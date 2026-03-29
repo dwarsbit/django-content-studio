@@ -1,5 +1,5 @@
 import uuid
-from typing import Type
+from typing import Type, TypeVar, Generic, Any, Optional, Union
 
 from blueprint import fields as bp_fields
 from blueprint.media_library.fields import MediaField, ManyMediaField
@@ -31,17 +31,19 @@ class AdminSite(admin.AdminSite):
     Enhanced admin site for Django Content Studio.
     """
 
-    token_backend = TokenBackendManager()
+    token_backend: TokenBackendManager = TokenBackendManager()
 
-    login_backend = LoginBackendManager()
+    login_backend: LoginBackendManager = LoginBackendManager()
 
-    dashboard = None
+    dashboard: Any = None
 
-    model_groups = None
+    model_groups: Optional[list["ModelGroup"]] = None
 
-    extensions = None
+    extensions: Optional[list[Any]] = None
 
-    default_widget_mapping = {
+    default_widget_mapping: dict[
+        Union[Type[models.Field], str], Type[widgets.BaseWidget]
+    ] = {
         models.CharField: widgets.InputWidget,
         models.IntegerField: widgets.InputWidget,
         models.SmallIntegerField: widgets.InputWidget,
@@ -74,7 +76,7 @@ class AdminSite(admin.AdminSite):
         "AutoSlugField": widgets.SlugWidget,
     }
 
-    default_format_mapping = {
+    default_format_mapping: dict[Type[models.Field], Type[formats.BaseFormat]] = {
         models.CharField: formats.TextFormat,
         models.IntegerField: formats.NumberFormat,
         models.SmallIntegerField: formats.NumberFormat,
@@ -123,7 +125,9 @@ class AdminSite(admin.AdminSite):
         """
         return obj.file.url
 
-    def get_tenants(self, tenant_model: Type[models.Model], **kwargs):
+    def get_tenants(
+        self, tenant_model: Type[models.Model], **kwargs
+    ) -> models.QuerySet:
         """
         Method for getting the list of available tenants.
         """
@@ -133,16 +137,21 @@ class AdminSite(admin.AdminSite):
 admin_site = AdminSite()
 
 
-class ModelAdmin(admin.ModelAdmin):
+T = TypeVar("T", bound=Model)
+
+
+class ModelAdmin(admin.ModelAdmin, Generic[T]):
     """
     Enhanced model admin for Django Content Studio and integration with
     Django Content Framework. Although it's relatively backwards compatible,
     some default behavior has been changed.
     """
 
+    model: Type[T]
+
     # Whether the model is a singleton and should not show
     # the list view.
-    is_singleton = False
+    is_singleton: bool = False
 
     # Override the widget used for certain fields by adding
     # a map of field to widget. Fields that are not included
@@ -150,7 +159,7 @@ class ModelAdmin(admin.ModelAdmin):
     #
     # @example
     # widget_mapping = {'is_published': widgets.SwitchWidget}
-    widget_mapping = None
+    widget_mapping: Optional[dict[str, Type[widgets.BaseWidget]]] = None
 
     # Override the format used for certain fields by adding
     # a map of field to format. Fields that are not included
@@ -158,23 +167,26 @@ class ModelAdmin(admin.ModelAdmin):
     #
     # @example
     # format_mapping = {'file_size': widgets.FileSizeWidget}
-    format_mapping = None
+    format_mapping: Optional[dict[str, Type[formats.BaseFormat]]] = None
 
     # We set a lower limit than Django's default of 100
-    list_per_page = 20
+    list_per_page: int = 20
 
     # Description shown below model name on list pages
-    list_description = ""
+    list_description: str = ""
 
     # Configure the main section in the edit-view.
-    edit_main: list[type[FormSetGroup | FormSet | Field | str]] = []
+    edit_main: Union[
+        list[Union[FormSetGroup, FormSet, Field, Component, str]], list[str]
+    ] = []
 
     # Configure the sidebar in the edit-view.
-    edit_sidebar: list[type[FormSet | Field | str]] = []
+    edit_sidebar: Union[list[Union[FormSet, Field, Component, str]], list[str]] = []
 
-    icon = None
+    # The icon for this model will be shown in the menu and some other places.
+    icon: Optional[str] = None
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         is_singleton = getattr(self.model, "is_singleton", False)
 
         # Don't allow to add more than one singleton object.
@@ -183,7 +195,9 @@ class ModelAdmin(admin.ModelAdmin):
 
         return super().has_add_permission(request)
 
-    def has_delete_permission(self, request, obj=None):
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Optional[T] = None
+    ) -> bool:
         is_singleton = getattr(self.model, "is_singleton", False)
 
         if is_singleton:
@@ -191,7 +205,7 @@ class ModelAdmin(admin.ModelAdmin):
 
         return super().has_delete_permission(request, obj)
 
-    def get_component(self, component_id: uuid.UUID):
+    def get_component(self, component_id: uuid.UUID) -> Optional[Component]:
         """
         Retrieves a component from the edit_main or edit_sidebar attributes by ID.
         :param component_id:
@@ -220,7 +234,7 @@ class AdminSerializer:
     def __init__(self, admin_class: ModelAdmin):
         self.admin_class = admin_class
 
-    def serialize(self, request: HttpRequest):
+    def serialize(self, request: HttpRequest) -> dict[str, Any]:
         admin_class = self.admin_class
         format_mapping = getattr(admin_class, "format_mapping", None) or {}
         widget_mapping = getattr(admin_class, "widget_mapping", None) or {}
@@ -263,7 +277,7 @@ class AdminSerializer:
             },
         }
 
-    def serialize_edit_main(self, request):
+    def serialize_edit_main(self, request: HttpRequest) -> list[dict[str, Any]]:
         admin_class = self.admin_class
 
         return [
@@ -273,7 +287,7 @@ class AdminSerializer:
             )
         ]
 
-    def serialize_edit_sidebar(self, request):
+    def serialize_edit_sidebar(self, request: HttpRequest) -> list[dict[str, Any]]:
         admin_class = self.admin_class
 
         return [
@@ -281,7 +295,7 @@ class AdminSerializer:
             for i in self.get_edit_sidebar(getattr(admin_class, "edit_sidebar", None))
         ]
 
-    def get_list_display(self):
+    def get_list_display(self) -> list[dict[str, Any]]:
         admin_class = self.admin_class
         fields = []
 
@@ -302,7 +316,12 @@ class AdminSerializer:
 
         return fields
 
-    def get_edit_main(self, edit_main):
+    def get_edit_main(
+        self,
+        edit_main: Union[
+            list[Union[FormSetGroup, FormSet, Field, Component, str]], list[str]
+        ],
+    ) -> list[FormSetGroup]:
         """
         Returns a normalized list of form set groups.
 
@@ -318,7 +337,12 @@ class AdminSerializer:
 
         return [FormSetGroup(formsets=[FormSet(fields=edit_main)])]
 
-    def get_edit_sidebar(self, edit_sidebar):
+    def get_edit_sidebar(
+        self,
+        edit_sidebar: Optional[
+            Union[list[Union[FormSet, Field, Component, str]], list[str]]
+        ],
+    ) -> list[FormSet]:
         """
         Returns a normalized list of form sets for the edit_sidebar.
 
@@ -334,19 +358,19 @@ class AdminSerializer:
 
 
 class ModelGroup:
-    name = None
-    label = None
-    icon = None
-    color = None
-    models = None
+    name: str
+    label: str
+    icon: Optional[str]
+    color: Optional[str]
+    models: list[Type[Model]]
 
     def __init__(
         self,
         name: str,
-        label: str = None,
-        icon: str = None,
-        color: str = None,
-        models: list[Type[Model]] = None,
+        label: Optional[str] = None,
+        icon: Optional[str] = None,
+        color: Optional[str] = None,
+        models: Optional[list[Type[Model]]] = None,
     ):
         self.name = name
         self.label = label or name.capitalize()
