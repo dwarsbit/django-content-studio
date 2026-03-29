@@ -18,6 +18,9 @@
   "app": {
     "copied_to_clipboard": "Gekopieerd naar klembord",
     "error": "Er gaat iets fout",
+    "error_troubleshooting": "Veelvoorkomende problemen kunnen zijn:",
+    "error_troubleshooting_django": "Django draait niet",
+    "error_troubleshooting_api": "De API URL is niet correct",
     "not_found": "We kunnen niet vinden wat je zoekt."
   },
   "login": {

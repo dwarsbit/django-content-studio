@@ -18,6 +18,9 @@
   "app": {
     "copied_to_clipboard": "Copied to clipboard!",
     "error": "Something went wrong",
+    "error_troubleshooting": "Common problems can be:",
+    "error_troubleshooting_django": "Django is not running",
+    "error_troubleshooting_api": "The API URL is not correct",
     "not_found": "We couldn't find what you were looking for."
   },
   "login": {
