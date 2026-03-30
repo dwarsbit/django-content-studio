@@ -3,14 +3,18 @@ name = "django-content-studio"
 version = "1.0.0-beta.23"
 description = "Modern & flexible Django admin"
 authors = [
-    {name = "Leon van der Grient",email = "leon@devtastic.io"}
+    {name = "Leon van der Grient", email = "leon@dwarsbit.nl"}
 ]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.12"
+
 [tool.poetry.dependencies]
-django-blueprint="1.0.0b2"
-djangorestframework-simplejwt= "5.5.1"
+Django = ">=5,<7"
+djangorestframework = ">=3.16,<4"
+djangorestframework-simplejwt = ">=5,<6"
+rich = "^14.3.3"
+pytest-cov = "^7.1.0"
 
 [tool.poetry]
 packages = [{include = "content_studio"}]
@@ -19,9 +23,19 @@ include = [
     { path = "content_studio/static/**/*", format = "wheel" }]
 
 [tool.poetry.group.dev.dependencies]
-black = "^26.3.0"
-Django= "^5.2.12"
-djangorestframework= "^3.16.1"
+black = "26.3.1"
+pytest = "^8.0.0"
+pytest-django = "^4.8.0"
+
+[tool.poetry.scripts]
+# Testing scripts
+test = "scripts.test_wrapper:main_test"
+test-verbose = "scripts.test_wrapper:main_test_verbose"
+test-cov = "scripts.test_wrapper:main_test_cov"
+
+# Quality gate scripts - run tests before critical operations
+build = "scripts.test_wrapper:main_build"
+publish = "scripts.test_wrapper:main_publish"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

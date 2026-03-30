@@ -8,3 +8,4 @@ dist-ssr
 /content_studio/static/content_studio
 .output.txt
 __pycache__
+.coverage
