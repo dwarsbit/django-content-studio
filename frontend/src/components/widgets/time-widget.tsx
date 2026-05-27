@@ -1,15 +1,15 @@
 import { useRef } from "react";
 
-import { Input } from "@/components/ui/input.tsx";
+import { Input } from "@/components/ui/input";
 
 export function TimeWidget({
-  value = "",
+  value,
   onChange,
 }: {
   onChange(value: any): void;
   value?: any;
 }) {
-  const [hours, minutes] = value.split(":");
+  const [hours, minutes] = (value ?? "").split(":");
   const minutesRef = useRef<HTMLInputElement>(null);
 
   return (
