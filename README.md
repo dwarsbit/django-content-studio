@@ -45,9 +45,9 @@ urlpatterns = [
 
 ## 🐛 Issues & Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/BitsOfAbstraction/django-content-studio/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/BitsOfAbstraction/django-content-studio/discussions)
-- 📧 **Email**: leon@devtastic.io
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/dwarsbit/django-content-studio/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/dwarsbit/django-content-studio/discussions)
+- 📧 **Email**: leon@dwarsbit.nl
 
 ## 📄 License
 
@@ -62,7 +62,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🔗 Links
 
 - [PyPI Package](https://pypi.org/project/django-content-studio/)
-- [GitHub Repository](https://github.com/BitsOfAbstraction/django-content-studio)
+- [GitHub Repository](https://github.com/dwarsbit/django-content-studio)
 - [Changelog](CHANGELOG.md)
 
 ---

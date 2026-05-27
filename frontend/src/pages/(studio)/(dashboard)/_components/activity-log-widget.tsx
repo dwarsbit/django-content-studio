@@ -50,8 +50,8 @@ export function ActivityLogWidget({ widget }: { widget: DashboardWidget }) {
               </div>
               <div>
                 <div className="flex gap-1">
-                  <div>{item.user?.__str__}</div>
-                  <div>
+                  <div className="shrink-0">{item.user?.__str__}</div>
+                  <div className="shrink-0">
                     {t(
                       `dashboard.widgets.activity_log.action_flags.${item.action_flag}`,
                     )}

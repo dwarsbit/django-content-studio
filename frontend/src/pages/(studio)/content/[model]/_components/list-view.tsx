@@ -44,7 +44,7 @@ export function ListView({
                 R.isNil(sortable_by) || sortable_by.includes(name);
 
               return (
-                <TableHead key={name} className="sticky top-0 z-10">
+                <TableHead key={name} className="sticky top-0 z-10 bg-card">
                   {label && isSortable ? (
                     <button
                       onClick={() =>

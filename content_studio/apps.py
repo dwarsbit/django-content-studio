@@ -4,7 +4,12 @@ from django.contrib import admin
 from . import VERSION
 from .paginators import ContentPagination
 from .settings import cs_settings
-from .utils import is_runserver, get_tenant_field_name
+from .utils import (
+    is_runserver,
+    get_tenant_field_name,
+    get_latest_version,
+    normalize_version,
+)
 
 
 class DjangoContentStudioConfig(AppConfig):
@@ -15,29 +20,44 @@ class DjangoContentStudioConfig(AppConfig):
     def ready(self):
         from .utils import log
 
-        if is_runserver() and not self.initialized:
-            self.initialized = True
+        if not is_runserver() or self.initialized:
+            return
+        self.initialized = True
 
-            log("\n")
-            log("----------------------------------------")
-            log("Django Content Studio")
-            log(f"Version {VERSION}")
-            log("----------------------------------------")
-            log(":rocket:", "Starting Django Content Studio")
-            log(":mag:", "Discovering admin models...")
-            registered_models = len(admin.site._registry)
-            log(
-                ":white_check_mark:",
-                f"[green]Found {registered_models} admin models[/green]",
-            )
-            # Set up admin site routes
-            admin_site = cs_settings.ADMIN_SITE
-            admin_site.setup()
+        log("")
+        log("[bold magenta]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold magenta]")
+        log("[bold cyan]Django Content Studio[/bold cyan]")
 
-            # Set up content CRUD APIs
-            self._create_crud_api()
+        # Check for a newer version
+        latest_version = get_latest_version()
+        if latest_version:
+            latest_version = normalize_version(latest_version)
+            current_version = normalize_version(VERSION)
+            if latest_version != current_version:
+                log(f"[yellow]⚠️  New version available[/yellow]")
+                log(
+                    f"Current: [bold]{current_version}[/bold] → Latest: {latest_version}"
+                )
+            else:
+                log(f"[bold]Version {current_version}[/bold]")
+        else:
+            log(f"[bold]Version {VERSION}[/bold]")
+        log("[bold magenta]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold magenta]")
 
-            log("\n")
+        log(":mag:", "Discovering admin models...")
+        registered_models = len(admin.site._registry)
+        log(
+            ":white_check_mark:",
+            f"[green]Found {registered_models} admin models[/green]",
+        )
+        # Set up admin site routes
+        admin_site = cs_settings.ADMIN_SITE
+        admin_site.setup()
+
+        # Set up content CRUD APIs
+        self._create_crud_api()
+
+        log("\n")
 
     def _create_crud_api(self):
         from .utils import log

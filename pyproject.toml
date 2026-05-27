@@ -1,6 +1,6 @@
 [project]
 name = "django-content-studio"
-version = "1.0.0-beta.23"
+version = "1.0.0-beta.24"
 description = "Modern & flexible Django admin"
 authors = [
     {name = "Leon van der Grient", email = "leon@dwarsbit.nl"}
@@ -23,9 +23,9 @@ include = [
     { path = "content_studio/static/**/*", format = "wheel" }]
 
 [tool.poetry.group.dev.dependencies]
-black = "26.3.1"
-pytest = "^8.0.0"
-pytest-django = "^4.8.0"
+black = "26.5.1"
+pytest = "8.4.2"
+pytest-django = "4.12.0"
 
 [tool.poetry.scripts]
 # Testing scripts

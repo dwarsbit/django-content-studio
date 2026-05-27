@@ -33,7 +33,7 @@ export function TenantSelector() {
     <Popover>
       <PopoverTrigger
         asChild
-        className="group w-full flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 data-[state=open]:bg-gray-100 hover:cursor-pointer"
+        className="group w-full flex items-center justify-between gap-2 rounded-md hover:bg-gray-100 data-[state=open]:bg-gray-100 hover:cursor-pointer"
       >
         <div>
           {tenant && (
@@ -41,7 +41,7 @@ export function TenantSelector() {
               <Avatar className="size-7 shrink-0">
                 <AvatarFallback>{tenant.__str__[0]}</AvatarFallback>
               </Avatar>
-              <div className="flex-1 text-left font-semibold text-gray-900 truncate">
+              <div className="flex-1 max-w-[84px] text-left font-semibold text-gray-900 truncate">
                 {tenant.__str__}
               </div>
               {tenantModel?.admin.permissions.change_permission && (
