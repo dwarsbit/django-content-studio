@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { PiTrendDownBold, PiTrendUpBold } from "react-icons/pi";
 
-import { Badge } from "@/components/ui/badge.tsx";
+import { Badge } from "@/components/ui/badge";
 import { useHttp } from "@/hooks/use-http";
-import { cn } from "@/lib/utils.ts";
+import { cn } from "@/lib/utils";
 import { type DashboardWidget } from "@/types";
 
 export function StatisticWidget({ widget }: { widget: DashboardWidget }) {
@@ -12,7 +12,7 @@ export function StatisticWidget({ widget }: { widget: DashboardWidget }) {
     retry: false,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    queryKey: ["dashboard", "widgets", widget.widget_id],
+    queryKey: ["dashboard", "widg", widget.widget_id],
     async queryFn() {
       const { data } = await http.get<{
         title: string;

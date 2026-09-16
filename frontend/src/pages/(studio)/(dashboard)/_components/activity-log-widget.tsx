@@ -14,7 +14,7 @@ export function ActivityLogWidget({ widget }: { widget: DashboardWidget }) {
     retry: false,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    queryKey: ["dashboard", "widgets", widget.widget_id],
+    queryKey: ["dashboard", "widg", widget.widget_id],
     async queryFn() {
       const { data } = await http.get<ActivityLogEntry[]>(
         `/dashboard/widgets/${widget.widget_id}`,

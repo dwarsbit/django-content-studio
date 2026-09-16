@@ -1,6 +1,6 @@
 import * as R from "ramda";
 
-import { useAdminInfo } from "@/hooks/use-admin-info.ts";
+import { useAdminInfo } from "@/hooks/use-admin-info";
 import { FieldType, LoginBackendType } from "@/types";
 
 import { ForgotPassword } from "./_components/forgot-password";

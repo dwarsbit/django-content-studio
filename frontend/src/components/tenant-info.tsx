@@ -1,8 +1,8 @@
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 
-import { useDiscover } from "@/hooks/use-discover.ts";
-import { useTenant } from "@/tenant.tsx";
+import { useDiscover } from "@/hooks/use-discover";
+import { useTenant } from "@/tenant";
 
 export function TenantInfo({ label }: { label: string }) {
   const { t } = useTranslation();

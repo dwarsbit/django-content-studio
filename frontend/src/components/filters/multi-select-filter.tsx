@@ -1,4 +1,4 @@
-import { DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu.tsx";
+import { DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import type { ModelField } from "@/types";
 
 export function MultiSelectFilter({

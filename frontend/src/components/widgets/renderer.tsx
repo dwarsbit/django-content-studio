@@ -11,7 +11,7 @@ import { FallbackWidget } from "./fallback-widget";
 import { ForeignKeyWidget } from "./foreign-key-widget";
 import { InputWidget } from "./input-widget";
 import { JSONSchemaWidget } from "./json-schema-widget";
-import { ManyMediaWidget } from "./many-media-widget.tsx";
+import { ManyMediaWidget } from "./many-media-widget";
 import { ManyToManyWidget } from "./many-to-many-widget";
 import { MediaWidget } from "./media-widget";
 import { MultiSelectWidget } from "./multi-select-widget";

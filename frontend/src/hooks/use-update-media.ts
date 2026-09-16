@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as R from "ramda";
 
-import { useHttp } from "@/hooks/use-http.ts";
-import type { MediaItem } from "@/types.ts";
+import { useHttp } from "@/hooks/use-http";
+import type { MediaItem } from "@/types";
 
 export function useUpdateMedia() {
   const queryClient = useQueryClient();

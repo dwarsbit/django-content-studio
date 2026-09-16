@@ -3,7 +3,7 @@ import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
-import { Spinner } from "@/components/ui/spinner.tsx";
+import { Spinner } from "@/components/ui/spinner";
 import { useHttp } from "@/hooks/use-http";
 import { type DashboardWidget } from "@/types";
 
@@ -14,7 +14,7 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
     retry: false,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    queryKey: ["dashboard", "widgets", widget.widget_id],
+    queryKey: ["dashboard", "widg", widget.widget_id],
     async queryFn() {
       const { data } = await http.get<{
         title: string;

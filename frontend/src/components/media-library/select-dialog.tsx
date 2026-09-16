@@ -1,14 +1,14 @@
 import { useIsMutating } from "@tanstack/react-query";
 import * as R from "ramda";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import { PiCheckBold, PiUpload } from "react-icons/pi";
-import { toast } from "sonner";
+import { PiCheckBold } from "react-icons/pi";
 
 import { FolderPath } from "@/components/media-library/folder-path";
 import { Folders } from "@/components/media-library/folders";
 import { ItemCard } from "@/components/media-library/item-card";
+import { UploadButton } from "@/components/media-library/upload-button";
 import { Button } from "@/components/ui/button";
 import { DebouncedInput } from "@/components/ui/debounced-input";
 import {
@@ -21,9 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
-import { useCreateMedia } from "@/hooks/use-create-media";
 import { useListMedia } from "@/hooks/use-list-media";
-import { cn, getErrorMessage } from "@/lib/utils";
+import { useUpload } from "@/hooks/use-upload";
+import { cn } from "@/lib/utils";
 
 export function SelectDialog({
   children,
@@ -57,46 +57,23 @@ function SelectDialogContent({
   onSelect(v: any | any[]): void;
 }) {
   const { t } = useTranslation();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [selection, setSelection] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [folder, setFolder] = useState<string | null>(null);
   const { data } = useListMedia({ folder, page, filters: { search } });
-  const { mutateAsync } = useCreateMedia();
   const pendingCount = useIsMutating({
     mutationKey: ["media-library", "items"],
   });
-  const handleUpload = useCallback(
-    async (acceptedFiles: File[]) => {
-      await Promise.all(
-        acceptedFiles.map(async (f) => {
-          try {
-            const fileType = R.cond([
-              [R.startsWith("image/"), R.always("image")],
-              [R.startsWith("video/"), R.always("video")],
-              [R.startsWith("audio/"), R.always("audio")],
-              [R.T, R.always("file")],
-            ])(f.type);
-
-            const data = await mutateAsync({
-              folder,
-              name: f.name,
-              file: f,
-              type: fileType,
-            });
-            setSelection(multiple ? R.append(data) : R.always([data]));
-          } catch (e) {
-            toast.error(getErrorMessage(e));
-          }
-        }),
-      );
-    },
-    [folder, multiple, mutateAsync],
-  );
+  const handleUpload = useUpload();
 
   return (
-    <DropzoneArea onDrop={handleUpload}>
+    <DropzoneArea
+      onDrop={async (files) => {
+        const data = await handleUpload(files);
+        setSelection(multiple ? R.append(data) : R.always([data]));
+      }}
+    >
       <div className={cn("mb-2", { invisible: search })}>
         <FolderPath
           folder={folder}
@@ -117,26 +94,7 @@ function SelectDialogContent({
             setSearch(v);
           }}
         />
-        <Button
-          variant="outline"
-          className="select-none text-sm font-medium"
-          onClick={() => inputRef.current?.click()}
-        >
-          <PiUpload />
-          {t("widgets.media_widget.upload_label")}
-        </Button>
-        <input
-          ref={inputRef}
-          type="file"
-          className="hidden"
-          multiple={multiple}
-          onChange={async (e) => {
-            const { files } = e.target;
-            if (files) {
-              await handleUpload(Array.from(files));
-            }
-          }}
-        />
+        <UploadButton variant="outline" folder={folder} multiple={multiple} />
       </div>
 
       <div className={cn("mb-2", { hidden: search })}>

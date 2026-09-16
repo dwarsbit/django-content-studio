@@ -1,10 +1,9 @@
 "use client";
 
 import { Command as CommandPrimitive, useCommandState } from "cmdk";
-import { ChevronDownIcon } from "lucide-react";
 import * as React from "react";
 import { forwardRef, useEffect } from "react";
-import { PiXBold } from "react-icons/pi";
+import { PiCaretDownBold, PiXBold } from "react-icons/pi";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -558,7 +557,7 @@ const MultiSelect = React.forwardRef<
           >
             <PiXBold className="size-3 text-gray-500" />
           </button>
-          <ChevronDownIcon
+          <PiCaretDownBold
             className={cn(
               "size-4 mr-1 text-muted-foreground/50 shrink-0",
               (hideClearAllButton ||

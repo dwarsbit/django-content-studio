@@ -124,6 +124,9 @@
     @apply bg-background text-foreground font-sans text-sm antialiased;
     font-optical-sizing: auto;
   }
+  button {
+    @apply cursor-pointer;
+  }
   .scrollbar {
     --scrollbar-foreground: rgba(0, 0, 0, 0.1);
     --scrollbar-background: transparent;

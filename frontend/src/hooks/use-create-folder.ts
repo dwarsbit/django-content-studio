@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { useHttp } from "@/hooks/use-http.ts";
-import type { Id } from "@/types.ts";
+import { useHttp } from "@/hooks/use-http";
+import type { Id } from "@/types";
 
 export function useCreateFolder() {
   const http = useHttp();

@@ -1,9 +1,9 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
-import { LucideEye, LucideEyeOff, LucideLock } from "lucide-react";
 import * as R from "ramda";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PiEyeBold, PiEyeClosedBold, PiLockBold } from "react-icons/pi";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
@@ -15,7 +15,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { Label } from "@/components/ui/label.tsx";
+import { Label } from "@/components/ui/label";
 import { useHttp } from "@/hooks/use-http";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -108,7 +108,7 @@ export function ResetPassword() {
         {validCode && (
           <>
             <div className="relative flex items-center mb-6">
-              <LucideLock className="size-4 stroke-gray-400 absolute left-3" />
+              <PiLockBold className="size-4 stroke-gray-400 absolute left-3" />
               <Input
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -131,9 +131,9 @@ export function ResetPassword() {
                 }}
               >
                 {passwordVisible ? (
-                  <LucideEyeOff className="size-4 stroke-gray-600" />
+                  <PiEyeClosedBold className="size-4 stroke-gray-600" />
                 ) : (
-                  <LucideEye className="size-4 stroke-gray-600" />
+                  <PiEyeBold className="size-4 stroke-gray-600" />
                 )}
               </button>
             </div>

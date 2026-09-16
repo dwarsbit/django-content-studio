@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { PiDotsThreeBold, PiXBold } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group.tsx";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,

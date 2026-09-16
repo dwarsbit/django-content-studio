@@ -6,7 +6,7 @@ export function ModelListLayout() {
   const { model: label } = useParams<{ model: string }>();
 
   return (
-    <div className="contents" key={label}>
+    <div className="conte" key={label}>
       <TenantInfo label={label!} />
       <Outlet />
     </div>

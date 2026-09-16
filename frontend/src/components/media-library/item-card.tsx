@@ -26,7 +26,7 @@ import { useDeleteMedia } from "@/hooks/use-delete-media";
 import { useListFolder } from "@/hooks/use-list-folder";
 import { useUpdateMedia } from "@/hooks/use-update-media";
 import { cn, getErrorMessage } from "@/lib/utils";
-import type { MediaItem } from "@/types.ts";
+import type { MediaItem } from "@/types";
 
 export function ItemCard({
   item,

@@ -1,6 +1,7 @@
 import * as R from "ramda";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { LuMonitorCog, LuMoon, LuSun } from "react-icons/lu";
 import {
   PiCaretDownBold,
   PiCaretLeftBold,
@@ -13,6 +14,7 @@ import {
 import { Link, type Path, useMatch, useNavigate } from "react-router";
 
 import { useAuth } from "@/auth";
+import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,22 +24,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAdminInfo } from "@/hooks/use-admin-info";
-import { useDiscover } from "@/hooks/use-discover";
-import { useMe } from "@/hooks/use-me";
-import { cn } from "@/lib/utils";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAdminInfo } from "@/hooks/use-admin-info";
+import { useDiscover } from "@/hooks/use-discover";
+import { useMe } from "@/hooks/use-me";
+import { cn } from "@/lib/utils";
 import { useTenant } from "@/tenant";
 import { ExtensionType, type TailwindColor } from "@/types";
-import { useTheme } from "@/components/theme-provider";
 
 import { TenantSelector } from "./tenant-selector";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { LucideMonitorCog, LucideMoon, LucideSun } from "lucide-react";
 
 const CollapsedContext = createContext(false);
 const ExpandedContext = createContext<{
@@ -191,6 +191,10 @@ const COLORS: Record<TailwindColor, string> = {
   fuchsia: "bg-fuchsia-100 text-fuchsia-600",
   pink: "bg-pink-100 text-pink-600",
   rose: "bg-rose-100 text-rose-600",
+  mauve: "bg-mauve-100 text-mauve-600",
+  olive: "bg-olive-100 text-olive-600",
+  mist: "bg-mist-100 text-mist-600",
+  taupe: "bg-taupe-100 text-taupe-600",
 };
 
 function MenuItem({
@@ -325,13 +329,13 @@ function UserMenu() {
                     }}
                   >
                     <ToggleGroupItem value="system">
-                      <LucideMonitorCog />
+                      <LuMonitorCog />
                     </ToggleGroupItem>
                     <ToggleGroupItem value="light">
-                      <LucideSun />
+                      <LuSun />
                     </ToggleGroupItem>
                     <ToggleGroupItem value="dark">
-                      <LucideMoon />
+                      <LuMoon />
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>

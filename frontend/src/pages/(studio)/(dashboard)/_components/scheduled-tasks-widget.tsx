@@ -8,10 +8,10 @@ import {
   PiPlayCircleBold,
 } from "react-icons/pi";
 
-import { Badge } from "@/components/ui/badge.tsx";
-import { Spinner } from "@/components/ui/spinner.tsx";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { useHttp } from "@/hooks/use-http";
-import { cn } from "@/lib/utils.ts";
+import { cn } from "@/lib/utils";
 import { type DashboardWidget, type DateTimeString } from "@/types";
 
 export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
@@ -22,7 +22,7 @@ export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
     refetchInterval: 10_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    queryKey: ["dashboard", "widgets", widget.widget_id],
+    queryKey: ["dashboard", "widg", widget.widget_id],
     async queryFn() {
       const { data } = await http.get<{
         title: string;

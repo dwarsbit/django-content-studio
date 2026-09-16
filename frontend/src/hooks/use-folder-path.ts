@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-import { useHttp } from "@/hooks/use-http.ts";
-import type { Id } from "@/types.ts";
+import { useHttp } from "@/hooks/use-http";
+import type { Id } from "@/types";
 
 export function useFolderPath(folder: Id | null) {
   const http = useHttp();

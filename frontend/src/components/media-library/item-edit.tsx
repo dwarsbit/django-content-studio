@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { CropField } from "@/components/media-library/crop-field.tsx";
-import { Button } from "@/components/ui/button.tsx";
+import { CropField } from "@/components/media-library/crop-field";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import {
   Form,
@@ -15,12 +15,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input.tsx";
-import { MultiSelect } from "@/components/ui/multi-select.tsx";
+import { Input } from "@/components/ui/input";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Spinner } from "@/components/ui/spinner";
 import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
-import { useUpdateMedia } from "@/hooks/use-update-media.ts";
-import { getErrorMessage } from "@/lib/utils.ts";
+import { useUpdateMedia } from "@/hooks/use-update-media";
+import { getErrorMessage } from "@/lib/utils";
 import type { MediaItem } from "@/types";
 
 export function ItemEdit({

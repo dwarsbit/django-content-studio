@@ -1,7 +1,7 @@
 import { Outlet } from "react-router";
 
 import { ContentEditor } from "@/components/content-editor";
-import { TenantProvider } from "@/tenant.tsx";
+import { TenantProvider } from "@/tenant";
 
 import { MainMenu } from "./_components/main-menu";
 

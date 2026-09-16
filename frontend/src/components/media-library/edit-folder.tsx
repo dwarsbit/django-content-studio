@@ -9,9 +9,9 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/input-group.tsx";
-import { useUpdateFolder } from "@/hooks/use-update-folder.ts";
-import { getErrorMessage } from "@/lib/utils.ts";
+} from "@/components/ui/input-group";
+import { useUpdateFolder } from "@/hooks/use-update-folder";
+import { getErrorMessage } from "@/lib/utils";
 
 export function EditFolder({
   folder,

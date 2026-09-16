@@ -13,7 +13,7 @@ import { FormatRenderer } from "@/components/formats/renderer";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
-import { Spinner } from "@/components/ui/spinner.tsx";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,

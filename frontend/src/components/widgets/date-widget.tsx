@@ -1,9 +1,9 @@
 "use client";
 import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
-import { ChevronDownIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { PiCaretDownBold } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -46,7 +46,7 @@ export function DateWidget({
             </span>
           )}
         </div>
-        <ChevronDownIcon className="size-4 text-muted-foreground/50" />
+        <PiCaretDownBold className="size-4 text-muted-foreground/50" />
       </PopoverTrigger>
       <PopoverContent className="w-auto overflow-hidden p-0" align="start">
         <Calendar

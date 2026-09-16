@@ -5,9 +5,9 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip.tsx";
-import { useDiscover } from "@/hooks/use-discover.ts";
-import { cn } from "@/lib/utils.ts";
+} from "@/components/ui/tooltip";
+import { useDiscover } from "@/hooks/use-discover";
+import { cn } from "@/lib/utils";
 import type { ModelField } from "@/types";
 
 export function ForeignKeyFormat({

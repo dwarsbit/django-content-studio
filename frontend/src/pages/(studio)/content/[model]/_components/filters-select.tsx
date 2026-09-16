@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { PiFunnelBold } from "react-icons/pi";
 import { useSearchParams } from "react-router";
 
-import { FilterRenderer } from "@/components/filters/renderer.tsx";
+import { FilterRenderer } from "@/components/filters/renderer";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

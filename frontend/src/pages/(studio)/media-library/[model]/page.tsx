@@ -5,12 +5,13 @@ import { useSearchParams } from "react-router";
 
 import { FolderPath } from "@/components/media-library/folder-path";
 import { Folders } from "@/components/media-library/folders";
-import { TenantInfo } from "@/components/tenant-info.tsx";
+import { UploadButton } from "@/components/media-library/upload-button";
+import { TenantInfo } from "@/components/tenant-info";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import { useDiscover } from "@/hooks/use-discover";
-import { useListMedia } from "@/hooks/use-list-media.ts";
-import { cn } from "@/lib/utils.ts";
+import { useListMedia } from "@/hooks/use-list-media";
+import { cn } from "@/lib/utils";
 
 import { Filters } from "./_components/filters";
 import { GridView } from "./_components/grid-view";
@@ -67,6 +68,7 @@ export function MediaLibraryPage() {
             </div>
           )}
         </div>
+        <UploadButton folder={folder} multiple />
       </div>
 
       <div className="mb-4 px-5">

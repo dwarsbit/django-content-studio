@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { useHttp } from "@/hooks/use-http.ts";
-import type { PaginatedResponse } from "@/types.ts";
+import { useHttp } from "@/hooks/use-http";
+import type { PaginatedResponse } from "@/types";
 
 export function useListFolder({
   parent,

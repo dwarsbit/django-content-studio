@@ -1,9 +1,9 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import * as R from "ramda";
 
-import { useDiscover } from "@/hooks/use-discover.ts";
-import { useHttp } from "@/hooks/use-http.ts";
-import type { MediaItem } from "@/types.ts";
+import { useDiscover } from "@/hooks/use-discover";
+import { useHttp } from "@/hooks/use-http";
+import type { MediaItem } from "@/types";
 
 export function useRetrieveMedia(id: string) {
   const http = useHttp();

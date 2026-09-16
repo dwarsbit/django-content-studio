@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { LucideMail } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PiEnvelopeBold } from "react-icons/pi";
 import { Link, useNavigate } from "react-router";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -43,7 +43,7 @@ export function ForgotPassword() {
       )}
       <form className="border border-gray-300 rounded-lg bg-background p-4 w-full shadow-sm shadow-gray-900/5">
         <div className="relative flex items-center mb-4">
-          <LucideMail className="size-4 stroke-gray-400 absolute left-3" />
+          <PiEnvelopeBold className="size-4 stroke-gray-400 absolute left-3" />
           <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}

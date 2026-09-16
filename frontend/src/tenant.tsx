@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import * as R from "ramda";
 import React, { useContext, useEffect, useState } from "react";
 
-import { useDiscover } from "@/hooks/use-discover.ts";
+import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
-import { TenantSetupPage } from "@/pages/(tenant)/tenant-setup/page.tsx";
+import { TenantSetupPage } from "@/pages/(tenant)/tenant-setup/page";
 import type { Resource } from "@/types";
 
 interface TenantState {
@@ -31,7 +31,7 @@ export function TenantProvider({ children }: { children: React.ReactElement }) {
     retry: false,
     queryKey: ["resources", discover?.multitenancy.tenant_model],
     async queryFn() {
-      const { data } = await http.get<Resource[]>("/tenants");
+      const { data } = await http.get<Resource[]>("/tena");
       return data;
     },
   });

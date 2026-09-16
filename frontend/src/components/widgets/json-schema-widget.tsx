@@ -1,8 +1,8 @@
 import * as R from "ramda";
 
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label.tsx";
-import type { ModelField } from "@/types.ts";
+import { Label } from "@/components/ui/label";
+import type { ModelField } from "@/types";
 
 export function JSONSchemaWidget({
   value,

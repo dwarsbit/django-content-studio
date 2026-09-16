@@ -3,7 +3,7 @@ import "react-image-crop/dist/ReactCrop.css";
 import * as R from "ramda";
 import ReactCrop from "react-image-crop";
 
-import { cn } from "@/lib/utils.ts";
+import { cn } from "@/lib/utils";
 import type { CropValue } from "@/types";
 
 export function CropField({

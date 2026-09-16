@@ -8,11 +8,11 @@ import { z } from "zod";
 
 import { Aside } from "@/components/content-editor/aside";
 import { Main } from "@/components/content-editor/main";
-import { Button } from "@/components/ui/button.tsx";
-import { Form } from "@/components/ui/form.tsx";
+import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
 import { useDiscover } from "@/hooks/use-discover";
-import { useHttp } from "@/hooks/use-http.ts";
-import type { Resource } from "@/types.ts";
+import { useHttp } from "@/hooks/use-http";
+import type { Resource } from "@/types";
 
 export function TenantSetupPage() {
   const { t } = useTranslation();

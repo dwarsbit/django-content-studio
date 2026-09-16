@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { useHttp } from "@/hooks/use-http.ts";
+import { useHttp } from "@/hooks/use-http";
 
 export function useCreateMedia() {
   const queryClient = useQueryClient();

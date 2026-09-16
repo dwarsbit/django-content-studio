@@ -10,15 +10,15 @@ import {
   CommandGroup,
   CommandItem,
   CommandList,
-} from "@/components/ui/command.tsx";
-import { Input } from "@/components/ui/input.tsx";
+} from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover.tsx";
-import { useHttp } from "@/hooks/use-http.ts";
-import type { Model, Resource } from "@/types.ts";
+} from "@/components/ui/popover";
+import { useHttp } from "@/hooks/use-http";
+import type { Model, Resource } from "@/types";
 
 export function ForeignKeyWidget({
   name,

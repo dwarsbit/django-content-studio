@@ -1,12 +1,8 @@
 import { enUS, nl } from "date-fns/locale";
-import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "lucide-react";
 import * as React from "react";
 import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 import { useTranslation } from "react-i18next";
+import { PiCaretLeftBold, PiCaretRightBold } from "react-icons/pi";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -144,13 +140,13 @@ function Calendar({
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === "left") {
             return (
-              <ChevronLeftIcon className={cn("size-4", className)} {...props} />
+              <PiCaretLeftBold className={cn("size-4", className)} {...props} />
             );
           }
 
           if (orientation === "right") {
             return (
-              <ChevronRightIcon
+              <PiCaretRightBold
                 className={cn("size-4", className)}
                 {...props}
               />
@@ -158,7 +154,7 @@ function Calendar({
           }
 
           return (
-            <ChevronDownIcon className={cn("size-4", className)} {...props} />
+            <PiCaretDownBoldw className={cn("size-4", className)} {...props} />
           );
         },
         DayButton: CalendarDayButton,

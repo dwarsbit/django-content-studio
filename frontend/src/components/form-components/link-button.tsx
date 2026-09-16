@@ -5,10 +5,10 @@ import { FiCopy } from "react-icons/fi";
 import { useCopyToClipboard } from "react-use";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button.tsx";
-import { ButtonGroup } from "@/components/ui/button-group.tsx";
-import { useHttp } from "@/hooks/use-http.ts";
-import { cn } from "@/lib/utils.ts";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { useHttp } from "@/hooks/use-http";
+import { cn } from "@/lib/utils";
 import type { FormField, Model } from "@/types";
 
 export function LinkButton({

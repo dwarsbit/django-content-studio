@@ -1,14 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
-import {
-  LucideEye,
-  LucideEyeOff,
-  LucideLock,
-  LucideMail,
-  LucideUser,
-} from "lucide-react";
 import * as R from "ramda";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  PiEnvelopeBold,
+  PiEyeBold,
+  PiEyeClosedBold,
+  PiLockBold,
+  PiUserBold,
+} from "react-icons/pi";
 import { Link, useSearchParams } from "react-router";
 
 import { useAuth } from "@/auth";
@@ -69,9 +69,9 @@ export function UsernamePasswordBackend({
       <form className="border border-card rounded-lg bg-card p-4 w-full shadow-sm">
         <div className="relative flex items-center mb-4">
           {emailField ? (
-            <LucideMail className="size-4 stroke-muted-foreground absolute left-3" />
+            <PiEnvelopeBold className="size-4 stroke-muted-foreground absolute left-3" />
           ) : (
-            <LucideUser className="size-4 stroke-muted-foreground absolute left-3" />
+            <PiUserBold className="size-4 stroke-muted-foreground absolute left-3" />
           )}
           <Input
             value={credentials.username}
@@ -89,7 +89,7 @@ export function UsernamePasswordBackend({
           />
         </div>
         <div className="relative flex items-center mb-6">
-          <LucideLock className="size-4 stroke-muted-foreground absolute left-3" />
+          <PiLockBold className="size-4 stroke-muted-foreground absolute left-3" />
           <Input
             value={credentials.password}
             onChange={(e) =>
@@ -114,9 +114,9 @@ export function UsernamePasswordBackend({
             }}
           >
             {passwordVisible ? (
-              <LucideEyeOff className="size-4 stroke-primary-foreground" />
+              <PiEyeClosedBold className="size-4 stroke-primary-foreground" />
             ) : (
-              <LucideEye className="size-4 stroke-primary-foreground" />
+              <PiEyeBold className="size-4 stroke-primary-foreground" />
             )}
           </button>
         </div>

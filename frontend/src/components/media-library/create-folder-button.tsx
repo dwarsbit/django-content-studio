@@ -9,10 +9,10 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/input-group.tsx";
-import { useCreateFolder } from "@/hooks/use-create-folder.ts";
+} from "@/components/ui/input-group";
+import { useCreateFolder } from "@/hooks/use-create-folder";
 import { useDiscover } from "@/hooks/use-discover";
-import { getErrorMessage } from "@/lib/utils.ts";
+import { getErrorMessage } from "@/lib/utils";
 
 export function CreateFolderButton({ parent }: { parent: string | null }) {
   const { t } = useTranslation();

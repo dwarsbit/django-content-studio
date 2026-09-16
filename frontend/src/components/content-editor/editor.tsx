@@ -7,9 +7,9 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { TenantInfo } from "@/components/tenant-info.tsx";
+import { TenantInfo } from "@/components/tenant-info";
 import { Form } from "@/components/ui/form";
-import { Spinner } from "@/components/ui/spinner.tsx";
+import { Spinner } from "@/components/ui/spinner";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
 import type { Model, Resource } from "@/types";

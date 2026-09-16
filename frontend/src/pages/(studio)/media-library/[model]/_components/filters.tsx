@@ -6,8 +6,8 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/input-group.tsx";
-import { cn } from "@/lib/utils.ts";
+} from "@/components/ui/input-group";
+import { cn } from "@/lib/utils";
 
 export function Filters({
   filters,
