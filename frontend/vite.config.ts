@@ -7,7 +7,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
-    outDir: path.resolve(__dirname, "../content_studio/static/content_studio"),
+    outDir: path.resolve(
+      import.meta.dirname,
+      "../content_studio/static/content_studio",
+    ),
     rolldownOptions: {
       output: {
         entryFileNames: "assets/[name].js",
@@ -17,7 +20,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });

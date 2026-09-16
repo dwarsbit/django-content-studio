@@ -6,11 +6,11 @@ export function MediaFormat({ value }: { value: any }) {
     value.type === "image" ? (
       <img
         src={value.thumbnail}
-        className="size-8 rounded object-cover"
+        className="size-8 rounded object-cover shrink-0"
         alt=""
       />
     ) : (
-      <div className="size-8 rounded flex items-center justify-center bg-stone-200">
+      <div className="size-8 rounded flex items-center justify-center bg-gray-200 shrink-0">
         {value.type === "file" && (
           <span>
             <PiFileBold />

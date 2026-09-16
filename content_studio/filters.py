@@ -66,6 +66,12 @@ class LookupFilter(BaseFilterBackend):
             except IndexError:
                 lookup = None
 
+            # Default to "in" lookup for multi values that do not
+            # have an explicit lookup set.
+            if len(value) > 1 and not lookup and "in" in lookups:
+                lookup = "in"
+                key = f"{key}__in"
+
             # Some lookups allow multiple values, otherwise
             # the first value is used.
             is_multi = lookup in self.MULTI_VALUE_LOOKUPS
@@ -83,6 +89,7 @@ class LookupFilter(BaseFilterBackend):
             else:
                 filter_kwargs[key] = casted_value
 
+        print(filter_kwargs)
         return filter_kwargs, exclude_kwargs
 
     @staticmethod

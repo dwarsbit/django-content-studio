@@ -27,18 +27,31 @@ export function ModelListPage() {
   const page = Number(searchParams.get("page") ?? "1");
   const ordering = searchParams.get("ordering");
   const search = searchParams.get("search");
+  const filters = Array.from(searchParams.entries())
+    .filter(([key]) => key.startsWith("filters."))
+    .reduce(
+      (result, [key, value]) =>
+        value
+          ? {
+              ...result,
+              [key.replace("filters.", "")]: value,
+            }
+          : result,
+      {},
+    );
+
   const { data } = useQuery({
     retry: false,
     enabled: !R.isNil(model),
-    queryKey: ["resources", appLabel, { search, page, ordering }],
+    queryKey: ["resources", appLabel, { search, page, ordering, filters }],
     placeholderData: keepPreviousData,
     async queryFn() {
       const { data } = await http.get<PaginatedResponse<Resource>>(
         `/content/${appLabel}`,
         {
           params: {
+            ...filters,
             search: search || undefined,
-            filters: {},
             page,
             ordering,
           },

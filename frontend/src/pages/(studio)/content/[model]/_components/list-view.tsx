@@ -33,7 +33,7 @@ export function ListView({
 
   return (
     <div className="w-full flex-1 scrollbar overflow-auto">
-      <Table className="table-fixed">
+      <Table>
         <TableHeader>
           <TableRow>
             {display.map(({ name, description }) => {

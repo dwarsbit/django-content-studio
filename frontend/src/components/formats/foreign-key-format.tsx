@@ -26,7 +26,7 @@ export function ForeignKeyFormat({
 
   return (
     <div className="flex items-center gap-1.5">
-      {model?.admin.icon && (
+      {!isUser && model?.admin.icon && (
         <span className={cn(model.admin.icon, "text-gray-500")} />
       )}
       {isUser && value && (
