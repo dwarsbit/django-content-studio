@@ -3,6 +3,7 @@
 import { Command as CommandPrimitive, useCommandState } from "cmdk";
 import * as React from "react";
 import { forwardRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { PiCaretDownBold, PiXBold } from "react-icons/pi";
 
 import { Badge } from "@/components/ui/badge";
@@ -207,6 +208,7 @@ const MultiSelect = React.forwardRef<
     }: MultipleSelectorProps,
     ref: React.Ref<MultipleSelectorRef>,
   ) => {
+    const { t } = useTranslation();
     const inputRef = React.useRef<HTMLInputElement>(null);
     const [open, setOpen] = React.useState(false);
     const [onScrollbar, setOnScrollbar] = React.useState(false);
@@ -384,7 +386,7 @@ const MultiSelect = React.forwardRef<
             onChange?.(newOptions);
           }}
         >
-          {`Create "${inputValue}"`}
+          {`${t("common.create")} "${inputValue}"`}
         </CommandItem>
       );
 
@@ -457,7 +459,7 @@ const MultiSelect = React.forwardRef<
       >
         <div
           className={cn(
-            "flex items-center justify-between rounded-md border border-gray-300 focus-within:border-gray-400 h-full min-h-8 px-3 py-1",
+            "flex items-center justify-between rounded-md border hover:border-gray-400 focus-within:border-gray-400 h-full min-h-8 px-3 py-1",
             {
               "cursor-text": !disabled && selected.length !== 0,
             },

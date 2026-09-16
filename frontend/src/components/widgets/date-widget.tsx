@@ -34,7 +34,7 @@ export function DateWidget({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="h-8 border border-gray-300 hover:border-gray-400 px-3 rounded-md shadow-xs cursor-pointer data-[state=open]:border-gray-400 flex items-center select-none">
+      <PopoverTrigger className="h-8 border border-gray-300 hover:border-gray-400 px-3 rounded-md cursor-pointer data-[state=open]:border-gray-400 flex items-center select-none">
         <div className="flex-1 text-left">
           {date$ ? (
             <span className="text-gray-700 font-medium">

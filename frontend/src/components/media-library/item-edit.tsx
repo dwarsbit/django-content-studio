@@ -16,8 +16,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { MultiSelect } from "@/components/ui/multi-select";
 import { Spinner } from "@/components/ui/spinner";
+import { TagInput } from "@/components/ui/tag-input";
 import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
 import { useUpdateMedia } from "@/hooks/use-update-media";
 import { getErrorMessage } from "@/lib/utils";
@@ -142,7 +142,7 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
                 <FormItem>
                   <FormLabel>Tags</FormLabel>
                   <FormControl>
-                    <MultiSelect creatable {...field} />
+                    <TagInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
