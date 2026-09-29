@@ -2,7 +2,11 @@ import { enUS, nl } from "date-fns/locale";
 import * as React from "react";
 import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 import { useTranslation } from "react-i18next";
-import { PiCaretLeftBold, PiCaretRightBold } from "react-icons/pi";
+import {
+  PiCaretDownBold,
+  PiCaretLeftBold,
+  PiCaretRightBold,
+} from "react-icons/pi";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -154,7 +158,7 @@ function Calendar({
           }
 
           return (
-            <PiCaretDownBoldw className={cn("size-4", className)} {...props} />
+            <PiCaretDownBold className={cn("size-4", className)} {...props} />
           );
         },
         DayButton: CalendarDayButton,

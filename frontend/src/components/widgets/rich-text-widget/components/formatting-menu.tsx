@@ -106,7 +106,7 @@ export function FormattingMenu() {
 
       <Separator orientation="vertical" className="h-auto! self-stretch" />
 
-      <LinkButton editor={editor} />
+      <LinkButton />
     </div>
   );
 }

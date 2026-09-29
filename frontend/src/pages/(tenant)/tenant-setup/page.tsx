@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import * as R from "ramda";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -56,19 +57,22 @@ export function TenantSetupPage() {
       await save(values);
       window.location.reload();
     } catch (e: unknown) {
-      const errors = Object.entries(e.response.data);
+      if (axios.isAxiosError(e) && e.response) {
+        const errors = Object.entries(
+          e.response.data as Record<string, string[]>,
+        );
+        toast.error(
+          <div>
+            <div>{t("editor.field_validation_error_title")}</div>
+            <div className="font-normal text-muted-foreground">
+              {t("editor.field_validation_error_description")}
+            </div>
+          </div>,
+        );
 
-      toast.error(
-        <div>
-          <div>{t("editor.field_validation_error_title")}</div>
-          <div className="font-normal text-muted-foreground">
-            {t("editor.field_validation_error_description")}
-          </div>
-        </div>,
-      );
-
-      for (const [key, error] of errors) {
-        form.setError(key, { type: "custom", message: error[0] ?? "" });
+        for (const [key, error] of errors) {
+          form.setError(key, { type: "custom", message: error[0] ?? "" });
+        }
       }
       throw e;
     }

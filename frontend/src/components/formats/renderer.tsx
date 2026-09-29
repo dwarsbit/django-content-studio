@@ -1,5 +1,4 @@
-import * as R from "ramda";
-import { useMemo } from "react";
+import { type ComponentType, useMemo } from "react";
 
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import { FieldFormat, type ModelField } from "@/types";
@@ -16,6 +15,24 @@ import { MediaFormat } from "./media-format";
 import { TextFormat } from "./text-format";
 import { TimeFormat } from "./time-format";
 
+type FormatComponent = ComponentType<{
+  value: unknown;
+  field?: ModelField;
+  emptyValue?: string | null;
+}>;
+
+const FORMATS: Partial<Record<FieldFormat, FormatComponent>> = {
+  [FieldFormat.BooleanFormat]: BooleanFormat,
+  [FieldFormat.DateFormat]: DateFormat,
+  [FieldFormat.DateTimeFormat]: DatetimeFormat,
+  [FieldFormat.FileFormat]: FileFormat,
+  [FieldFormat.FileSizeFormat]: FileSizeFormat,
+  [FieldFormat.ForeignKeyFormat]: ForeignKeyFormat,
+  [FieldFormat.JSONFormat]: JSONFormat,
+  [FieldFormat.MediaFormat]: MediaFormat,
+  [FieldFormat.TimeFormat]: TimeFormat,
+};
+
 export function FormatRenderer({
   value,
   field,
@@ -28,27 +45,15 @@ export function FormatRenderer({
   const { data: info } = useAdminInfo();
   const formatClass =
     field?.format_class ??
-    info?.formats[field?.type]?.name ??
+    (field ? info?.formats[field.type]?.name : undefined) ??
     FieldFormat.TextFormat;
 
-  const FormatComp = useMemo(
-    () =>
-      R.cond([
-        [R.isNil, R.always(TextFormat)],
-        [() => !R.isNil(field?.choices), R.always(ChoiceFormat)],
-        [R.equals(FieldFormat.FileSizeFormat), R.always(FileSizeFormat)],
-        [R.equals(FieldFormat.FileFormat), R.always(FileFormat)],
-        [R.equals(FieldFormat.BooleanFormat), R.always(BooleanFormat)],
-        [R.equals(FieldFormat.TimeFormat), R.always(TimeFormat)],
-        [R.equals(FieldFormat.DateFormat), R.always(DateFormat)],
-        [R.equals(FieldFormat.DateTimeFormat), R.always(DatetimeFormat)],
-        [R.equals(FieldFormat.ForeignKeyFormat), R.always(ForeignKeyFormat)],
-        [R.equals(FieldFormat.MediaFormat), R.always(MediaFormat)],
-        [R.equals(FieldFormat.JSONFormat), R.always(JSONFormat)],
-        [R.T, R.always(TextFormat)],
-      ])(formatClass),
-    [field?.choices, field?.type, formatClass],
-  );
+  const FormatComp = useMemo(() => {
+    if (field?.choices) {
+      return ChoiceFormat;
+    }
+    return FORMATS[formatClass] ?? TextFormat;
+  }, [field?.choices, formatClass]);
 
   return <FormatComp value={value} field={field} emptyValue={emptyValue} />;
 }

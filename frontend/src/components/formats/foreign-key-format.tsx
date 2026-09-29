@@ -15,13 +15,13 @@ export function ForeignKeyFormat({
   field,
 }: {
   value: any;
-  field: ModelField;
+  field?: ModelField;
 }) {
   const { data: discover } = useDiscover();
   const isUser =
-    field.related_model?.toLowerCase() === discover?.user_model.toLowerCase();
+    field?.related_model?.toLowerCase() === discover?.user_model.toLowerCase();
   const model = discover?.models.find(
-    R.whereEq({ label: field.related_model }),
+    R.whereEq({ label: field?.related_model }),
   );
 
   return (

@@ -20,7 +20,15 @@ export function CropField({
   return (
     <ReactCrop
       ruleOfThirds
-      crop={value?.[0]}
+      crop={
+        value?.[0] && {
+          ...value[0],
+          x: Number(value[0].x),
+          y: Number(value[0].y),
+          width: Number(value[0].width),
+          height: Number(value[0].height),
+        }
+      }
       className="w-full"
       onChange={(_, p) =>
         onChange?.([

@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import * as R from "ramda";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,6 +13,7 @@ import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
+import { getErrorMessage } from "@/lib/utils";
 import type { Model, Resource } from "@/types";
 
 import { Aside } from "./aside";
@@ -88,7 +90,7 @@ function EditorForm({
         }
         return data;
       } catch (e: unknown) {
-        throw Error(e);
+        throw new Error(getErrorMessage(e), { cause: e });
       } finally {
         setInitialized(true);
       }
@@ -113,19 +115,22 @@ function EditorForm({
     try {
       await save(values);
     } catch (e: unknown) {
-      const errors = Object.entries(e.response.data);
+      if (axios.isAxiosError(e) && e.response) {
+        const errors = Object.entries(
+          e.response.data as Record<string, string[]>,
+        );
+        toast.error(
+          <div>
+            <div>{t("editor.field_validation_error_title")}</div>
+            <div className="font-normal text-muted-foreground">
+              {t("editor.field_validation_error_description")}
+            </div>
+          </div>,
+        );
 
-      toast.error(
-        <div>
-          <div>{t("editor.field_validation_error_title")}</div>
-          <div className="font-normal text-muted-foreground">
-            {t("editor.field_validation_error_description")}
-          </div>
-        </div>,
-      );
-
-      for (const [key, error] of errors) {
-        form.setError(key, { type: "custom", message: error[0] ?? "" });
+        for (const [key, error] of errors) {
+          form.setError(key, { type: "custom", message: error[0] ?? "" });
+        }
       }
       throw e;
     }

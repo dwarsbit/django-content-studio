@@ -31,7 +31,7 @@ export function TenantProvider({ children }: { children: React.ReactElement }) {
     retry: false,
     queryKey: ["resources", discover?.multitenancy.tenant_model],
     async queryFn() {
-      const { data } = await http.get<Resource[]>("/tena");
+      const { data } = await http.get<Resource[]>("/tenants");
       return data;
     },
   });

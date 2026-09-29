@@ -14,7 +14,15 @@ import {
 import { WidgetRenderer } from "@/components/widgets/renderer";
 import type { FormField as IFormField, Model } from "@/types";
 
-const COMPONENTS = {
+const COMPONENTS: Partial<
+  Record<
+    IFormField["component_type"],
+    React.ComponentType<{
+      model: Model;
+      formField: IFormField;
+    }>
+  >
+> = {
   LinkButton,
 };
 
@@ -57,11 +65,12 @@ export function FormField({
         />
       ) : (
         <div>
-          {COMPONENTS[formField.component_type] &&
-            React.createElement(COMPONENTS[formField.component_type], {
-              formField,
-              model,
-            })}
+          {(() => {
+            const Component = COMPONENTS[formField.component_type];
+            return (
+              Component && React.createElement(Component, { formField, model })
+            );
+          })()}
         </div>
       )}
     </div>

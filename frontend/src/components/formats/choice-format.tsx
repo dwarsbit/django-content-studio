@@ -6,10 +6,10 @@ export function ChoiceFormat({
   field,
 }: {
   value: unknown;
-  field: ModelField;
+  field?: ModelField;
 }) {
   const label = (i: unknown) =>
-    field.choices?.find(([key]) => i === key)?.[1] ?? String(i);
+    field?.choices?.find(([key]) => i === key)?.[1] ?? String(i);
 
   return (
     <div className="flex gap-1 flex-wrap">

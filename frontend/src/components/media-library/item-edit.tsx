@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -66,11 +66,13 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
     id: z.string().readonly(),
   });
   const form = useForm<MediaItem>({
-    resolver: zodResolver(formSchema),
+    // The schema only pins down required fields; the values themselves are a
+    // full media item, so the resolver is widened to the form's value type.
+    resolver: zodResolver(formSchema) as unknown as Resolver<MediaItem>,
     defaultValues: data,
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: MediaItem) => {
     try {
       await mutateAsync(values);
       onSave();

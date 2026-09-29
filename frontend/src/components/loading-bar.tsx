@@ -10,7 +10,7 @@ export function LoadingBar() {
   const showLoader = isFetching + isMutating > 0;
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     if (showLoader) {
       timeoutId = setTimeout(() => {

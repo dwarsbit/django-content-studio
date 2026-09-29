@@ -14,7 +14,7 @@ import {
 import { Link, type Path, useMatch, useNavigate } from "react-router";
 
 import { useAuth } from "@/auth";
-import { useTheme } from "@/components/theme-provider";
+import { type Theme, useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -324,7 +324,7 @@ function UserMenu() {
                     variant="outline"
                     onValueChange={(value) => {
                       if (value) {
-                        setTheme(value);
+                        setTheme(value as Theme);
                       }
                     }}
                   >

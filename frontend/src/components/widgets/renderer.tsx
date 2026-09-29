@@ -1,8 +1,7 @@
-import * as R from "ramda";
-import React, { useMemo } from "react";
+import { type ComponentType, useMemo } from "react";
 
 import { useAdminInfo } from "@/hooks/use-admin-info";
-import { FieldWidget, type Model } from "@/types";
+import { FieldWidget, type Model, type ModelField } from "@/types";
 
 import { CheckboxWidget } from "./checkbox-widget";
 import { DateTimeWidget } from "./date-time-widget";
@@ -23,6 +22,32 @@ import { TextAreaWidget } from "./text-area-widget";
 import { TimeWidget } from "./time-widget";
 import { URLPathWidget } from "./url-path-widget";
 
+type WidgetComponent = ComponentType<{
+  value: any;
+  onChange(value: any): void;
+  model: Model;
+  field: ModelField;
+  name: string;
+}>;
+
+const WIDGETS: Partial<Record<FieldWidget, WidgetComponent>> = {
+  [FieldWidget.CheckboxWidget]: CheckboxWidget,
+  [FieldWidget.DateWidget]: DateWidget,
+  [FieldWidget.DateTimeWidget]: DateTimeWidget,
+  [FieldWidget.ForeignKeyWidget]: ForeignKeyWidget,
+  [FieldWidget.JSONSchemaWidget]: JSONSchemaWidget,
+  [FieldWidget.ManyToManyWidget]: ManyToManyWidget,
+  [FieldWidget.ManyMediaWidget]: ManyMediaWidget,
+  [FieldWidget.MediaWidget]: MediaWidget,
+  [FieldWidget.MultiSelectWidget]: MultiSelectWidget,
+  [FieldWidget.RichTextWidget]: RichTextWidget,
+  [FieldWidget.SlugWidget]: SlugWidget,
+  [FieldWidget.TagWidget]: TagWidget,
+  [FieldWidget.TextAreaWidget]: TextAreaWidget,
+  [FieldWidget.TimeWidget]: TimeWidget,
+  [FieldWidget.URLPathWidget]: URLPathWidget,
+};
+
 export function WidgetRenderer({
   value,
   onChange,
@@ -39,35 +64,15 @@ export function WidgetRenderer({
   const widgetClass =
     field.widget_class ?? info?.widgets[field.type]?.name ?? null;
 
-  const WidgetComp = useMemo(
-    () =>
-      R.cond([
-        [R.isNil, R.always(InputWidget)],
-        [
-          () =>
-            widgetClass === FieldWidget.InputWidget && !R.isNil(field.choices),
-          R.always(SelectWidget),
-        ],
-        [R.equals(FieldWidget.DateWidget), R.always(DateWidget)],
-        [R.equals(FieldWidget.DateTimeWidget), R.always(DateTimeWidget)],
-        [R.equals(FieldWidget.ForeignKeyWidget), R.always(ForeignKeyWidget)],
-        [R.equals(FieldWidget.InputWidget), R.always(InputWidget)],
-        [R.equals(FieldWidget.JSONSchemaWidget), R.always(JSONSchemaWidget)],
-        [R.equals(FieldWidget.ManyToManyWidget), R.always(ManyToManyWidget)],
-        [R.equals(FieldWidget.MediaWidget), R.always(MediaWidget)],
-        [R.equals(FieldWidget.ManyMediaWidget), R.always(ManyMediaWidget)],
-        [R.equals(FieldWidget.MultiSelectWidget), R.always(MultiSelectWidget)],
-        [R.equals(FieldWidget.RichTextWidget), R.always(RichTextWidget)],
-        [R.equals(FieldWidget.TextAreaWidget), R.always(TextAreaWidget)],
-        [R.equals(FieldWidget.SlugWidget), R.always(SlugWidget)],
-        [R.equals(FieldWidget.TagWidget), R.always(TagWidget)],
-        [R.equals(FieldWidget.URLPathWidget), R.always(URLPathWidget)],
-        [R.equals(FieldWidget.CheckboxWidget), R.always(CheckboxWidget)],
-        [R.equals(FieldWidget.TimeWidget), R.always(TimeWidget)],
-        [R.T, R.always(FallbackWidget)],
-      ])(widgetClass),
-    [field.choices, widgetClass],
-  );
+  const WidgetComp = useMemo(() => {
+    if (widgetClass === null) {
+      return InputWidget;
+    }
+    if (widgetClass === FieldWidget.InputWidget && field.choices) {
+      return SelectWidget;
+    }
+    return WIDGETS[widgetClass] ?? FallbackWidget;
+  }, [field.choices, widgetClass]);
 
   return (
     <WidgetComp
