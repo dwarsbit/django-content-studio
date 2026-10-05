@@ -9,3 +9,13 @@ dist-ssr
 .output.txt
 __pycache__
 .coverage
+# Agent tooling
+.agents/
+.vibe/
+skills-lock.json
+/ROADMAP.md
+
+# Docusaurus website
+node_modules/
+website/build/
+.docusaurus/
