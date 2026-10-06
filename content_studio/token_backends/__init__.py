@@ -10,7 +10,7 @@ class TokenBackendManager:
     Content Studio.
 
     While login backends are used to identify a user,
-    token backends determine are used to authenticate
+    token backends are used to authenticate
     communication between Content Studio and the admin API.
     """
 
