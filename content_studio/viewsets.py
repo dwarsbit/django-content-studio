@@ -2,12 +2,14 @@ import operator
 import uuid
 from functools import reduce
 
+from django.contrib import admin
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.db.models import Q
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import DjangoModelPermissions
@@ -132,6 +134,9 @@ class BaseModelViewSet(ModelViewSet):
     def get_related_objects(self, request, field_name):
         """
         Endpoint for retrieving related objects.
+
+        The user needs view permission on the related model, mirroring
+        the Django admin's requirement for related object popups.
         """
         search = request.data.get("search", "")
 
@@ -139,10 +144,12 @@ class BaseModelViewSet(ModelViewSet):
 
         try:
             related_field = parent_model._meta.get_field(field_name)
-        except LookupError:
+        except FieldDoesNotExist:
             raise ValidationError("Related field not found.")
 
         related_model = related_field.related_model
+
+        self._check_related_permission(request, related_model)
 
         custom_filter_method = getattr(
             self._admin_model, f"get_related_{field_name}", None
@@ -157,18 +164,57 @@ class BaseModelViewSet(ModelViewSet):
             )
 
         else:
+            qs = self._get_related_search_queryset(related_model, search)
+
+        serializer = RelatedItemSerializer(qs[:20], many=True)
+
+        return Response(data=serializer.data)
+
+    def _check_related_permission(self, request, related_model):
+        """
+        Require view permission on the related model. Uses the model's
+        model admin when registered, so custom permission overrides
+        apply; otherwise falls back to Django's view permission.
+        """
+        related_admin = admin.site._registry.get(related_model)
+
+        if related_admin is not None:
+            if not related_admin.has_view_permission(request):
+                raise PermissionDenied("View permission required.")
+
+        elif not request.user.has_perm(
+            f"{related_model._meta.app_label}.view_{related_model._meta.model_name}"
+        ):
+            raise PermissionDenied("View permission required.")
+
+    def _get_related_search_queryset(self, related_model, search):
+        """
+        Search the related model. Uses the related model admin's
+        search_fields when available, mirroring the Django admin;
+        otherwise all CharFields are searched.
+        """
+        if not search:
+            return related_model.objects.all()
+
+        related_admin = admin.site._registry.get(related_model)
+        search_fields = (
+            getattr(related_admin, "search_fields", None) if related_admin else None
+        )
+
+        if search_fields:
+            queries = [Q(**{f"{field}__icontains": search}) for field in search_fields]
+        else:
             char_fields = [
                 f.name
                 for f in related_model._meta.get_fields()
                 if isinstance(f, models.CharField)
             ]
+            queries = [Q(**{f"{field}__icontains": search}) for field in char_fields]
 
-            queries = [Q(**{f"{f}__icontains": search}) for f in char_fields]
+        # No searchable fields: nothing can match a search term.
+        if not queries:
+            return related_model.objects.none()
 
-            combined_query = reduce(operator.or_, queries)
+        combined_query = reduce(operator.or_, queries)
 
-            qs = related_model.objects.filter(combined_query)
-
-        serializer = RelatedItemSerializer(qs[:20], many=True)
-
-        return Response(data=serializer.data)
+        return related_model.objects.filter(combined_query)

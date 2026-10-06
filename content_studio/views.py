@@ -107,8 +107,10 @@ class AdminApiViewSet(ViewSet):
             "enabled": media_model is not None,
             "folders": folder_model is not None,
             "models": {
-                "media_model": media_model._meta.label_lower,
-                "folder_model": folder_model._meta.label_lower,
+                "media_model": (media_model._meta.label_lower if media_model else None),
+                "folder_model": (
+                    folder_model._meta.label_lower if folder_model else None
+                ),
             },
         }
 
@@ -225,4 +227,4 @@ def get_health_check_path():
 def get_extensions():
     admin_site = cs_settings.ADMIN_SITE
 
-    return [i.serialize() for i in getattr(admin_site, "extensions", [])]
+    return [i.serialize() for i in getattr(admin_site, "extensions", None) or []]
