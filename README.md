@@ -64,7 +64,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [PyPI Package](https://pypi.org/project/django-content-studio/)
 - [GitHub Repository](https://github.com/dwarsbit/django-content-studio)
 - [Changelog](CHANGELOG.md)
-
----
-
-Made in Europe 🇪🇺 with 💚 for Django
