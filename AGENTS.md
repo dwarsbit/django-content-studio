@@ -10,6 +10,11 @@
 - **Author**: Leon van der Grient (leon@dwarsbit.nl)
 - **Version**: 1.0.0-beta.28
 
+### Design Principles
+
+- **Not a CMS**: Content Studio brings no models of its own. Like the classic Django admin, it works with any plain Django model — register it and it is manageable. Django Blueprint is **not** a requirement.
+- **Blueprint-aware, never Blueprint-dependent**: Content Studio may detect Blueprint objects and adapt its behavior (for example, Blueprint's `HTMLField` renders the Rich Text widget), but every capability must also be achievable with plain Django models and fields. Never make Blueprint the only path to a feature.
+
 ---
 
 ## Architecture
@@ -193,8 +198,10 @@ Content Studio uses a widget system to render fields. Default mappings are defin
 - `DateTimeField` → `DateTimeWidget`
 - `TimeField` → `TimeWidget`
 - `JSONField` → `JSONWidget`
-- Blueprint `HTMLField` → `RichTextWidget`
-- Blueprint `TagField` → `TagWidget`
+- Blueprint `HTMLField` → `RichTextWidget` (only when django-blueprint is installed)
+- Blueprint `TagField` → `TagWidget` (only when django-blueprint is installed)
+
+Blueprint widgets are registered via a guarded import: Content Studio imports and works fully without django-blueprint. Never import blueprint at module top level without a guard.
 
 Custom widgets can be registered via the widget mapping.
 
