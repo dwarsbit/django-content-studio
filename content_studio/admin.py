@@ -1,8 +1,6 @@
 import uuid
 from typing import Type, TypeVar, Generic, Any, Optional, Union
 
-from blueprint import fields as bp_fields
-from blueprint.media_library.fields import MediaField, ManyMediaField
 from django.contrib import admin
 from django.db import models
 from django.db.models import Model
@@ -16,6 +14,40 @@ from .utils import get_related_field_name, flatten
 
 register = admin.register
 display = admin.display
+
+# Django Blueprint is an optional integration: when it is installed, its
+# fields get their dedicated widgets and formats. Without it, Content
+# Studio works with plain Django fields only.
+try:
+    from blueprint import fields as bp_fields
+    from blueprint.media_library.fields import MediaField, ManyMediaField
+
+    blueprint_available = True
+
+    _blueprint_widget_mapping = {
+        bp_fields.HTMLField: widgets.RichTextWidget,
+        bp_fields.TagField: widgets.TagWidget,
+        bp_fields.FlexField: widgets.JSONSchemaWidget,
+        bp_fields.MultipleChoiceField: widgets.MultiSelectWidget,
+        bp_fields.URLPathField: widgets.URLPathWidget,
+        MediaField: widgets.MediaWidget,
+        ManyMediaField: widgets.ManyMediaWidget,
+    }
+
+    _blueprint_format_mapping = {
+        bp_fields.HTMLField: formats.HtmlFormat,
+        bp_fields.TagField: formats.TagFormat,
+        bp_fields.FlexField: formats.JSONFormat,
+        bp_fields.MultipleChoiceField: formats.TextFormat,
+        bp_fields.URLPathField: formats.TextFormat,
+        MediaField: formats.MediaFormat,
+        ManyMediaField: formats.ManyMediaFormat,
+    }
+except ImportError:
+    blueprint_available = False
+
+    _blueprint_widget_mapping = {}
+    _blueprint_format_mapping = {}
 
 
 class StackedInline(admin.StackedInline):
@@ -64,16 +96,10 @@ class AdminSite(admin.AdminSite):
         models.DateTimeField: widgets.DateTimeWidget,
         models.TimeField: widgets.TimeWidget,
         models.JSONField: widgets.JSONWidget,
-        # Blueprint fields
-        bp_fields.HTMLField: widgets.RichTextWidget,
-        bp_fields.TagField: widgets.TagWidget,
-        bp_fields.FlexField: widgets.JSONSchemaWidget,
-        bp_fields.MultipleChoiceField: widgets.MultiSelectWidget,
-        bp_fields.URLPathField: widgets.URLPathWidget,
-        MediaField: widgets.MediaWidget,
-        ManyMediaField: widgets.ManyMediaWidget,
         # Common third-party fields
         "AutoSlugField": widgets.SlugWidget,
+        # Blueprint fields (only when django-blueprint is installed)
+        **_blueprint_widget_mapping,
     }
 
     default_format_mapping: dict[Type[models.Field], Type[formats.BaseFormat]] = {
@@ -96,14 +122,8 @@ class AdminSite(admin.AdminSite):
         models.ForeignKey: formats.ForeignKeyFormat,
         models.OneToOneField: formats.ForeignKeyFormat,
         models.JSONField: formats.JSONFormat,
-        # Blueprint fields
-        bp_fields.HTMLField: formats.HtmlFormat,
-        bp_fields.TagField: formats.TagFormat,
-        bp_fields.FlexField: formats.JSONFormat,
-        bp_fields.MultipleChoiceField: formats.TextFormat,
-        bp_fields.URLPathField: formats.TextFormat,
-        MediaField: formats.MediaFormat,
-        ManyMediaField: formats.ManyMediaFormat,
+        # Blueprint fields (only when django-blueprint is installed)
+        **_blueprint_format_mapping,
     }
 
     def setup(self):
