@@ -213,6 +213,10 @@ Forms are defined using `FormSet`, `FormSetGroup`, `Field`, and `Component` clas
 
 Content Studio supports extensions for adding custom functionality. See `extensions.py` for the base `Extension` class.
 
+### Deterministic IDs
+
+Extensions, dashboard widgets and form components derive their IDs deterministically from the class and its label/url/name (`utils.derive_uuid`), so all workers agree on them. An explicit `extension_id`, `widget_id` or `component_id` (UUID) takes precedence and disambiguates duplicates — duplicate IDs raise `ImproperlyConfigured` at setup. Never use `uuid4()` for these IDs.
+
 ---
 
 ## API Endpoints

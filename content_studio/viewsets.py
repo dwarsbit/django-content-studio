@@ -123,7 +123,12 @@ class BaseModelViewSet(ModelViewSet):
         methods=["get"], detail=True, url_path="components/(?P<component_id>[^/.]+)"
     )
     def get_component(self, request, id, component_id):
-        component = self._admin_model.get_component(uuid.UUID(component_id))
+        try:
+            component_uuid = uuid.UUID(component_id)
+        except ValueError:
+            raise NotFound()
+
+        component = self._admin_model.get_component(component_uuid)
 
         if not component:
             raise NotFound()

@@ -2,6 +2,7 @@ import uuid
 from typing import Type, TypeVar, Generic, Any, Optional, Union
 
 from django.contrib import admin
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models import Model
 from rest_framework.request import HttpRequest
@@ -138,6 +139,55 @@ class AdminSite(admin.AdminSite):
         if self.dashboard:
             self.dashboard.set_up_router()
 
+        self._validate_config_ids()
+
+    def _validate_config_ids(self):
+        """
+        Fail fast at setup when extension, dashboard widget or component
+        IDs collide. IDs are derived from the class and its label/url/
+        name by default, so duplicates mean an explicit ID is needed.
+        """
+        errors = []
+
+        seen = {}
+        for extension in getattr(self, "extensions", None) or []:
+            key = str(extension.extension_id)
+            if key in seen:
+                errors.append(
+                    f"Duplicate extension ID {key}: "
+                    f"{seen[key]} and {extension.__class__.__name__}. "
+                    "Pass extension_id to disambiguate."
+                )
+            seen[key] = extension.__class__.__name__
+
+        if self.dashboard:
+            seen = {}
+            for widget in self.dashboard.widgets or []:
+                key = str(widget.widget_id)
+                if key in seen:
+                    errors.append(
+                        f"Duplicate dashboard widget ID {key}: "
+                        f"{seen[key]} and {widget.__class__.__name__}. "
+                        "Pass widget_id to disambiguate."
+                    )
+                seen[key] = widget.__class__.__name__
+
+        seen = {}
+        for model, admin_class in admin.site._registry.items():
+            for component in iter_components(admin_class):
+                key = str(component.component_id)
+                if key in seen:
+                    errors.append(
+                        f"Duplicate component ID {key}: "
+                        f"{seen[key]} and {component.__class__.__name__} "
+                        f"in {admin_class.__class__.__name__}. "
+                        "Pass component_id to disambiguate."
+                    )
+                seen[key] = component.__class__.__name__
+
+        if errors:
+            raise ImproperlyConfigured("\n".join(errors))
+
     def get_thumbnail(self, obj) -> str:
         """
         Method for getting and manipulating the image path (or URL).
@@ -155,6 +205,24 @@ class AdminSite(admin.AdminSite):
 
 
 admin_site = AdminSite()
+
+
+def iter_components(admin_class):
+    """
+    Yield the components configured in a model admin's edit_main and
+    edit_sidebar.
+    """
+    all_fields = getattr(admin_class, "edit_main", []) + getattr(
+        admin_class, "edit_sidebar", []
+    )
+
+    flat_fields = flatten(
+        [f.get_fields() if hasattr(f, "get_fields") else [f] for f in all_fields]
+    )
+
+    for field in flat_fields:
+        if issubclass(field.__class__, Component):
+            yield field
 
 
 T = TypeVar("T", bound=Model)
@@ -231,15 +299,7 @@ class ModelAdmin(admin.ModelAdmin, Generic[T]):
         :param component_id:
         :return:
         """
-        all_fields = getattr(self, "edit_main", []) + getattr(self, "edit_sidebar", [])
-
-        flat_fields = flatten(
-            [f.get_fields() if hasattr(f, "get_fields") else [f] for f in all_fields]
-        )
-
-        components = [c for c in flat_fields if issubclass(c.__class__, Component)]
-
-        for component in components:
+        for component in iter_components(self):
             if component.component_id == component_id:
                 return component
 

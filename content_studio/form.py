@@ -7,6 +7,8 @@ from typing import Type
 from django.db.models import Model
 from rest_framework.response import Response
 
+from .utils import derive_uuid
+
 
 class Field:
     """
@@ -150,8 +152,20 @@ class Component:
     component_id: uuid.UUID
     component_type: str
 
-    def __init__(self):
-        self.component_id = uuid.uuid4()
+    def __init__(self, component_id=None):
+        """
+        The component ID is derived deterministically from the class and
+        its label, so all workers agree on it. Pass an explicit UUID to
+        disambiguate components that share these.
+        """
+        if component_id is not None:
+            self.component_id = uuid.UUID(str(component_id))
+        else:
+            self.component_id = derive_uuid(
+                self.__class__.__module__,
+                self.__class__.__qualname__,
+                getattr(self, "label", None),
+            )
 
     def serialize(self):
         return {

@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from content_studio.settings import cs_settings
+from content_studio.utils import derive_uuid
 
 
 class Dashboard:
@@ -81,13 +82,29 @@ class BaseWidget:
     col_span = 1
     widget_id = None
 
-    def __init__(self):
-        self.widget_id = self.widget_id or uuid.uuid4()
+    def __init__(self, widget_id=None):
+        """
+        The widget ID is derived deterministically from the class and its
+        name, so all workers agree on it. A widget_id class attribute or
+        an explicit UUID argument takes precedence; pass one to
+        disambiguate widgets that share a name.
+        """
+        if widget_id is None:
+            widget_id = self.widget_id
+
+        if widget_id is not None:
+            self.widget_id = uuid.UUID(str(widget_id))
+        else:
+            self.widget_id = derive_uuid(
+                self.__class__.__module__,
+                self.__class__.__qualname__,
+                getattr(self, "name", None),
+            )
 
 
 class SpacingWidget(BaseWidget):
     name = "SpacingWidget"
 
-    def __init__(self, col_span=1):
+    def __init__(self, col_span=1, widget_id=None):
         self.col_span = col_span
-        super().__init__()
+        super().__init__(widget_id)

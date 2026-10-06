@@ -1,5 +1,6 @@
 import json
 import sys
+import uuid
 from typing import Optional
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -9,6 +10,24 @@ from rich.console import Console
 from content_studio.settings import cs_settings
 
 console = Console()
+
+# Namespace for deterministically derived UUIDs: widgets, components and
+# extensions derive their IDs from stable parts so every process (and
+# every worker) agrees on them.
+UUID_NAMESPACE = uuid.uuid5(
+    uuid.NAMESPACE_URL, "https://github.com/dwarsbit/django-content-studio"
+)
+
+
+def derive_uuid(*parts) -> uuid.UUID:
+    """
+    Deterministically derive a UUID from stable string parts.
+
+    Derived IDs are stable across processes and restarts, so multi-worker
+    deployments agree on them and cached frontend data keeps working
+    after a restart.
+    """
+    return uuid.uuid5(UUID_NAMESPACE, ":".join(str(part) for part in parts))
 
 
 def log(*args, **kwargs):
