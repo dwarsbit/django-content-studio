@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: backend (py${{ matrix.python }}, Django ${{ matrix.django }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13", "3.14"]
+        django: ["5.2", "6.0"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Pin Django ${{ matrix.django }}
+        run: poetry run pip install "Django~=${{ matrix.django }}.0"
+
+      - name: Check formatting
+        run: poetry run black --check content_studio tests scripts
+
+      - name: Run tests
+        run: poetry run pytest tests/
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # Advisory until the pre-existing lint debt (~85 errors) is paid
+      # down; typecheck, tests and build are the hard gates.
+      - name: Lint (advisory)
+        run: npm run lint
+        continue-on-error: true
+
+  packaging:
+    name: packaging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Build the frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build the wheel
+        run: poetry build
+
+      - name: Verify the wheel contents
+        run: python scripts/check_wheel.py
+
+      - name: Fresh install imports without django-blueprint
+        run: |
+          python -m venv /tmp/cs-venv
+          /tmp/cs-venv/bin/pip install dist/*.whl
+          /tmp/cs-venv/bin/python -c "import content_studio; print(content_studio.__version__)"
+          ! /tmp/cs-venv/bin/pip list | grep -qi blueprint

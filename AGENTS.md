@@ -155,6 +155,7 @@ npm run dev
 ```bash
 # Testing
 poetry run test          # Run tests
+npm test                 # Frontend unit tests (from frontend/)
 poetry run test-verbose  # Run tests with verbose output
 poetry run test-cov      # Run tests with coverage
 
@@ -169,7 +170,12 @@ See `scripts/test_wrapper.py` for test configuration.
 
 - **Python**: Poetry for dependency management
 - **Frontend**: npm for dependency management
-- **Dev Tools**: black, pytest, pytest-django, eslint, prettier, typescript
+- **Dev Tools**: black, pytest, pytest-django, vitest + testing-library, eslint, prettier, typescript
+
+CI runs on GitHub Actions (`.github/workflows/ci.yml`): a backend matrix
+(Python 3.12–3.14 x Django 5.2/6.0) with pytest + black, a frontend job with
+typecheck + Vitest + build, and a packaging job that builds the wheel and
+verifies the compiled assets, translations and a blueprint-less install.
 
 ---
 
@@ -382,6 +388,7 @@ poetry run test-cov    # With coverage
 |------|---------|
 | Install package | `pip install django-content-studio` |
 | Run backend tests | `poetry run test` |
+| Run frontend tests | `cd frontend && npm test` |
 | Run frontend dev | `cd frontend && npm run dev` |
 | Build frontend | `cd frontend && npm run build` |
 | Lint frontend | `cd frontend && npm run lint` |
