@@ -87,6 +87,11 @@ class DjangoContentStudioConfig(AppConfig):
         from .router import content_studio_router
         from .serializers import ContentSerializer
 
+        if parent:
+            # Inlines arrive as classes (ModelAdmin.inlines); the viewset
+            # needs an instance so permission methods are bound.
+            admin_model = admin_model(parent, admin.site)
+
         class Pagination(ContentPagination):
             page_size = getattr(admin_model, "list_per_page", 10)
 
@@ -127,7 +132,12 @@ class DjangoContentStudioConfig(AppConfig):
                 return Serializer
 
             def get_queryset(self):
-                return get_tenant_scoped_queryset(self.request, self._model)
+                qs = get_tenant_scoped_queryset(self.request, self._model)
+
+                # Respect the model admin's ordering; fall back to pk so
+                # paginated pages are stable (and silent).
+                ordering = getattr(self._admin_model, "ordering", None) or ["pk"]
+                return qs.order_by(*ordering)
 
         if parent:
             prefix = f"api/inlines/{parent._meta.label_lower}/{model._meta.label_lower}"

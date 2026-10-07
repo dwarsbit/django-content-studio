@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "content_studio",
     "content_studio.contrib.password_reset",
+    "tests.testapp",
 ]
 
 MIDDLEWARE = [

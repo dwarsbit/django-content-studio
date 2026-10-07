@@ -156,6 +156,8 @@ def get_tenant_scoped_queryset(request, model, queryset=None):
     - Tenant-scoped models fail closed: without an x-dcs-tenant header
       no rows are returned, and the header's tenant must be in
       AdminSite.get_tenants.
+
+    Ordering is left to the caller.
     """
     tenant_model = cs_settings.TENANT_MODEL
     field_name = get_tenant_field_name(model)
