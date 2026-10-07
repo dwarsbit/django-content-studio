@@ -77,6 +77,7 @@ class DjangoContentStudioConfig(AppConfig):
         )
 
     def _create_view_set(self, model, admin_model, parent=None):
+        from .admin import get_is_singleton
         from .viewsets import BaseModelViewSet
         from .router import content_studio_router
         from .serializers import ContentSerializer
@@ -87,7 +88,7 @@ class DjangoContentStudioConfig(AppConfig):
         class ViewSet(BaseModelViewSet):
             _model = model
             _admin_model = admin_model
-            is_singleton = getattr(admin_model, "is_singleton", False)
+            is_singleton = get_is_singleton(admin_model)
             pagination_class = Pagination
             queryset = _model.objects.none()
             search_fields = list(getattr(_admin_model, "search_fields", []))

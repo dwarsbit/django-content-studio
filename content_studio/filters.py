@@ -32,8 +32,7 @@ class LookupFilter(BaseFilterBackend):
                     query_params=request.query_params,
                 )
             except Exception as e:
-                print(e)
-                raise ParseError(detail="Invalid filter parameters")
+                raise ParseError(detail=f"Invalid filter parameters: {e}")
             return queryset.filter(**filter_kwargs).exclude(**exclude_kwargs).distinct()
 
         return queryset
@@ -47,10 +46,14 @@ class LookupFilter(BaseFilterBackend):
         for key, value in query_params.lists():
             if key in self.NON_FILTER_FIELDS:
                 continue
+            is_exclude = key.startswith(self.EXCLUDE_SYMBOL)
+            if is_exclude:
+                # Strip the exclude symbol so the field name
+                # resolves normally.
+                key = key[len(self.EXCLUDE_SYMBOL) :]
             # By default Django supports repeated multi-values (e.g. `a=1&a=2`)
             # but we allow for comma-seperated multi-values as well (e.g. `a=1,2`).
             value = flatten([param.split(",") for param in value])
-            is_exclude = key.startswith(self.EXCLUDE_SYMBOL)
             # The first part of a key is considered the field name
             field_name = key.split("__")[0]
             # Get the model field.
@@ -80,7 +83,7 @@ class LookupFilter(BaseFilterBackend):
             if is_multi:
                 casted_value = [self.cast_field_value(v, field) for v in value]
             elif lookup == "isnull":
-                casted_value = value[0] in ["1", "true", "on"]
+                casted_value = value[0].strip().lower() in ["1", "true", "on"]
             else:
                 casted_value = self.cast_field_value(value[0], field)
 
@@ -89,7 +92,6 @@ class LookupFilter(BaseFilterBackend):
             else:
                 filter_kwargs[key] = casted_value
 
-        print(filter_kwargs)
         return filter_kwargs, exclude_kwargs
 
     @staticmethod
@@ -104,15 +106,25 @@ class LookupFilter(BaseFilterBackend):
         return field_lookups
 
     def cast_field_value(self, value: str, field):
-        value = value.strip().lower()
+        """
+        Cast a raw string value to the field's type.
 
-        if isinstance(field, models.BooleanField):
-            if value in ["1", "true", "on"]:
+        Values are passed through unchanged unless the field type
+        requires a cast: booleans and nulls match case-insensitively,
+        numbers are cast to their numeric type, everything else is
+        matched exactly as provided.
+        """
+        lowered = value.strip().lower()
+
+        if isinstance(field, models.BooleanField) or isinstance(
+            field, models.NullBooleanField
+        ):
+            if lowered in ["1", "true", "on"]:
                 return True
-            if value in ["0", "false", "off"]:
+            if lowered in ["0", "false", "off"]:
                 return False
         if isinstance(field, models.NullBooleanField):
-            if value in ["null", "none", "empty"]:
+            if lowered in ["null", "none", "empty"]:
                 return None
 
         if isinstance(field, models.IntegerField):

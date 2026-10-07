@@ -225,6 +225,27 @@ def iter_components(admin_class):
             yield field
 
 
+def get_is_singleton(admin_class) -> bool:
+    """
+    Return the effective singleton state of a model admin.
+
+    The admin's is_singleton attribute is the canonical declaration.
+    A model-level marker (e.g. a class property like Blueprint's
+    SingletonModel.is_singleton) is honored as a fallback for backward
+    compatibility; concrete fields named is_singleton are ignored, since
+    a field descriptor is truthy off the model class.
+    """
+    if getattr(admin_class, "is_singleton", False):
+        return True
+
+    model = admin_class.model
+
+    if any(field.name == "is_singleton" for field in model._meta.get_fields()):
+        return False
+
+    return bool(getattr(model, "is_singleton", False))
+
+
 T = TypeVar("T", bound=Model)
 
 
@@ -275,10 +296,8 @@ class ModelAdmin(admin.ModelAdmin, Generic[T]):
     icon: Optional[str] = None
 
     def has_add_permission(self, request: HttpRequest) -> bool:
-        is_singleton = getattr(self.model, "is_singleton", False)
-
-        # Don't allow to add more than one singleton object.
-        if is_singleton and self.model.objects.get():
+        # Don't allow adding more than one singleton object.
+        if get_is_singleton(self) and self.model.objects.exists():
             return False
 
         return super().has_add_permission(request)
@@ -286,9 +305,7 @@ class ModelAdmin(admin.ModelAdmin, Generic[T]):
     def has_delete_permission(
         self, request: HttpRequest, obj: Optional[T] = None
     ) -> bool:
-        is_singleton = getattr(self.model, "is_singleton", False)
-
-        if is_singleton:
+        if get_is_singleton(self):
             return False
 
         return super().has_delete_permission(request, obj)
@@ -321,7 +338,7 @@ class AdminSerializer:
 
         return {
             "icon": getattr(admin_class, "icon", None),
-            "is_singleton": getattr(admin_class, "is_singleton", False),
+            "is_singleton": get_is_singleton(admin_class),
             "edit": {
                 "main": self.serialize_edit_main(request),
                 "sidebar": self.serialize_edit_sidebar(request),
