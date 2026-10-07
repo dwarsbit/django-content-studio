@@ -79,14 +79,16 @@ class DashboardViewSet(ViewSet):
 
 
 class BaseWidget:
+    # Display name of the widget; every widget should set one.
+    name = None
     col_span = 1
     widget_id = None
 
     def __init__(self, widget_id=None):
         """
         The widget ID is derived deterministically from the class and its
-        name, so all workers agree on it. A widget_id class attribute or
-        an explicit UUID argument takes precedence; pass one to
+        ID parts, so all workers agree on it. A widget_id class attribute
+        or an explicit UUID argument takes precedence; pass one to
         disambiguate widgets that share a name.
         """
         if widget_id is None:
@@ -98,8 +100,21 @@ class BaseWidget:
             self.widget_id = derive_uuid(
                 self.__class__.__module__,
                 self.__class__.__qualname__,
-                getattr(self, "name", None),
+                *self.get_id_parts(),
             )
+
+    def get_id_parts(self):
+        """
+        Return the properties that define this widget's identity.
+
+        The parts feed the derived widget ID. The default identifies a
+        widget by its name; override to add the values that distinguish
+        this widget. Note that the method is called from __init__: only
+        use attributes that are set before calling super().__init__().
+        Widgets sharing their parts get the same ID and are rejected at
+        setup.
+        """
+        return (self.name,)
 
 
 class SpacingWidget(BaseWidget):

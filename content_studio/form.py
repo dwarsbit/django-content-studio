@@ -155,8 +155,8 @@ class Component:
     def __init__(self, component_id=None):
         """
         The component ID is derived deterministically from the class and
-        its label, so all workers agree on it. Pass an explicit UUID to
-        disambiguate components that share these.
+        its ID parts, so all workers agree on it. Pass an explicit UUID
+        to disambiguate components that share these.
         """
         if component_id is not None:
             self.component_id = uuid.UUID(str(component_id))
@@ -164,8 +164,21 @@ class Component:
             self.component_id = derive_uuid(
                 self.__class__.__module__,
                 self.__class__.__qualname__,
-                getattr(self, "label", None),
+                *self.get_id_parts(),
             )
+
+    def get_id_parts(self):
+        """
+        Return the properties that define this component's identity.
+
+        The parts feed the derived component ID, so every component
+        should override this to return the values that distinguish it.
+        Note that the method is called from __init__: only use
+        attributes that are set before calling super().__init__().
+        Components sharing their parts get the same ID and are rejected
+        at setup.
+        """
+        return ()
 
     def serialize(self):
         return {
@@ -178,6 +191,9 @@ class Component:
 class Link(Component):
     component_type = "Link"
     label: str
+
+    def get_id_parts(self):
+        return (self.label,)
 
     def get_url(self, obj: Type[Model], request):
         raise NotImplementedError

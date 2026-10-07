@@ -215,7 +215,7 @@ Content Studio supports extensions for adding custom functionality. See `extensi
 
 ### Deterministic IDs
 
-Extensions, dashboard widgets and form components derive their IDs deterministically from the class and its label/url/name (`utils.derive_uuid`), so all workers agree on them. An explicit `extension_id`, `widget_id` or `component_id` (UUID) takes precedence and disambiguates duplicates — duplicate IDs raise `ImproperlyConfigured` at setup. Never use `uuid4()` for these IDs.
+Extensions, dashboard widgets and form components derive their IDs deterministically (`utils.derive_uuid`) from the class plus the values returned by `get_id_parts()` — override that method to return the properties that define the object's identity. An explicit `extension_id`, `widget_id` or `component_id` (UUID) takes precedence and disambiguates duplicates — duplicate IDs raise `ImproperlyConfigured` at setup. Never use `uuid4()` for these IDs, and never let a base class inspect subclass attributes to derive IDs; use `get_id_parts()` overrides instead.
 
 ---
 

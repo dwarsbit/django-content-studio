@@ -18,13 +18,17 @@ from django.db import models
 
 from content_studio.dashboard import BaseWidget, Dashboard, SpacingWidget
 from content_studio.extensions import IFramePage, MainMenuLink
-from content_studio.form import Component
+from content_studio.form import ButtonLink, Component
 from content_studio.utils import derive_uuid
 
 
 class MyComponent(Component):
     component_type = "MyComponent"
-    label = "My component"
+
+
+class MyLink(ButtonLink):
+    component_type = "LinkButton"
+    label = "View site"
 
 
 class MyWidget(BaseWidget):
@@ -37,10 +41,24 @@ class ScratchModel(models.Model):
 
 
 def test_component_id_is_deterministic():
-    expected = derive_uuid(
-        MyComponent.__module__, MyComponent.__qualname__, "My component"
-    )
+    expected = derive_uuid(MyComponent.__module__, MyComponent.__qualname__)
     assert MyComponent().component_id == expected
+
+
+def test_link_component_id_includes_label():
+    expected = derive_uuid(MyLink.__module__, MyLink.__qualname__, "View site")
+    assert MyLink().component_id == expected
+
+
+def test_custom_id_parts_override():
+    class IdentityComponent(MyComponent):
+        def get_id_parts(self):
+            return ("identity",)
+
+    expected = derive_uuid(
+        IdentityComponent.__module__, IdentityComponent.__qualname__, "identity"
+    )
+    assert IdentityComponent().component_id == expected
 
 
 def test_explicit_component_id_takes_precedence():
@@ -80,13 +98,20 @@ def test_spacing_widget_forwards_widget_id():
 
 def test_extension_id_is_deterministic():
     link = MainMenuLink(url="/docs/", label="Docs")
-    expected = derive_uuid(MainMenuLink.__module__, MainMenuLink.__qualname__, "/docs/")
+    expected = derive_uuid(
+        MainMenuLink.__module__, MainMenuLink.__qualname__, "/docs/", "Docs"
+    )
     assert link.extension_id == expected
 
 
 def test_iframe_page_id_is_deterministic():
     page = IFramePage(path="/reports/", iframe_url="https://example.com")
-    expected = derive_uuid(IFramePage.__module__, IFramePage.__qualname__, "/reports/")
+    expected = derive_uuid(
+        IFramePage.__module__,
+        IFramePage.__qualname__,
+        "/reports/",
+        "https://example.com",
+    )
     assert page.extension_id == expected
 
 
@@ -99,7 +124,8 @@ def test_explicit_extension_id_takes_precedence():
 def test_ids_stable_across_processes():
     """Derived IDs are identical in separate processes (multi-worker)."""
     code = (
-        "from content_studio.form import Component;" "print(Component().component_id)"
+        "from content_studio.form import ButtonLink, Component;"
+        "print(Component().component_id)"
     )
     outputs = [
         subprocess.run(
