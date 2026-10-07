@@ -25,7 +25,16 @@ class ContentRelatedField(RelatedField):
         return data
 
     def to_internal_value(self, data):
-        return self.get_queryset().get(id=data["id"])
+        from django.core.exceptions import ObjectDoesNotExist
+
+        try:
+            return self.get_queryset().get(id=data["id"])
+        except (TypeError, KeyError):
+            raise serializers.ValidationError(
+                "A related item must be given as {'id': ...}."
+            )
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError("Unknown related item.")
 
 
 class ContentSerializer(serializers.ModelSerializer):

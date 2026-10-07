@@ -26,11 +26,21 @@ class LookupFilter(BaseFilterBackend):
         Filterable fields are declared by the model admin's list_filter,
         mirroring the Django admin. Only string entries count: list_filter
         may also contain filter classes and (field, class) tuples.
+
+        Inline viewsets can always filter on their parent FK, in both
+        its field name and attname (e.g. `article` / `article_id`)
+        forms: inline lists only exist in the context of a parent.
         """
         admin_model = getattr(view, "_admin_model", None)
         list_filter = getattr(admin_model, "list_filter", None) or []
 
-        return [entry for entry in list_filter if isinstance(entry, str)]
+        allowed = [entry for entry in list_filter if isinstance(entry, str)]
+
+        parent_fk = getattr(view, "parent_fk", None)
+        if parent_fk:
+            allowed += [parent_fk, f"{parent_fk}_id"]
+
+        return allowed
 
     def filter_queryset(self, request, queryset, view):
         """

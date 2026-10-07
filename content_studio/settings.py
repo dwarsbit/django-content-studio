@@ -33,6 +33,8 @@ DEFAULTS = {
     "MEDIA_LIBRARY_FOLDER_MODEL": None,
     "TENANT_MODEL": None,
     "PASSWORD_RESET_EXPIRATION_TIME": 10,
+    # Rate limit for login attempts, per IP; None disables throttling.
+    "LOGIN_THROTTLE_RATE": "10/min",
 }
 
 

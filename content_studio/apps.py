@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from rest_framework.exceptions import ValidationError
 
 from . import VERSION
 from .paginators import ContentPagination
@@ -86,11 +87,15 @@ class DjangoContentStudioConfig(AppConfig):
         from .viewsets import BaseModelViewSet
         from .router import content_studio_router
         from .serializers import ContentSerializer
+        from .utils import get_related_field_name
+
+        inline_parent_fk = None
 
         if parent:
             # Inlines arrive as classes (ModelAdmin.inlines); the viewset
             # needs an instance so permission methods are bound.
             admin_model = admin_model(parent, admin.site)
+            inline_parent_fk = get_related_field_name(admin_model, parent)
 
         class Pagination(ContentPagination):
             page_size = getattr(admin_model, "list_per_page", 10)
@@ -102,6 +107,9 @@ class DjangoContentStudioConfig(AppConfig):
             pagination_class = Pagination
             queryset = _model.objects.none()
             search_fields = list(getattr(_admin_model, "search_fields", []))
+            # Inline viewsets: the FK to the parent model.
+            parent_fk = inline_parent_fk
+            parent_model = parent
 
             def get_serializer_class(self):
                 user_model = get_user_model()
@@ -134,10 +142,69 @@ class DjangoContentStudioConfig(AppConfig):
             def get_queryset(self):
                 qs = get_tenant_scoped_queryset(self.request, self._model)
 
+                # Inline lists only exist in the context of a parent:
+                # the parent filter is required and the referenced
+                # parent must be visible to the user.
+                if self.parent_fk and self.action == "list":
+                    parent_id = self._get_parent_id()
+                    if not parent_id:
+                        raise ValidationError(
+                            "Filtering by the parent is required on inline endpoints."
+                        )
+                    self._check_parent_access(parent_id)
+
                 # Respect the model admin's ordering; fall back to pk so
                 # paginated pages are stable (and silent).
                 ordering = getattr(self._admin_model, "ordering", None) or ["pk"]
                 return qs.order_by(*ordering)
+
+            def _get_parent_id(self):
+                params = self.request.query_params
+                return params.get(f"{self.parent_fk}_id") or params.get(self.parent_fk)
+
+            def _check_parent_access(self, parent_id):
+                from rest_framework.exceptions import PermissionDenied
+
+                parent = self.parent_model.objects.filter(pk=parent_id).first()
+                parent_admin = admin.site._registry.get(self.parent_model)
+
+                if (
+                    not parent
+                    or parent_admin is None
+                    or not parent_admin.has_view_permission(self.request, parent)
+                ):
+                    raise PermissionDenied("Unknown or unauthorized parent.")
+
+            def _check_parent_instance(self, parent_obj):
+                from rest_framework.exceptions import PermissionDenied
+
+                parent_admin = admin.site._registry.get(self.parent_model)
+
+                if (
+                    not parent_obj
+                    or parent_admin is None
+                    or not parent_admin.has_view_permission(self.request, parent_obj)
+                ):
+                    raise PermissionDenied("Unknown or unauthorized parent.")
+
+            def perform_create(self, serializer):
+                # Inline objects cannot be attached to parents the user
+                # cannot see.
+                if self.parent_fk:
+                    self._check_parent_instance(
+                        serializer.validated_data.get(self.parent_fk)
+                    )
+
+                super().perform_create(serializer)
+
+            def perform_update(self, serializer):
+                # ... and cannot be re-attached on update either.
+                if self.parent_fk and self.parent_fk in serializer.validated_data:
+                    self._check_parent_instance(
+                        serializer.validated_data[self.parent_fk]
+                    )
+
+                super().perform_update(serializer)
 
         if parent:
             prefix = f"api/inlines/{parent._meta.label_lower}/{model._meta.label_lower}"

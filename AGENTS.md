@@ -120,6 +120,7 @@ CONTENT_STUDIO = {
     'MEDIA_LIBRARY_FOLDER_MODEL': None,
     'TENANT_MODEL': None,
     'PASSWORD_RESET_EXPIRATION_TIME': 10,
+    'LOGIN_THROTTLE_RATE': '10/min',  # per IP; None disables login throttling
 }
 ```
 

@@ -64,6 +64,34 @@ def test_unconfigured_media_model_returns_501():
     assert response.status_code == 501
 
 
+def test_media_serializer_fields_hook_restricts_fields():
+    """AdminSite.get_media_serializer_fields controls the exposure."""
+    from content_studio.admin import admin_site
+    from content_studio.media_library.serializers import (
+        build_media_item_serializer,
+    )
+
+    original = admin_site.get_media_serializer_fields
+
+    try:
+        admin_site.get_media_serializer_fields = lambda media_model: ["id", "name"]
+        serializer_class = build_media_item_serializer(FolderModel)
+
+        assert serializer_class.Meta.fields == ["id", "name"]
+    finally:
+        admin_site.get_media_serializer_fields = original
+
+
+def test_media_serializer_fields_default_is_all():
+    from content_studio.admin import admin_site
+    from content_studio.media_library.serializers import (
+        build_media_item_serializer,
+    )
+
+    assert admin_site.get_media_serializer_fields(FolderModel) == "__all__"
+    assert build_media_item_serializer(FolderModel).Meta.fields == "__all__"
+
+
 def test_related_item_serializer_is_pk_agnostic():
     """Models are free to use integer or string primary keys."""
     int_pk = RelatedItemSerializer(IntPkItem(3, "int")).data

@@ -195,6 +195,14 @@ class AdminSite(admin.AdminSite):
         """
         return obj.file.url
 
+    def get_media_serializer_fields(self, media_model):
+        """
+        Controls which fields the media library serializer exposes for
+        the given media model. Defaults to "__all__"; override to
+        restrict custom media models that carry sensitive fields.
+        """
+        return "__all__"
+
     def get_tenants(
         self, tenant_model: Type[models.Model], **kwargs
     ) -> models.QuerySet:

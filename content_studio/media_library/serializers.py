@@ -7,15 +7,17 @@ def build_media_item_serializer(media_model):
     """
     Build a serializer for the given media model at call time, so the
     configured MEDIA_LIBRARY_MODEL is always current (the setting
-    cannot be captured at import time).
+    cannot be captured at import time). The exposed fields are
+    controlled by AdminSite.get_media_serializer_fields.
     """
+    admin_site = cs_settings.ADMIN_SITE
 
     class MediaItemSerializer(serializers.ModelSerializer):
         thumbnail = serializers.SerializerMethodField()
 
         class Meta:
             model = media_model
-            fields = "__all__"
+            fields = admin_site.get_media_serializer_fields(media_model)
 
         def get_thumbnail(self, obj):
             admin_site = cs_settings.ADMIN_SITE

@@ -264,13 +264,58 @@ class SingletonTests(AuthenticatedTestCase):
 
 
 class InlineTests(AuthenticatedTestCase):
-    def test_inline_crud(self):
+    def make_editor(self, with_article_view=True):
+        permissions = ["add_review", "view_review"]
+        if with_article_view:
+            permissions.append("view_article")
+        return self.create_user(
+            *permissions, username=f"editor{len(permissions)}{with_article_view}"
+        )
+
+    def test_inline_list_filters_by_parent(self):
+        """The frontend fetches inlines with ?<fk>_id=<id> (regression)."""
+        editor = self.create_user("view_article", "view_review", username="editor")
+        article = Article.objects.create(title="one")
+        other = Article.objects.create(title="two")
+        Review.objects.create(article=article, text="for one")
+        Review.objects.create(article=other, text="for two")
+        client = self.client_for(editor)
+
+        response = client.get(
+            "/api/inlines/testapp.article/testapp.review",
+            {"article_id": article.id},
+        )
+
+        assert response.status_code == 200, response.content
+        # Inline lists serialize id and __str__ by default (list_display).
+        strs = [item["__str__"] for item in response.json()["results"]]
+        assert strs == ["for one"]
+
+    def test_inline_list_requires_parent_filter(self):
+        editor = self.create_user("view_article", "view_review", username="editor")
+        client = self.client_for(editor)
+
+        response = client.get("/api/inlines/testapp.article/testapp.review")
+
+        assert response.status_code == 400
+        assert "parent" in str(response.json())
+
+    def test_inline_list_rejects_invisible_parent(self):
+        """Without view permission on the parent, no inline listing."""
+        editor = self.create_user("view_review", username="editor")
+        article = Article.objects.create(title="hidden")
+        client = self.client_for(editor)
+
+        response = client.get(
+            "/api/inlines/testapp.article/testapp.review",
+            {"article_id": article.id},
+        )
+
+        assert response.status_code == 403
+
+    def test_inline_create_attaches_to_visible_parent(self):
         editor = self.create_user(
-            "view_article",
-            "change_article",
-            "add_review",
-            "view_review",
-            username="editor",
+            "view_article", "add_review", "view_review", username="editor"
         )
         article = Article.objects.create(title="with review")
         client = self.client_for(editor)
@@ -282,6 +327,35 @@ class InlineTests(AuthenticatedTestCase):
         )
         assert response.status_code == 201, response.content
         assert Review.objects.filter(article=article, stars=4).exists()
+
+    def test_inline_create_rejects_invisible_parent(self):
+        """Inlines cannot be attached to parents the user cannot see."""
+        editor = self.create_user("add_review", "view_review", username="editor")
+        article = Article.objects.create(title="hidden")
+        client = self.client_for(editor)
+
+        response = client.post(
+            "/api/inlines/testapp.article/testapp.review",
+            {"article": {"id": article.id}, "text": "great"},
+            format="json",
+        )
+
+        assert response.status_code == 403
+        assert not Review.objects.exists()
+
+    def test_inline_create_rejects_unknown_parent(self):
+        editor = self.create_user(
+            "view_article", "add_review", "view_review", username="editor"
+        )
+        client = self.client_for(editor)
+
+        response = client.post(
+            "/api/inlines/testapp.article/testapp.review",
+            {"article": {"id": 99999}, "text": "great"},
+            format="json",
+        )
+
+        assert response.status_code == 400, response.content
 
 
 class UserSerializerTests(AuthenticatedTestCase):
