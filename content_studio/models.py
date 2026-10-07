@@ -38,7 +38,9 @@ class ModelSerializer:
     def get_field(self, field):
         data = {
             "verbose_name": field.verbose_name,
-            "required": not field.null or not field.blank,
+            # Match Django admin semantics: blank controls whether a
+            # value must be provided.
+            "required": not field.blank,
             "type": field.__class__.__name__,
         }
 

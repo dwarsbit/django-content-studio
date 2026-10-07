@@ -21,8 +21,18 @@ class DjangoContentStudioConfig(AppConfig):
     def ready(self):
         from .utils import log
 
+        # Set up the admin site routes and content CRUD APIs in every
+        # context (runserver, WSGI/ASGI, management commands, tests) so
+        # the routes always exist.
+        admin_site = cs_settings.ADMIN_SITE
+        admin_site.setup()
+        self._create_crud_api()
+
+        # The boot log and PyPI version check are decorative: show them
+        # in interactive server mode only.
         if not is_runserver() or self.initialized:
             return
+
         self.initialized = True
 
         log("")
@@ -35,7 +45,7 @@ class DjangoContentStudioConfig(AppConfig):
             latest_version = normalize_version(latest_version)
             current_version = normalize_version(VERSION)
             if latest_version != current_version:
-                log(f"[yellow]⚠️  New version available[/yellow]")
+                log("[yellow]⚠️  New version available[/yellow]")
                 log(
                     f"Current: [bold]{current_version}[/bold] → Latest: {latest_version}"
                 )
@@ -51,12 +61,7 @@ class DjangoContentStudioConfig(AppConfig):
             ":white_check_mark:",
             f"[green]Found {registered_models} admin models[/green]",
         )
-        # Set up admin site routes
-        admin_site = cs_settings.ADMIN_SITE
-        admin_site.setup()
-
-        # Set up content CRUD APIs
-        self._create_crud_api()
+        log(":white_check_mark:", "[green]Created CRUD API[/green]")
 
         log("\n")
 

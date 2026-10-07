@@ -50,7 +50,8 @@ class DashboardViewSet(ViewSet):
     renderer_classes = [JSONRenderer]
 
     def __init__(self, *args, **kwargs):
-        super(ViewSet, self).__init__()
+        # Forward kwargs: action-level overrides arrive through the viewset init.
+        super(ViewSet, self).__init__(*args, **kwargs)
         admin_site = cs_settings.ADMIN_SITE
 
         self.dashboard = admin_site.dashboard

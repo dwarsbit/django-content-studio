@@ -32,7 +32,9 @@ class BaseModelViewSet(ModelViewSet):
     filter_backends = [SearchFilter, OrderingFilter, LookupFilter]
 
     def __init__(self, *args, **kwargs):
-        super(BaseModelViewSet, self).__init__()
+        # Forward kwargs: action-level overrides (permission_classes,
+        # authentication_classes) arrive through the viewset init.
+        super(BaseModelViewSet, self).__init__(*args, **kwargs)
         admin_site = cs_settings.ADMIN_SITE
 
         self.authentication_classes = [

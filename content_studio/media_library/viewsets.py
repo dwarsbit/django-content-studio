@@ -9,7 +9,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from content_studio.paginators import ContentPagination
 from content_studio.settings import cs_settings
-from .serializers import MediaItemSerializer, MediaFolderSerializer
+from .serializers import build_media_folder_serializer, build_media_item_serializer
 
 
 class MediaLibraryViewSet(ModelViewSet):
@@ -23,7 +23,8 @@ class MediaLibraryViewSet(ModelViewSet):
     search_fields = ["name", "tags"]
 
     def __init__(self, *args, **kwargs):
-        super(MediaLibraryViewSet, self).__init__()
+        # Forward kwargs: action-level overrides arrive through the viewset init.
+        super(MediaLibraryViewSet, self).__init__(*args, **kwargs)
 
         admin_site = cs_settings.ADMIN_SITE
 
@@ -53,7 +54,7 @@ class MediaLibraryViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self._media_model:
-            return MediaItemSerializer
+            return build_media_item_serializer(self._media_model)
 
         raise exceptions.MethodNotAllowed(
             method="GET", detail="Media model not defined."
@@ -70,7 +71,8 @@ class MediaFolderViewSet(ModelViewSet):
     pagination_class = ContentPagination
 
     def __init__(self, *args, **kwargs):
-        super(MediaFolderViewSet, self).__init__()
+        # Forward kwargs: action-level overrides arrive through the viewset init.
+        super(MediaFolderViewSet, self).__init__(*args, **kwargs)
 
         admin_site = cs_settings.ADMIN_SITE
 
@@ -100,7 +102,7 @@ class MediaFolderViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self._folder_model:
-            return MediaFolderSerializer
+            return build_media_folder_serializer(self._folder_model)
 
         raise exceptions.MethodNotAllowed(
             method="GET", detail="Media folder model not defined."
@@ -129,6 +131,10 @@ class MediaFolderViewSet(ModelViewSet):
                 path.insert(0, folder)
                 folder = folder.parent
 
-            return Response(data=MediaFolderSerializer(path, many=True).data)
+            return Response(
+                data=build_media_folder_serializer(self._folder_model)(
+                    path, many=True
+                ).data
+            )
         except self._folder_model.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)

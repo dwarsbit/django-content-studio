@@ -16,7 +16,7 @@ from rest_framework.viewsets import ViewSet
 from . import __version__
 from .admin import AdminSerializer, ModelGroup
 from .models import ModelSerializer
-from .serializers import SessionUserSerializer
+from .serializers import get_session_user_serializer
 from .settings import cs_settings
 
 
@@ -42,6 +42,15 @@ class AdminApiViewSet(ViewSet):
     permission_classes = [IsAdminUser]
     renderer_classes = [JSONRenderer]
     admin_site = cs_settings.ADMIN_SITE
+
+    def __init__(self, *args, **kwargs):
+        # Forward kwargs: action-level overrides (permission_classes,
+        # authentication_classes) arrive through the viewset init.
+        super().__init__(*args, **kwargs)
+
+        self.authentication_classes = [
+            self.admin_site.token_backend.active_backend.authentication_class
+        ]
 
     @action(
         methods=["get"],
@@ -85,6 +94,9 @@ class AdminApiViewSet(ViewSet):
         methods=["get"],
         detail=False,
         url_path="discover",
+        # The frontend (tenant selection, menus) needs this endpoint
+        # before authentication; registered model metadata is public.
+        permission_classes=[AllowAny],
     )
     def discover(
         self,
@@ -135,7 +147,7 @@ class AdminApiViewSet(ViewSet):
         """
         Returns information about the current user.
         """
-        return Response(SessionUserSerializer(request.user).data)
+        return Response(get_session_user_serializer()(request.user).data)
 
     @action(
         methods=["get"],

@@ -1,10 +1,11 @@
 import inspect
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import FieldDoesNotExist
 from rest_framework import serializers
 from rest_framework.relations import RelatedField
 
-user_model = get_user_model()
+from content_studio.settings import cs_settings
 
 
 class ContentRelatedField(RelatedField):
@@ -103,14 +104,49 @@ class RelatedItemSerializer(serializers.Serializer):
     __str__ = serializers.CharField()
 
 
-class SessionUserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source=user_model.USERNAME_FIELD)
+def session_user_field_names(user_model) -> list[str]:
+    """
+    The session user fields: id, the username field, and the optional
+    name fields when the user model has them (custom user models may
+    not).
+    """
+    fields = ["id", "username"]
 
-    class Meta:
-        model = user_model
-        fields = (
-            "id",
-            "username",
-            "first_name",
-            "last_name",
+    for name in ("first_name", "last_name"):
+        try:
+            user_model._meta.get_field(name)
+        except FieldDoesNotExist:
+            continue
+        fields.append(name)
+
+    return fields
+
+
+_session_user_serializers: dict = {}
+
+
+def get_session_user_serializer():
+    """
+    Build the session user serializer lazily: get_user_model() cannot be
+    called at import time (the app registry may not be ready yet), and
+    custom user models may lack the name fields.
+    """
+    user_model = get_user_model()
+
+    if user_model in _session_user_serializers:
+        return _session_user_serializers[user_model]
+
+    class SessionUserSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = user_model
+            fields = session_user_field_names(user_model)
+
+    if user_model.USERNAME_FIELD != "username":
+        # A declared field is needed when the username field has
+        # another name; a redundant source is rejected by DRF.
+        SessionUserSerializer._declared_fields["username"] = serializers.CharField(
+            source=user_model.USERNAME_FIELD
         )
+
+    _session_user_serializers[user_model] = SessionUserSerializer
+    return SessionUserSerializer

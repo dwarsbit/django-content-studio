@@ -6,7 +6,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-test-key"
+SECRET_KEY = "django-insecure-test-key-for-content-studio-tests-only-not-for-production"
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
