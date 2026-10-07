@@ -26,8 +26,8 @@ const features = [
   },
   {
     emoji: "⚡",
-    title: "Auto-generated CRUD API",
-    text: "A Django REST Framework API is generated for every registered model: pagination, search, filtering and ordering — with the React frontend as its first consumer.",
+    title: "A complete editing interface",
+    text: "List views with search, filtering and ordering, an editor with validation, inlines and audit stamps — generated from your model admin, no frontend code to write.",
   },
   {
     emoji: "🧩",

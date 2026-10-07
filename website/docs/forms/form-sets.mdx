@@ -68,7 +68,7 @@ class ArticleAdmin(ModelAdmin):
 ```
 
 Subclass `Component` for fully custom behavior: implement `handle_request(obj,
-request)` and the component gets its own API endpoint. Components are looked
+request)` and the component gets its own endpoint. Components are looked
 up by ID, and IDs derive deterministically from the class and its
 `get_id_parts()` — pass an explicit `component_id` (a UUID) when two
 components of the same class share a label.

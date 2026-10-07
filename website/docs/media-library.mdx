@@ -36,23 +36,14 @@ media model needs:
 - optionally `tags`, searched alongside the name
 
 Folder models need a self-referencing `parent` field; the rest (name,
-children) follows from it. An unconfigured media library answers 501 Not
-Implemented on its endpoints.
+children) follows from it. An unconfigured media library simply does not
+appear in the interface.
 
-## Endpoints
+## Managing media
 
-The library is served by its own API — uploads, folders and folder paths are
-all handled through it:
-
-```
-GET/POST   /api/media-library/items        list and upload
-GET/PATCH  /api/media-library/items/<id>   edit an item
-GET/POST   /api/media-library/folders     list and create folders
-GET        /api/media-library/folders/path?folder=<id>   breadcrumb
-```
-
-Uploads are multipart creates; when the model has a `tags` field, tagging
-happens in the same request.
+The library is fully managed in the interface: upload files (with tags in the
+same go when the model has a `tags` field), move them between folders, edit
+their details and crop images — all against the models you configure.
 
 ## Hooks
 

@@ -43,8 +43,8 @@ urlpatterns = [
 ]
 ```
 
-Every URL under the prefix that does not start with `api/` serves the React
-interface; everything under `api/` is the generated API.
+The interface (and everything it needs) is served under this prefix — no
+further URL configuration required.
 
 ## Register a model
 
@@ -92,8 +92,7 @@ throttling are covered under [authentication](/docs/authentication).
 
 - [Registering models](/docs/content/registering-models) — every `ModelAdmin`
   option, singletons and inlines.
-- [The CRUD API](/docs/api/crud) — endpoints, filtering and the pagination
-  envelope.
+- [Access control](/docs/permissions) — model and object permissions.
 - [Widgets and forms](/docs/forms/widgets) — dedicated field editors and
   custom layouts.
 - [Settings reference](/docs/settings) — every `CONTENT_STUDIO` option.

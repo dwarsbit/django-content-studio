@@ -1,12 +1,17 @@
-# 🛡️ Permissions
+---
+sidebar_position: 4
+---
 
-The generated API enforces the same permission hooks the Django admin calls.
-There is nothing new to learn: a user's Django model permissions gate access,
-and custom `ModelAdmin` hooks can restrict it further — per object.
+# 🛡️ Access control
+
+Content Studio reuses the Django admin's permission system. A user needs
+Django's model permissions to see and change content in the studio, and the
+familiar `ModelAdmin` hooks can restrict access further — per object.
 
 ## Model-level permissions
 
-Requests are checked against the model admin's permission methods:
+Access is checked against the model admin's permission methods, which
+default to Django's model permissions:
 
 | Method | Default behavior |
 |--------|------------------|
@@ -16,11 +21,13 @@ Requests are checked against the model admin's permission methods:
 | `has_delete_permission(request)` | Django's `delete` permission |
 
 A staff user needs the matching Django permission on the model — superusers
-have them all. Endpoints answer 401/403 when a check fails.
+have them all. Grant them like anywhere else in Django, through groups or
+user permissions.
 
 ## Object-level permissions
 
-The per-object variants are called for retrieve, update and delete requests:
+The per-object variants are honored throughout the interface — a user only
+sees and edits the objects you allow:
 
 ```python
 @register(Article)
@@ -33,13 +40,10 @@ class ArticleAdmin(ModelAdmin):
 ```
 
 By default the object-level variants fall back to the model-level check, so
-behavior out of the box matches the classic admin: with the `view` permission
-a user can retrieve any object of the model. Override the hooks to restrict
-access per object — the checks are enforced on every endpoint.
-
-The same hooks protect related objects: the [relations endpoint](/docs/api/crud#related-object-search)
-requires view permission on the *related* model, and inline objects cannot be
-attached to a parent the user cannot see.
+behavior out of the box matches the classic admin. The same hooks protect
+everything around the objects too: related model options are only offered
+when the user may view the related model, and inline objects can only be
+attached to parents the user can see.
 
 ## Login throttling
 
@@ -63,6 +67,6 @@ for the full limit in multi-worker deployments.
 - **Session invalidation after a password reset.** JWT access tokens remain
   valid until they expire. Token blacklisting is planned for the auth
   hardening release.
-- **Field-level permissions.** The serializer exposes the model's fields;
+- **Field-level permissions.** The editor exposes the model's fields;
   restrict with a custom serializer or keep sensitive data out of admin
   models.

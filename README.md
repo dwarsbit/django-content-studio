@@ -13,7 +13,7 @@ Django Content Studio is a modern, flexible alternative to the Django admin: a R
 ## ✨ Features
 
 - **🎯 Works with any model**: register a plain Django model — like the classic admin — and it is manageable. Content Studio brings no models of its own; it is an admin, not a CMS
-- **⚡ Auto-generated CRUD API**: pagination, search, filtering and ordering for every registered model, secured by the same permission hooks the Django admin calls — including per-object checks
+- **⚡ A complete editing interface**: list views with search, filtering and ordering, a widget-based editor with validation, inlines and audit stamps — secured by the same permission hooks the Django admin calls, including per-object checks
 - **🧩 Widget-based editing**: dedicated editors for dates, rich text, tags, media and JSON, with edit views laid out through form sets, field layouts and components
 - **📊 A composable dashboard**: statistics, content lists, activity logs and scheduled tasks as widgets you declare in Python
 - **🖼️ Media library**: folders, uploads and image crops against whichever media model you configure
@@ -70,7 +70,7 @@ class ArticleAdmin(ModelAdmin):
     search_fields = ['title']
 ```
 
-That's it! 🎉 Open `/admin/`, log in with a staff account, and manage your content in a modern interface — backed by an API you can use anywhere.
+That's it! 🎉 Open `/admin/`, log in with a staff account, and manage your content in a modern interface. (Building an API of your own? Use [Django Headless](https://github.com/dwarsbit/django-headless) — Content Studio's backend is internal plumbing for its interface, not a public API.)
 
 ## 📚 Documentation
 
@@ -79,8 +79,7 @@ All usage and configuration is documented at [dwarsbit.github.io/django-content-
 - [Introduction](https://dwarsbit.github.io/django-content-studio/docs/intro) — what Content Studio is (and is not)
 - [Getting started](https://dwarsbit.github.io/django-content-studio/docs/getting-started) — requirements, setup and your first model
 - [Registering models](https://dwarsbit.github.io/django-content-studio/docs/content/registering-models) — every `ModelAdmin` option, singletons and inlines
-- [The CRUD API](https://dwarsbit.github.io/django-content-studio/docs/api/crud) — endpoints, filtering, the pagination envelope and audit stamps
-- [Permissions](https://dwarsbit.github.io/django-content-studio/docs/api/permissions) — model-level and per-object permission hooks
+- [Access control](https://dwarsbit.github.io/django-content-studio/docs/permissions) — model-level and per-object permission hooks, login throttling
 - [Widgets and forms](https://dwarsbit.github.io/django-content-studio/docs/forms/widgets) — the widget registry and custom form layouts
 - [Dashboard](https://dwarsbit.github.io/django-content-studio/docs/dashboard) — composing the dashboard with widgets
 - [Media library](https://dwarsbit.github.io/django-content-studio/docs/media-library) — configuration, uploads and thumbnails

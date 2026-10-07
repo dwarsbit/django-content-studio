@@ -60,8 +60,7 @@ serializer instance. `col_span` controls the widget's width in the grid.
 
 ## Widget identity
 
-Widget data is fetched through `api/dashboard/widgets/<widget_id>` — IDs
-derive deterministically from the widget's class and name, so every worker
-agrees on them. Widgets of the same class and name need an explicit
+Widget data is fetched per widget, so IDs derive deterministically from the
+widget's class and name — every worker in a deployment agrees on them. Widgets of the same class and name need an explicit
 `widget_id` to disambiguate; duplicates are rejected at startup with a clear
 error.

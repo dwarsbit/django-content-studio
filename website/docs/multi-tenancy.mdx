@@ -17,14 +17,15 @@ Content Studio finds the tenant field on each registered model automatically:
 the single foreign key pointing at the tenant model. Models without one are
 global and unaffected.
 
-## How requests are scoped
+## How content is scoped
 
-The frontend sends the selected tenant with every request in the
-`x-dcs-tenant` header. The backend:
+The selected tenant travels with every request the interface makes. The
+backend:
 
-- **fails closed** — a tenant-scoped model without the header returns no rows
-- returns 403 when the user may not access that tenant
-- filters every query to the tenant, and stamps it on creates
+- **fails closed** — a tenant-scoped model without a selected tenant returns
+  no rows
+- rejects tenants the user may not access
+- scopes every query to the tenant, and stamps it on creates
 
 ## Authorization: `get_tenants`
 

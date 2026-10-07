@@ -14,9 +14,10 @@ inlines, a dashboard and a media library.
 - **Any plain Django model works.** Like the classic Django admin, Content
   Studio brings no models of its own. It is an admin, not a CMS — there is
   nothing to buy into.
-- **An auto-generated CRUD API** for every registered model: pagination, search,
-  filtering and ordering, secured by the same permission hooks the Django
-  admin calls — including per-object checks.
+- **A complete editing interface** for every registered model: list views with
+  search, filtering and ordering, a widget-based editor with validation,
+  inlines and audit stamps — secured by the same permission hooks the Django
+  admin calls, including per-object checks.
 - **A widget-based editor.** Fields render with dedicated widgets for dates,
   rich text, tags, media, JSON with a schema and more, and edit views are
   laid out with form sets and field layouts.
@@ -43,9 +44,10 @@ is an optional integration, never a requirement.
 
 ## How it relates to the dwarsbit packages
 
-- **[Django Headless](https://djangoheadless.org)** exposes models as a REST API for your own
-  frontend; Content Studio generates its API for its own React interface.
-  Same ideas, different consumers.
+- **[Django Headless](https://djangoheadless.org)** exposes models as a REST API for your
+  own clients and frontends. Content Studio is a different tool: it ships an
+  interface, not an API. Its generated backend is internal plumbing for the
+  React app — for a public API of your own, use Django Headless.
 - **[Django Blueprint](https://dwarsbit.github.io/django-blueprint/)** provides common content
   models and fields. Content Studio recognizes Blueprint fields when
   installed — see [Blueprint integration](/docs/blueprint-integration).
@@ -54,4 +56,4 @@ is an optional integration, never a requirement.
 
 Start with [installation](/docs/getting-started), then read about
 [registering models](/docs/content/registering-models) or browse the
-[API documentation](/docs/api/crud).
+[access control](/docs/permissions) options.

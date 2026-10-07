@@ -14,6 +14,7 @@
 
 - **Not a CMS**: Content Studio brings no models of its own. Like the classic Django admin, it works with any plain Django model — register it and it is manageable. Django Blueprint is **not** a requirement.
 - **Blueprint-aware, never Blueprint-dependent**: Content Studio may detect Blueprint objects and adapt its behavior (for example, Blueprint's `HTMLField` renders the Rich Text widget), but every capability must also be achievable with plain Django models and fields. Never make Blueprint the only path to a feature.
+- **The internal API stays internal**: the generated Django REST Framework backend is plumbing for the React app, not a public feature. Users who need an API for their own clients should use django-headless. Never document or expose API internals (endpoints, wire formats, the tenant header) in user-facing documentation.
 
 ---
 

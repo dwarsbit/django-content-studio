@@ -41,13 +41,13 @@ The familiar Django admin options drive the list view:
 
 | Option | Effect |
 |--------|--------|
-| `list_display` | Columns of the list view (also the fields the list endpoint returns) |
-| `list_filter` | Filterable fields in the list view — the API only allows filtering on these |
+| `list_display` | Columns of the list view |
+| `list_filter` | Filterable fields in the list view's filter panel |
 | `search_fields` | Fields searched by the search box |
 | `sortable_by` | Columns the user may sort on |
 | `list_per_page` | Page size (default 20) |
 | `list_description` | Description below the model name on list pages |
-| `ordering` | Default ordering of list endpoints (falls back to `pk` for stable pagination) |
+| `ordering` | Default ordering of list views (falls back to `pk` for stable pagination) |
 | `icon` | Icon shown in the main menu |
 
 ## Singletons
@@ -61,9 +61,9 @@ class SiteSettingsAdmin(ModelAdmin):
     edit_main = ["site_name", "tagline"]
 ```
 
-Singletons skip the list view: the list endpoint acts as the object's detail
-endpoint, creating is only allowed while no object exists, deletion is not
-offered, and `PATCH` performs a partial update.
+Singletons skip the list view: the single object opens directly in the
+editor, creating is only allowed while no object exists, and deletion is not
+offered.
 
 :::note
 As a fallback for models that carry a model-level `is_singleton` marker (for
@@ -90,7 +90,6 @@ class ArticleAdmin(ModelAdmin):
     inlines = [ReviewInline]
 ```
 
-Inline endpoints live under `api/inlines/<parent-model>/<inline-model>/` and
-enforce their parent context: lists must be filtered by the parent (which the
-interface always does), and inline objects cannot be attached to a parent the
-user cannot see. See [the CRUD API](/docs/api/crud).
+Inlines live inside their parent's edit view and stay there: inline lists are
+always shown in the context of a parent, and inline objects cannot be attached
+to a parent the user cannot see.

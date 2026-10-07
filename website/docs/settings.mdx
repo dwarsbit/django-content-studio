@@ -37,15 +37,15 @@ every worker counts separately; configure a shared cache for the full limit.
 ## EDITED_BY_ATTR / EDITED_AT_ATTR / CREATED_BY_ATTR / CREATED_AT_ATTR {#audit-attrs}
 
 Field names for the audit stamps. Defaults: `"edited_by"`, `"edited_at"`,
-`"created_by"`, `"created_at"`. The CRUD API stamps `created_by` on create and
-`edited_by` / `edited_at` on update — on models that define those fields
+`"created_by"`, `"created_at"`. The interface stamps `created_by` on create
+and `edited_by` / `edited_at` on update — on models that define those fields
 (other models are untouched).
 
 ## MEDIA_LIBRARY_MODEL / MEDIA_LIBRARY_FOLDER_MODEL {#media_models}
 
 Import path strings of the media and folder models for the
 [media library](/docs/media-library). Both default to `None` — the library is
-disabled and its endpoints answer 501 Not Implemented.
+disabled.
 
 ## TENANT_MODEL {#tenant_model}
 

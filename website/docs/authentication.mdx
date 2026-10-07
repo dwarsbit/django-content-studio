@@ -11,20 +11,11 @@ and a pluggable login backend system.
 ## Login backends
 
 A login backend is a small class with a name, a DRF view set and the login
-logic. The default username/password backend posts to
-`api/login/usernamepassword`:
-
-```
-POST /api/login/usernamepassword
-{"username": "admin", "password": "..."}
-→ {"refresh": "...", "access": "..."}
-```
-
-Access tokens authorize every API call; expired access tokens are refreshed
-through `api/tokens/simplejwt/refresh`. Configure additional backends —
-SSO, magic links, LDAP — with the `LOGIN_BACKENDS` setting; the frontend
-renders a form per backend automatically. Each backend gets its own route,
-and login attempts are throttled per IP
+logic. The default username/password backend logs staff users in with their
+username and password, exactly like the Django admin, and returns the JWT
+pair the interface works with. Configure additional backends — SSO, magic
+links, LDAP — with the `LOGIN_BACKENDS` setting; the interface renders a
+form per backend automatically. Login attempts are throttled per IP
 ([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate)).
 
 ```python
@@ -41,7 +32,7 @@ The backend interface:
 ```python
 class MagicLinkBackend:
     name = "Magic link"
-    view_set = MagicLinkViewSet  # a DRF ViewSet with a `create` action
+    view_set = MagicLinkViewSet  # a DRF ViewSet handling the submit
 
     @classmethod
     def get_info(cls):
@@ -58,9 +49,8 @@ class MagicLinkBackend:
 ## Token backend
 
 Tokens themselves come from the token backend (`SimpleJwtBackend` by
-default), which exposes simplejwt's authentication class, the refresh endpoint
-and the response format. Custom token backends follow the same small
-interface.
+default), which provides the authentication class and the token response
+format. Custom token backends follow the same small interface.
 
 ## Password reset
 
@@ -79,17 +69,12 @@ urlpatterns = [
 ]
 ```
 
-```
-POST /admin/api/password-reset/request   {"email": ...}  → 202 always
-POST /admin/api/password-reset/code      {"email", "code"} → 204
-POST /admin/api/password-reset/submit   {"email", "code", "password"} → 204
-```
-
+Users request a code for their email, validate it, and set a new password.
 Codes are six digits, generated with `secrets`, valid for 10 minutes (the
 [`PASSWORD_RESET_EXPIRATION_TIME`](/docs/settings#password_reset_expiration_time)
 setting) and invalidated after five failed attempts. Validation is bound to
 the email: unknown emails and wrong codes answer identically, so the
-endpoints do not reveal which addresses exist.
+flow does not reveal which addresses exist.
 
 Configure `EMAIL_*` settings — Content Studio sends the code email with
 `send_mail`.
