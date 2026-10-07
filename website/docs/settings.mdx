@@ -1,0 +1,57 @@
+---
+sidebar_position: 11
+---
+
+# ⚙️ Settings reference
+
+All settings live in a single `CONTENT_STUDIO` namespace in your Django
+settings. Every option is optional.
+
+```python
+CONTENT_STUDIO = {
+    "ADMIN_SITE": "content_studio.admin.admin_site",
+}
+```
+
+## ADMIN_SITE {#admin_site}
+
+The admin site instance to use — import path string. The default site works
+out of the box; subclass `AdminSite` to customize the dashboard, extensions,
+tenants, thumbnails or media serializer fields and point this setting at your
+instance.
+
+## LOGIN_BACKENDS {#login_backends}
+
+Import path strings of login backends. Default:
+
+```python
+["content_studio.login_backends.UsernamePasswordBackend"]
+```
+
+## LOGIN_THROTTLE_RATE {#login_throttle_rate}
+
+Rate limit for login attempts, per IP, as a DRF rate string — default
+`"10/min"`. `None` disables throttling. With the default per-process cache
+every worker counts separately; configure a shared cache for the full limit.
+
+## EDITED_BY_ATTR / EDITED_AT_ATTR / CREATED_BY_ATTR / CREATED_AT_ATTR {#audit-attrs}
+
+Field names for the audit stamps. Defaults: `"edited_by"`, `"edited_at"`,
+`"created_by"`, `"created_at"`. The CRUD API stamps `created_by` on create and
+`edited_by` / `edited_at` on update — on models that define those fields
+(other models are untouched).
+
+## MEDIA_LIBRARY_MODEL / MEDIA_LIBRARY_FOLDER_MODEL {#media_models}
+
+Import path strings of the media and folder models for the
+[media library](/docs/media-library). Both default to `None` — the library is
+disabled and its endpoints answer 501 Not Implemented.
+
+## TENANT_MODEL {#tenant_model}
+
+Import path string of the tenant model for
+[multi-tenancy](/docs/multi-tenancy). Default `None` — tenancy is disabled.
+
+## PASSWORD_RESET_EXPIRATION_TIME {#password_reset_expiration_time}
+
+Minutes a password reset code stays valid. Default `10`.

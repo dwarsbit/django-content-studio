@@ -264,6 +264,7 @@ urlpatterns = [
 | ESLint config | `/frontend/eslint.config.js` |
 | TypeScript config | `/frontend/tsconfig.json` |
 | Vite config | `/frontend/vite.config.ts` |
+| Docs website | `/website` (Docusaurus, `npm run build`; deployed by the Website workflow) |
 
 ---
 
@@ -394,3 +395,5 @@ poetry run test-cov    # With coverage
 | Lint frontend | `cd frontend && npm run lint` |
 | Format Python | `black .` |
 | Format frontend | `cd frontend && prettier --write .` |
+| Run docs site | `cd website && npm start` |
+| Build docs site | `cd website && npm run build` |

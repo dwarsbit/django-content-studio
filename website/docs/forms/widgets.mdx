@@ -1,0 +1,56 @@
+# 🧩 Widgets
+
+Every field renders with a widget. Widgets are chosen by field type through a
+default mapping, and you can override the choice per field — or per Django
+field class — on the model admin.
+
+```python
+class ArticleAdmin(ModelAdmin):
+    # By field name:
+    widget_mapping = {"status": SelectWidget}
+
+    # Or by Django field type:
+    widget_mapping = {models.EmailField: InputWidget}
+```
+
+## Default mapping
+
+| Field type | Widget |
+|-----------|--------|
+| `CharField` and numeric fields | `InputWidget` |
+| `SlugField` | `SlugWidget` |
+| `TextField` | `TextAreaWidget` |
+| `BooleanField` | `CheckboxWidget` |
+| `ForeignKey` / `OneToOneField` | `ForeignKeyWidget` |
+| `ManyToManyField` | `ManyToManyWidget` |
+| `DateField` / `DateTimeField` / `TimeField` | Dedicated date/time widgets |
+| `JSONField` | `JSONWidget` |
+| Blueprint `HTMLField` | `RichTextWidget` *(Blueprint only)* |
+| Blueprint `TagField`, `FlexField`, `MultipleChoiceField`, `URLPathField` | Dedicated widgets *(Blueprint only)* |
+| Blueprint `MediaField` / `ManyMediaField` | Media picker widgets *(Blueprint only)* |
+| `"AutoSlugField"` (string key) | `SlugWidget` |
+
+Unknown field types fall back to a plain input; unknown widget names fall
+back to a read-only display. Choice fields render as selects automatically.
+
+## Custom widgets
+
+Widgets are markers: subclass `BaseWidget`, register it in a
+`widget_mapping`, and render it in the frontend's widget registry. A widget
+is identified by its class name, so the backend mapping and the frontend
+registry agree by convention.
+
+## Formats
+
+List columns are formatted through a parallel `format_mapping`: dates, times,
+booleans, numbers, tags, HTML and media references each have a formatter, and
+`format_mapping` overrides per field name or field class in the same way as
+widgets.
+
+```python
+from content_studio import formats
+
+
+class ArticleAdmin(ModelAdmin):
+    format_mapping = {"views": formats.NumberFormat}
+```

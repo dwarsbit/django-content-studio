@@ -1,0 +1,8 @@
+{
+  "label": "Widgets & forms",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "How fields are rendered and how edit views are laid out."
+  }
+}

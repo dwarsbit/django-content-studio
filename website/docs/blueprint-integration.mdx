@@ -1,0 +1,61 @@
+---
+sidebar_position: 12
+---
+
+# 🤝 Blueprint integration
+
+[Django Blueprint](https://dwarsbit.github.io/django-blueprint/) provides the
+common content models and fields many projects rebuild. Content Studio knows
+about it — and works fully without it. Blueprint is **never** a requirement:
+install it, and the integration lights up; skip it, and every feature still
+works with plain Django fields.
+
+## Fields with dedicated widgets
+
+When Blueprint is installed, its fields get their dedicated editors and
+formats automatically:
+
+| Blueprint field | Widget |
+|-----------------|--------|
+| `HTMLField` | Rich text editor |
+| `TagField` | Tag input |
+| `FlexField` | JSON editor driven by the field's schema |
+| `MultipleChoiceField` | Multi select |
+| `URLPathField` | URL path input |
+| `MediaField` / `ManyMediaField` | Media library pickers |
+
+No configuration needed — the mapping registers itself when Blueprint is
+importable.
+
+## Singletons
+
+Blueprint's `SingletonModel` carries a model-level `is_singleton` marker,
+which Content Studio honors as a fallback: a Blueprint singleton registered
+without an explicit `is_singleton` on its admin still gets singleton behavior.
+Prefer declaring `is_singleton = True` on the model admin — the canonical,
+always-available declaration.
+
+## Media library
+
+Blueprint ships a media library app that plugs straight in:
+
+```python
+INSTALLED_APPS = [
+    # ...
+    "blueprint.media_library",
+]
+
+CONTENT_STUDIO = {
+    "MEDIA_LIBRARY_MODEL": "blueprint.media_library.models.Media",
+    "MEDIA_LIBRARY_FOLDER_MODEL": "blueprint.media_library.models.Folder",
+}
+```
+
+Folders, uploads and image crops work out of the box, including the crop
+editing in the media dialog.
+
+## The pairing
+
+Blueprint models are ordinary Django models — Content Studio manages them
+like any other: the abstract base models inherit their way into your apps,
+and the studio picks them up through `@register` as usual.

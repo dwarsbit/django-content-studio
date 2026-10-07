@@ -1,0 +1,73 @@
+---
+sidebar_position: 7
+---
+
+# 🖼️ Media library
+
+The media library manages uploads in folders and lets fields reference them.
+Point it at your own media and folder models:
+
+```python
+CONTENT_STUDIO = {
+    "MEDIA_LIBRARY_MODEL": "myapp.models.MediaItem",
+    "MEDIA_LIBRARY_FOLDER_MODEL": "myapp.models.MediaFolder",
+}
+```
+
+With [Django Blueprint](/docs/blueprint-integration) installed, its media
+library models plug in directly:
+
+```python
+CONTENT_STUDIO = {
+    "MEDIA_LIBRARY_MODEL": "blueprint.media_library.models.Media",
+    "MEDIA_LIBRARY_FOLDER_MODEL": "blueprint.media_library.models.Folder",
+}
+```
+
+## Model contract
+
+The interface works with any model, but it expects a handful of fields. Your
+media model needs:
+
+- a `file` field (the upload)
+- a `name` — used by the library's search
+- a `type` — `"image"`, `"video"`, `"audio"` or `"file"` drive the grid
+  previews and thumbnails
+- optionally `tags`, searched alongside the name
+
+Folder models need a self-referencing `parent` field; the rest (name,
+children) follows from it. An unconfigured media library answers 501 Not
+Implemented on its endpoints.
+
+## Endpoints
+
+The library is served by its own API — uploads, folders and folder paths are
+all handled through it:
+
+```
+GET/POST   /api/media-library/items        list and upload
+GET/PATCH  /api/media-library/items/<id>   edit an item
+GET/POST   /api/media-library/folders     list and create folders
+GET        /api/media-library/folders/path?folder=<id>   breadcrumb
+```
+
+Uploads are multipart creates; when the model has a `tags` field, tagging
+happens in the same request.
+
+## Hooks
+
+- **`AdminSite.get_thumbnail(obj)`** — returns the thumbnail URL for an image
+  item. The default returns `obj.file.url`; override to point at a
+  pre-generated variant.
+- **`AdminSite.get_media_serializer_fields(media_model)`** — controls which
+  fields the serializer exposes. The default is `__all__`; override to keep
+  sensitive custom fields out of the API.
+
+```python
+class CustomAdminSite(AdminSite):
+    def get_thumbnail(self, obj):
+        return obj.thumbnail.url if obj.thumbnail else obj.file.url
+
+    def get_media_serializer_fields(self, media_model):
+        return ["id", "name", "type", "tags", "file", "folder"]
+```

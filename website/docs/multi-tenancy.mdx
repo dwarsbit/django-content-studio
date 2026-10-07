@@ -1,0 +1,51 @@
+---
+sidebar_position: 9
+---
+
+# 🧭 Multi-tenancy
+
+Multi-tenant projects have one tenant model, one foreign key per tenant-scoped
+model, and one authorization hook. Configure the tenant model:
+
+```python
+CONTENT_STUDIO = {
+    "TENANT_MODEL": "organizations.models.Organization",
+}
+```
+
+Content Studio finds the tenant field on each registered model automatically:
+the single foreign key pointing at the tenant model. Models without one are
+global and unaffected.
+
+## How requests are scoped
+
+The frontend sends the selected tenant with every request in the
+`x-dcs-tenant` header. The backend:
+
+- **fails closed** — a tenant-scoped model without the header returns no rows
+- returns 403 when the user may not access that tenant
+- filters every query to the tenant, and stamps it on creates
+
+## Authorization: `get_tenants`
+
+Which tenants a user may see is decided in one place — the admin site's
+`get_tenants` hook. The default returns all tenants:
+
+```python
+class CustomAdminSite(AdminSite):
+    def get_tenants(self, tenant_model, **kwargs):
+        # The single authorization hook: the tenant selector and every
+        # data query both go through it.
+        user = kwargs.get("request").user
+        return tenant_model.objects.filter(members=user)
+```
+
+The hook feeds the tenant selector in the interface, so users can only choose
+tenants they may work in — and the same list authorizes the API.
+
+## Admin sites
+
+The admin site itself is customizable: subclass `AdminSite`, override its
+hooks (tenants, thumbnails, media serializer fields, dashboard, extensions)
+and point the [`ADMIN_SITE` setting](/docs/settings#admin_site) at your
+instance.

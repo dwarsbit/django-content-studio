@@ -1,0 +1,98 @@
+# ⚡ The CRUD API
+
+Every registered model gets a set of Django REST Framework endpoints under
+`api/`, generated at startup — no serializers, views or URLs to write.
+
+```
+GET    /api/content/<app_label.model>          list (paginated)
+POST   /api/content/<app_label.model>          create
+GET    /api/content/<app_label.model>/<id>    retrieve
+PUT    /api/content/<app_label.model>/<id>    full update
+PATCH  /api/content/<app_label.model>/<id>    partial update
+DELETE /api/content/<app_label.model>/<id>    delete
+
+POST   /api/content/<app_label.model>/relations/<field>   related object search
+GET    /api/content/<app_label.model>/<id>/components/<component_id>
+```
+
+The endpoints are a first-class API: the React interface is their most
+demanding consumer, but scripts and integrations are welcome to use them too.
+
+## Pagination
+
+List endpoints paginate with a read-friendly envelope:
+
+```json
+{
+  "pagination": { "count": 42, "current": 1, "pages": 3 },
+  "results": [ /* ... */ ]
+}
+```
+
+`limit` sets the page size (capped at 100), `page` the page number. Without an
+explicit `ordering` the results are ordered by the admin's `ordering` option,
+falling back to the primary key — pages are always stable.
+
+## Filtering
+
+Filtering is declared, not permissive: the model admin's `list_filter` defines
+which fields are filterable, mirroring the Django admin. Everything else is
+rejected with a 400.
+
+```
+GET /api/content/blog.article?status=published
+```
+
+Conventions on top of plain Django lookups:
+
+- `~field=value` excludes (`field != value`)
+- `field=1,2` filters on multiple values (repeated `field=1&field=2` works
+  too)
+- `field__isnull=true` checks for empty values
+- Traversing into related fields (`author__email=...`) is not allowed — only
+  lookups on the declared field itself
+
+## Search and ordering
+
+`?search=` searches the admin's `search_fields` (the same fields the search
+box uses). `?ordering=field` sorts ascending, `?ordering=-field` descending —
+restricted to the admin's `sortable_by` when set.
+
+## Singletons
+
+For [singleton](/docs/content/registering-models#singletons) models the list
+URL acts as the detail URL: it retrieves the single object (404 while none
+exists), accepts `POST` to create the first one and `PATCH` for partial
+updates.
+
+## Related object search
+
+Foreign keys and many-to-manies search their options through the relations
+endpoint. It requires view permission on the related model, and searches the
+related admin's `search_fields` when defined:
+
+```
+POST /api/content/blog.article/relations/author
+{"search": "lene"}
+```
+
+## Inlines
+
+Inline child models get endpoints under
+`api/inlines/<parent-model>/<inline-model>/`. Inline lists require the parent
+filter (`?<fk>=<id>` or `?<fk>_id=<id>` — the interface always sends it), and
+creates and updates validate that the referenced parent is visible to the
+user.
+
+## Audit stamps
+
+Creates and updates maintain the audit attributes when your models define
+them (all names configurable, see
+[settings](/docs/settings)):
+
+- `created_by` — set to the creating user on create
+- `edited_by` / `edited_at` — stamped on update with a targeted save, so
+  concurrent edits are not lost
+
+Every create, update and delete also writes a `LogEntry` record, which feeds
+the [dashboard activity log](/docs/dashboard).

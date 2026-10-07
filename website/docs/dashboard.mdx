@@ -1,0 +1,67 @@
+---
+sidebar_position: 6
+---
+
+# 📊 Dashboard
+
+The admin site's dashboard is composed in Python. Assign a `Dashboard` to the
+admin site and declare widgets:
+
+```python
+# settings.py
+from content_studio.dashboard import Dashboard
+from content_studio.dashboard.statistic import StatisticWidget
+
+from myproject.dashboard import ArticlesWidget, RecentContentWidget
+
+
+CONTENT_STUDIO = {
+    "ADMIN_SITE": "myproject.admin.content_studio_site",
+    ...
+}
+```
+
+```python
+# myproject/admin.py
+from content_studio.admin import AdminSite
+from content_studio.dashboard import Dashboard
+from content_studio.dashboard.activity_log import ActivityLogWidget
+from content_studio.dashboard.content_list import ContentListWidget
+
+
+class CustomAdminSite(AdminSite):
+    dashboard = Dashboard(
+        widgets=[
+            ArticlesWidget(),
+            RecentContentWidget(),
+            ActivityLogWidget(),
+            ContentListWidget(),
+        ]
+    )
+
+
+content_studio_site = CustomAdminSite()
+```
+
+Every widget implements `get_data(request)` and returns plain data or a DRF
+serializer instance. `col_span` controls the widget's width in the grid.
+
+## Built-in widgets
+
+- **`StatisticWidget`** — one number with a title, prefix/suffix and a trend
+  indicator. Implement `get_data` to compute the value.
+- **`ContentListWidget`** — a titled list of content links; return title,
+  description and content items (model, id, title).
+- **`ActivityLogWidget`** — the latest five `LogEntry` records (the audit
+  trail written by the CRUD API), ready to use without configuration.
+- **`ScheduledTasksWidget`** — status of scheduled tasks (title, next run,
+  duration, status); implement `get_data` with your task runner.
+- **`SpacingWidget(col_span)`** — a spacer for grid tuning.
+
+## Widget identity
+
+Widget data is fetched through `api/dashboard/widgets/<widget_id>` — IDs
+derive deterministically from the widget's class and name, so every worker
+agrees on them. Widgets of the same class and name need an explicit
+`widget_id` to disambiguate; duplicates are rejected at startup with a clear
+error.

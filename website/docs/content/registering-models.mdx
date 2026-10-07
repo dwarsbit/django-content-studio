@@ -1,0 +1,96 @@
+# 📋 Registering models
+
+Models are registered with the `@register` decorator — the same shape as the
+Django admin — on a `ModelAdmin` subclass:
+
+```python
+from content_studio import register
+from content_studio.admin import ModelAdmin
+
+
+@register(Article)
+class ArticleAdmin(ModelAdmin):
+    list_display = ["title", "status", "published_at"]
+```
+
+`@register` accepts multiple models, and `content_studio.display` is an alias
+for Django's `@display` decorator for calculated list columns:
+
+```python
+from content_studio import display, register
+
+
+@register(Article)
+class ArticleAdmin(ModelAdmin):
+    list_display = ["title", "word_count"]
+
+    @display(description="Words")
+    def word_count(self, obj):
+        return len(obj.body.split())
+```
+
+:::note
+`register` and `display` are exposed lazily: `from content_studio import
+register` works anywhere in your code, without importing the admin machinery
+before Django is ready.
+:::
+
+## ModelAdmin options
+
+The familiar Django admin options drive the list view:
+
+| Option | Effect |
+|--------|--------|
+| `list_display` | Columns of the list view (also the fields the list endpoint returns) |
+| `list_filter` | Filterable fields in the list view — the API only allows filtering on these |
+| `search_fields` | Fields searched by the search box |
+| `sortable_by` | Columns the user may sort on |
+| `list_per_page` | Page size (default 20) |
+| `list_description` | Description below the model name on list pages |
+| `ordering` | Default ordering of list endpoints (falls back to `pk` for stable pagination) |
+| `icon` | Icon shown in the main menu |
+
+## Singletons
+
+Settings-style models with a single row declare `is_singleton` on the admin:
+
+```python
+@register(SiteSettings)
+class SiteSettingsAdmin(ModelAdmin):
+    is_singleton = True
+    edit_main = ["site_name", "tagline"]
+```
+
+Singletons skip the list view: the list endpoint acts as the object's detail
+endpoint, creating is only allowed while no object exists, deletion is not
+offered, and `PATCH` performs a partial update.
+
+:::note
+As a fallback for models that carry a model-level `is_singleton` marker (for
+example [Django Blueprint](/docs/blueprint-integration)'s `SingletonModel`),
+that marker is honored too — a concrete *field* named `is_singleton` is
+ignored.
+:::
+
+## Inlines
+
+Related child models edit inside their parent's edit view. Declare them with
+the inline classes:
+
+```python
+from content_studio.admin import ModelAdmin, StackedInline
+
+
+class ReviewInline(StackedInline):
+    model = Review
+
+
+@register(Article)
+class ArticleAdmin(ModelAdmin):
+    inlines = [ReviewInline]
+```
+
+Inline endpoints live under `api/inlines/<parent-model>/<inline-model>/` and
+enforce their parent context: lists must be filtered by the parent (which the
+interface always does), and inline objects cannot be attached to a parent the
+user cannot see. See [the CRUD API](/docs/api/crud).

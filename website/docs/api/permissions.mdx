@@ -1,0 +1,68 @@
+# 🛡️ Permissions
+
+The generated API enforces the same permission hooks the Django admin calls.
+There is nothing new to learn: a user's Django model permissions gate access,
+and custom `ModelAdmin` hooks can restrict it further — per object.
+
+## Model-level permissions
+
+Requests are checked against the model admin's permission methods:
+
+| Method | Default behavior |
+|--------|------------------|
+| `has_view_permission(request)` | Django's `view` permission |
+| `has_add_permission(request)` | Django's `add` permission |
+| `has_change_permission(request)` | Django's `change` permission |
+| `has_delete_permission(request)` | Django's `delete` permission |
+
+A staff user needs the matching Django permission on the model — superusers
+have them all. Endpoints answer 401/403 when a check fails.
+
+## Object-level permissions
+
+The per-object variants are called for retrieve, update and delete requests:
+
+```python
+@register(Article)
+class ArticleAdmin(ModelAdmin):
+    def has_view_permission(self, request, obj=None):
+        if obj is None:
+            return super().has_view_permission(request)
+        # Editors only see their own articles:
+        return obj.author_id == request.user.id or request.user.is_superuser
+```
+
+By default the object-level variants fall back to the model-level check, so
+behavior out of the box matches the classic admin: with the `view` permission
+a user can retrieve any object of the model. Override the hooks to restrict
+access per object — the checks are enforced on every endpoint.
+
+The same hooks protect related objects: the [relations endpoint](/docs/api/crud#related-object-search)
+requires view permission on the *related* model, and inline objects cannot be
+attached to a parent the user cannot see.
+
+## Login throttling
+
+Login attempts are rate limited per IP; the default is 10 per minute. Change
+or disable it with the `LOGIN_THROTTLE_RATE` setting:
+
+```python
+CONTENT_STUDIO = {
+    "LOGIN_THROTTLE_RATE": "5/min",  # or None to disable
+}
+```
+
+:::note
+The limit is enforced through the cache. With the default per-process cache
+every worker counts separately — configure a shared cache (Redis, Memcached)
+for the full limit in multi-worker deployments.
+:::
+
+## What is deliberately not included
+
+- **Session invalidation after a password reset.** JWT access tokens remain
+  valid until they expire. Token blacklisting is planned for the auth
+  hardening release.
+- **Field-level permissions.** The serializer exposes the model's fields;
+  restrict with a custom serializer or keep sensitive data out of admin
+  models.

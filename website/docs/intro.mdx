@@ -1,0 +1,57 @@
+---
+sidebar_position: 1
+---
+
+# 🎯 Introduction
+
+Django Content Studio is a modern, flexible alternative to the Django admin:
+a React interface on top of an auto-generated [Django REST Framework](https://www.django-rest-framework.org/) API. Register a model, and it becomes
+manageable — with list views, search, filtering, a widget-based editor,
+inlines, a dashboard and a media library.
+
+## What you get
+
+- **Any plain Django model works.** Like the classic Django admin, Content
+  Studio brings no models of its own. It is an admin, not a CMS — there is
+  nothing to buy into.
+- **An auto-generated CRUD API** for every registered model: pagination, search,
+  filtering and ordering, secured by the same permission hooks the Django
+  admin calls — including per-object checks.
+- **A widget-based editor.** Fields render with dedicated widgets for dates,
+  rich text, tags, media, JSON with a schema and more, and edit views are
+  laid out with form sets and field layouts.
+- **A composable dashboard** with statistics, content lists, an activity log
+  and scheduled task widgets you declare in Python.
+- **A media library** — folders, uploads and crops — pointed at whichever
+  media model you configure.
+- **Multi-tenancy** built in: one header scopes every query, one hook decides
+  which tenants a user may see.
+
+## What it is not
+
+Content Studio does not bring content models, and it does not render your
+site. It manages the models you already have. [Django Blueprint](https://dwarsbit.github.io/django-blueprint/) pairs well with it — its fields
+get dedicated widgets and its media library plugs straight in — but Blueprint
+is an optional integration, never a requirement.
+
+## Requirements
+
+- Python 3.12+
+- Django 5.2 or 6.0
+- Django REST Framework 3.16+
+- djangorestframework-simplejwt 5+
+
+## How it relates to the dwarsbit packages
+
+- **[Django Headless](https://djangoheadless.org)** exposes models as a REST API for your own
+  frontend; Content Studio generates its API for its own React interface.
+  Same ideas, different consumers.
+- **[Django Blueprint](https://dwarsbit.github.io/django-blueprint/)** provides common content
+  models and fields. Content Studio recognizes Blueprint fields when
+  installed — see [Blueprint integration](/docs/blueprint-integration).
+
+## Next steps
+
+Start with [installation](/docs/getting-started), then read about
+[registering models](/docs/content/registering-models) or browse the
+[API documentation](/docs/api/crud).

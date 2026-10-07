@@ -1,0 +1,99 @@
+---
+sidebar_position: 2
+---
+
+# 🚀 Getting started
+
+## Install the package
+
+```bash
+pip install django-content-studio
+```
+
+## Configure Django
+
+Add Content Studio and Django REST Framework to `INSTALLED_APPS`. Content
+Studio builds its API from models registered with the Django admin, so
+`django.contrib.admin` must come **before** `content_studio`:
+
+```python
+# settings.py
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "content_studio",
+    # ... your apps
+]
+```
+
+Mount the interface at any prefix — `admin/` is the conventional choice:
+
+```python
+# urls.py
+from django.urls import include, path
+
+urlpatterns = [
+    path("admin/", include("content_studio.urls")),
+    # ... your urls
+]
+```
+
+Every URL under the prefix that does not start with `api/` serves the React
+interface; everything under `api/` is the generated API.
+
+## Register a model
+
+```python
+# apps/blog/admin.py
+from django.db import models
+from content_studio import register
+from content_studio.admin import ModelAdmin
+
+
+class Article(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+
+    title = models.CharField(max_length=200)
+    body = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.DRAFT
+    )
+
+    def __str__(self):
+        return self.title
+
+
+@register(Article)
+class ArticleAdmin(ModelAdmin):
+    list_display = ["title", "status"]
+    list_filter = ["status"]
+    search_fields = ["title"]
+```
+
+That's it. 🎉 Start the development server and open `/admin/`: the article
+appears in the menu, with a list view (searchable, filterable) and an edit
+view rendered from the model's fields.
+
+## Log in
+
+Content Studio authenticates through JSON Web Tokens. By default the
+`UsernamePasswordBackend` is enabled: log in with the username and password of
+any staff user, exactly like the Django admin. Custom login backends and
+throttling are covered under [authentication](/docs/authentication).
+
+## Where to go next
+
+- [Registering models](/docs/content/registering-models) — every `ModelAdmin`
+  option, singletons and inlines.
+- [The CRUD API](/docs/api/crud) — endpoints, filtering and the pagination
+  envelope.
+- [Widgets and forms](/docs/forms/widgets) — dedicated field editors and
+  custom layouts.
+- [Settings reference](/docs/settings) — every `CONTENT_STUDIO` option.

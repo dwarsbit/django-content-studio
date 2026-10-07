@@ -1,0 +1,74 @@
+# 🧱 Form sets and layouts
+
+Edit views are laid out with a small composition API in `content_studio.form`.
+Leave `edit_main` unset and the editor renders the model's fields in
+declaration order; set it and you control the layout.
+
+```python
+from content_studio.form import Field, FieldLayout, FormSet
+
+
+@register(Article)
+class ArticleAdmin(ModelAdmin):
+    edit_main = [
+        FormSet(
+            title="Content",
+            description="The article itself",
+            fields=[
+                "title",
+                Field("status", col_span=1),
+                Field("body", col_span=3),
+            ],
+        ),
+    ]
+    edit_sidebar = ["published_at", "rating"]
+```
+
+## Building blocks
+
+- **`Field(name, col_span=1, label=None, readonly=False)`** — one model field.
+  Strings are shorthand for `Field(name)`.
+- **`FieldLayout(fields=[...], columns=1)`** — a field group rendered in `columns`
+  columns.
+- **`FormSet(title, description, fields)`** — a titled block of fields; the
+  primary grouping in the main area.
+- **`FormSetGroup(label, formsets=[...])`** — groups form sets; a list of form
+  sets is wrapped automatically.
+
+A list of plain fields is wrapped in a form set automatically, and a list of
+form sets in a group — so simple layouts stay simple.
+
+## Sidebar
+
+`edit_sidebar` works the same way and renders in the narrower sidebar
+column. Fields set as `readonly` display their value without an input.
+
+## Components
+
+Edit views can carry interactive components — currently links and buttons,
+pointing at anything from a "view on site" button to an external editor.
+
+```python
+from content_studio.form import ButtonLink
+
+
+class ViewSiteLink(ButtonLink):
+    component_type = "LinkButton"
+    label = "View on site"
+    icon = "external-link"
+    copy = False
+
+    def get_url(self, obj, request):
+        return obj.get_absolute_url()
+
+
+@register(Article)
+class ArticleAdmin(ModelAdmin):
+    edit_sidebar = ["published_at", ViewSiteLink()]
+```
+
+Subclass `Component` for fully custom behavior: implement `handle_request(obj,
+request)` and the component gets its own API endpoint. Components are looked
+up by ID, and IDs derive deterministically from the class and its
+`get_id_parts()` — pass an explicit `component_id` (a UUID) when two
+components of the same class share a label.

@@ -1,0 +1,8 @@
+{
+  "label": "Content",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Registering and configuring models in Content Studio."
+  }
+}

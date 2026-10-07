@@ -1,0 +1,44 @@
+---
+sidebar_position: 10
+---
+
+# 🔌 Extensions
+
+Extensions add external things to the interface without building frontend
+code: menu links and full pages rendered in an iframe.
+
+```python
+from content_studio.admin import AdminSite
+from content_studio.extensions import IFramePage, MainMenuLink
+
+
+class CustomAdminSite(AdminSite):
+    extensions = [
+        MainMenuLink(
+            url="https://plausible.io/myproject",
+            label="Analytics",
+            icon="pi-chart-line",
+        ),
+        IFramePage(
+            path="reports/",
+            iframe_url="https://metabase.myproject.com/dashboard/1",
+        ),
+    ]
+```
+
+## MainMenuLink
+
+A link in the studio's main menu — `url`, `label`, an `icon`, an optional
+`color` and a `weight` for ordering.
+
+## IFramePage
+
+A studio route that renders any web page in an iframe: `path` is the route
+under the studio prefix, `iframe_url` the page.
+
+## Identity
+
+Extensions are identified by an ID derived from their class and defining
+properties (`get_id_parts()`), so every worker agrees on them. Pass an
+explicit `extension_id` (a UUID) when two extensions share their parts —
+duplicates are rejected at startup with a clear error.
