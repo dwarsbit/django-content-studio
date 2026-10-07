@@ -1,6 +1,7 @@
 """
 Django settings for testing content_studio.
 """
+
 import os
 from pathlib import Path
 
@@ -19,6 +20,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "content_studio",
+    "content_studio.contrib.password_reset",
 ]
 
 MIDDLEWARE = [
@@ -79,6 +81,9 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+
+# Keep test emails out of SMTP
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Content Studio settings

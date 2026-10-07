@@ -7,8 +7,8 @@ from .paginators import ContentPagination
 from .settings import cs_settings
 from .utils import (
     is_runserver,
-    get_tenant_field_name,
     get_latest_version,
+    get_tenant_scoped_queryset,
     normalize_version,
 )
 
@@ -127,14 +127,7 @@ class DjangoContentStudioConfig(AppConfig):
                 return Serializer
 
             def get_queryset(self):
-                tenant_model = cs_settings.TENANT_MODEL
-                tenant_id = self.request.headers.get("x-dcs-tenant", None)
-                field_name = get_tenant_field_name(self._model)
-
-                if tenant_model and tenant_id and field_name:
-                    return self._model.objects.filter(**{f"{field_name}_id": tenant_id})
-
-                return self._model.objects.all()
+                return get_tenant_scoped_queryset(self.request, self._model)
 
         if parent:
             prefix = f"api/inlines/{parent._meta.label_lower}/{model._meta.label_lower}"

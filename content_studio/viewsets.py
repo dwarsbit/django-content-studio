@@ -12,15 +12,15 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import JSONParser
-from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from .filters import LookupFilter
+from .permissions import ModelAdminPermissions
 from .serializers import RelatedItemSerializer
 from .settings import cs_settings
-from .utils import get_tenant_field_name
+from .utils import get_tenant_field_name, validate_tenant_access
 
 
 class BaseModelViewSet(ModelViewSet):
@@ -28,7 +28,7 @@ class BaseModelViewSet(ModelViewSet):
     is_singleton = False
     parser_classes = [JSONParser]
     renderer_classes = [JSONRenderer]
-    permission_classes = [DjangoModelPermissions]
+    permission_classes = [ModelAdminPermissions]
     filter_backends = [SearchFilter, OrderingFilter, LookupFilter]
 
     def __init__(self, *args, **kwargs):
@@ -59,6 +59,7 @@ class BaseModelViewSet(ModelViewSet):
         attrs = {}
 
         if tenant_model and tenant_id and tenant_field_name:
+            validate_tenant_access(self.request, tenant_id)
             attrs[f"{tenant_field_name}_id"] = tenant_id
 
         if hasattr(model, cs_settings.CREATED_BY_ATTR):

@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
@@ -13,6 +15,32 @@ from .serializers import (
     CodeValidationSerializer,
     PasswordResetSubmissionSerializer,
 )
+
+logger = logging.getLogger("content_studio.password_reset")
+
+
+def get_valid_code(email, code):
+    """
+    Return the password reset code for the email when the code matches.
+
+    Validation is bound to the email so failed attempts can be counted
+    on the code record: after MAX_ATTEMPTS wrong codes the code is
+    deleted and a new one has to be requested. Unknown emails and wrong
+    codes both raise the same error, so the endpoint does not reveal
+    whether a code exists for an email.
+    """
+    existing = PasswordResetCode.objects.filter(email=email).first()
+
+    if not existing or existing.code != code:
+        if existing:
+            existing.register_failed_attempt()
+        raise ValidationError("Invalid code.")
+
+    if existing.expired:
+        existing.delete()
+        raise ValidationError("Expired code.")
+
+    return existing
 
 
 class PasswordResetRequestView(APIView):
@@ -39,9 +67,9 @@ class PasswordResetRequestView(APIView):
 
         try:
             self.send_email(reset)
-        except Exception as e:
+        except Exception:
+            logger.exception("Could not send password reset email to %s", email)
             reset.delete()
-            print(e)
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -62,16 +90,9 @@ class CodeValidationView(APIView):
 
         serializer.is_valid(raise_exception=True)
 
-        code = serializer.validated_data["code"]
-
-        existing = PasswordResetCode.objects.filter(code=code).first()
-
-        if not existing:
-            raise ValidationError("Invalid code.")
-
-        if existing.expired:
-            existing.delete()
-            raise ValidationError("Expired code.")
+        get_valid_code(
+            serializer.validated_data["email"], serializer.validated_data["code"]
+        )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -84,24 +105,16 @@ class PasswordResetSubmissionView(APIView):
 
         serializer.is_valid(raise_exception=True)
 
-        code = serializer.validated_data["code"]
         email = serializer.validated_data["email"]
         password = serializer.validated_data["password"]
 
-        existing = PasswordResetCode.objects.filter(code=code, email=email).first()
-
-        if not existing:
-            raise ValidationError("Invalid code.")
-
-        if existing.expired:
-            existing.delete()
-            raise ValidationError("Expired code.")
+        existing = get_valid_code(email, serializer.validated_data["code"])
 
         user_model = get_user_model()
         user = user_model.objects.filter(email=email).first()
 
         if not user:
-            raise ValidationError("Invalid email.")
+            raise ValidationError("Invalid code.")
 
         user.set_password(password)
 
@@ -111,8 +124,8 @@ class PasswordResetSubmissionView(APIView):
 
         try:
             self.send_email(email)
-        except Exception as e:
-            print(e)
+        except Exception:
+            logger.exception("Could not send password reset confirmation to %s", email)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 

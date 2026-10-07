@@ -126,6 +126,54 @@ def get_tenant_field_name(model):
         )
 
 
+def validate_tenant_access(request, tenant_id):
+    """
+    Validate an x-dcs-tenant value against AdminSite.get_tenants: the
+    single authorization hook for tenant access, also used to populate
+    the frontend's tenant selector.
+
+    Raises PermissionDenied when the user may not access the tenant.
+    """
+    from rest_framework.exceptions import PermissionDenied
+
+    tenant_model = cs_settings.TENANT_MODEL
+
+    if not tenant_model:
+        return
+
+    admin_site = cs_settings.ADMIN_SITE
+    tenants = admin_site.get_tenants(tenant_model=tenant_model, request=request)
+
+    if not tenants.filter(pk=tenant_id).exists():
+        raise PermissionDenied("Unknown or unauthorized tenant.")
+
+
+def get_tenant_scoped_queryset(request, model, queryset=None):
+    """
+    Return the queryset for a model, scoped to the request's tenant.
+
+    - Models without a tenant field are unaffected: all rows.
+    - Tenant-scoped models fail closed: without an x-dcs-tenant header
+      no rows are returned, and the header's tenant must be in
+      AdminSite.get_tenants.
+    """
+    tenant_model = cs_settings.TENANT_MODEL
+    field_name = get_tenant_field_name(model)
+    qs = queryset if queryset is not None else model.objects.all()
+
+    if not tenant_model or not field_name:
+        return qs
+
+    tenant_id = request.headers.get("x-dcs-tenant", None)
+
+    if not tenant_id:
+        return qs.none()
+
+    validate_tenant_access(request, tenant_id)
+
+    return qs.filter(**{f"{field_name}_id": tenant_id})
+
+
 def normalize_version(version: str) -> str:
     """Normalize version strings for comparison (e.g., '1.0.0b6' -> '1.0.0-beta.6')"""
     if not version:

@@ -7,6 +7,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 class CodeValidationSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=6)
+    email = serializers.EmailField()
 
 
 class PasswordResetSubmissionSerializer(serializers.Serializer):

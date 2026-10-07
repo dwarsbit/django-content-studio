@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from rest_framework.exceptions import ParseError
 from rest_framework.filters import BaseFilterBackend
@@ -20,16 +21,29 @@ class LookupFilter(BaseFilterBackend):
 
     NON_FILTER_FIELDS = ["search", "limit", "page", "ordering"]
 
+    def get_allowed_fields(self, view):
+        """
+        Filterable fields are declared by the model admin's list_filter,
+        mirroring the Django admin. Only string entries count: list_filter
+        may also contain filter classes and (field, class) tuples.
+        """
+        admin_model = getattr(view, "_admin_model", None)
+        list_filter = getattr(admin_model, "list_filter", None) or []
+
+        return [entry for entry in list_filter if isinstance(entry, str)]
+
     def filter_queryset(self, request, queryset, view):
         """
         Build the queryset based on the query params and the view's model.
-        Only apply filters in list endpoints.
+        Only apply filters in list endpoints, and only on the fields the
+        model admin declared in list_filter.
         """
         if getattr(view, "action", None) == "list":
             try:
                 filter_kwargs, exclude_kwargs = self.get_filter_kwargs(
                     model_class=view.queryset.model,
                     query_params=request.query_params,
+                    allowed_fields=self.get_allowed_fields(view),
                 )
             except Exception as e:
                 raise ParseError(detail=f"Invalid filter parameters: {e}")
@@ -37,7 +51,10 @@ class LookupFilter(BaseFilterBackend):
 
         return queryset
 
-    def get_filter_kwargs(self, model_class, query_params):
+    def get_filter_kwargs(self, model_class, query_params, allowed_fields):
+        if not allowed_fields:
+            allowed_fields = []
+
         filter_kwargs = {}
         exclude_kwargs = {}
 
@@ -56,6 +73,23 @@ class LookupFilter(BaseFilterBackend):
             value = flatten([param.split(",") for param in value])
             # The first part of a key is considered the field name
             field_name = key.split("__")[0]
+
+            if field_name not in allowed_fields:
+                raise FieldDoesNotExist(
+                    f"Filtering on '{field_name}' is not allowed for this model; "
+                    "add it to the model admin's list_filter."
+                )
+
+            # Traversing into related fields is not allowed: only lookups
+            # registered on the declared field itself.
+            if "__" in key and key.split("__")[-1] not in field_lookups.get(
+                field_name, []
+            ):
+                raise FieldDoesNotExist(
+                    f"Filtering on '{key}' traverses into a related field; "
+                    "only lookups on the declared field are allowed."
+                )
+
             # Get the model field.
             field = model_class._meta.get_field(field_name)
             # Get the allowed lookups for this field.

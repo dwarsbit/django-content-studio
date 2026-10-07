@@ -58,6 +58,7 @@ export function ResetPassword() {
     async queryFn() {
       try {
         await http.post("/password-reset/code", {
+          email: searchParams.get("email"),
           code,
         });
         return true;
