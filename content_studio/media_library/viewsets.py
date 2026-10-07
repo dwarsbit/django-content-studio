@@ -1,4 +1,4 @@
-from rest_framework import status, exceptions
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.parsers import JSONParser, MultiPartParser
@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from content_studio.paginators import ContentPagination
+from content_studio.exceptions import NotConfigured
 from content_studio.settings import cs_settings
 from .serializers import build_media_folder_serializer, build_media_item_serializer
 
@@ -37,9 +38,7 @@ class MediaLibraryViewSet(ModelViewSet):
             self._media_model = cs_settings.MEDIA_LIBRARY_MODEL
 
         if not self._media_model:
-            raise exceptions.MethodNotAllowed(
-                method="GET", detail="Media model not defined."
-            )
+            raise NotConfigured("The media library model is not defined.")
 
         folder = self.request.query_params.get("folder", None)
         search = self.request.query_params.get("search", None)
@@ -56,9 +55,7 @@ class MediaLibraryViewSet(ModelViewSet):
         if self._media_model:
             return build_media_item_serializer(self._media_model)
 
-        raise exceptions.MethodNotAllowed(
-            method="GET", detail="Media model not defined."
-        )
+        raise NotConfigured("The media library model is not defined.")
 
 
 class MediaFolderViewSet(ModelViewSet):
@@ -85,9 +82,7 @@ class MediaFolderViewSet(ModelViewSet):
             self._folder_model = cs_settings.MEDIA_LIBRARY_FOLDER_MODEL
 
         if not self._folder_model:
-            raise exceptions.MethodNotAllowed(
-                method="GET", detail="Media folder model not defined."
-            )
+            raise NotConfigured("The media folder model is not defined.")
 
         parent = self.request.query_params.get("parent", None)
         qs = self._folder_model.objects.all()
@@ -104,9 +99,7 @@ class MediaFolderViewSet(ModelViewSet):
         if self._folder_model:
             return build_media_folder_serializer(self._folder_model)
 
-        raise exceptions.MethodNotAllowed(
-            method="GET", detail="Media folder model not defined."
-        )
+        raise NotConfigured("The media folder model is not defined.")
 
     @action(methods=["get"], detail=False, url_path="path")
     def get(self, request, *args, **kwargs):
@@ -115,9 +108,7 @@ class MediaFolderViewSet(ModelViewSet):
             self._folder_model = cs_settings.MEDIA_LIBRARY_FOLDER_MODEL
 
         if not self._folder_model:
-            raise exceptions.MethodNotAllowed(
-                method="GET", detail="Folder model not defined."
-            )
+            raise NotConfigured("The media folder model is not defined.")
 
         folder_id = request.query_params.get("folder", None)
 
@@ -127,7 +118,11 @@ class MediaFolderViewSet(ModelViewSet):
         try:
             folder = self._folder_model.objects.get(pk=folder_id)
             path = []
-            while folder:
+            seen = set()
+            while folder and folder.pk not in seen:
+                # seen guards against cyclic folder data: a loop would
+                # otherwise never terminate.
+                seen.add(folder.pk)
                 path.insert(0, folder)
                 folder = folder.parent
 

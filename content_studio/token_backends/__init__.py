@@ -35,5 +35,7 @@ class TokenBackendManager:
         content_studio_router.register(
             f"api/tokens/{self.active_backend.__name__.lower().replace('backend', '')}",
             self.active_backend.view_set,
-            basename="content_studio_token_backend",
+            basename=(
+                f"content_studio_token_backend_{self.active_backend.__name__.lower()}"
+            ),
         )

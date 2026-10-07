@@ -7,13 +7,13 @@ from django.views.decorators.cache import never_cache
 from django.views.generic import TemplateView
 from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from . import __version__
+from .exceptions import NotConfigured
 from .admin import AdminSerializer, ModelGroup
 from .models import ModelSerializer
 from .serializers import get_session_user_serializer
@@ -158,7 +158,7 @@ class AdminApiViewSet(ViewSet):
         tenant_model = cs_settings.TENANT_MODEL
 
         if not tenant_model:
-            raise MethodNotAllowed("GET", "Tenant model not defined.")
+            raise NotConfigured("The tenant model is not defined.")
 
         class TenantSerializer(serializers.ModelSerializer):
             class Meta:

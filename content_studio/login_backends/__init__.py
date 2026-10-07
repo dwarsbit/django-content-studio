@@ -12,10 +12,15 @@ class LoginBackendManager:
     def __init__(self, **kwargs):
         self.active_backends = cs_settings.LOGIN_BACKENDS
 
-    def set_up_router(self):
+    def set_up_router(self, router=None):
+        if router is None:
+            router = content_studio_router
+
         for backend in self.active_backends:
-            content_studio_router.register(
+            router.register(
                 f"api/login/{backend.__name__.lower().replace('backend', '')}",
                 backend.view_set,
-                basename="content_studio_login_backend",
+                # Unique per backend: a shared basename would make the
+                # reverse name collide and the registration shadow itself.
+                basename=f"content_studio_login_backend_{backend.__name__.lower()}",
             )

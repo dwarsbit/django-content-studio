@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -80,9 +81,20 @@ class BaseModelViewSet(ModelViewSet):
     def perform_update(self, serializer):
         instance = serializer.save()
 
+        # Stamp the editor with a targeted update: a full instance save
+        # would race with concurrent edits (lost updates).
+        stamp_fields = []
+
         if hasattr(instance, cs_settings.EDITED_BY_ATTR):
             setattr(instance, cs_settings.EDITED_BY_ATTR, self.request.user)
-            instance.save()
+            stamp_fields.append(cs_settings.EDITED_BY_ATTR)
+
+        if hasattr(instance, cs_settings.EDITED_AT_ATTR):
+            setattr(instance, cs_settings.EDITED_AT_ATTR, timezone.now())
+            stamp_fields.append(cs_settings.EDITED_AT_ATTR)
+
+        if stamp_fields:
+            instance.save(update_fields=stamp_fields)
 
         content_type = ContentType.objects.get_for_model(instance)
         LogEntry.objects.create(

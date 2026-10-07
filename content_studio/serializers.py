@@ -97,10 +97,11 @@ class ContentSerializer(serializers.ModelSerializer):
 
 class RelatedItemSerializer(serializers.Serializer):
     """
-    Serializer for use in the relations endpoint.
+    Serializer for use in the relations endpoint. The id is PK-agnostic:
+    models are free to use integer or string primary keys.
     """
 
-    id = serializers.UUIDField()
+    id = serializers.CharField()
     __str__ = serializers.CharField()
 
 
