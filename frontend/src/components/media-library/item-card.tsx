@@ -135,7 +135,7 @@ export function ItemCard({
             try {
               await deleteMedia(item.id);
               toast.success(t("common.deleted"), { id });
-            } catch (e: any) {
+            } catch (e: unknown) {
               toast.error(getErrorMessage(e), { id });
             }
           }}

@@ -21,7 +21,7 @@ export function ForgotPassword() {
         await http.post("/password-reset/request", { email });
         navigate(`/reset-password?email=${email}`);
       } catch (e: unknown) {
-        throw new Error(getErrorMessage(e));
+        throw new Error(getErrorMessage(e), { cause: e });
       }
     },
   });

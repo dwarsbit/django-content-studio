@@ -1,17 +1,19 @@
-import { useMemo } from "react";
+import { type ComponentType, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useDiscover } from "@/hooks/use-discover";
 import { useMe } from "@/hooks/use-me";
 import { cn, getTimeOfDay } from "@/lib/utils";
-import { DashboardWidgetType } from "@/types";
+import { type DashboardWidget, DashboardWidgetType } from "@/types";
 
 import { ActivityLogWidget } from "./_components/activity-log-widget";
 import { ContentListWidget } from "./_components/content-list-widget";
 import { ScheduledTasksWidget } from "./_components/scheduled-tasks-widget";
 import { StatisticWidget } from "./_components/statistic-widget";
 
-const WIDGET_COMPONENTS: Record<any, any> = {
+const WIDGET_COMPONENTS: Partial<
+  Record<DashboardWidgetType, ComponentType<{ widget: DashboardWidget }>>
+> = {
   [DashboardWidgetType.ActivityLogWidget]: ActivityLogWidget,
   [DashboardWidgetType.StatisticWidget]: StatisticWidget,
   [DashboardWidgetType.ScheduledTasksWidget]: ScheduledTasksWidget,

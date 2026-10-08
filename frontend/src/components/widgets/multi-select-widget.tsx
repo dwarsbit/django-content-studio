@@ -1,7 +1,7 @@
 import * as R from "ramda";
 
 import { MultiSelect } from "@/components/ui/multi-select";
-import type { ModelField } from "@/types";
+import type { ModelField, WidgetProps } from "@/types";
 
 export function MultiSelectWidget({
   field,
@@ -9,9 +9,7 @@ export function MultiSelectWidget({
   onChange,
 }: {
   field: ModelField;
-  onChange(value: any): void;
-  value?: any;
-}) {
+} & WidgetProps<string[]>) {
   const options = R.fromPairs(field.choices ?? []);
 
   return (

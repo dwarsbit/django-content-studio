@@ -42,7 +42,7 @@ export function ResetPassword() {
         toast.success(t("reset_password.success_message"));
         navigate("/login", { replace: true });
       } catch (e: unknown) {
-        throw new Error(getErrorMessage(e));
+        throw new Error(getErrorMessage(e), { cause: e });
       }
     },
   });
@@ -63,7 +63,7 @@ export function ResetPassword() {
         });
         return true;
       } catch (e: unknown) {
-        throw new Error(getErrorMessage(e));
+        throw new Error(getErrorMessage(e), { cause: e });
       }
     },
   });

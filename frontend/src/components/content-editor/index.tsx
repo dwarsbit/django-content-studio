@@ -7,7 +7,7 @@ import { Editor } from "./editor";
 export function ContentEditor() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [_, modelLabel, id] = location.hash.split(":");
+  const [, modelLabel, id] = location.hash.split(":");
 
   return (
     <Dialog

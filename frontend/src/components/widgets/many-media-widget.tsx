@@ -4,22 +4,20 @@ import { PiImage, PiXBold } from "react-icons/pi";
 
 import { SelectDialog } from "@/components/media-library/select-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { ModelField } from "@/types";
+import type { MediaItem, ModelField, WidgetProps } from "@/types";
 
 export function ManyMediaWidget({
   value,
   field,
   onChange,
 }: {
-  value: any[];
   field: ModelField;
-  onChange: any;
-}) {
+} & WidgetProps<MediaItem[]>) {
   const { t } = useTranslation();
 
   return (
     <div className="grid grid-cols-4 gap-2">
-      {value?.map((item: any, idx) => (
+      {value?.map((item, idx) => (
         <div
           key={idx}
           className="aspect-square relative flex items-center shrink-0 group"
@@ -48,7 +46,9 @@ export function ManyMediaWidget({
 
       <SelectDialog
         multiple
-        onSelect={(v) => onChange?.([...(value ?? []), ...v])}
+        onSelect={(v) =>
+          onChange?.([...(value ?? []), ...(Array.isArray(v) ? v : [v])])
+        }
       >
         <button className="cursor-pointer aspect-square flex flex-col gap-1 items-center justify-center border border-dashed border-stone-300 hover:border-stone-400 text-stone-400 text-center text-sm font-medium rounded-md p-1">
           <PiImage className="size-6" />

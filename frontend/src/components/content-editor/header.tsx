@@ -87,7 +87,9 @@ export function Header({
                   onClick={async () => {
                     try {
                       await onSave();
-                    } catch (e) {}
+                    } catch {
+                      // Errors are already surfaced by the save flow.
+                    }
                   }}
                   isLoading={isSaving}
                 >

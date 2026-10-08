@@ -4,7 +4,6 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import type { ModelField } from "@/types";
 
 export function TagWidget({
-  field,
   value = [],
   onChange,
 }: {

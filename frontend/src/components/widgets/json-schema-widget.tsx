@@ -2,7 +2,7 @@ import * as R from "ramda";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ModelField } from "@/types";
+import type { ModelField, WidgetProps } from "@/types";
 
 export function JSONSchemaWidget({
   value,
@@ -10,9 +10,7 @@ export function JSONSchemaWidget({
   field,
 }: {
   field: ModelField;
-  onChange(value: any): void;
-  value?: any;
-}) {
+} & WidgetProps<Record<string, unknown>>) {
   const schema = field.json_schema ?? {};
 
   return schema.type === "object" ? (
@@ -22,7 +20,12 @@ export function JSONSchemaWidget({
           <Label className="font-normal mb-1.5">{props.verbose_name}</Label>
           <Input
             key={key}
-            value={value?.[key]}
+            value={
+              typeof value?.[key] === "string" ||
+              typeof value?.[key] === "number"
+                ? value?.[key]
+                : ""
+            }
             onChange={(e) => onChange(R.assoc(key, e.target.value, value))}
           />
         </div>

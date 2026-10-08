@@ -3,14 +3,9 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import type { WidgetProps } from "@/types";
 
-export function URLPathWidget({
-  value = "",
-  onChange,
-}: {
-  onChange(value: any): void;
-  value?: any;
-}) {
+export function URLPathWidget({ value = "", onChange }: WidgetProps<string>) {
   return (
     <div>
       <InputGroup>

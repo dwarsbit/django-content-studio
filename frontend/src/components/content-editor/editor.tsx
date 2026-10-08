@@ -26,7 +26,7 @@ export function Editor({
 }: {
   modelLabel: string;
   id?: string | null;
-  initialValues?: Record<string, any>;
+  initialValues?: Record<string, unknown>;
   onSave: VoidFunction;
   onClose: VoidFunction;
   onDelete?: VoidFunction;
@@ -47,7 +47,7 @@ function EditorForm({
 }: {
   model: Model;
   id?: string | null;
-  initialValues?: Record<string, any>;
+  initialValues?: Record<string, unknown>;
   onSave: VoidFunction;
   onClose: VoidFunction;
   onDelete?: VoidFunction;
@@ -74,6 +74,7 @@ function EditorForm({
     defaultValues: R.mergeDeepLeft(initialValues, defaultValues),
   });
 
+  // eslint-disable-next-line @tanstack/query/exhaustive-deps -- `initialized` is deliberately not part of the queryKey: the queryFn flips it, so including it would invalidate the entry on every fetch
   const { data: resource } = useQuery({
     enabled: !R.isNil(id) || isSingleton,
     retry: false,

@@ -34,7 +34,7 @@ export function EditFolder({
     try {
       await mutateAsync({ id: folder.id, name });
       onClose();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(getErrorMessage(e));
     }
   }, [folder.id, mutateAsync, name, onClose]);

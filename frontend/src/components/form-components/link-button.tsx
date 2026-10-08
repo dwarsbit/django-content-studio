@@ -22,7 +22,7 @@ export function LinkButton({
   const http = useHttp();
   const form = useFormContext();
   const id = form.watch("id");
-  const [_, copy] = useCopyToClipboard();
+  const [, copy] = useCopyToClipboard();
 
   const getLink = useCallback(async () => {
     const { data } = await http.get<{ url: string }>(

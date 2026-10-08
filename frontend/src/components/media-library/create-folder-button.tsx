@@ -34,7 +34,7 @@ export function CreateFolderButton({ parent }: { parent: string | null }) {
       await mutateAsync({ name, parent });
       setCreate(false);
       setName("");
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(getErrorMessage(e));
     }
   }, [mutateAsync, name, parent]);

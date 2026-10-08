@@ -142,6 +142,16 @@ export interface ModelField {
   multiple?: boolean;
 }
 
+/**
+ * Props shared by field widgets. The concrete value type depends on the
+ * field being edited, so every widget instantiates this with the type it
+ * handles; the widget registry passes values through as `unknown`.
+ */
+export interface WidgetProps<T> {
+  value?: T;
+  onChange(value: T): void;
+}
+
 export interface Resource {
   id: Id;
   __str__: string;
@@ -283,11 +293,31 @@ export interface ActivityLogEntry {
   };
 }
 
-export interface Extension<T> {
-  extension_id: string;
-  extension_type: ExtensionType;
-  config: T;
+export interface MainMenuLinkConfig {
+  url: string;
+  icon: string | null;
+  color: TailwindColor | null;
+  label: string;
 }
+
+export interface IFramePageConfig {
+  path: string;
+  iframe_url: string;
+}
+
+export interface MainMenuLinkExtension {
+  extension_id: string;
+  extension_type: ExtensionType.MainMenuLink;
+  config: MainMenuLinkConfig;
+}
+
+export interface IFramePageExtension {
+  extension_id: string;
+  extension_type: ExtensionType.IFramePage;
+  config: IFramePageConfig;
+}
+
+export type Extension = MainMenuLinkExtension | IFramePageExtension;
 
 export enum ExtensionType {
   MainMenuLink = "MainMenuLink",

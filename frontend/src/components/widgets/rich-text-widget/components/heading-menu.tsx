@@ -38,7 +38,9 @@ export function HeadingMenu() {
 
         if (nodeType.startsWith("heading")) {
           baseCommands
-            .setHeading({ level: Number(nodeType.at(-1)) as any })
+            .setHeading({
+              level: Number(nodeType.at(-1)) as 1 | 2 | 3 | 4 | 5 | 6,
+            })
             .run();
         }
         if (nodeType === "blockquote") {

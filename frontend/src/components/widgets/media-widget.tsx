@@ -6,7 +6,7 @@ import { PiFileBold, PiImage, PiXBold } from "react-icons/pi";
 import { SelectDialog } from "@/components/media-library/select-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import type { ModelField } from "@/types";
+import type { MediaItem, ModelField, WidgetProps } from "@/types";
 
 export function MediaWidget({
   field,
@@ -14,13 +14,21 @@ export function MediaWidget({
   onChange,
 }: {
   field: ModelField;
-  value: any;
-  onChange: any;
-}) {
+} & WidgetProps<MediaItem | MediaItem[] | null>) {
+  // The value shape follows `field.multiple`; the casts narrow at this
+  // single dispatch seam, where the runtime flag is the only discriminator.
   return field.multiple ? (
-    <MultipleMedia value={value} field={field} onChange={onChange} />
+    <MultipleMedia
+      value={value as MediaItem[] | undefined}
+      field={field}
+      onChange={onChange as (value: MediaItem[]) => void}
+    />
   ) : (
-    <SingleMedia value={value} field={field} onChange={onChange} />
+    <SingleMedia
+      value={(Array.isArray(value) ? value[0] : value) ?? null}
+      field={field}
+      onChange={onChange as (value: MediaItem | null) => void}
+    />
   );
 }
 
@@ -29,9 +37,9 @@ function SingleMedia({
   field,
   onChange,
 }: {
-  value: any;
+  value: MediaItem | null;
   field: ModelField;
-  onChange: any;
+  onChange: (value: MediaItem | null) => void;
 }) {
   const { t } = useTranslation();
 
@@ -63,7 +71,7 @@ function SingleMedia({
         <div className="flex gap-2">
           <SelectDialog
             multiple={!!field.multiple}
-            onSelect={(v) => onChange?.(v)}
+            onSelect={(v) => onChange?.(Array.isArray(v) ? (v[0] ?? null) : v)}
           >
             <Button variant="outline">
               {t("widgets.media_widget.select_media")}
@@ -92,15 +100,15 @@ function MultipleMedia({
   field,
   onChange,
 }: {
-  value: any[];
+  value?: MediaItem[];
   field: ModelField;
-  onChange: any;
+  onChange: (value: MediaItem[]) => void;
 }) {
   const { t } = useTranslation();
 
   return (
     <div className="grid grid-cols-4 gap-2">
-      {value?.map((item: any, idx) => (
+      {value?.map((item, idx) => (
         <div
           key={idx}
           className="aspect-square relative flex items-center shrink-0 group"
@@ -118,7 +126,7 @@ function MultipleMedia({
               className="absolute bg-white/50 rounded p-3 left-1/2 -translate-x-1/2 invisible group-hover:visible"
               onClick={(e) => {
                 e.preventDefault();
-                onChange?.(R.reject(R.whereEq({ id: item.id }), value));
+                onChange?.(R.reject(R.whereEq({ id: item.id }), value ?? []));
               }}
             >
               <PiXBold />
@@ -129,7 +137,9 @@ function MultipleMedia({
 
       <SelectDialog
         multiple={!!field.multiple}
-        onSelect={(v) => onChange?.([...(value ?? []), ...v])}
+        onSelect={(v) =>
+          onChange?.([...(value ?? []), ...(Array.isArray(v) ? v : [v])])
+        }
       >
         <button className="cursor-pointer aspect-square flex flex-col gap-1 items-center justify-center border border-dashed border-stone-300 hover:border-stone-400 text-stone-400 text-center text-sm font-medium rounded-md p-1">
           <PiImage className="size-6" />

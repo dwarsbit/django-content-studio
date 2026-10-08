@@ -24,6 +24,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useListMedia } from "@/hooks/use-list-media";
 import { useUpload } from "@/hooks/use-upload";
 import { cn } from "@/lib/utils";
+import type { MediaItem } from "@/types";
 
 export function SelectDialog({
   children,
@@ -32,7 +33,7 @@ export function SelectDialog({
 }: {
   children: React.ReactElement;
   multiple: boolean;
-  onSelect(v: any | any[]): void;
+  onSelect(v: MediaItem | MediaItem[]): void;
 }) {
   const { t } = useTranslation();
 
@@ -54,11 +55,11 @@ function SelectDialogContent({
   onSelect,
 }: {
   multiple: boolean;
-  onSelect(v: any | any[]): void;
+  onSelect(v: MediaItem | MediaItem[]): void;
 }) {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const [selection, setSelection] = useState<any[]>([]);
+  const [selection, setSelection] = useState<MediaItem[]>([]);
   const [page, setPage] = useState(1);
   const [folder, setFolder] = useState<string | null>(null);
   const { data } = useListMedia({ folder, page, filters: { search } });
@@ -70,8 +71,12 @@ function SelectDialogContent({
   return (
     <DropzoneArea
       onDrop={async (files) => {
-        const data = await handleUpload(files);
-        setSelection(multiple ? R.append(data) : R.always([data]));
+        const uploaded = (await handleUpload(files)).filter(
+          (item): item is MediaItem => !R.isNil(item),
+        );
+        setSelection((current) =>
+          multiple ? [...current, ...uploaded] : uploaded,
+        );
       }}
     >
       <div className={cn("mb-2", { invisible: search })}>
@@ -118,7 +123,7 @@ function SelectDialogContent({
             </div>
           ))}
 
-          {data?.results.map((item: any) => {
+          {data?.results.map((item) => {
             const isSelected = selection.some(R.whereEq({ id: item.id }));
 
             return (

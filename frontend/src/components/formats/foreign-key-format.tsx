@@ -10,11 +10,19 @@ import { useDiscover } from "@/hooks/use-discover";
 import { cn } from "@/lib/utils";
 import type { ModelField } from "@/types";
 
+function relatedLabel(value: object): string {
+  if (!("__str__" in value)) {
+    return String(value);
+  }
+  const str = value.__str__;
+  return str === null || str === undefined ? String(value) : String(str);
+}
+
 export function ForeignKeyFormat({
   value,
   field,
 }: {
-  value: any;
+  value: unknown;
   field?: ModelField;
 }) {
   const { data: discover } = useDiscover();
@@ -23,25 +31,27 @@ export function ForeignKeyFormat({
   const model = discover?.models.find(
     R.whereEq({ label: field?.related_model }),
   );
+  const label =
+    typeof value === "object" && value !== null ? relatedLabel(value) : null;
 
   return (
     <div className="flex items-center gap-1.5">
       {!isUser && model?.admin.icon && (
         <span className={cn(model.admin.icon, "text-gray-500")} />
       )}
-      {isUser && value && (
+      {isUser && Boolean(value) && (
         <Tooltip>
-          <TooltipContent>{value.__str__}</TooltipContent>
+          <TooltipContent>{label}</TooltipContent>
           <TooltipTrigger asChild>
             <Avatar className="size-6">
               <AvatarFallback className="text-xs">
-                {value.__str__.slice(0, 2).toUpperCase()}
+                {(label ?? "").slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
           </TooltipTrigger>
         </Tooltip>
       )}
-      {!isUser && (value ? (value.__str__ ?? String(value)) : "-")}
+      {!isUser && (value ? (label ?? String(value)) : "-")}
     </div>
   );
 }

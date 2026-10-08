@@ -76,7 +76,7 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
     try {
       await mutateAsync(values);
       onSave();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(getErrorMessage(e));
     }
   };

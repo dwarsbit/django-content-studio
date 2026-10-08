@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ModelField } from "@/types";
+import type { ModelField, WidgetProps } from "@/types";
 
 export function SelectWidget({
   field,
@@ -17,14 +17,12 @@ export function SelectWidget({
   onChange,
 }: {
   field: ModelField;
-  onChange(value: any): void;
-  value?: any;
-}) {
+} & WidgetProps<string | null>) {
   const { t } = useTranslation();
 
   return (
     <Select
-      value={value}
+      value={value ?? undefined}
       onValueChange={(value) => onChange?.(value === "NULL" ? null : value)}
     >
       <SelectTrigger className="w-auto">

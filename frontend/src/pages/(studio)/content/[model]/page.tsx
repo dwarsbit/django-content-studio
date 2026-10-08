@@ -22,7 +22,7 @@ export function ModelListPage() {
   const http = useHttp();
   const { data: discover } = useDiscover();
   const model = discover?.models.find(R.whereEq({ label: appLabel }));
-  const [view, _] = useState<"list" | "grid">("list");
+  const [view] = useState<"list" | "grid">("list");
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page") ?? "1");
   const ordering = searchParams.get("ordering");

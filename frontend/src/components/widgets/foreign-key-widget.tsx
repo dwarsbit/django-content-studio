@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useHttp } from "@/hooks/use-http";
-import type { Model, Resource } from "@/types";
+import type { Model, Resource, WidgetProps } from "@/types";
 
 export function ForeignKeyWidget({
   name,
@@ -28,9 +28,7 @@ export function ForeignKeyWidget({
 }: {
   name: string;
   model: Model;
-  onChange?: any;
-  value?: any;
-}) {
+} & WidgetProps<Resource | null>) {
   const { t } = useTranslation();
   const http = useHttp();
   const form = useFormContext();
@@ -50,14 +48,12 @@ export function ForeignKeyWidget({
       return data;
     },
   });
-  const dataWithValue = useMemo<Resource[]>(
-    () =>
-      R.pipe(
-        R.unless(() => R.isNil(value) || !R.isEmpty(search), R.prepend(value)),
-        R.uniqBy(R.prop("id")),
-      )(data),
-    [data, value, search],
-  );
+  const dataWithValue = useMemo<Resource[]>(() => {
+    const withCurrent =
+      !R.isNil(value) && R.isEmpty(search) ? [value, ...data] : data;
+
+    return R.uniqBy(R.prop("id"), withCurrent);
+  }, [data, value, search]);
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>

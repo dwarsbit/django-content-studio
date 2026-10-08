@@ -4,7 +4,7 @@ import { useFormContext } from "react-hook-form";
 
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useHttp } from "@/hooks/use-http";
-import type { Model, Resource } from "@/types";
+import type { Model, Resource, WidgetProps } from "@/types";
 
 export function ManyToManyWidget({
   name,
@@ -14,9 +14,7 @@ export function ManyToManyWidget({
 }: {
   name: string;
   model: Model;
-  onChange?: any;
-  value?: any;
-}) {
+} & WidgetProps<Resource[]>) {
   const http = useHttp();
   const form = useFormContext();
   const [search, setSearch] = useState("");
@@ -45,7 +43,7 @@ export function ManyToManyWidget({
           value: id,
         })) ?? []
       }
-      value={value.map(({ id, __str__ }: any) => ({
+      value={value.map(({ id, __str__ }) => ({
         value: id,
         label: __str__,
       }))}

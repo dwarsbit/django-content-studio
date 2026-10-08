@@ -3,7 +3,7 @@ import * as R from "ramda";
 
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
-import type { PaginatedResponse, Resource } from "@/types";
+import type { MediaItem, PaginatedResponse } from "@/types";
 
 export function useListMedia({
   folder,
@@ -24,7 +24,7 @@ export function useListMedia({
     queryKey: ["media-library", "items", { folder, page, filters }],
     placeholderData: keepPreviousData,
     async queryFn() {
-      const { data } = await http.get<PaginatedResponse<Resource>>(
+      const { data } = await http.get<PaginatedResponse<MediaItem>>(
         `/media-library/items`,
         {
           params: {

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useHttp } from "@/hooks/use-http";
+import type { MediaItem } from "@/types";
 
 export function useCreateMedia() {
   const queryClient = useQueryClient();
@@ -19,7 +20,7 @@ export function useCreateMedia() {
       file: File;
       type: string;
     }) {
-      const { data } = await http.postForm(
+      const { data } = await http.postForm<MediaItem>(
         "/media-library/items",
         {
           folder,

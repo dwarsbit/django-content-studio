@@ -23,30 +23,37 @@ import { TimeWidget } from "./time-widget";
 import { URLPathWidget } from "./url-path-widget";
 
 type WidgetComponent = ComponentType<{
-  value: any;
-  onChange(value: any): void;
+  value: unknown;
+  onChange(value: unknown): void;
   model: Model;
   field: ModelField;
   name: string;
 }>;
 
-const WIDGETS: Partial<Record<FieldWidget, WidgetComponent>> = {
+// Widget value shapes are model-defined at runtime; each widget instantiates
+// `WidgetProps<T>` with its concrete type. This registry is the single point
+// where those per-widget types meet the `unknown` values the form hands the
+// renderer, so it is asserted once here rather than weakened with `any`
+// in every widget.
+const WIDGETS = {
   [FieldWidget.CheckboxWidget]: CheckboxWidget,
   [FieldWidget.DateWidget]: DateWidget,
   [FieldWidget.DateTimeWidget]: DateTimeWidget,
   [FieldWidget.ForeignKeyWidget]: ForeignKeyWidget,
+  [FieldWidget.InputWidget]: InputWidget,
   [FieldWidget.JSONSchemaWidget]: JSONSchemaWidget,
   [FieldWidget.ManyToManyWidget]: ManyToManyWidget,
   [FieldWidget.ManyMediaWidget]: ManyMediaWidget,
   [FieldWidget.MediaWidget]: MediaWidget,
   [FieldWidget.MultiSelectWidget]: MultiSelectWidget,
   [FieldWidget.RichTextWidget]: RichTextWidget,
+  [FieldWidget.SelectWidget]: SelectWidget,
   [FieldWidget.SlugWidget]: SlugWidget,
   [FieldWidget.TagWidget]: TagWidget,
   [FieldWidget.TextAreaWidget]: TextAreaWidget,
   [FieldWidget.TimeWidget]: TimeWidget,
   [FieldWidget.URLPathWidget]: URLPathWidget,
-};
+} as Partial<Record<FieldWidget, WidgetComponent>>;
 
 export function WidgetRenderer({
   value,
@@ -54,8 +61,8 @@ export function WidgetRenderer({
   model,
   name,
 }: {
-  value: any;
-  onChange(value: any): void;
+  value: unknown;
+  onChange(value: unknown): void;
   model: Model;
   name: string;
 }) {
@@ -64,12 +71,12 @@ export function WidgetRenderer({
   const widgetClass =
     field.widget_class ?? info?.widgets[field.type]?.name ?? null;
 
-  const WidgetComp = useMemo(() => {
+  const WidgetComp = useMemo<WidgetComponent>(() => {
     if (widgetClass === null) {
-      return InputWidget;
+      return WIDGETS[FieldWidget.InputWidget] ?? FallbackWidget;
     }
     if (widgetClass === FieldWidget.InputWidget && field.choices) {
-      return SelectWidget;
+      return WIDGETS[FieldWidget.SelectWidget] ?? FallbackWidget;
     }
     return WIDGETS[widgetClass] ?? FallbackWidget;
   }, [field.choices, widgetClass]);

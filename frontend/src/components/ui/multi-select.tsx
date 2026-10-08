@@ -293,6 +293,7 @@ const MultiSelect = React.forwardRef<
 
     useEffect(() => {
       if (value) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- vendored component; mirrors the controlled value into local state
         setSelected(value);
       }
     }, [value]);
@@ -304,6 +305,7 @@ const MultiSelect = React.forwardRef<
       }
       const newOption = transToGroupOption(arrayOptions || [], groupBy);
       if (JSON.stringify(newOption) !== JSON.stringify(options)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- vendored component; derives options from props
         setOptions(newOption);
       }
     }, [arrayDefaultOptions, arrayOptions, groupBy, onSearch, options]);
@@ -403,7 +405,7 @@ const MultiSelect = React.forwardRef<
       return undefined;
     };
 
-    const EmptyItem = React.useCallback(() => {
+    const EmptyItem = () => {
       if (!emptyIndicator) return undefined;
 
       // For async search that showing emptyIndicator
@@ -416,7 +418,7 @@ const MultiSelect = React.forwardRef<
       }
 
       return <CommandEmpty>{emptyIndicator}</CommandEmpty>;
-    }, [creatable, emptyIndicator, onSearch, options]);
+    };
 
     const selectables = React.useMemo<GroupOption>(
       () => removePickedOption(options, selected),
@@ -424,9 +426,10 @@ const MultiSelect = React.forwardRef<
     );
 
     /** Avoid Creatable Selector freezing or lagging when paste a long string. */
+    const commandPropsFilter = commandProps?.filter;
     const commandFilter = React.useCallback(() => {
-      if (commandProps?.filter) {
-        return commandProps.filter;
+      if (commandPropsFilter) {
+        return commandPropsFilter;
       }
 
       if (creatable) {
@@ -436,7 +439,7 @@ const MultiSelect = React.forwardRef<
       }
       // Using default filter in `cmdk`. We don't have to provide it.
       return undefined;
-    }, [creatable, commandProps?.filter]);
+    }, [creatable, commandPropsFilter]);
 
     return (
       <Command

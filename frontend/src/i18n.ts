@@ -16,7 +16,10 @@ i18n
     },
     backend: {
       loadPath(lng: string, ns: string) {
-        return (window as any).DCS_STATIC_PREFIX + `locales/${lng}/${ns}.json`;
+        return (
+          (window as Window & typeof globalThis & { DCS_STATIC_PREFIX: string })
+            .DCS_STATIC_PREFIX + `locales/${lng}/${ns}.json`
+        );
       },
     },
   });

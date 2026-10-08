@@ -1,14 +1,9 @@
 import { useRef } from "react";
 
 import { Input } from "@/components/ui/input";
+import type { WidgetProps } from "@/types";
 
-export function TimeWidget({
-  value,
-  onChange,
-}: {
-  onChange(value: any): void;
-  value?: any;
-}) {
+export function TimeWidget({ value, onChange }: WidgetProps<string>) {
   const [hours, minutes] = (value ?? "").split(":");
   const minutesRef = useRef<HTMLInputElement>(null);
 

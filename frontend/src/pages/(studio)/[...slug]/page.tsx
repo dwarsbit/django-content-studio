@@ -1,19 +1,17 @@
-import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 
 import { useDiscover } from "@/hooks/use-discover";
-import { ExtensionType } from "@/types";
+import { ExtensionType, type IFramePageExtension } from "@/types";
 
 export function CatchAllPage() {
   const { data: discover } = useDiscover();
   const { "*": path } = useParams();
   const { t } = useTranslation();
   const iframePage = discover?.extensions.find(
-    R.where({
-      extension_type: R.equals(ExtensionType.IFramePage),
-      config: R.whereEq({ path: `/${path}` }),
-    }),
+    (extension): extension is IFramePageExtension =>
+      extension.extension_type === ExtensionType.IFramePage &&
+      extension.config.path === `/${path}`,
   );
 
   return iframePage ? (

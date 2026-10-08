@@ -29,11 +29,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (token) {
       localStorage.setItem(LOCALE_STORAGE_KEY, token);
+      // eslint-disable-next-line react-hooks/immutability -- deliberate mutation of the shared axios instance
       http.defaults.headers.common["Authorization"] = `JWT ${token}`;
     } else {
       localStorage.removeItem(LOCALE_STORAGE_KEY);
       delete http.defaults.headers.common["Authorization"];
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- `init` gates rendering until the Authorization header is set, so no child request can fire unauthorized
     setInit(true);
   }, [http.defaults.headers.common, token]);
 

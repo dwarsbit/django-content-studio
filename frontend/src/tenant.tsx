@@ -40,14 +40,16 @@ export function TenantProvider({ children }: { children: React.ReactElement }) {
   useEffect(() => {
     if (tenantId && enabled) {
       localStorage.setItem(LOCALE_STORAGE_KEY, tenantId);
-      // eslint-disable-next-line react-hooks/immutability
+      // eslint-disable-next-line react-hooks/immutability -- deliberate mutation of the shared axios instance
       http.defaults.headers.common["X-DCS-Tenant"] = tenantId;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- `init` gates rendering until the tenant header is set, so no child request can fire unscoped
     setInit(true);
   }, [http.defaults.headers.common, tenantId, enabled]);
 
   useEffect(() => {
     if (enabled && !tenantId && isFetched) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-selects the first tenant once the list is known; there is no earlier point where `tenants` exists
       setTenant(tenants[0]?.id ?? null);
     }
   }, [tenants, tenantId, enabled, isFetched]);

@@ -1,12 +1,7 @@
 import { Input } from "@/components/ui/input";
+import type { WidgetProps } from "@/types";
 
-export function SlugWidget({
-  value,
-  onChange,
-}: {
-  onChange(value: any): void;
-  value?: any;
-}) {
+export function SlugWidget({ value, onChange }: WidgetProps<string>) {
   return (
     <div>
       <Input

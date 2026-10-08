@@ -45,7 +45,7 @@ export function UsernamePasswordBackend({
         setToken(data.access);
         location.href = searchParams.get("redirect") ?? "/";
       } catch (e: unknown) {
-        throw new Error(getErrorMessage(e));
+        throw new Error(getErrorMessage(e), { cause: e });
       }
     },
   });

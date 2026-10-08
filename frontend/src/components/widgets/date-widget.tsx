@@ -12,7 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { DateString, ModelField } from "@/types";
+import type { DateString, ModelField, WidgetProps } from "@/types";
 
 dayjs.extend(localizedFormat);
 
@@ -21,10 +21,8 @@ export function DateWidget({
   onChange,
   field,
 }: {
-  value?: DateString;
-  onChange?: any;
   field: ModelField;
-}) {
+} & WidgetProps<DateString | null>) {
   const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const date$ = React.useMemo(

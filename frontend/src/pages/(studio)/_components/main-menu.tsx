@@ -57,7 +57,7 @@ export function MainMenu() {
 
   const linkExtensions =
     discover?.extensions.filter(
-      R.whereEq({ extension_type: ExtensionType.MainMenuLink }),
+      (extension) => extension.extension_type === ExtensionType.MainMenuLink,
     ) ?? [];
 
   useEffect(() => {
@@ -124,8 +124,8 @@ export function MainMenu() {
               <MenuItem
                 key={extension_id}
                 to={config.url}
-                color={config.color}
-                icon={<span className={config.icon} />}
+                color={config.color ?? undefined}
+                icon={<span className={config.icon ?? undefined} />}
                 label={config.label}
               />
             ))}
