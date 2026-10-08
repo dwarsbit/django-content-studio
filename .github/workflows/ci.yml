@@ -57,17 +57,14 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Lint
+        run: npm run lint
+
       - name: Unit tests
         run: npm test
 
       - name: Build
         run: npm run build
-
-      # Advisory until the pre-existing lint debt (~85 errors) is paid
-      # down; typecheck, tests and build are the hard gates.
-      - name: Lint (advisory)
-        run: npm run lint
-        continue-on-error: true
 
   packaging:
     name: packaging
