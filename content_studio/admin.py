@@ -185,6 +185,9 @@ class AdminSite(admin.AdminSite):
                     )
                 seen[key] = component.__class__.__name__
 
+            if isinstance(admin_class, ModelAdmin):
+                errors.extend(_validate_list_config(admin_class))
+
         if errors:
             raise ImproperlyConfigured("\n".join(errors))
 
@@ -213,6 +216,38 @@ class AdminSite(admin.AdminSite):
 
 
 admin_site = AdminSite()
+
+
+LIST_VIEW_NAMES = {"table", "list"}
+
+
+def _validate_list_config(admin_class: "ModelAdmin") -> list[str]:
+    """
+    Fail fast at setup on misconfigured list pages. Content Studio
+    repurposes list_display for the list view, so an old-style list/tuple
+    (the classic admin's table columns) must be pointed at table_display
+    rather than silently ignored.
+    """
+    if isinstance(admin_class.list_display, (list, tuple)):
+        return [
+            f"{admin_class.__class__.__name__}.list_display configures the "
+            "list view and takes a mapping like "
+            "{'title': 'name', 'description': 'subtitle'}. For table "
+            "columns, use table_display."
+        ]
+
+    unknown_views = [
+        view for view in admin_class.list_views if view not in LIST_VIEW_NAMES
+    ]
+
+    if unknown_views:
+        return [
+            f"{admin_class.__class__.__name__}.list_views contains unknown "
+            f"view(s) {', '.join(unknown_views)}. Available views: "
+            f"{', '.join(sorted(LIST_VIEW_NAMES))}."
+        ]
+
+    return []
 
 
 def iter_components(admin_class):
@@ -308,6 +343,20 @@ class ModelAdmin(admin.ModelAdmin, Generic[T]):
     # Description shown below model name on list pages
     list_description: str = ""
 
+    # The columns of the table view. This replaces Django admin's
+    # list_display, which Content Studio repurposes for the list view.
+    table_display: list[str] = ["__str__"]
+
+    # The anatomy of a list view row: roles mapped to field or model
+    # method names, e.g. {"title": "name", "description": "subtitle"}.
+    # Unlike the classic admin, list_display configures the list view —
+    # an old-style list/tuple raises ImproperlyConfigured at setup.
+    list_display: Optional[dict[str, str]] = None
+
+    # The views offered by the list page: "table" and/or "list". More than
+    # one enables a toggle in the interface.
+    list_views: list[str] = ["table"]
+
     # Configure the main section in the edit-view.
     edit_main: Union[
         list[Union[FormSetGroup, FormSet, Field, Component, str]], list[str]
@@ -328,6 +377,46 @@ class ModelAdmin(admin.ModelAdmin, Generic[T]):
         the base implementation displays the object's string representation.
         """
         return RelationDisplay(title=str(obj))
+
+    def get_list_display(
+        self, obj: models.Model, request: HttpRequest
+    ) -> "ListDisplay":
+        """
+        The anatomy of a row in the list view. The base implementation
+        resolves the declarative list_display mapping (roles to field or
+        model method names); override for fully computed rows.
+        """
+        display = self.list_display or {}
+
+        def resolve(role: str) -> str:
+            field = display.get(role)
+
+            if not field:
+                return ""
+
+            value = getattr(obj, field)
+
+            return str(value() if callable(value) else value)
+
+        return ListDisplay(
+            title=resolve("title") or str(obj),
+            description=resolve("description"),
+            meta=resolve("meta"),
+        )
+
+    def check(self, **kwargs):
+        """
+        Content Studio renders its own interface; Django's changelist
+        checks inspect list_display, which the studio repurposes for the
+        list view. Run the checks with the changelist's expectation in
+        place, everything else applies as usual.
+        """
+        original = self.list_display
+        self.list_display = ("__str__",)
+        try:
+            return super().check(**kwargs)
+        finally:
+            self.list_display = original
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         # Don't allow adding more than one singleton object.
@@ -380,7 +469,7 @@ class AdminSerializer:
                     {
                         "model": inline.model._meta.label_lower,
                         "fk_name": get_related_field_name(inline, admin_class.model),
-                        "list_display": getattr(inline, "list_display", None)
+                        "list_display": getattr(inline, "table_display", None)
                         or ["__str__"],
                     }
                     for inline in admin_class.inlines
@@ -389,7 +478,8 @@ class AdminSerializer:
             "list": {
                 "per_page": admin_class.list_per_page,
                 "description": getattr(admin_class, "list_description", ""),
-                "display": self.get_list_display(),
+                "display": self.get_table_display(),
+                "views": getattr(admin_class, "list_views", ["table"]),
                 "search": len(admin_class.search_fields) > 0,
                 "filter": admin_class.list_filter,
                 "sortable_by": admin_class.sortable_by,
@@ -428,11 +518,17 @@ class AdminSerializer:
             for i in self.get_edit_sidebar(getattr(admin_class, "edit_sidebar", None))
         ]
 
-    def get_list_display(self) -> list[dict[str, Any]]:
+    def get_table_display(self) -> list[dict[str, Any]]:
         admin_class = self.admin_class
         fields = []
 
-        for field in admin_class.list_display:
+        # Plain Django admins (e.g. django.contrib.auth's) lack the
+        # Content Studio attributes; fall back to their list_display.
+        for field in (
+            getattr(admin_class, "table_display", None)
+            or getattr(admin_class, "list_display", ())
+            or ["__str__"]
+        ):
             if hasattr(admin_class, field):
                 method = getattr(admin_class, field)
                 description = getattr(method, "short_description", None)
@@ -516,6 +612,18 @@ class RelationDisplay:
         self.initials = initials
         # A URL to an image.
         self.avatar = avatar
+
+
+class ListDisplay:
+    """
+    The anatomy of a row in the list view: a prominent title, a muted
+    description and a meta value rendered as a badge on the right.
+    """
+
+    def __init__(self, title: str, description: str = "", meta: str = ""):
+        self.title = title
+        self.description = description
+        self.meta = meta
 
 
 class ModelGroup:

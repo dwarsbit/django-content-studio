@@ -23,7 +23,7 @@ class ReviewInline(StackedInline):
 
 @register(models.Category)
 class CategoryAdmin(ModelAdmin):
-    list_display = ["name"]
+    table_display = ["name"]
     search_fields = ["name"]
 
     def get_relation_display(self, obj, request):
@@ -36,7 +36,7 @@ class CategoryAdmin(ModelAdmin):
 
 @register(models.MediaItem)
 class MediaItemAdmin(ModelAdmin):
-    list_display = ["name", "type"]
+    table_display = ["name", "type"]
 
     def get_relation_display(self, obj, request):
         return RelationDisplay(
@@ -49,12 +49,19 @@ class MediaItemAdmin(ModelAdmin):
 
 @register(models.MediaFolder)
 class MediaFolderAdmin(ModelAdmin):
-    list_display = ["name"]
+    table_display = ["name"]
 
 
 @register(models.Article)
 class ArticleAdmin(ModelAdmin):
-    list_display = ["title", "status", "author", "published_at"]
+    table_display = ["title", "status", "author", "published_at"]
+    # The list view's rows; both views are offered, with a toggle.
+    list_views = ["table", "list"]
+    list_display = {
+        "title": "title",
+        "description": "body",
+        "meta": "get_status_display",
+    }
     list_filter = ["status"]
     search_fields = ["title"]
     inlines = [ReviewInline]

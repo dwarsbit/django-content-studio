@@ -11,13 +11,19 @@ class ReviewInline(StackedInline):
 
 @register(Category)
 class CategoryAdmin(ModelAdmin):
-    list_display = ["id", "name"]
+    table_display = ["id", "name"]
     search_fields = ["name"]
 
 
 @register(Article)
 class ArticleAdmin(ModelAdmin):
-    list_display = ["id", "title", "status", "published_at", "views"]
+    table_display = ["id", "title", "status", "published_at", "views"]
+    list_views = ["table", "list"]
+    list_display = {
+        "title": "title",
+        "description": "body",
+        "meta": "get_status_display",
+    }
     list_filter = ["status", "published_at"]
     search_fields = ["title"]
     inlines = [ReviewInline]

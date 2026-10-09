@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from . import VERSION
@@ -114,12 +115,15 @@ class DjangoContentStudioConfig(AppConfig):
             def get_serializer_class(self):
                 user_model = get_user_model()
                 excluded_fields = None
-                # For list views we include the specified list_display fields.
+                # For list views we include the specified table_display fields.
                 if self.action == "list" and not self.is_singleton:
-                    available_fields = [
-                        "id",
-                        "__str__",
-                    ] + list(getattr(self._admin_model, "list_display", []))
+                    available_fields = ["id", "__str__"] + list(
+                        getattr(self._admin_model, "table_display", [])
+                    )
+                    # Rows carry their resolved list display when the
+                    # list view is enabled.
+                    if "list" in getattr(self._admin_model, "list_views", ["table"]):
+                        available_fields.append("list_display")
                 # For the user model we exclude the password and the username field.
                 elif model is user_model:
                     available_fields = None
@@ -136,6 +140,32 @@ class DjangoContentStudioConfig(AppConfig):
                         model = self._model
                         fields = available_fields
                         exclude = excluded_fields
+
+                # When the list view is enabled, every row carries its
+                # resolved list display so the frontend renders fully
+                # computed rows (declarative mapping or override).
+                if (
+                    self.action == "list"
+                    and not self.is_singleton
+                    and "list" in getattr(self._admin_model, "list_views", ["table"])
+                ):
+                    admin_model = self._admin_model
+
+                    class ListSerializer(Serializer):
+                        list_display = serializers.SerializerMethodField()
+
+                        def get_list_display(self, obj):
+                            display = admin_model.get_list_display(
+                                obj, self.context.get("request")
+                            )
+
+                            return {
+                                "title": display.title,
+                                "description": display.description,
+                                "meta": display.meta,
+                            }
+
+                    return ListSerializer
 
                 return Serializer
 

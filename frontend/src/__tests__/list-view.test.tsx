@@ -392,3 +392,80 @@ describe("ModelListPage", () => {
     ).toBeInTheDocument();
   });
 });
+
+const listArticles: Resource[] = [
+  {
+    id: "1",
+    __str__: "First Article",
+    title: "First Article",
+    status: "draft",
+    list_display: {
+      title: "First Article",
+      description: "The first body",
+      meta: "Draft",
+    },
+  },
+  {
+    id: "2",
+    __str__: "Second Article",
+    title: "Second Article",
+    status: "published",
+    list_display: {
+      title: "Second Article",
+      description: "The second body",
+      meta: "Published",
+    },
+  },
+];
+
+describe("ModelListPage views", () => {
+  beforeEach(() => {
+    httpGetMock.mockReset();
+    httpGetMock.mockResolvedValue({ data: makePaginated(listArticles) });
+    useAdminInfoMock.mockReturnValue({ data: undefined });
+  });
+
+  it("renders the table and no toggle when only one view is offered", async () => {
+    renderListPage(makeModel());
+
+    expect(await screen.findByText("First Article")).toBeInTheDocument();
+    // The table header is the table view's signature.
+    expect(screen.getByText("Title")).toBeInTheDocument();
+    expect(screen.queryByTitle("list_view.list_view")).not.toBeInTheDocument();
+  });
+
+  it("switches to the list view through the toggle and keeps it in the URL", async () => {
+    renderListPage(makeModel({ list: { views: ["table", "list"] } }));
+
+    await userEvent.click(await screen.findByTitle("list_view.list_view"));
+
+    // Rows render the resolved list display: title, description, meta.
+    expect(await screen.findByText("The first body")).toBeInTheDocument();
+    expect(screen.getByText("The second body")).toBeInTheDocument();
+    expect(screen.getByText("Draft")).toBeInTheDocument();
+    expect(screen.getByText("Published")).toBeInTheDocument();
+    expect(screen.getByTestId("location-search")).toHaveTextContent(
+      "view=list",
+    );
+  });
+
+  it("opens the editor when a list row is clicked", async () => {
+    renderListPage(
+      makeModel({ list: { views: ["table", "list"] } }),
+      "/content/testapp.article?view=list",
+    );
+
+    await userEvent.click(await screen.findByText("First Article"));
+
+    expect(screen.getByTestId("location-hash")).toHaveTextContent(
+      "editor:testapp.article:1",
+    );
+  });
+
+  it("falls back to the first offered view when the URL asks for another", async () => {
+    // views offers only the table; ?view=list is ignored.
+    renderListPage(makeModel(), "/content/testapp.article?view=list");
+
+    expect(await screen.findByText("Title")).toBeInTheDocument();
+  });
+});

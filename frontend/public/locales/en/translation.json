@@ -67,6 +67,8 @@
     "empty_state": "No items yet"
   },
   "list_view": {
+    "table_view": "Table view",
+    "list_view": "List view",
     "empty_state": "No items yet",
     "filter": "Filter",
     "clear_all_filters": "Clear all filters"

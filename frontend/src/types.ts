@@ -104,6 +104,7 @@ export interface Model {
         description: string | null;
         empty_value: string | null;
       }[];
+      views?: string[];
       search: boolean;
       filter: string[];
       sortable_by: string[] | null;
@@ -157,6 +158,13 @@ export interface WidgetProps<T> {
 export interface Resource {
   id: Id;
   __str__: string;
+  // The resolved list display, present on list rows when the admin
+  // offers the list view.
+  list_display?: {
+    title: string;
+    description?: string;
+    meta?: string;
+  };
   // Relation display customization (ModelAdmin.get_relation_display).
   description?: string | null;
   icon?: string | null;

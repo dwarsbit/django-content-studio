@@ -10,7 +10,7 @@ from content_studio.admin import ModelAdmin
 
 @register(Article)
 class ArticleAdmin(ModelAdmin):
-    list_display = ["title", "status", "published_at"]
+    table_display = ["title", "status", "published_at"]
 ```
 
 `@register` accepts multiple models, and `content_studio.display` is an alias
@@ -22,7 +22,7 @@ from content_studio import display, register
 
 @register(Article)
 class ArticleAdmin(ModelAdmin):
-    list_display = ["title", "word_count"]
+    table_display = ["title", "word_count"]
 
     @display(description="Words")
     def word_count(self, obj):
@@ -41,7 +41,7 @@ The familiar Django admin options drive the list view:
 
 | Option | Effect |
 |--------|--------|
-| `list_display` | Columns of the list view |
+| `table_display` | Columns of the table view |
 | `list_filter` | Filterable fields in the list view's filter panel |
 | `search_fields` | Fields searched by the search box |
 | `sortable_by` | Columns the user may sort on |
@@ -123,3 +123,39 @@ from the interface when empty. When several glyphs are set, one is shown with
 the priority: avatar, then initials, then icon. Models registered with a
 plain Django admin (like `django.contrib.auth`'s `User`) always fall back to
 the string representation.
+
+## List views
+
+The list page can render as a **table** (the default) or as a **list** of
+readable rows. Which views a model offers is declared with `list_views`;
+more than one shows a toggle, and the choice persists in the URL:
+
+```python
+@register(models.Article)
+class ArticleAdmin(ModelAdmin):
+    table_display = ["title", "status", "published_at"]
+    list_views = ["table", "list"]
+```
+
+The table's columns come from `table_display`. The list view's rows are
+configured separately through `list_display` — a mapping of roles to field
+or model method names:
+
+```python
+list_display = {"title": "title", "description": "body", "meta": "get_status_display"}
+```
+
+Rows render a prominent `title`, a muted `description` and a `meta` badge.
+The API ships every row's resolved display, so fully computed rows are
+possible by overriding `get_list_display`:
+
+```python
+def get_list_display(self, obj, request):
+    return ListDisplay(title=obj.title.upper(), description=obj.subtitle, meta=obj.status)
+```
+
+:::caution
+Unlike the classic Django admin, `list_display` configures the list view —
+not the table columns. Passing an old-style list raises
+`ImproperlyConfigured` at setup; use `table_display` for the columns.
+:::

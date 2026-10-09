@@ -72,7 +72,7 @@ class Article(models.Model):
 
 @register(Article)
 class ArticleAdmin(ModelAdmin):
-    list_display = ["title", "status"]
+    table_display = ["title", "status"]
     list_filter = ["status"]
     search_fields = ["title"]
 ```

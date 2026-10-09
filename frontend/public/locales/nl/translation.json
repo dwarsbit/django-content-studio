@@ -67,6 +67,8 @@
     "empty_state": "Nog geen items"
   },
   "list_view": {
+    "table_view": "Tabelweergave",
+    "list_view": "Lijstweergave",
     "empty_state": "Nog geen items",
     "filter": "Filteren",
     "clear_all_filters": "Alle filters wissen"
