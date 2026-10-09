@@ -9,6 +9,12 @@ dist-ssr
 .output.txt
 __pycache__
 .coverage
+
+# Demo project state
+/demo/db.sqlite3
+/demo/media/
+/.venv
+
 # Agent tooling
 .agents/
 .vibe/

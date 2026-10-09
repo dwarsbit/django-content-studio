@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .tanstack
 .agents
+# Playwright
+/test-results/
+/playwright/.cache/
