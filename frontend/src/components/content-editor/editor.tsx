@@ -26,6 +26,7 @@ export function Editor({
 }: {
   modelLabel: string;
   id?: string | null;
+  inlineOf?: string;
   initialValues?: Record<string, unknown>;
   onSave: VoidFunction;
   onClose: VoidFunction;
@@ -40,6 +41,7 @@ export function Editor({
 function EditorForm({
   model,
   id,
+  inlineOf,
   initialValues = {},
   onDelete,
   onSave,
@@ -47,6 +49,7 @@ function EditorForm({
 }: {
   model: Model;
   id?: string | null;
+  inlineOf?: string;
   initialValues?: Record<string, unknown>;
   onSave: VoidFunction;
   onClose: VoidFunction;
@@ -57,6 +60,11 @@ function EditorForm({
   const { t } = useTranslation();
   const modelLabel = model.label;
   const isSingleton = model?.admin.is_singleton ?? false;
+  // Inline models are managed through the inline endpoints of their parent,
+  // not the content endpoints (which only exist for registered models).
+  const resourcePath = inlineOf
+    ? `/inlines/${inlineOf}/${modelLabel}`
+    : `/content/${modelLabel}`;
   const [initialized, setInitialized] = useState(R.isNil(id) && !isSingleton);
   const hiddenFields = Object.keys(initialValues);
   const defaultValues = Object.entries(model?.fields ?? {}).reduce(
@@ -84,10 +92,15 @@ function EditorForm({
     async queryFn() {
       try {
         const { data } = await http.get(
-          `/content/${modelLabel}${isSingleton ? "" : `/${id}`}`,
+          `${resourcePath}${isSingleton ? "" : `/${id}`}`,
         );
         if (!initialized) {
-          form.reset(data);
+          // The API serializes integer primary keys as JSON numbers; the
+          // form schema (and the rest of the app) treats ids as strings.
+          form.reset({
+            ...data,
+            id: data.id != null ? String(data.id) : data.id,
+          });
         }
         return data;
       } catch (e: unknown) {
@@ -101,7 +114,7 @@ function EditorForm({
   const { mutateAsync: save, isPending } = useMutation({
     async mutationFn(values: Partial<Resource>) {
       await http[values.id ? "put" : "post"](
-        `/content/${modelLabel}${values.id ? `/${values.id}` : ""}`,
+        `${resourcePath}${values.id ? `/${values.id}` : ""}`,
         values,
       );
     },
@@ -144,6 +157,7 @@ function EditorForm({
         <Header
           model={model}
           resource={resource}
+          resourcePath={resourcePath}
           isSaving={isPending}
           onSave={async () => {
             await form.handleSubmit(onSubmit)();

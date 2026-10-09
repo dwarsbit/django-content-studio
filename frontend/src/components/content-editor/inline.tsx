@@ -83,6 +83,7 @@ export function Inline({
         >
           <Editor
             modelLabel={model.label}
+            inlineOf={relModel}
             initialValues={{
               [adminModel.fk_name]: { id: relId, __str__: relName },
             }}
@@ -200,6 +201,7 @@ function InlineRow({
           >
             <Editor
               modelLabel={model.label}
+              inlineOf={relModel}
               id={resource.id}
               initialValues={{
                 [adminModel.fk_name]: { id: relId, __str__: relName },

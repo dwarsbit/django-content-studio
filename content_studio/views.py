@@ -14,7 +14,7 @@ from rest_framework.viewsets import ViewSet
 
 from . import __version__
 from .exceptions import NotConfigured
-from .admin import AdminSerializer, ModelGroup
+from .admin import AdminSerializer, ModelAdmin, ModelGroup
 from .models import ModelSerializer
 from .serializers import get_session_user_serializer
 from .settings import cs_settings
@@ -188,6 +188,13 @@ def get_models(request):
                 models.append(
                     {
                         **ModelSerializer(inline.model).serialize(),
+                        # The inline model has no admin of its own; serialize a
+                        # default one so the frontend's editor can render the
+                        # inline's create and edit forms (they read the admin
+                        # payload like any other model).
+                        "admin": AdminSerializer(
+                            ModelAdmin(inline.model, admin.site)
+                        ).serialize(request),
                     }
                 )
 

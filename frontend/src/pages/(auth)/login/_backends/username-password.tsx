@@ -43,7 +43,16 @@ export function UsernamePasswordBackend({
           credentials,
         );
         setToken(data.access);
-        location.href = searchParams.get("redirect") ?? "/";
+        // The redirect parameter is router-relative (the AuthGuard stores the
+        // pathname without the router basename); resolve it against the mount
+        // prefix so a full page load stays inside the app. In development the
+        // router has no basename, matching main.tsx.
+        const base = import.meta.env.PROD
+          ? (
+              window as Window & typeof globalThis & { DCS_BASENAME: string }
+            ).DCS_BASENAME.replace(/\/+$/, "")
+          : "";
+        location.href = `${base}${searchParams.get("redirect") ?? "/"}`;
       } catch (e: unknown) {
         throw new Error(getErrorMessage(e), { cause: e });
       }

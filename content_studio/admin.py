@@ -385,12 +385,14 @@ class AdminSerializer:
     def serialize_edit_main(self, request: HttpRequest) -> list[dict[str, Any]]:
         admin_class = self.admin_class
 
-        return [
-            i.serialize()
-            for i in self.get_edit_main(
-                getattr(admin_class, "edit_main", admin_class.get_fields(request))
-            )
-        ]
+        # An unset (or empty) edit_main falls back to every editable field,
+        # mirroring the Django admin's get_fields default. This also gives
+        # inline models without an admin of their own a complete form.
+        edit_main = getattr(admin_class, "edit_main", None) or admin_class.get_fields(
+            request
+        )
+
+        return [i.serialize() for i in self.get_edit_main(edit_main)]
 
     def serialize_edit_sidebar(self, request: HttpRequest) -> list[dict[str, Any]]:
         admin_class = self.admin_class

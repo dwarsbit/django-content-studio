@@ -12,13 +12,25 @@ export function Search() {
 
   useDebounce(
     () => {
+      // Only navigate when the value actually changed: setSearchParams drops
+      // the location hash, and the no-op run on mount would otherwise close
+      // an editor opened right after page load (and pollute every list URL
+      // with an empty ?search=).
+      if ((searchParams.get("search") ?? "") === local) {
+        return;
+      }
+
       setSearchParams((searchParams) => {
-        searchParams.set("search", local);
+        if (local) {
+          searchParams.set("search", local);
+        } else {
+          searchParams.delete("search");
+        }
         return searchParams;
       });
     },
     300,
-    [local],
+    [local, searchParams, setSearchParams],
   );
 
   return (

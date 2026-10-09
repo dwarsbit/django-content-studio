@@ -10,7 +10,7 @@ import React, {
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useEffectOnce } from "react-use";
 
-import { useHttp } from "@/hooks/use-http";
+import { http } from "@/hooks/use-http";
 import { type AuthState } from "@/types";
 
 const REFRESH_URL = "/tokens/jsonwebtoken/refresh";
@@ -23,10 +23,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // The access token lives in memory only. The matching refresh token is
   // an httpOnly cookie that never reaches JavaScript; requests carry
   // `Authorization: Bearer <access token>`.
-  const [token, setToken] = useState<string | null>(null);
-  const http = useHttp();
+  const [token, setTokenState] = useState<string | null>(null);
   const refreshInFlight = useRef<Promise<string | null> | null>(null);
   const retriedRequests = useRef(new WeakSet<object>());
+
+  // The Authorization header is set the moment the token changes, not in an
+  // effect: child mount effects (e.g. the discover query, which is public and
+  // cached forever) dispatch requests before a parent effect would run, and
+  // would otherwise send them unauthenticated.
+  const setToken = useCallback((token: string | null) => {
+    setTokenState(token);
+    if (token) {
+      http.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    } else {
+      delete http.defaults.headers.common["Authorization"];
+    }
+  }, []);
 
   const refresh = useCallback(async (): Promise<string | null> => {
     try {
@@ -37,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(null);
       return null;
     }
-  }, [http]);
+  }, [setToken]);
 
   // Concurrent 401s share a single refresh call.
   const singleFlightRefresh = useCallback(() => {
@@ -57,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // local session either way.
     }
     setToken(null);
-  }, [http]);
+  }, [setToken]);
 
   // Silent session restore on boot, gated so no child request can fire
   // before the Authorization header is in place.
@@ -97,15 +109,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     });
   });
-
-  useEffect(() => {
-    if (token) {
-      // eslint-disable-next-line react-hooks/immutability -- deliberate mutation of the shared axios instance
-      http.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      delete http.defaults.headers.common["Authorization"];
-    }
-  }, [http.defaults.headers.common, token]);
 
   return init ? (
     <AuthContext.Provider

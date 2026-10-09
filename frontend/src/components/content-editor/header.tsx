@@ -22,6 +22,7 @@ import type { DateTimeString, Model, Resource } from "@/types";
 export function Header({
   model,
   resource,
+  resourcePath,
   isSaving,
   onSave,
   onDelete,
@@ -29,6 +30,7 @@ export function Header({
 }: {
   model: Model;
   resource?: Resource;
+  resourcePath: string;
   isSaving: boolean;
   onSave(): Promise<void>;
   onDelete?: VoidFunction;
@@ -49,7 +51,7 @@ export function Header({
   const queryClient = useQueryClient();
   const { mutateAsync } = useMutation({
     async mutationFn(id: string) {
-      await http.delete(`/content/${model.label}/${id}`);
+      await http.delete(`${resourcePath}/${id}`);
     },
     async onSuccess() {
       await queryClient.invalidateQueries({
