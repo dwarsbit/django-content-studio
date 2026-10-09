@@ -14,6 +14,7 @@ __pycache__
 /demo/db.sqlite3
 /demo/media/
 /.venv
+/demo/.venv
 
 # Agent tooling
 .agents/

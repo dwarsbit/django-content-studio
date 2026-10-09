@@ -10,7 +10,9 @@ test("the Blueprint-integrated model renders the rich text widget", async ({
   page,
 }) => {
   const title = `Landing page ${uniqueSuffix()}`;
-  const body = `Rich text body ${uniqueSuffix()}`;
+  // Digit-only suffix: TipTap's typography extension rewrites "x" between
+  // digits into a multiplication sign, which would break text matching.
+  const body = `Rich text body ${Date.now()}`;
   const dialog = page.getByRole("dialog");
 
   await page.goto("/admin/content/demo_blog.landingpage");

@@ -88,3 +88,13 @@ test("adds an inline review to the seeded article", async ({ page }) => {
     rowByText(page, reviewText.slice(0, 20)),
   ).toBeVisible();
 });
+
+test("the active model's group starts expanded after a reload", async ({
+  page,
+}) => {
+  await page.goto("/admin/content/demo_blog.landingpage");
+
+  // Deep link into a model page: the group holding the active model is
+  // already expanded, no click needed.
+  await expect(page.getByRole("link", { name: "landing pages" })).toBeVisible();
+});

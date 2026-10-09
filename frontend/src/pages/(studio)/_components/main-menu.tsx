@@ -1,5 +1,12 @@
 import * as R from "ramda";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { LuMonitorCog, LuMoon, LuSun } from "react-icons/lu";
 import {
@@ -11,7 +18,13 @@ import {
   PiImageBold,
   PiSignOutBold,
 } from "react-icons/pi";
-import { Link, type Path, useMatch, useNavigate } from "react-router";
+import {
+  Link,
+  type Path,
+  useLocation,
+  useMatch,
+  useNavigate,
+} from "react-router";
 
 import { useAuth } from "@/auth";
 import { type Theme, useTheme } from "@/components/theme-provider";
@@ -42,18 +55,23 @@ import { TenantSelector } from "./tenant-selector";
 const CollapsedContext = createContext(false);
 const ExpandedContext = createContext<{
   expandedItem: string | null;
-  setExpandedItem: (label: string | null) => void;
-}>({ expandedItem: null, setExpandedItem: () => {} });
+  toggleGroup: (label: string, isExpanded: boolean) => void;
+}>({ expandedItem: null, toggleGroup: () => {} });
 
 export function MainMenu() {
   const { t } = useTranslation();
   const { data: adminInfo } = useAdminInfo();
   const { data: discover } = useDiscover();
   const { enabled: tenant } = useTenant();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem("main-menu-collapsed") === "true",
   );
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  // The group the user opened or closed by hand; the last one wins.
+  const [manualExpanded, setManualExpanded] = useState<string | null>(null);
+  const [collapsedActiveGroup, setCollapsedActiveGroup] = useState<
+    string | null
+  >(null);
 
   const linkExtensions =
     discover?.extensions.filter(
@@ -64,8 +82,45 @@ export function MainMenu() {
     localStorage.setItem("main-menu-collapsed", String(collapsed));
   }, [collapsed]);
 
+  // The group holding the active model's route is expanded by default, so a
+  // deep link into /content/<model> (or a refresh on such a page) doesn't
+  // start with every group collapsed. Collapsing it by hand keeps it closed
+  // until the user reopens it.
+  const activeGroupLabel = useMemo(() => {
+    const label = /^\/content\/([^/]+)/.exec(location.pathname)?.[1];
+
+    if (!label || !discover?.model_groups) {
+      return null;
+    }
+
+    return (
+      discover.model_groups.find((group) => group.models.includes(label))
+        ?.label ?? null
+    );
+  }, [discover, location.pathname]);
+
+  const expandedItem =
+    manualExpanded ??
+    (activeGroupLabel && activeGroupLabel !== collapsedActiveGroup
+      ? activeGroupLabel
+      : null);
+
+  const toggleGroup = useCallback((label: string, isExpanded: boolean) => {
+    if (isExpanded) {
+      setManualExpanded((previous) => (previous === label ? null : previous));
+      setCollapsedActiveGroup((previous) =>
+        previous === label ? null : label,
+      );
+    } else {
+      setManualExpanded(label);
+      setCollapsedActiveGroup((previous) =>
+        previous === label ? null : previous,
+      );
+    }
+  }, []);
+
   return (
-    <ExpandedContext value={{ expandedItem, setExpandedItem }}>
+    <ExpandedContext value={{ expandedItem, toggleGroup }}>
       <CollapsedContext value={collapsed}>
         <nav
           className={cn(
@@ -215,7 +270,7 @@ function MenuItem({
   const Comp = to ? Link : "button";
   const match = useMatch(`${to ?? ""}`);
   const menuCollapsed = useContext(CollapsedContext);
-  const { expandedItem, setExpandedItem } = useContext(ExpandedContext);
+  const { expandedItem, toggleGroup } = useContext(ExpandedContext);
   const expanded = expandedItem === label;
 
   const item = (
@@ -231,7 +286,7 @@ function MenuItem({
       )}
       onClick={() => {
         if (children) {
-          setExpandedItem(expanded ? null : label);
+          toggleGroup(label, expanded);
         }
       }}
     >
