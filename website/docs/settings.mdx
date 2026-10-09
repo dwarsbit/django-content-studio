@@ -34,6 +34,35 @@ Rate limit for login attempts, per IP, as a DRF rate string — default
 `"10/min"`. `None` disables throttling. With the default per-process cache
 every worker counts separately; configure a shared cache for the full limit.
 
+## TOKEN_BACKEND {#token_backend}
+
+Import path string of the token backend class that authenticates the admin
+API — default `"content_studio.token_backends.JsonWebTokenBackend"`, the
+bundled JSON Web Token backend ([authentication](/docs/authentication)).
+
+## TOKEN_LIFETIME {#token_lifetime}
+
+Lifetime of the access token in seconds — default `3600` (one hour). The
+browser keeps the access token in memory; a 401 triggers a silent refresh,
+so short lifetimes do not log users out.
+
+## REFRESH_TOKEN_LIFETIME {#refresh_token_lifetime}
+
+Lifetime of the refresh token in seconds — default `604800` (seven days).
+The refresh token lives in an httpOnly cookie and never reaches JavaScript;
+it rotates on every refresh.
+
+## TOKEN_SIGNING_KEY {#token_signing_key}
+
+Signing key for the tokens. Default `None` — falls back to the Django
+`SECRET_KEY`. Set a dedicated key if you rotate `SECRET_KEY` independently
+of admin sessions.
+
+## TOKEN_ALGORITHM {#token_algorithm}
+
+Algorithm used to sign the tokens (any algorithm PyJWT supports) — default
+`"HS256"`.
+
 ## EDITED_BY_ATTR / EDITED_AT_ATTR / CREATED_BY_ATTR / CREATED_AT_ATTR {#audit-attrs}
 
 Field names for the audit stamps. Defaults: `"edited_by"`, `"edited_at"`,

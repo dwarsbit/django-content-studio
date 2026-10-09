@@ -38,7 +38,7 @@ export function UsernamePasswordBackend({
   const { mutate, isPending, error } = useMutation({
     async mutationFn(credentials: { username: string; password: string }) {
       try {
-        const { data } = await http.post<{ refresh: string; access: string }>(
+        const { data } = await http.post<{ access: string }>(
           "/login/usernamepassword",
           credentials,
         );

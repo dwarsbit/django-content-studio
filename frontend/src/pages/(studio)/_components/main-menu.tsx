@@ -287,7 +287,7 @@ function MenuItem({
 function UserMenu() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setToken } = useAuth();
+  const { logout } = useAuth();
   const { data: me } = useMe();
   const { data: adminInfo } = useAdminInfo();
   const { theme, setTheme } = useTheme();
@@ -342,7 +342,7 @@ function UserMenu() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
-                    setToken(null);
+                    logout();
                     navigate("/login");
                   }}
                 >

@@ -42,7 +42,9 @@ class UsernamePasswordViewSet(ViewSet):
 
         user.save()
 
-        return admin_site.token_backend.active_backend.get_response_for_user(user)
+        return admin_site.token_backend.active_backend.get_response_for_user(
+            user, request
+        )
 
 
 class UsernamePasswordBackend:

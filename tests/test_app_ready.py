@@ -35,14 +35,14 @@ class RouteRegistrationTests(TestCase):
 
     def test_me_accepts_the_configured_token_backend(self):
         """AdminApiViewSet authenticates with the studio's token backend."""
-        from rest_framework_simplejwt.tokens import RefreshToken
-
         from django.contrib.auth import models as auth_models
+
+        from content_studio.token_backends.jwt import create_access_token
 
         user = auth_models.User.objects.create_superuser(
             username="admin", email="a@example.com", password="x"
         )
-        token = str(RefreshToken.for_user(user).access_token)
+        token = create_access_token(user)
 
         response = self.client.get("/api/me", HTTP_AUTHORIZATION=f"Bearer {token}")
 

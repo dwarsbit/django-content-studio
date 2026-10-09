@@ -65,8 +65,8 @@ function makeAdminInfo(overrides: Partial<AdminInfo> = {}): AdminInfo {
     version: "1.0.0-rc.1",
     login_backends: [],
     token_backend: {
-      type: TokenBackendType.SimpleJwt,
-      config: { ACCESS_TOKEN_LIFETIME: 1800 },
+      type: TokenBackendType.JsonWebToken,
+      config: { ACCESS_TOKEN_LIFETIME: 1800, REFRESH_TOKEN_LIFETIME: 604800 },
     },
     formats: {} as AdminInfo["formats"],
     widgets: {} as AdminInfo["widgets"],

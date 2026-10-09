@@ -35,6 +35,16 @@ DEFAULTS = {
     "PASSWORD_RESET_EXPIRATION_TIME": 10,
     # Rate limit for login attempts, per IP; None disables throttling.
     "LOGIN_THROTTLE_RATE": "10/min",
+    # Token backend used to authenticate the admin API.
+    "TOKEN_BACKEND": "content_studio.token_backends.JsonWebTokenBackend",
+    # Access token lifetime in seconds; the token lives in browser memory.
+    "TOKEN_LIFETIME": 60 * 60,
+    # Refresh token lifetime in seconds; the token lives in an httpOnly cookie.
+    "REFRESH_TOKEN_LIFETIME": 7 * 24 * 60 * 60,
+    # Signing key for tokens; None falls back to the Django SECRET_KEY.
+    "TOKEN_SIGNING_KEY": None,
+    # Algorithm used to sign tokens (see PyJWT for the supported options).
+    "TOKEN_ALGORITHM": "HS256",
 }
 
 
@@ -45,6 +55,7 @@ IMPORT_STRINGS = [
     "MEDIA_LIBRARY_MODEL",
     "MEDIA_LIBRARY_FOLDER_MODEL",
     "TENANT_MODEL",
+    "TOKEN_BACKEND",
 ]
 
 

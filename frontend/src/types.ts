@@ -22,6 +22,7 @@ export interface AuthState {
   token: string | null;
   setToken(token: string | null): void;
   isAuthenticated: boolean;
+  logout(): Promise<void>;
 }
 
 export interface AdminInfo {
@@ -56,16 +57,17 @@ export interface UsernamePasswordBackend {
   };
 }
 
-export type TokenBackend = SimpleJwtBackend;
+export type TokenBackend = JsonWebTokenBackend;
 
 export enum TokenBackendType {
-  SimpleJwt = "SimpleJwtBackend",
+  JsonWebToken = "JsonWebTokenBackend",
 }
 
-export interface SimpleJwtBackend {
-  type: TokenBackendType.SimpleJwt;
+export interface JsonWebTokenBackend {
+  type: TokenBackendType.JsonWebToken;
   config: {
     ACCESS_TOKEN_LIFETIME: number;
+    REFRESH_TOKEN_LIFETIME: number;
   };
 }
 

@@ -9,8 +9,8 @@ from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
 from django.contrib.auth import models as auth_models
 from django.test import TestCase
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 
+from content_studio.token_backends.jwt import create_access_token
 from tests.testapp.models import Article, Category, Review, SiteSettings
 
 
@@ -33,7 +33,7 @@ class AuthenticatedTestCase(TestCase):
 
     def client_for(self, user):
         client = APIClient()
-        token = str(RefreshToken.for_user(user).access_token)
+        token = create_access_token(user)
         client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         return client
 

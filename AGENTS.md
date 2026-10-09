@@ -89,7 +89,7 @@ frontend/
 | Backend | Python | >=3.12 |
 | Framework | Django | >=5.0,<7.0 |
 | API | Django REST Framework | >=3.16,<4 |
-| Auth | JWT (djangorestframework-simplejwt) | >=5,<6 |
+| Auth | JWT (PyJWT, own backend; refresh token in httpOnly cookie) | >=2,<3 |
 | Frontend | React | 19.2.7 |
 | Build | Vite | 8.0.16 |
 | Styling | Tailwind CSS | 4.3.0 |
@@ -244,7 +244,7 @@ urlpatterns = [
 
 ### Authentication
 
-- Uses JWT tokens via djangorestframework-simplejwt
+- Uses JWT tokens via Content Studio's own token backend (PyJWT; the refresh token lives in an httpOnly cookie)
 - Token backend configured in `token_backends/jwt.py`
 - Login backends in `login_backends/` directory
 

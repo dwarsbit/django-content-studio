@@ -49,12 +49,13 @@ def test_unconfigured_media_model_raises_not_configured():
 def test_unconfigured_media_model_returns_501():
     """Through the API the status is 501 Not Implemented, not 405."""
     from django.contrib.auth import models as auth_models
-    from rest_framework_simplejwt.tokens import RefreshToken
+
+    from content_studio.token_backends.jwt import create_access_token
 
     user = auth_models.User.objects.create_user(
         username="staff", email="s@example.com", password="x"
     )
-    token = str(RefreshToken.for_user(user).access_token)
+    token = create_access_token(user)
 
     client = APIClient()
     response = client.get(

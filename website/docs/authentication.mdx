@@ -4,18 +4,37 @@ sidebar_position: 8
 
 # 🔐 Authentication
 
-Content Studio ships with JSON Web Token authentication
-([djangorestframework-simplejwt](https://django-rest-framework-simplejwt.readthedocs.io/))
-and a pluggable login backend system.
+Content Studio ships with its own JSON Web Token authentication — signed
+with [PyJWT](https://pyjwt.readthedocs.io/) and configured entirely through
+the `CONTENT_STUDIO` namespace — plus a pluggable login backend system.
+Projects that run their own JWT stack (for example
+`djangorestframework-simplejwt` for their public API) never conflict with
+Content Studio: no global JWT settings are touched.
+
+## How sessions work
+
+The access token authenticates every request through the
+`Authorization: Bearer <token>` header and is short-lived (one hour by
+default, [`TOKEN_LIFETIME`](/docs/settings#token_lifetime)). The browser
+keeps it in memory only. The matching refresh token lives in an httpOnly,
+`SameSite=Lax` cookie scoped to the token endpoints — it never reaches
+JavaScript, so a compromised page cannot steal it.
+
+Login returns the access token; the refresh cookie is set alongside it.
+Sessions restore silently on page reload, a 401 triggers a single shared
+refresh and the failed request is retried, and logging out clears the
+cookie server-side. Refreshing rotates the refresh token; the previous one
+simply expires. Server-side reuse detection (a shared blacklist) is a
+deliberate non-goal for now.
 
 ## Login backends
 
 A login backend is a small class with a name, a DRF view set and the login
 logic. The default username/password backend logs staff users in with their
-username and password, exactly like the Django admin, and returns the JWT
-pair the interface works with. Configure additional backends — SSO, magic
-links, LDAP — with the `LOGIN_BACKENDS` setting; the interface renders a
-form per backend automatically. Login attempts are throttled per IP
+username and password, exactly like the Django admin, and returns the
+access token the interface works with. Configure additional backends — SSO,
+magic links, LDAP — with the `LOGIN_BACKENDS` setting; the interface renders
+a form per backend automatically. Login attempts are throttled per IP
 ([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate)).
 
 ```python
@@ -40,16 +59,17 @@ class MagicLinkBackend:
         return {"type": cls.__name__, "config": {}}
 
     @classmethod
-    def get_response_for_user(cls, user):
-        # Build the authentication response — the JWT backend returns
-        # {"refresh": ..., "access": ...}.
+    def get_response_for_user(cls, user, request):
+        # Build the authentication response — the JSON Web Token
+        # backend returns {"access": ...} and sets the refresh cookie.
         ...
 ```
 
 ## Token backend
 
-Tokens themselves come from the token backend (`SimpleJwtBackend` by
-default), which provides the authentication class and the token response
+Tokens come from the token backend (`JsonWebTokenBackend` by default —
+select another with the [`TOKEN_BACKEND`](/docs/settings#token_backend)
+setting), which provides the authentication class and the token response
 format. Custom token backends follow the same small interface.
 
 ## Password reset
