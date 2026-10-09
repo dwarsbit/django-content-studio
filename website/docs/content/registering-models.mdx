@@ -93,3 +93,33 @@ class ArticleAdmin(ModelAdmin):
 Inlines live inside their parent's edit view and stay there: inline lists are
 always shown in the context of a parent, and inline objects cannot be attached
 to a parent the user cannot see.
+
+## Relation display
+
+Wherever a related object appears — relation pickers, list views and
+selected-value badges — its display is controlled by the **related model's
+admin** through `get_relation_display`. The default shows the object's
+string representation:
+
+```python
+from content_studio.admin import ModelAdmin, RelationDisplay
+
+
+@register(models.Category)
+class CategoryAdmin(ModelAdmin):
+    def get_relation_display(self, obj, request):
+        return RelationDisplay(
+            title=obj.name,
+            description=f"{obj.article_set.count()} article(s)",
+            icon="ph-bold ph-tag",
+        )
+```
+
+`RelationDisplay` takes a `title` (required), a `description`, an `icon`
+(a CSS class, like the `ModelAdmin.icon`), `initials` (shown as one character on
+a colored circle — the color is derived from the full initials value) and an
+`avatar` (an image URL). Everything but the title is optional and omitted
+from the interface when empty. When several glyphs are set, one is shown with
+the priority: avatar, then initials, then icon. Models registered with a
+plain Django admin (like `django.contrib.auth`'s `User`) always fall back to
+the string representation.

@@ -157,6 +157,11 @@ export interface WidgetProps<T> {
 export interface Resource {
   id: Id;
   __str__: string;
+  // Relation display customization (ModelAdmin.get_relation_display).
+  description?: string | null;
+  icon?: string | null;
+  initials?: string | null;
+  avatar?: string | null;
   [key: string]: unknown;
 }
 

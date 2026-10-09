@@ -17,8 +17,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { useHttp } from "@/hooks/use-http";
 import type { Model, Resource, WidgetProps } from "@/types";
+
+import { RelationGlyph } from "./relation-glyph";
+import { RelationOption } from "./relation-option";
 
 export function ForeignKeyWidget({
   name,
@@ -35,7 +39,7 @@ export function ForeignKeyWidget({
   const formValues = form.watch();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const { data = [] } = useQuery({
+  const { data = [], isLoading } = useQuery({
     enabled: open,
     queryKey: ["related-model", model.label, name, formValues, search],
     placeholderData: keepPreviousData,
@@ -57,8 +61,17 @@ export function ForeignKeyWidget({
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="w-full font-medium text-gray-700 flex items-center justify-between text-left border border-gray-300 hover:border-gray-400 cursor-pointer rounded-md px-3 h-8 shadow-xs select-none">
-        <div className="flex-1">{value?.__str__}</div>
+      <PopoverTrigger className="w-full font-medium text-gray-700 flex items-center justify-between text-left border border-gray-300 hover:border-gray-400 cursor-pointer rounded-md px-3 h-8 select-none">
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          <RelationGlyph
+            avatar={value?.avatar}
+            initials={value?.initials}
+            icon={value?.icon}
+            size="size-4"
+            text="text-[9px]"
+          />
+          <span className="line-clamp-1">{value?.__str__}</span>
+        </div>
         <FiChevronDown className="size-4 opacity-50" />
       </PopoverTrigger>
       <PopoverContent className="max-h-[400px] w-[var(--radix-popover-trigger-width)] overflow-hidden p-0 flex flex-col">
@@ -73,19 +86,29 @@ export function ForeignKeyWidget({
         </div>
         <Command shouldFilter={false}>
           <CommandList className="scrollbar">
-            <CommandGroup>
-              {dataWithValue.map(({ id, __str__ }) => (
-                <CommandItem
-                  key={id}
-                  onSelect={() => {
-                    onChange?.({ id, __str__ });
-                    setOpen(false);
-                  }}
-                >
-                  <div className="line-clamp-1">{__str__}</div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {isLoading ? (
+              <div role="status" className="py-6 flex justify-center">
+                <Spinner />
+              </div>
+            ) : R.isEmpty(dataWithValue) ? (
+              <div className="py-6 text-center text-sm text-muted-foreground select-none">
+                {t("widgets.relation_widget.no_results")}
+              </div>
+            ) : (
+              <CommandGroup>
+                {dataWithValue.map((option) => (
+                  <CommandItem
+                    key={option.id}
+                    onSelect={() => {
+                      onChange?.(option);
+                      setOpen(false);
+                    }}
+                  >
+                    <RelationOption option={option} />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { RelationGlyph } from "@/components/widgets/relation-glyph";
 import { useDiscover } from "@/hooks/use-discover";
 import { cn } from "@/lib/utils";
 import type { ModelField } from "@/types";
@@ -26,32 +27,53 @@ export function ForeignKeyFormat({
   field?: ModelField;
 }) {
   const { data: discover } = useDiscover();
-  const isUser =
-    field?.related_model?.toLowerCase() === discover?.user_model.toLowerCase();
   const model = discover?.models.find(
     R.whereEq({ label: field?.related_model }),
   );
   const label =
     typeof value === "object" && value !== null ? relatedLabel(value) : null;
+  const isUser =
+    field?.related_model?.toLowerCase() === discover?.user_model.toLowerCase();
+  // A customized relation display (avatar, initials or icon) takes
+  // precedence over the user-model avatar heuristic.
+  const hasDisplayGlyph =
+    typeof value === "object" &&
+    value !== null &&
+    ("avatar" in value || "initials" in value || "icon" in value);
+
+  if (isUser && !hasDisplayGlyph) {
+    return (
+      <div className="flex items-center gap-1.5">
+        {Boolean(value) && (
+          <Tooltip>
+            <TooltipContent>{label}</TooltipContent>
+            <TooltipTrigger asChild>
+              <Avatar className="size-6">
+                <AvatarFallback className="text-xs">
+                  {(label ?? "").slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </TooltipTrigger>
+          </Tooltip>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-1.5">
-      {!isUser && model?.admin.icon && (
+      {hasDisplayGlyph ? (
+        <RelationGlyph
+          avatar={"avatar" in value ? String(value.avatar) : null}
+          initials={"initials" in value ? String(value.initials) : null}
+          icon={"icon" in value ? String(value.icon) : null}
+          size="size-5"
+          text="text-[10px]"
+        />
+      ) : model?.admin.icon ? (
         <span className={cn(model.admin.icon, "text-gray-500")} />
-      )}
-      {isUser && Boolean(value) && (
-        <Tooltip>
-          <TooltipContent>{label}</TooltipContent>
-          <TooltipTrigger asChild>
-            <Avatar className="size-6">
-              <AvatarFallback className="text-xs">
-                {(label ?? "").slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </TooltipTrigger>
-        </Tooltip>
-      )}
-      {!isUser && (value ? (label ?? String(value)) : "-")}
+      ) : null}
+      {value ? (label ?? String(value)) : "-"}
     </div>
   );
 }

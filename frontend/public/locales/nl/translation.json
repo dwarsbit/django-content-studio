@@ -106,6 +106,16 @@
       "dialog_title": "Selecteer media",
       "upload_label": "Upload media"
     },
+    "tag_widget": {
+      "placeholder": "Voeg een tag toe..."
+    },
+    "multi_select_widget": {
+      "no_more_options": "Geen opties meer"
+    },
+    "relation_widget": {
+      "no_results": "Geen resultaten gevonden",
+      "remove": "Verwijder {{item}}"
+    },
     "date_picker": {
       "placeholder": "Selecteer een datum"
     }

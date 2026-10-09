@@ -4,7 +4,12 @@ Content Studio registration for the demo project — the documented pattern:
 """
 
 from content_studio import register
-from content_studio.admin import AdminSite, ModelAdmin, StackedInline
+from content_studio.admin import (
+    AdminSite,
+    ModelAdmin,
+    RelationDisplay,
+    StackedInline,
+)
 from content_studio.dashboard import Dashboard
 from content_studio.form import FormSet
 
@@ -21,10 +26,25 @@ class CategoryAdmin(ModelAdmin):
     list_display = ["name"]
     search_fields = ["name"]
 
+    def get_relation_display(self, obj, request):
+        return RelationDisplay(
+            title=obj.name,
+            description=f"{obj.article_set.count()} article(s)",
+            icon="ph-bold ph-tag",
+        )
+
 
 @register(models.MediaItem)
 class MediaItemAdmin(ModelAdmin):
     list_display = ["name", "type"]
+
+    def get_relation_display(self, obj, request):
+        return RelationDisplay(
+            title=obj.name,
+            initials=obj.name[:2],
+            # Image items show their own picture as the avatar.
+            avatar=obj.file.url if obj.type == "image" and obj.file else None,
+        )
 
 
 @register(models.MediaFolder)

@@ -17,6 +17,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from .admin import get_relation_display_for
 from .filters import LookupFilter
 from .permissions import ModelAdminPermissions
 from .serializers import RelatedItemSerializer
@@ -186,7 +187,26 @@ class BaseModelViewSet(ModelViewSet):
         else:
             qs = self._get_related_search_queryset(related_model, search)
 
-        serializer = RelatedItemSerializer(qs[:20], many=True)
+        items = []
+        for obj in qs[:20]:
+            display = get_relation_display_for(related_model, obj, request)
+            item = {"id": obj.pk, "__str__": display.title}
+
+            if display.description:
+                item["description"] = display.description
+
+            if display.icon:
+                item["icon"] = display.icon
+
+            if display.initials:
+                item["initials"] = display.initials
+
+            if display.avatar:
+                item["avatar"] = display.avatar
+
+            items.append(item)
+
+        serializer = RelatedItemSerializer(items, many=True)
 
         return Response(data=serializer.data)
 

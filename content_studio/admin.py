@@ -254,6 +254,22 @@ def get_is_singleton(admin_class) -> bool:
     return bool(getattr(model, "is_singleton", False))
 
 
+def get_relation_display_for(
+    model: Type[models.Model], obj: models.Model, request: HttpRequest
+) -> "RelationDisplay":
+    """
+    Resolve the relation display for an object through its model's
+    Content Studio admin. Models registered with a plain Django admin (e.g.
+    django.contrib.auth's User) fall back to the string representation.
+    """
+    related_admin = admin.site._registry.get(model)
+
+    if isinstance(related_admin, ModelAdmin):
+        return related_admin.get_relation_display(obj, request)
+
+    return RelationDisplay(title=str(obj))
+
+
 T = TypeVar("T", bound=Model)
 
 
@@ -302,6 +318,16 @@ class ModelAdmin(admin.ModelAdmin, Generic[T]):
 
     # The icon for this model will be shown in the menu and some other places.
     icon: Optional[str] = None
+
+    def get_relation_display(
+        self, obj: models.Model, request: HttpRequest
+    ) -> "RelationDisplay":
+        """
+        How a related object appears wherever the studio renders it: relation
+        pickers, list views and selected-value badges. Override to customize;
+        the base implementation displays the object's string representation.
+        """
+        return RelationDisplay(title=str(obj))
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         # Don't allow adding more than one singleton object.
@@ -462,6 +488,34 @@ class AdminSerializer:
             return edit_sidebar
 
         return [FormSet(fields=edit_sidebar)]
+
+
+class RelationDisplay:
+    """
+    The display of a related object wherever it appears in the studio:
+    relation pickers, list views and selected-value badges.
+
+    Besides title, description and icon, the display can carry initials
+    (shown as one character on a colored circle) and an avatar (an image
+    URL). When several are set, the interface shows one glyph with the
+    priority: avatar, then initials, then icon.
+    """
+
+    def __init__(
+        self,
+        title: str,
+        description: str = "",
+        icon: str = None,
+        initials: str = "",
+        avatar: str = None,
+    ):
+        self.title = title
+        self.description = description
+        # A CSS class, like the ModelAdmin icon.
+        self.icon = icon
+        self.initials = initials
+        # A URL to an image.
+        self.avatar = avatar
 
 
 class ModelGroup:

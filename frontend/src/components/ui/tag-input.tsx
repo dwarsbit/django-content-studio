@@ -80,6 +80,14 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
         return;
       }
 
+      // Tab commits the pending tag and lets focus move on with the natural
+      // form order (blur would commit it otherwise, so this only makes the
+      // commit happen before the leave).
+      if (e.key === "Tab") {
+        commitTag(inputValue);
+        return;
+      }
+
       if (e.key === "Backspace" && inputValue === "" && value.length > 0) {
         // Remove the last tag when backspacing on an empty field.
         removeTag(value.length - 1);
@@ -95,7 +103,7 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
     return (
       <div
         className={cn(
-          "flex min-h-8 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1 text-sm",
+          "flex min-h-8 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1 text-sm",
           "focus-within:border-gray-400 focus-within:outline-none",
           disabled && "cursor-not-allowed opacity-50",
           className,

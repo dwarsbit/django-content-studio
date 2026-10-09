@@ -1,8 +1,13 @@
-import * as R from "ramda";
+import { useTranslation } from "react-i18next";
 
-import { MultiSelect } from "@/components/ui/multi-select";
+import { TagInput } from "@/components/ui/tag-input";
 import type { ModelField } from "@/types";
 
+/**
+ * A simple free-form tag input: tags are arbitrary strings, committed with
+ * Enter, Tab or a comma. There are no options or suggestions — tags are
+ * whatever the user types.
+ */
 export function TagWidget({
   value = [],
   onChange,
@@ -11,16 +16,16 @@ export function TagWidget({
   onChange(value: string[]): void;
   value?: string[];
 }) {
-  const _value = !value ? [] : !Array.isArray(value) ? [value] : value;
+  const { t } = useTranslation();
+
+  // Values are string lists; tolerate anything else by normalizing to one.
+  const tags = !value ? [] : Array.isArray(value) ? value : [value];
 
   return (
-    <MultiSelect
-      hidePlaceholderWhenSelected
-      creatable
-      value={_value.map((value) => ({ value, label: value }))}
-      onChange={(value) => {
-        onChange(value.map(R.prop("value")));
-      }}
+    <TagInput
+      value={tags}
+      onChange={onChange}
+      placeholder={t("widgets.tag_widget.placeholder")}
     />
   );
 }

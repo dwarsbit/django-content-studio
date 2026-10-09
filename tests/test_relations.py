@@ -120,3 +120,66 @@ def test_custom_filter_method_is_used():
     response = viewset.get_related_objects(request, "groups")
 
     assert response.data == []
+
+
+@pytest.mark.django_db
+def test_relation_display_defaults_to_str():
+    """Without a customization, items stay the plain {id, __str__} shape."""
+    user = auth_models.User.objects.create_superuser(
+        username="admin", email="a@example.com", password="x"
+    )
+    auth_models.Group.objects.create(name="editors")
+
+    viewset, request = make_viewset(user, auth_models.User, search="edit")
+
+    response = viewset.get_related_objects(request, "groups")
+
+    assert response.data == [
+        {"id": str(auth_models.Group.objects.get().pk), "__str__": "editors"}
+    ]
+
+
+@pytest.mark.django_db
+def test_relation_display_is_customizable():
+    """A related model admin can customize how its options display."""
+    from django.contrib import admin as django_admin
+
+    from content_studio.admin import ModelAdmin, RelationDisplay
+    from tests.testapp.models import Category
+
+    class CategoryAdmin(ModelAdmin):
+        def get_relation_display(self, obj, request):
+            return RelationDisplay(
+                title=obj.name.upper(),
+                description="customized",
+                icon="ph-bold ph-tag",
+                initials="Ge",
+                avatar="https://example.com/general.png",
+            )
+
+    original_admin = django_admin.site._registry.pop(Category)
+    django_admin.site.register(Category, CategoryAdmin)
+    try:
+        user = auth_models.User.objects.create_superuser(
+            username="admin", email="a@example.com", password="x"
+        )
+        Category.objects.create(name="General")
+
+        from tests.testapp.models import Article
+
+        article_admin = django_admin.site._registry.get(Article)
+        viewset, request = make_viewset(
+            user, Article, search="", admin_model=article_admin
+        )
+
+        response = viewset.get_related_objects(request, "categories")
+
+        item = response.data[0]
+        assert item["__str__"] == "GENERAL"
+        assert item["description"] == "customized"
+        assert item["icon"] == "ph-bold ph-tag"
+        assert item["initials"] == "Ge"
+        assert item["avatar"] == "https://example.com/general.png"
+    finally:
+        django_admin.site.unregister(Category)
+        django_admin.site._registry[Category] = original_admin

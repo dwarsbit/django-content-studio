@@ -13,8 +13,25 @@ class ContentRelatedField(RelatedField):
     def to_representation(self, value):
         from content_studio.settings import cs_settings
 
+        from .admin import get_relation_display_for
+
         admin_site = cs_settings.ADMIN_SITE
-        data = {"id": value.id, "__str__": str(value)}
+        display = get_relation_display_for(
+            value.__class__, value, self.context.get("request")
+        )
+        data = {"id": value.id, "__str__": display.title}
+
+        if display.description:
+            data["description"] = display.description
+
+        if display.icon:
+            data["icon"] = display.icon
+
+        if display.initials:
+            data["initials"] = display.initials
+
+        if display.avatar:
+            data["avatar"] = display.avatar
 
         # Add file URL and media type if the model is a media library model.
         if value.__class__ is cs_settings.MEDIA_LIBRARY_MODEL:
@@ -107,11 +124,17 @@ class ContentSerializer(serializers.ModelSerializer):
 class RelatedItemSerializer(serializers.Serializer):
     """
     Serializer for use in the relations endpoint. The id is PK-agnostic:
-    models are free to use integer or string primary keys.
+    models are free to use integer or string primary keys. The display of an
+    item is resolved through the related model admin's
+    get_relation_display: description and icon are present when customized.
     """
 
     id = serializers.CharField()
     __str__ = serializers.CharField()
+    description = serializers.CharField(required=False)
+    icon = serializers.CharField(required=False)
+    initials = serializers.CharField(required=False)
+    avatar = serializers.CharField(required=False)
 
 
 def session_user_field_names(user_model) -> list[str]:
