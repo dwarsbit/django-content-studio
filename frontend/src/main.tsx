@@ -15,8 +15,14 @@ import { ModelListLayout } from "@/pages/(studio)/content/[model]/layout";
 import { ModelListPage } from "@/pages/(studio)/content/[model]/page";
 import { StudioLayout } from "@/pages/(studio)/layout";
 import { MediaLibraryPage } from "@/pages/(studio)/media-library/[model]/page";
+import { UIPage } from "@/pages/(studio)/ui/page";
 
 const queryClient = new QueryClient();
+
+// The UI showcase is a development tool: available under the vite dev server
+// and on Django debug deployments (the template sets DCS_DEBUG); production
+// installs never see the route.
+const uiShowcaseEnabled = import.meta.env.DEV || window.DCS_DEBUG === true;
 
 const router = createBrowserRouter(
   [
@@ -38,6 +44,9 @@ const router = createBrowserRouter(
                   path: "media-library",
                   element: <MediaLibraryPage />,
                 },
+                ...(uiShowcaseEnabled
+                  ? [{ path: "ui", element: <UIPage /> }]
+                  : []),
                 {
                   path: "content/:model",
                   element: <ModelListLayout />,

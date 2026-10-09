@@ -9,6 +9,7 @@
     <script>
         window.DCS_STATIC_PREFIX = "{% static '' %}content_studio/";
         window.DCS_BASENAME = "{% url 'content_studio_web' %}";
+        {% if debug %}window.DCS_DEBUG = true;{% endif %}
     </script>
     <script type="module" crossorigin src="{% static 'content_studio/assets/index.js' %}?v={{ version }}"></script>
     <link rel="stylesheet" crossorigin href="{% static 'content_studio/assets/index.css' %}?v={{ version }}">

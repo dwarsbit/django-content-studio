@@ -31,6 +31,9 @@ class ContentStudioWebAppView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["version"] = __version__
+        # Development tooling (the UI showcase) is enabled for Django debug
+        # setups only; production installs never see it.
+        context["debug"] = settings.DEBUG
         return context
 
 
