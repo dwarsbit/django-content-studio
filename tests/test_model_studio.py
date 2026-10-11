@@ -96,13 +96,3 @@ def test_get_fields_respects_exclude():
     assert "views" not in fields
     assert "rating" not in fields
     assert "title" in fields
-
-
-def test_get_fields_prefers_explicit_fields():
-    class Narrow(ModelStudio):
-        fields = ["title", "status"]
-
-    assert Narrow(Article, admin_site).get_fields(make_request(None)) == [
-        "title",
-        "status",
-    ]

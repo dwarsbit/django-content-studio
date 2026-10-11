@@ -128,10 +128,6 @@ class BaseStudio(Generic[T]):
 
     model: Type[T]
 
-    # Explicit field list for the default edit form; falls back to
-    # every editable field.
-    fields: Optional[list[str]] = None
-
     # Fields to leave out of the default edit form.
     exclude: Optional[list[str]] = None
 
@@ -142,11 +138,9 @@ class BaseStudio(Generic[T]):
     def get_fields(self, request: HttpRequest, obj: Optional[T] = None) -> list[str]:
         """
         The fields of the default edit form: every editable field
-        (including many-to-many) when `fields` is not set, minus `exclude`.
+        (including many-to-many), minus `exclude`. The additive way to
+        pick fields is edit_main.
         """
-        if self.fields:
-            return list(self.fields)
-
         exclude = set(self.exclude or [])
 
         return [
