@@ -37,14 +37,19 @@ export function FormatRenderer({
   value,
   field,
   emptyValue,
+  formatName,
 }: {
   value: unknown;
   field?: ModelField;
   emptyValue?: string | null;
+  // An explicit format (e.g. a table column's); overrides the
+  // field-type driven resolution.
+  formatName?: FieldFormat;
 }) {
   const { data: info } = useAdminInfo();
   const formatClass =
     field?.format_class ??
+    formatName ??
     (field ? info?.formats[field.type]?.name : undefined) ??
     FieldFormat.TextFormat;
 

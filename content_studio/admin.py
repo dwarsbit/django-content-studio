@@ -9,7 +9,7 @@ from rest_framework.request import HttpRequest
 
 from . import widgets, formats
 from .exceptions import AlreadyRegistered, NotRegistered
-from .form import FormSet, FormSetGroup, Field, Component
+from .form import FormSet, FormSetGroup, Field, Component, TableColumn
 from .login_backends import LoginBackendManager
 from .settings import cs_settings
 from .token_backends import TokenBackendManager
@@ -192,8 +192,9 @@ class ModelStudio(BaseStudio[T]):
     # Description shown below model name on list pages
     list_description: str = ""
 
-    # The columns of the table view.
-    table_display: list[str] = ["__str__"]
+    # The columns of the table view: field names, TableColumn objects
+    # or both mixed.
+    table_display: list[Union[str, "TableColumn"]] = ["__str__"]
 
     # The anatomy of a list view row: roles mapped to field or model
     # method names, e.g. {"title": "name", "description": "subtitle"}.
@@ -304,8 +305,9 @@ class InlineModelStudio(BaseStudio[T]):
     # empty when the inline has exactly one.
     fk_name: Optional[str] = None
 
-    # The columns of the inline list.
-    table_display: list[str] = ["__str__"]
+    # The columns of the inline list: field names, TableColumn objects
+    # or both mixed.
+    table_display: list[Union[str, "TableColumn"]] = ["__str__"]
 
     list_per_page: int = 10
     list_filter: list[str] = []
@@ -562,6 +564,29 @@ def iter_components(admin_class):
             yield field
 
 
+def get_table_display_columns(admin_class) -> list[TableColumn]:
+    """
+    Normalize a model studio's table_display entries into TableColumn
+    objects: plain strings are shorthand for TableColumn(field=name).
+    """
+    return [
+        entry if isinstance(entry, TableColumn) else TableColumn(field=entry)
+        for entry in admin_class.table_display
+    ]
+
+
+def is_computed_column(admin_class, column: TableColumn) -> bool:
+    """
+    Whether a column is computed: backed by a method on the studio
+    rather than a model field. Dunder names (__str__ and friends) are
+    model behavior, never studio methods.
+    """
+    if column.field.startswith("__"):
+        return False
+
+    return callable(getattr(admin_class, column.field, None))
+
+
 def get_is_singleton(admin_class) -> bool:
     """
     Return the effective singleton state of a model studio.
@@ -620,7 +645,10 @@ class AdminSerializer:
                     {
                         "model": inline.model._meta.label_lower,
                         "fk_name": get_related_field_name(inline, admin_class.model),
-                        "table_display": inline.table_display,
+                        "table_display": [
+                            column.serialize()
+                            for column in get_table_display_columns(inline)
+                        ],
                     }
                     for inline in admin_class.inlines
                 ],
@@ -658,7 +686,10 @@ class AdminSerializer:
         return [i.serialize() for i in self.get_edit_sidebar(admin_class.edit_sidebar)]
 
     def get_table_display(self) -> list[dict[str, Any]]:
-        return [{"name": field} for field in self.admin_class.table_display]
+        return [column.serialize() for column in self.get_columns()]
+
+    def get_columns(self) -> list[TableColumn]:
+        return get_table_display_columns(self.admin_class)
 
     def get_edit_main(
         self,

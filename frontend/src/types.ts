@@ -99,6 +99,8 @@ export interface Model {
       description: string;
       display: {
         name: string;
+        header: string | null;
+        format: string | null;
       }[];
       views?: string[];
       search: boolean;
@@ -111,7 +113,11 @@ export interface Model {
       inlines: {
         model: string;
         fk_name: string;
-        table_display: string[];
+        table_display: {
+          name: string;
+          header: string | null;
+          format: string | null;
+        }[];
       }[];
     };
     permissions: {

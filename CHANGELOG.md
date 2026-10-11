@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Table columns:** `table_display` accepts `TableColumn` objects
+  alongside field names — `TableColumn(field, header, format)` sets a
+  custom column header, an explicit format, and references studio
+  methods (`(obj, request)` returning a JSON-safe value) for computed
+  columns. Method columns render through `TextFormat` when no format
+  is set, cannot be sorted (ordering is now restricted to real model
+  fields — ordering by `__str__` previously raised a server error),
+  and misconfiguration is reported by the `content_studio.E006`
+  system check.
 - ⚠️ **Breaking:** Content Studio no longer inherits from Django's
   `ModelAdmin` and `AdminSite`. The configuration classes are now
   `ModelStudio` and `ContentStudioSite` (`InlineModelStudio` for

@@ -110,7 +110,10 @@ function makeModel(overrides: ModelOverrides = {}): Model {
       list: {
         per_page: 10,
         description: "",
-        display: [{ name: "title" }, { name: "status" }],
+        display: [
+          { name: "title", header: null, format: null },
+          { name: "status", header: null, format: null },
+        ],
         search: true,
         filter: [],
         sortable_by: null,
@@ -143,6 +146,11 @@ const articles: Resource[] = [
     status: "published",
   },
 ];
+
+const previewedArticles: Resource[] = articles.map((article, i) => ({
+  ...article,
+  get_body_preview: i === 0 ? "first body" : "second body",
+}));
 
 function makePaginated(
   results: Resource[],
@@ -287,6 +295,37 @@ describe("ModelListPage", () => {
     expect(screen.getByRole("button", { name: "Title" })).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Status" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders a header on a column and the raw value on a computed one", async () => {
+    httpGetMock.mockResolvedValue({ data: makePaginated(previewedArticles) });
+    renderListPage(
+      makeModel({
+        list: {
+          display: [
+            { name: "title", header: null, format: null },
+            {
+              name: "get_body_preview",
+              header: "Preview",
+              format: null,
+            },
+          ],
+        },
+      }),
+    );
+
+    await screen.findByText("First Article");
+
+    // The explicit header replaces the verbose name...
+    expect(screen.getByText("Preview")).toBeInTheDocument();
+    // Field columns keep their verbose name...
+    expect(screen.getByText("Title")).toBeInTheDocument();
+    // ...and computed columns render their row value without a sort
+    // button.
+    expect(screen.getByText("first body")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Preview" }),
     ).not.toBeInTheDocument();
   });
 

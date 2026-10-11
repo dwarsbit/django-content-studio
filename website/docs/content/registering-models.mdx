@@ -143,7 +143,38 @@ class ArticleStudio(ModelStudio):
     list_views = ["table", "list"]
 ```
 
-The table's columns come from `table_display`. The list view's rows are
+The table's columns come from `table_display`. A column is a field name,
+or a `TableColumn` for a custom header, an explicit format or a computed
+value:
+
+```python
+from content_studio.form import TableColumn
+
+
+@register(models.Article)
+class ArticleStudio(ModelStudio):
+    table_display = [
+        "title",
+        TableColumn(field="published_at", header="Published"),
+        TableColumn(field="get_word_count", header="Words", format=NumberFormat),
+    ]
+
+    def get_word_count(self, obj, request):
+        return len(obj.body.split())
+```
+
+`TableColumn(field=...)` references a model field or a method on the
+studio. Methods take `(obj, request)` and return a JSON-safe value the
+format understands: strings for text-like formats, numbers for
+`NumberFormat`, ISO strings for the date and time formats. A method
+column without a format renders through `TextFormat`; a field column
+without one keeps its field type's default format.
+
+Column headers fall back to the field's verbose name; method columns
+without a `header` have no label. Method columns cannot be sorted —
+ordering is restricted to real model fields.
+
+The list view's rows are
 configured separately through `list_display` — a mapping of roles to field
 or model method names:
 

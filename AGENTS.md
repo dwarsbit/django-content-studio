@@ -222,7 +222,7 @@ The mappings live on the `ContentStudioSite` (`default_widget_mapping`, `default
 
 ### Form System
 
-Forms are defined using `FormSet`, `FormSetGroup`, `Field`, and `Component` classes in `form.py`.
+Forms are defined using `FormSet`, `FormSetGroup`, `Field` and `Component` classes in `form.py`; table columns use `TableColumn` (field name or studio method, optional header and format).
 
 ### Extensions
 

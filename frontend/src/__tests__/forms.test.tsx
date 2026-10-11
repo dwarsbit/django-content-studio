@@ -464,7 +464,10 @@ describe("Inline", () => {
           relModel="testapp.article"
           relId="art-1"
           model={imageModel}
-          adminModel={{ fk_name: "article", table_display: ["caption"] }}
+          adminModel={{
+            fk_name: "article",
+            table_display: [{ name: "caption", header: null, format: null }],
+          }}
         />
       </FormHarness>,
     );
@@ -497,7 +500,10 @@ describe("Inline", () => {
           relModel="testapp.article"
           relId="art-1"
           model={imageModel}
-          adminModel={{ fk_name: "article", table_display: ["caption"] }}
+          adminModel={{
+            fk_name: "article",
+            table_display: [{ name: "caption", header: null, format: null }],
+          }}
         />
       </FormHarness>,
     );

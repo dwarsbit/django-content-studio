@@ -1,6 +1,6 @@
 from content_studio import register
 from content_studio.admin import InlineModelStudio, ModelStudio
-from content_studio.form import FormSet
+from content_studio.form import FormSet, TableColumn
 
 from .models import Article, Category, Review, SiteSettings
 
@@ -17,7 +17,14 @@ class CategoryAdmin(ModelStudio):
 
 @register(Article)
 class ArticleAdmin(ModelStudio):
-    table_display = ["id", "title", "status", "published_at", "views"]
+    table_display = [
+        "id",
+        "title",
+        "status",
+        "published_at",
+        "views",
+        TableColumn(field="get_body_preview", header="Preview"),
+    ]
     list_views = ["table", "list"]
     list_display = {
         "title": "title",
@@ -35,6 +42,9 @@ class ArticleAdmin(ModelStudio):
         ),
     ]
     edit_sidebar = ["published_at", "rating", "author"]
+
+    def get_body_preview(self, obj, request):
+        return obj.body[:50] if obj.body else ""
 
 
 @register(SiteSettings)

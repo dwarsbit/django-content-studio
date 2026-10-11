@@ -64,6 +64,35 @@ class FieldLayout:
             raise ValueError(f"Invalid field: {field}. Must be a string or Field.")
 
 
+class TableColumn:
+    """
+    Column of a table view. A plain field name renders the field's
+    values; a method name on the model studio renders the method's
+    return value through the column's format.
+
+    Method values must be JSON-safe types the format understands:
+    strings for text-like formats, numbers for NumberFormat, ISO
+    strings for the date and time formats.
+    """
+
+    def __init__(self, field: str, header: str = None, format: Type = None):
+        self.field = field
+        # The column header. None uses the field's verbose name and
+        # leaves method columns unlabeled.
+        self.header = header
+        # The format class rendering the column's values. None falls
+        # back to the field type's default format (TextFormat for
+        # methods).
+        self.format = format
+
+    def serialize(self):
+        return {
+            "name": self.field,
+            "header": self.header,
+            "format": self.format.__name__ if self.format else None,
+        }
+
+
 class FormSet:
     """
     Formset class for configuring the blocks of fields in content edit views

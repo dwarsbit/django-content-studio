@@ -92,7 +92,11 @@ class DjangoContentStudioConfig(AppConfig):
         )
 
     def _create_view_set(self, model, admin_model, parent=None):
-        from .admin import get_is_singleton
+        from .admin import (
+            get_is_singleton,
+            get_table_display_columns,
+            is_computed_column,
+        )
         from .viewsets import BaseModelViewSet
         from .router import content_studio_router
         from .serializers import ContentSerializer
@@ -107,6 +111,15 @@ class DjangoContentStudioConfig(AppConfig):
             admin_model = admin_model(parent, admin_site)
             inline_parent_fk = get_related_field_name(admin_model, parent)
 
+        # Ordering is restricted to real model fields: __str__ and
+        # computed columns have no queryset equivalent, so ordering by
+        # them is dropped instead of raising FieldError.
+        model_field_names = {field.name for field in model._meta.get_fields()}
+        columns = get_table_display_columns(admin_model)
+        allowed_ordering = ["id", "pk"] + [
+            column.field for column in columns if column.field in model_field_names
+        ]
+
         class Pagination(ContentPagination):
             page_size = admin_model.list_per_page
 
@@ -117,6 +130,7 @@ class DjangoContentStudioConfig(AppConfig):
             pagination_class = Pagination
             queryset = _model.objects.none()
             search_fields = list(admin_model.search_fields)
+            ordering_fields = allowed_ordering
             # Inline viewsets: the FK to the parent model.
             parent_fk = inline_parent_fk
             parent_model = parent
@@ -126,9 +140,9 @@ class DjangoContentStudioConfig(AppConfig):
                 excluded_fields = None
                 # For list views we include the specified table_display fields.
                 if self.action == "list" and not self.is_singleton:
-                    available_fields = ["id", "__str__"] + list(
-                        self._admin_model.table_display
-                    )
+                    available_fields = ["id", "__str__"] + [
+                        column.field for column in columns
+                    ]
                     # Rows carry their resolved list display when the
                     # list view is enabled.
                     if "list" in self._admin_model.list_views:
@@ -149,6 +163,36 @@ class DjangoContentStudioConfig(AppConfig):
                         model = self._model
                         fields = available_fields
                         exclude = excluded_fields
+
+                # Columns backed by a model studio method ship their
+                # computed value on every row, through the column's
+                # format (TextFormat when unset).
+                if self.action == "list" and not self.is_singleton:
+                    method_columns = [
+                        column
+                        for column in columns
+                        if is_computed_column(self._admin_model, column)
+                    ]
+
+                    if method_columns:
+                        admin_model = self._admin_model
+                        attrs = {}
+
+                        for column in method_columns:
+
+                            def get_column_value(
+                                self, obj, admin_model=admin_model, column=column
+                            ):
+                                return getattr(admin_model, column.field)(
+                                    obj, self.context.get("request")
+                                )
+
+                            attrs[column.field] = serializers.SerializerMethodField(
+                                method_name=f"resolve_{column.field}"
+                            )
+                            attrs[f"resolve_{column.field}"] = get_column_value
+
+                        Serializer = type(str("Serializer"), (Serializer,), attrs)
 
                 # When the list view is enabled, every row carries its
                 # resolved list display so the frontend renders fully

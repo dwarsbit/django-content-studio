@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import type { Model } from "@/types";
+import type { FieldFormat, Model } from "@/types";
 
 export function ListView({
   items,
@@ -25,9 +25,7 @@ export function ListView({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const fields = model.admin.list.display.filter(
-    ({ name }) => !R.isNil(model.fields[name]),
-  );
+  const fields = model.admin.list.display;
   const ordering = searchParams.get("ordering");
   const { sortable_by, display } = model.admin.list;
 
@@ -36,12 +34,14 @@ export function ListView({
       <Table>
         <TableHeader>
           <TableRow>
-            {display.map(({ name }) => {
-              const label = model.fields[name]?.verbose_name;
+            {display.map(({ name, header }) => {
+              const label = header ?? model.fields[name]?.verbose_name;
               const active = name === ordering?.replace(/^-/, "");
               const descending = !!ordering?.startsWith("-");
+              // Computed columns have no queryset equivalent to sort on.
               const isSortable =
-                R.isNil(sortable_by) || sortable_by.includes(name);
+                !R.isNil(model.fields[name]) &&
+                (R.isNil(sortable_by) || sortable_by.includes(name));
 
               return (
                 <TableHead key={name} className="sticky top-0 z-10 bg-card">
@@ -106,12 +106,13 @@ export function ListView({
                 navigate({ hash: `#editor:${model.label}:${item.id}` })
               }
             >
-              {fields.map(({ name }) => (
+              {fields.map(({ name, format }) => (
                 <TableCell key={name}>
                   <div className="truncate min-h-8 items-center flex">
                     <FormatRenderer
                       value={item[name]}
                       field={model.fields[name]}
+                      formatName={(format as FieldFormat | null) ?? undefined}
                     />
                   </div>
                 </TableCell>

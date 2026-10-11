@@ -7,10 +7,94 @@ Django's check framework runs (`manage.py check`, runserver startup,
 
 from django.core import checks
 
-from .admin import iter_components
+from . import formats
+from .admin import is_computed_column, iter_components
+from .form import TableColumn
 from .settings import cs_settings
 
 LIST_VIEW_NAMES = {"table", "list"}
+
+
+def table_column_errors(studio) -> list[tuple[str, str]]:
+    """
+    Unresolvable or ambiguous table_display columns, as (check id,
+    message) pairs. A column resolves to a model field, __str__ or a
+    method on the studio; anything else would fail when rows are
+    serialized. Column names must be unique and explicit formats must
+    be format classes.
+    """
+    errors = []
+
+    def validate(owner, model):
+        if model is None:
+            return
+
+        model_field_names = {field.name for field in model._meta.get_fields()}
+        seen = set()
+
+        for entry in getattr(owner, "table_display", []):
+            if isinstance(entry, str):
+                column = TableColumn(field=entry)
+            elif isinstance(entry, TableColumn):
+                column = entry
+            else:
+                errors.append(
+                    (
+                        "content_studio.E006",
+                        f"{owner.__class__.__name__}.table_display entries must be "
+                        f"field names or TableColumn objects; got {entry!r}.",
+                    )
+                )
+                continue
+
+            if column.field in seen:
+                errors.append(
+                    (
+                        "content_studio.E006",
+                        f"{owner.__class__.__name__}.table_display contains a "
+                        f"duplicate column {column.field!r}; column names must "
+                        "be unique.",
+                    )
+                )
+            seen.add(column.field)
+
+            is_method = is_computed_column(owner, column)
+            is_resolvable = (
+                is_method
+                or column.field == "__str__"
+                or column.field in model_field_names
+            )
+
+            if not is_resolvable:
+                errors.append(
+                    (
+                        "content_studio.E006",
+                        f"{owner.__class__.__name__}.table_display column "
+                        f"{column.field!r} does not resolve to a model field, "
+                        "__str__ or a method on the studio.",
+                    )
+                )
+
+            if column.format is not None and not (
+                isinstance(column.format, type)
+                and issubclass(column.format, formats.BaseFormat)
+            ):
+                errors.append(
+                    (
+                        "content_studio.E006",
+                        f"{owner.__class__.__name__}.table_display column "
+                        f"{column.field!r} has format {column.format!r}; formats "
+                        "must be content_studio.formats classes.",
+                    )
+                )
+
+    model = getattr(studio, "model", None)
+    validate(studio, model)
+
+    for inline in getattr(studio, "inlines", None) or []:
+        validate(inline, getattr(inline, "model", None))
+
+    return errors
 
 
 def list_config_errors(studio) -> list[tuple[str, str]]:
@@ -115,6 +199,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         obj = f"{studio.__class__.__name__} ({model._meta.label_lower})"
 
         for check_id, error in list_config_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in table_column_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
     for check_id, error in duplicate_id_errors(site):

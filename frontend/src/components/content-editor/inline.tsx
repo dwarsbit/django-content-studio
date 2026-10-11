@@ -24,7 +24,13 @@ import {
 } from "@/components/ui/table";
 import { useHttp } from "@/hooks/use-http";
 import { cn } from "@/lib/utils";
-import type { Id, Model, PaginatedResponse, Resource } from "@/types";
+import type {
+  FieldFormat,
+  Id,
+  Model,
+  PaginatedResponse,
+  Resource,
+} from "@/types";
 
 import { Editor } from "./editor";
 
@@ -41,7 +47,10 @@ export function Inline({
   // Inline model
   model: Model;
   // Inline admin model
-  adminModel: { fk_name: string; table_display: string[] };
+  adminModel: {
+    fk_name: string;
+    table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
+  };
 }) {
   const { t } = useTranslation();
   const http = useHttp();
@@ -107,10 +116,10 @@ export function Inline({
         <Table>
           <TableHeader>
             <TableRow>
-              {adminModel.table_display?.map((field) => (
-                <TableHead key={field}>
+              {adminModel.table_display?.map(({ name, header }) => (
+                <TableHead key={name}>
                   <div className="flex items-center">
-                    {model.fields[field]?.verbose_name}
+                    {header ?? model.fields[name]?.verbose_name}
                   </div>
                 </TableHead>
               ))}
@@ -186,7 +195,10 @@ function InlineRow({
   resource: Resource;
   readOnly: boolean;
   model: Model;
-  adminModel: { fk_name: string; table_display: string[] };
+  adminModel: {
+    fk_name: string;
+    table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
+  };
 }) {
   const [edit, setEdit] = useState(false);
   const queryClient = useQueryClient();
@@ -230,11 +242,12 @@ function InlineRow({
           "hover:bg-transparent": readOnly,
         })}
       >
-        {adminModel.table_display?.map((field) => (
-          <TableCell key={field}>
+        {adminModel.table_display?.map(({ name, format }) => (
+          <TableCell key={name}>
             <FormatRenderer
-              value={resource[field]}
-              field={model.fields[field]}
+              value={resource[name]}
+              field={model.fields[name]}
+              formatName={(format as FieldFormat | null) ?? undefined}
             />
           </TableCell>
         ))}
