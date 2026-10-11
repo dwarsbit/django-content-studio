@@ -21,8 +21,6 @@ const MODEL: Model = {
   tenant_field: null,
   admin: {
     is_singleton: false,
-    format_mapping: {},
-    widget_mapping: {},
     icon: null,
     list: {
       per_page: 20,

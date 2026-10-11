@@ -1,22 +1,22 @@
 from content_studio import register
-from content_studio.admin import ModelAdmin, StackedInline
+from content_studio.admin import InlineModelStudio, ModelStudio
 from content_studio.form import FormSet
 
 from .models import Article, Category, Review, SiteSettings
 
 
-class ReviewInline(StackedInline):
+class ReviewInline(InlineModelStudio):
     model = Review
 
 
 @register(Category)
-class CategoryAdmin(ModelAdmin):
+class CategoryAdmin(ModelStudio):
     table_display = ["id", "name"]
     search_fields = ["name"]
 
 
 @register(Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleAdmin(ModelStudio):
     table_display = ["id", "title", "status", "published_at", "views"]
     list_views = ["table", "list"]
     list_display = {
@@ -38,6 +38,6 @@ class ArticleAdmin(ModelAdmin):
 
 
 @register(SiteSettings)
-class SiteSettingsAdmin(ModelAdmin):
+class SiteSettingsAdmin(ModelStudio):
     is_singleton = True
     edit_main = ["site_name", "tagline"]

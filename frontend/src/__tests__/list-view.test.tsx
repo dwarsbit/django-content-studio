@@ -106,16 +106,11 @@ function makeModel(overrides: ModelOverrides = {}): Model {
     tenant_field: null,
     admin: {
       is_singleton: false,
-      format_mapping: {},
-      widget_mapping: {},
       icon: null,
       list: {
         per_page: 10,
         description: "",
-        display: [
-          { name: "title", description: "Title", empty_value: null },
-          { name: "status", description: "Status", empty_value: null },
-        ],
+        display: [{ name: "title" }, { name: "status" }],
         search: true,
         filter: [],
         sortable_by: null,

@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- ⚠️ **Breaking:** Content Studio no longer inherits from Django's
+  `ModelAdmin` and `AdminSite`. The configuration classes are now
+  `ModelStudio` and `ContentStudioSite` (`InlineModelStudio` for
+  inlines), implementing only the surface the studio actually uses:
+  list, edit, relation display and permission options. The permission
+  hooks are uniform (`has_*_permission(self, request, obj=None)`), the
+  `check()` workaround is gone and configuration errors surface as
+  Django system checks (`content_studio.E001`–`E005`, reported by
+  `manage.py check`).
+- ⚠️ **Breaking:** Content Studio keeps its own registry. Models
+  registered only with the classic Django admin no longer appear in the
+  studio — register them with `content_studio.register`. The user model
+  is registered automatically with a default studio when no custom one
+  is registered.
+- ⚠️ **Breaking:** `content_studio.display` (the alias of Django's
+  `@display`) is removed. The admin payload no longer carries column
+  labels or `empty_value` metadata; table columns render raw values
+  until the upcoming display API.
+- ⚠️ **Breaking:** `ModelStudio` no longer supports per-model
+  `widget_mapping` and `format_mapping`. Widget and format choices live
+  on the `ContentStudioSite` (`default_widget_mapping` /
+  `default_format_mapping`); a dedicated override API will follow.
+- The site's identity defaults (`site_header`, `site_title`) now say
+  "Content Studio" instead of Django's administration defaults.
 - ⚠️ **Breaking:** Content Studio now ships its own JSON Web Token backend
   and no longer depends on `djangorestframework-simplejwt`. All token
   configuration lives in the `CONTENT_STUDIO` namespace, so projects that

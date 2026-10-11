@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.contrib import admin
 from django.urls import reverse, NoReverseMatch
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
@@ -14,7 +13,7 @@ from rest_framework.viewsets import ViewSet
 
 from . import __version__
 from .exceptions import NotConfigured
-from .admin import AdminSerializer, ModelAdmin, ModelGroup
+from .admin import AdminSerializer, ModelStudio, ModelGroup
 from .models import ModelSerializer
 from .serializers import get_session_user_serializer
 from .settings import cs_settings
@@ -177,7 +176,8 @@ class AdminApiViewSet(ViewSet):
 
 def get_models(request):
     models = []
-    registered_models = admin.site._registry
+    admin_site = cs_settings.ADMIN_SITE
+    registered_models = admin_site._registry
 
     for model, admin_class in registered_models.items():
         models.append(
@@ -191,12 +191,12 @@ def get_models(request):
                 models.append(
                     {
                         **ModelSerializer(inline.model).serialize(),
-                        # The inline model has no admin of its own; serialize a
+                        # The inline model has no studio of its own; serialize a
                         # default one so the frontend's editor can render the
                         # inline's create and edit forms (they read the admin
                         # payload like any other model).
                         "admin": AdminSerializer(
-                            ModelAdmin(inline.model, admin.site)
+                            ModelStudio(inline.model, admin_site)
                         ).serialize(request),
                     }
                 )
@@ -212,7 +212,7 @@ def get_model_groups():
             label=_("Content"),
             name="default",
             icon=None,
-            models=[model for model, admin_model in admin.site._registry.items()],
+            models=list(admin_site._registry.keys()),
         )
     ]
     # Get custom model groups or use the default one

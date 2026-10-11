@@ -1,16 +1,18 @@
 # 🧩 Widgets
 
-Every field renders with a widget. Widgets are chosen by field type through a
-default mapping, and you can override the choice per field — or per Django
-field class — on the model admin.
+Every field renders with a widget. Widgets are chosen by field type through
+the studio site's `default_widget_mapping`:
 
 ```python
-class ArticleAdmin(ModelAdmin):
-    # By field name:
-    widget_mapping = {"status": SelectWidget}
+from content_studio.admin import ContentStudioSite
+from content_studio import widgets
 
-    # Or by Django field type:
-    widget_mapping = {models.EmailField: InputWidget}
+
+class MyStudioSite(ContentStudioSite):
+    default_widget_mapping = {
+        **ContentStudioSite.default_widget_mapping,
+        models.EmailField: widgets.InputWidget,
+    }
 ```
 
 ## Default mapping
@@ -35,22 +37,14 @@ back to a read-only display. Choice fields render as selects automatically.
 
 ## Custom widgets
 
-Widgets are markers: subclass `BaseWidget`, register it in a
-`widget_mapping`, and render it in the frontend's widget registry. A widget
-is identified by its class name, so the backend mapping and the frontend
-registry agree by convention.
+Widgets are markers: subclass `BaseWidget`, add it to a site's
+`default_widget_mapping`, and render it in the frontend's widget registry.
+A widget is identified by its class name, so the backend mapping and the
+frontend registry agree by convention.
 
 ## Formats
 
-List columns are formatted through a parallel `format_mapping`: dates, times,
-booleans, numbers, tags, HTML and media references each have a formatter, and
-`format_mapping` overrides per field name or field class in the same way as
-widgets.
-
-```python
-from content_studio import formats
-
-
-class ArticleAdmin(ModelAdmin):
-    format_mapping = {"views": formats.NumberFormat}
-```
+List values are formatted through the site's parallel
+`default_format_mapping`: dates, times, booleans, numbers, tags, HTML and
+media references each have a formatter, and the mapping is customized on
+the `ContentStudioSite` in the same way as widgets.

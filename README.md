@@ -60,11 +60,11 @@ Register a model:
 ```python
 # apps/blog/admin.py
 from content_studio import register
-from content_studio.admin import ModelAdmin
+from content_studio.admin import ModelStudio
 
 
 @register(Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleStudio(ModelStudio):
     list_display = ['title', 'status', 'published_at']
     list_filter = ['status']
     search_fields = ['title']
@@ -78,7 +78,7 @@ All usage and configuration is documented at [dwarsbit.github.io/django-content-
 
 - [Introduction](https://dwarsbit.github.io/django-content-studio/docs/intro) — what Content Studio is (and is not)
 - [Getting started](https://dwarsbit.github.io/django-content-studio/docs/getting-started) — requirements, setup and your first model
-- [Registering models](https://dwarsbit.github.io/django-content-studio/docs/content/registering-models) — every `ModelAdmin` option, singletons and inlines
+- [Registering models](https://dwarsbit.github.io/django-content-studio/docs/content/registering-models) — every `ModelStudio` option, singletons and inlines
 - [Access control](https://dwarsbit.github.io/django-content-studio/docs/permissions) — model-level and per-object permission hooks, login throttling
 - [Widgets and forms](https://dwarsbit.github.io/django-content-studio/docs/forms/widgets) — the widget registry and custom form layouts
 - [Dashboard](https://dwarsbit.github.io/django-content-studio/docs/dashboard) — composing the dashboard with widgets

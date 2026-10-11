@@ -41,7 +41,7 @@ export function Inline({
   // Inline model
   model: Model;
   // Inline admin model
-  adminModel: { fk_name: string; list_display: string[] | null };
+  adminModel: { fk_name: string; table_display: string[] };
 }) {
   const { t } = useTranslation();
   const http = useHttp();
@@ -107,7 +107,7 @@ export function Inline({
         <Table>
           <TableHeader>
             <TableRow>
-              {adminModel.list_display?.map((field) => (
+              {adminModel.table_display?.map((field) => (
                 <TableHead key={field}>
                   <div className="flex items-center">
                     {model.fields[field]?.verbose_name}
@@ -119,7 +119,7 @@ export function Inline({
           <TableBody>
             {isLoading ? (
               <tr>
-                <td colSpan={adminModel.list_display?.length}>
+                <td colSpan={adminModel.table_display?.length}>
                   <div className="flex justify-center py-24">
                     <Spinner />
                   </div>
@@ -127,7 +127,7 @@ export function Inline({
               </tr>
             ) : R.isEmpty(data?.results) ? (
               <tr>
-                <td colSpan={adminModel.list_display?.length}>
+                <td colSpan={adminModel.table_display?.length}>
                   <div className="text-center py-12 text-muted-foreground select-none">
                     {t("editor.empty_state")}
                   </div>
@@ -186,7 +186,7 @@ function InlineRow({
   resource: Resource;
   readOnly: boolean;
   model: Model;
-  adminModel: { fk_name: string; list_display: string[] | null };
+  adminModel: { fk_name: string; table_display: string[] };
 }) {
   const [edit, setEdit] = useState(false);
   const queryClient = useQueryClient();
@@ -230,7 +230,7 @@ function InlineRow({
           "hover:bg-transparent": readOnly,
         })}
       >
-        {adminModel.list_display?.map((field) => (
+        {adminModel.table_display?.map((field) => (
           <TableCell key={field}>
             <FormatRenderer
               value={resource[field]}

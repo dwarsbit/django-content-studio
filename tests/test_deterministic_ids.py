@@ -137,76 +137,86 @@ def test_ids_stable_across_processes():
 
 
 def test_get_component_finds_by_id():
-    from content_studio.admin import ModelAdmin, admin_site
+    from content_studio.admin import ModelStudio, admin_site
 
     explicit = uuid.uuid4()
     component = MyComponent(component_id=explicit)
-    model_admin = ModelAdmin(ScratchModel, admin_site)
-    model_admin.edit_main = [component]
+    model_studio = ModelStudio(ScratchModel, admin_site)
+    model_studio.edit_main = [component]
 
-    assert model_admin.get_component(explicit) is component
-    assert model_admin.get_component(uuid.uuid4()) is None
+    assert model_studio.get_component(explicit) is component
+    assert model_studio.get_component(uuid.uuid4()) is None
 
 
-def _validate(extensions=None, dashboard=None, model_admins=None):
+def _validate(extensions=None, dashboard=None, model_studios=None):
+    """Run the duplicate-ID checks with throwaway site state."""
     from content_studio.admin import admin_site
+    from content_studio.checks import duplicate_id_errors
 
     admin_site.extensions = extensions
     admin_site.dashboard = dashboard
 
-    for model, model_admin in (model_admins or {}).items():
-        django_admin.site.register(model, model_admin)
+    added = []
+    for model, studio_class in (model_studios or {}).items():
+        admin_site._registry[model] = studio_class(model, admin_site)
+        added.append(model)
 
     try:
-        admin_site._validate_config_ids()
+        return duplicate_id_errors(admin_site)
     finally:
-        for model in model_admins or {}:
-            django_admin.site.unregister(model)
+        for model in added:
+            del admin_site._registry[model]
         admin_site.extensions = None
         admin_site.dashboard = None
 
 
 def test_duplicate_component_ids_raise():
-    from content_studio.admin import ModelAdmin, admin_site
+    from content_studio.admin import ModelStudio
 
-    class DuplicateAdmin(ModelAdmin):
+    class DuplicateStudio(ModelStudio):
         edit_main = [MyComponent(), MyComponent()]
 
-    with pytest.raises(ImproperlyConfigured) as exc_info:
-        _validate(model_admins={ScratchModel: DuplicateAdmin})
+    errors = _validate(model_studios={ScratchModel: DuplicateStudio})
 
-    assert "Duplicate component ID" in str(exc_info.value)
+    assert any(
+        check_id == "content_studio.E005" and "Duplicate component ID" in message
+        for check_id, message in errors
+    )
 
 
 def test_distinct_component_ids_pass_validation():
-    class DistinctAdmin(
-        __import__("content_studio.admin", fromlist=["ModelAdmin"]).ModelAdmin
-    ):
+    from content_studio.admin import ModelStudio
+
+    class DistinctStudio(ModelStudio):
         edit_main = [
             MyComponent(component_id=uuid.uuid4()),
             MyComponent(component_id=uuid.uuid4()),
         ]
 
-    _validate(model_admins={ScratchModel: DistinctAdmin})
+    assert _validate(model_studios={ScratchModel: DistinctStudio}) == []
 
 
 def test_duplicate_widget_ids_raise():
-    with pytest.raises(ImproperlyConfigured) as exc_info:
-        _validate(dashboard=Dashboard(widgets=[MyWidget(), MyWidget()]))
+    errors = _validate(dashboard=Dashboard(widgets=[MyWidget(), MyWidget()]))
 
-    assert "Duplicate dashboard widget ID" in str(exc_info.value)
+    assert any(
+        check_id == "content_studio.E004" and "Duplicate dashboard widget ID" in message
+        for check_id, message in errors
+    )
 
 
 def test_duplicate_extension_ids_raise():
-    with pytest.raises(ImproperlyConfigured) as exc_info:
-        _validate(
-            extensions=[
-                MainMenuLink(url="/docs/", label="Docs"),
-                MainMenuLink(url="/docs/", label="Docs"),
-            ]
-        )
+    errors = _validate(
+        extensions=[
+            MainMenuLink(url="/docs/", label="Docs"),
+            MainMenuLink(url="/docs/", label="Docs"),
+        ]
+    )
 
-    assert "Duplicate extension ID" in str(exc_info.value)
+    assert any(
+        check_id == "content_studio.E003" and "Duplicate extension ID" in message
+        for check_id, message in errors
+    )
 
 
 def test_component_endpoint_rejects_malformed_uuid():

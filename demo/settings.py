@@ -82,7 +82,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 CONTENT_STUDIO = {
-    "ADMIN_SITE": "demo.blog.admin.admin_site",
+    "ADMIN_SITE": "demo.blog.studio.admin_site",
     "MEDIA_LIBRARY_MODEL": "demo.blog.models.MediaItem",
     "MEDIA_LIBRARY_FOLDER_MODEL": "demo.blog.models.MediaFolder",
     # The default per-IP rate (10/min) is fine for humans; the e2e suite

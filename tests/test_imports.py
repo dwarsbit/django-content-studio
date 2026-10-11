@@ -9,10 +9,9 @@ import sys
 
 
 def test_documented_imports_work():
-    from content_studio import display, register
+    from content_studio import register
 
     assert callable(register)
-    assert callable(display)
 
 
 def test_package_import_does_not_require_the_admin_module():

@@ -2,7 +2,6 @@ import operator
 import uuid
 from functools import reduce
 
-from django.contrib import admin
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
@@ -19,7 +18,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from .admin import get_relation_display_for
 from .filters import LookupFilter
-from .permissions import ModelAdminPermissions
+from .permissions import ModelStudioPermissions
 from .serializers import RelatedItemSerializer
 from .settings import cs_settings
 from .utils import get_tenant_field_name, validate_tenant_access
@@ -30,7 +29,7 @@ class BaseModelViewSet(ModelViewSet):
     is_singleton = False
     parser_classes = [JSONParser]
     renderer_classes = [JSONRenderer]
-    permission_classes = [ModelAdminPermissions]
+    permission_classes = [ModelStudioPermissions]
     filter_backends = [SearchFilter, OrderingFilter, LookupFilter]
 
     def __init__(self, *args, **kwargs):
@@ -213,10 +212,11 @@ class BaseModelViewSet(ModelViewSet):
     def _check_related_permission(self, request, related_model):
         """
         Require view permission on the related model. Uses the model's
-        model admin when registered, so custom permission overrides
-        apply; otherwise falls back to Django's view permission.
+        registered model studio when present, so custom permission
+        overrides apply; otherwise falls back to Django's view
+        permission.
         """
-        related_admin = admin.site._registry.get(related_model)
+        related_admin = cs_settings.ADMIN_SITE._registry.get(related_model)
 
         if related_admin is not None:
             if not related_admin.has_view_permission(request):
@@ -229,17 +229,15 @@ class BaseModelViewSet(ModelViewSet):
 
     def _get_related_search_queryset(self, related_model, search):
         """
-        Search the related model. Uses the related model admin's
-        search_fields when available, mirroring the Django admin;
-        otherwise all CharFields are searched.
+        Search the related model. Uses the related model studio's
+        search_fields when available; otherwise all CharFields are
+        searched.
         """
         if not search:
             return related_model.objects.all()
 
-        related_admin = admin.site._registry.get(related_model)
-        search_fields = (
-            getattr(related_admin, "search_fields", None) if related_admin else None
-        )
+        related_admin = cs_settings.ADMIN_SITE._registry.get(related_model)
+        search_fields = related_admin.search_fields if related_admin else None
 
         if search_fields:
             queries = [Q(**{f"{field}__icontains": search}) for field in search_fields]

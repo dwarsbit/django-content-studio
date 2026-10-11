@@ -1,5 +1,4 @@
 from django.apps import AppConfig
-from django.contrib import admin
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -21,7 +20,16 @@ class DjangoContentStudioConfig(AppConfig):
     initialized = False
 
     def ready(self):
+        from django.utils.module_loading import autodiscover_modules
+
+        from . import checks  # noqa: F401 -- registers the system checks
         from .utils import log
+
+        # Import every app's admin module (where Content Studio
+        # registrations live) before building the studio's API, so the
+        # position of apps in INSTALLED_APPS does not affect what is
+        # registered.
+        autodiscover_modules("admin")
 
         # Set up the admin site routes and content CRUD APIs in every
         # context (runserver, WSGI/ASGI, management commands, tests) so
@@ -58,7 +66,7 @@ class DjangoContentStudioConfig(AppConfig):
         log("[bold magenta]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold magenta]")
 
         log(":mag:", "Discovering admin models...")
-        registered_models = len(admin.site._registry)
+        registered_models = len(cs_settings.ADMIN_SITE._registry)
         log(
             ":white_check_mark:",
             f"[green]Found {registered_models} admin models[/green]",
@@ -70,7 +78,7 @@ class DjangoContentStudioConfig(AppConfig):
     def _create_crud_api(self):
         from .utils import log
 
-        for model, admin_model in admin.site._registry.items():
+        for model, admin_model in cs_settings.ADMIN_SITE._registry.items():
             self._create_view_set(model, admin_model)
 
             for inline in admin_model.inlines:
@@ -93,13 +101,14 @@ class DjangoContentStudioConfig(AppConfig):
         inline_parent_fk = None
 
         if parent:
-            # Inlines arrive as classes (ModelAdmin.inlines); the viewset
+            # Inlines arrive as classes (ModelStudio.inlines); the viewset
             # needs an instance so permission methods are bound.
-            admin_model = admin_model(parent, admin.site)
+            admin_site = cs_settings.ADMIN_SITE
+            admin_model = admin_model(parent, admin_site)
             inline_parent_fk = get_related_field_name(admin_model, parent)
 
         class Pagination(ContentPagination):
-            page_size = getattr(admin_model, "list_per_page", 10)
+            page_size = admin_model.list_per_page
 
         class ViewSet(BaseModelViewSet):
             _model = model
@@ -107,7 +116,7 @@ class DjangoContentStudioConfig(AppConfig):
             is_singleton = get_is_singleton(admin_model)
             pagination_class = Pagination
             queryset = _model.objects.none()
-            search_fields = list(getattr(_admin_model, "search_fields", []))
+            search_fields = list(admin_model.search_fields)
             # Inline viewsets: the FK to the parent model.
             parent_fk = inline_parent_fk
             parent_model = parent
@@ -118,11 +127,11 @@ class DjangoContentStudioConfig(AppConfig):
                 # For list views we include the specified table_display fields.
                 if self.action == "list" and not self.is_singleton:
                     available_fields = ["id", "__str__"] + list(
-                        getattr(self._admin_model, "table_display", [])
+                        self._admin_model.table_display
                     )
                     # Rows carry their resolved list display when the
                     # list view is enabled.
-                    if "list" in getattr(self._admin_model, "list_views", ["table"]):
+                    if "list" in self._admin_model.list_views:
                         available_fields.append("list_display")
                 # For the user model we exclude the password and the username field.
                 elif model is user_model:
@@ -147,7 +156,7 @@ class DjangoContentStudioConfig(AppConfig):
                 if (
                     self.action == "list"
                     and not self.is_singleton
-                    and "list" in getattr(self._admin_model, "list_views", ["table"])
+                    and "list" in self._admin_model.list_views
                 ):
                     admin_model = self._admin_model
 
@@ -183,9 +192,9 @@ class DjangoContentStudioConfig(AppConfig):
                         )
                     self._check_parent_access(parent_id)
 
-                # Respect the model admin's ordering; fall back to pk so
+                # Respect the model studio's ordering; fall back to pk so
                 # paginated pages are stable (and silent).
-                ordering = getattr(self._admin_model, "ordering", None) or ["pk"]
+                ordering = self._admin_model.ordering or ["pk"]
                 return qs.order_by(*ordering)
 
             def _get_parent_id(self):
@@ -196,7 +205,7 @@ class DjangoContentStudioConfig(AppConfig):
                 from rest_framework.exceptions import PermissionDenied
 
                 parent = self.parent_model.objects.filter(pk=parent_id).first()
-                parent_admin = admin.site._registry.get(self.parent_model)
+                parent_admin = cs_settings.ADMIN_SITE._registry.get(self.parent_model)
 
                 if (
                     not parent
@@ -208,7 +217,7 @@ class DjangoContentStudioConfig(AppConfig):
             def _check_parent_instance(self, parent_obj):
                 from rest_framework.exceptions import PermissionDenied
 
-                parent_admin = admin.site._registry.get(self.parent_model)
+                parent_admin = cs_settings.ADMIN_SITE._registry.get(self.parent_model)
 
                 if (
                     not parent_obj

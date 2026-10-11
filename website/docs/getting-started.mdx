@@ -52,7 +52,7 @@ further URL configuration required.
 # apps/blog/admin.py
 from django.db import models
 from content_studio import register
-from content_studio.admin import ModelAdmin
+from content_studio.admin import ModelStudio
 
 
 class Article(models.Model):
@@ -71,7 +71,7 @@ class Article(models.Model):
 
 
 @register(Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleStudio(ModelStudio):
     table_display = ["title", "status"]
     list_filter = ["status"]
     search_fields = ["title"]
@@ -90,7 +90,7 @@ throttling are covered under [authentication](/docs/authentication).
 
 ## Where to go next
 
-- [Registering models](/docs/content/registering-models) — every `ModelAdmin`
+- [Registering models](/docs/content/registering-models) — every `ModelStudio`
   option, singletons and inlines.
 - [Access control](/docs/permissions) — model and object permissions.
 - [Widgets and forms](/docs/forms/widgets) — dedicated field editors and

@@ -5,45 +5,46 @@ the setup validation that keeps the two apart.
 """
 
 import pytest
-from django.contrib import admin as django_admin
 from django.core.exceptions import ImproperlyConfigured
 
 from content_studio.admin import (
     ListDisplay,
-    ModelAdmin,
+    ModelStudio,
     admin_site,
-    _validate_list_config,
 )
+from content_studio.checks import list_config_errors
 from tests.test_e2e_crud import AuthenticatedTestCase
 from tests.testapp.models import Article
 
 
-def _validate_with(model_admin):
-    """Instantiate a throwaway admin and run the setup validation."""
-    return _validate_list_config(model_admin(Article, django_admin.site))
+def _validate_with(model_studio):
+    """Instantiate a throwaway studio and run the list config checks."""
+    return list_config_errors(model_studio(Article, admin_site))
 
 
 def test_old_style_list_display_is_rejected():
     """The classic admin's list_display no longer configures the table."""
 
-    class OldStyle(ModelAdmin):
+    class OldStyle(ModelStudio):
         list_display = ["title"]  # type: ignore[assignment]
 
     errors = _validate_with(OldStyle)
     assert len(errors) == 1
-    assert "table_display" in errors[0]
+    assert errors[0][0] == "content_studio.E001"
+    assert "table_display" in errors[0][1]
 
 
 def test_unknown_list_view_is_rejected():
-    class UnknownView(ModelAdmin):
+    class UnknownView(ModelStudio):
         list_views = ["table", "cards"]
 
     errors = _validate_with(UnknownView)
-    assert "cards" in errors[0]
+    assert errors[0][0] == "content_studio.E002"
+    assert "cards" in errors[0][1]
 
 
 def test_declarative_and_override_configs_validate():
-    class Fine(ModelAdmin):
+    class Fine(ModelStudio):
         list_views = ["table", "list"]
         list_display = {"title": "title", "description": "body"}
 
@@ -51,7 +52,7 @@ def test_declarative_and_override_configs_validate():
 
 
 def test_get_list_display_resolves_the_mapping():
-    admin = django_admin.site._registry[Article]
+    admin = admin_site._registry[Article]
     article = Article(title="Hello", body="Body text")
     article.status = Article.Status.PUBLISHED
 
@@ -64,10 +65,10 @@ def test_get_list_display_resolves_the_mapping():
 
 
 def test_get_list_display_falls_back_to_str_without_mapping():
-    class Bare(ModelAdmin):
+    class Bare(ModelStudio):
         pass
 
-    admin = Bare(Article, django_admin.site)
+    admin = Bare(Article, admin_site)
     display = admin.get_list_display(Article(title="Fallback"), None)
 
     assert display.title == "Fallback"
@@ -76,13 +77,13 @@ def test_get_list_display_falls_back_to_str_without_mapping():
 
 
 def test_get_list_display_can_be_overridden():
-    class Computed(ModelAdmin):
+    class Computed(ModelStudio):
         def get_list_display(self, obj, request):
             return ListDisplay(
                 title=f"computed {obj.title}", description="fixed", meta="M"
             )
 
-    admin = Computed(Article, django_admin.site)
+    admin = Computed(Article, admin_site)
     display = admin.get_list_display(Article(title="Hello"), None)
 
     assert display.title == "computed Hello"
@@ -91,8 +92,9 @@ def test_get_list_display_can_be_overridden():
 
 
 def test_default_site_config_stays_valid():
-    # The registered test app admins pass the list config validation.
-    assert admin_site._validate_config_ids() is None
+    # The registered test app studios pass the list config checks.
+    for studio in admin_site._registry.values():
+        assert list_config_errors(studio) == []
 
 
 class ListDisplaySerializationTests(AuthenticatedTestCase):

@@ -1,20 +1,19 @@
-import uuid
 from typing import Type, TypeVar, Generic, Any, Optional, Union
 
-from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models import Model
+from django.utils.translation import gettext_lazy as _
 from rest_framework.request import HttpRequest
 
 from . import widgets, formats
+from .exceptions import AlreadyRegistered, NotRegistered
 from .form import FormSet, FormSetGroup, Field, Component
 from .login_backends import LoginBackendManager
+from .settings import cs_settings
 from .token_backends import TokenBackendManager
 from .utils import get_related_field_name, flatten
-
-register = admin.register
-display = admin.display
 
 # Django Blueprint is an optional integration: when it is installed, its
 # fields get their dedicated widgets and formats. Without it, Content
@@ -51,18 +50,290 @@ except ImportError:
     _blueprint_format_mapping = {}
 
 
-class StackedInline(admin.StackedInline):
-    pass
+class ModelGroup:
+    name: str
+    label: str
+    icon: Optional[str]
+    color: Optional[str]
+    models: list[Type[Model]]
+
+    def __init__(
+        self,
+        name: str,
+        label: Optional[str] = None,
+        icon: Optional[str] = None,
+        color: Optional[str] = None,
+        models: Optional[list[Type[Model]]] = None,
+    ):
+        self.name = name
+        self.label = label or name.capitalize()
+        self.icon = icon
+        self.color = color
+        self.models = models or []
 
 
-class TabularInline(admin.TabularInline):
-    pass
-
-
-class AdminSite(admin.AdminSite):
+class RelationDisplay:
     """
-    Enhanced admin site for Django Content Studio.
+    The display of a related object wherever it appears in the studio:
+    relation pickers, list views and selected-value badges.
+
+    Besides title, description and icon, the display can carry initials
+    (shown as one character on a colored circle) and an avatar (an image
+    URL). When several are set, the interface shows one glyph with the
+    priority: avatar, then initials, then icon.
     """
+
+    def __init__(
+        self,
+        title: str,
+        description: str = "",
+        icon: str = None,
+        initials: str = "",
+        avatar: str = None,
+    ):
+        self.title = title
+        self.description = description
+        # A CSS class, like the ModelStudio icon.
+        self.icon = icon
+        self.initials = initials
+        # A URL to an image.
+        self.avatar = avatar
+
+
+class ListDisplay:
+    """
+    The anatomy of a row in the list view: a prominent title, a muted
+    description and a meta value rendered as a badge on the right.
+    """
+
+    def __init__(self, title: str, description: str = "", meta: str = ""):
+        self.title = title
+        self.description = description
+        self.meta = meta
+
+
+T = TypeVar("T", bound=Model)
+
+
+class BaseStudio(Generic[T]):
+    """
+    Shared base of ModelStudio and InlineModelStudio: the model, the
+    default edit fields and the permission hooks.
+
+    The permission defaults check Django's model-level permissions,
+    mirroring the classic admin: view or change to read, add/change/
+    delete for their respective actions. All hooks take the optional
+    object argument, so overriding per object is a matter of using it.
+    """
+
+    model: Type[T]
+
+    # Explicit field list for the default edit form; falls back to
+    # every editable field.
+    fields: Optional[list[str]] = None
+
+    # Fields to leave out of the default edit form.
+    exclude: Optional[list[str]] = None
+
+    def __init__(self, model: Type[T], admin_site: "ContentStudioSite"):
+        self.model = model
+        self.admin_site = admin_site
+
+    def get_fields(self, request: HttpRequest, obj: Optional[T] = None) -> list[str]:
+        """
+        The fields of the default edit form: every editable field
+        (including many-to-many) when `fields` is not set, minus `exclude`.
+        """
+        if self.fields:
+            return list(self.fields)
+
+        exclude = set(self.exclude or [])
+
+        return [
+            field.name
+            for field in self.model._meta.get_fields()
+            if field.editable and not field.auto_created and field.name not in exclude
+        ]
+
+    def _has_model_perm(self, request: HttpRequest, action: str) -> bool:
+        opts = self.model._meta
+        return request.user.has_perm(f"{opts.app_label}.{action}_{opts.model_name}")
+
+    def has_add_permission(self, request: HttpRequest, obj: Optional[T] = None) -> bool:
+        return self._has_model_perm(request, "add")
+
+    def has_change_permission(
+        self, request: HttpRequest, obj: Optional[T] = None
+    ) -> bool:
+        return self._has_model_perm(request, "change")
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Optional[T] = None
+    ) -> bool:
+        return self._has_model_perm(request, "delete")
+
+    def has_view_permission(
+        self, request: HttpRequest, obj: Optional[T] = None
+    ) -> bool:
+        return self._has_model_perm(request, "view") or self._has_model_perm(
+            request, "change"
+        )
+
+
+class ModelStudio(BaseStudio[T]):
+    """
+    Configuration for a model in Content Studio: how its list and edit
+    pages are laid out, which fields it shows and who may do what.
+    """
+
+    model: Type[T]
+
+    # Whether the model is a singleton and should not show
+    # the list view.
+    is_singleton: bool = False
+
+    # We set a lower limit than Django's default of 100
+    list_per_page: int = 20
+
+    # Description shown below model name on list pages
+    list_description: str = ""
+
+    # The columns of the table view.
+    table_display: list[str] = ["__str__"]
+
+    # The anatomy of a list view row: roles mapped to field or model
+    # method names, e.g. {"title": "name", "description": "subtitle"}.
+    list_display: Optional[dict[str, str]] = None
+
+    # The views offered by the list page: "table" and/or "list". More than
+    # one enables a toggle in the interface.
+    list_views: list[str] = ["table"]
+
+    # Fields the list search searches through.
+    search_fields: list[str] = []
+
+    # Fields the list filters can filter on. Only string entries count.
+    list_filter: list[str] = []
+
+    # The columns that may be sorted on; None allows all.
+    sortable_by: Optional[list[str]] = None
+
+    # The default ordering of list results; falls back to pk.
+    ordering: list[str] = []
+
+    # Inline models edited on the parent's edit page.
+    inlines: list[Type["InlineModelStudio"]] = []
+
+    # Configure the main section in the edit-view.
+    edit_main: Union[
+        list[Union[FormSetGroup, FormSet, Field, Component, str]], list[str]
+    ] = []
+
+    # Configure the sidebar in the edit-view.
+    edit_sidebar: Union[list[Union[FormSet, Field, Component, str]], list[str]] = []
+
+    # The icon for this model will be shown in the menu and some other places.
+    icon: Optional[str] = None
+
+    def get_relation_display(
+        self, obj: models.Model, request: HttpRequest
+    ) -> "RelationDisplay":
+        """
+        How a related object appears wherever the studio renders it: relation
+        pickers, list views and selected-value badges. Override to customize;
+        the base implementation displays the object's string representation.
+        """
+        return RelationDisplay(title=str(obj))
+
+    def get_list_display(
+        self, obj: models.Model, request: HttpRequest
+    ) -> "ListDisplay":
+        """
+        The anatomy of a row in the list view. The base implementation
+        resolves the declarative list_display mapping (roles to field or
+        model method names); override for fully computed rows.
+        """
+        display = self.list_display or {}
+
+        def resolve(role: str) -> str:
+            field = display.get(role)
+
+            if not field:
+                return ""
+
+            value = getattr(obj, field)
+
+            return str(value() if callable(value) else value)
+
+        return ListDisplay(
+            title=resolve("title") or str(obj),
+            description=resolve("description"),
+            meta=resolve("meta"),
+        )
+
+    def has_add_permission(self, request: HttpRequest, obj: Optional[T] = None) -> bool:
+        # Don't allow adding more than one singleton object.
+        if get_is_singleton(self) and self.model.objects.exists():
+            return False
+
+        return super().has_add_permission(request, obj)
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Optional[T] = None
+    ) -> bool:
+        if get_is_singleton(self):
+            return False
+
+        return super().has_delete_permission(request, obj)
+
+    def get_component(self, component_id) -> Optional[Component]:
+        """
+        Retrieves a component from the edit_main or edit_sidebar attributes by ID.
+        """
+        for component in iter_components(self):
+            if component.component_id == component_id:
+                return component
+
+        return None
+
+
+class InlineModelStudio(BaseStudio[T]):
+    """
+    An inline model: rows of a related model edited on the parent's
+    edit page. The relation is derived from the foreign key to the
+    parent; set fk_name when the inline has more than one.
+    """
+
+    model: Type[T]
+
+    # The name of the foreign key field pointing at the parent; left
+    # empty when the inline has exactly one.
+    fk_name: Optional[str] = None
+
+    # The columns of the inline list.
+    table_display: list[str] = ["__str__"]
+
+    list_per_page: int = 10
+    list_filter: list[str] = []
+    list_views: list[str] = ["table"]
+    search_fields: list[str] = []
+    ordering: list[str] = []
+
+    def __init__(self, parent_model: Type[Model], admin_site: "ContentStudioSite"):
+        self.parent_model = parent_model
+        self.admin_site = admin_site
+
+
+class ContentStudioSite:
+    """
+    The Content Studio site: the registry of model studios plus the
+    studio-wide configuration (authentication, dashboard, menus).
+    """
+
+    site_header = _("Content Studio")
+    site_title = _("Content Studio")
+    index_title = None
+    site_url = "/"
 
     token_backend: TokenBackendManager = TokenBackendManager()
 
@@ -127,7 +398,79 @@ class AdminSite(admin.AdminSite):
         **_blueprint_format_mapping,
     }
 
+    def __init__(self, name: str = "content_studio"):
+        self.name = name
+        self._registry: dict[Type[Model], ModelStudio] = {}
+
+    def register(
+        self, model_or_iterable, studio_class: Type[ModelStudio] = None, **options
+    ) -> None:
+        """
+        Register the given model(s) with the site. The studio class is
+        instantiated and stored; models must be registered only once.
+
+        Options given as keyword arguments are applied by dynamically
+        subclassing the studio class, like the classic admin's register.
+        """
+        if not isinstance(model_or_iterable, (list, tuple)):
+            model_or_iterable = [model_or_iterable]
+
+        for model in model_or_iterable:
+            if model._meta.abstract:
+                raise ImproperlyConfigured(
+                    f"The model {model.__name__} is abstract, so it cannot be "
+                    "registered with Content Studio."
+                )
+
+            if model in self._registry:
+                raise AlreadyRegistered(
+                    f"The model {model.__name__} is already registered with "
+                    "Content Studio."
+                )
+
+            if studio_class is None:
+                studio_class = ModelStudio
+
+            if options:
+                studio_class = type(
+                    str(studio_class.__name__), (studio_class,), options
+                )
+
+            if not issubclass(studio_class, ModelStudio):
+                raise ImproperlyConfigured(
+                    f"{studio_class.__name__} must subclass "
+                    "content_studio.admin.ModelStudio."
+                )
+
+            self._registry[model] = studio_class(model, self)
+
+    def unregister(self, model_or_iterable) -> None:
+        """
+        Unregister the given model(s) from the site.
+        """
+        if not isinstance(model_or_iterable, (list, tuple)):
+            model_or_iterable = [model_or_iterable]
+
+        for model in model_or_iterable:
+            if model not in self._registry:
+                raise NotRegistered(
+                    f"The model {model.__name__} is not registered with "
+                    "Content Studio."
+                )
+
+            del self._registry[model]
+
+    def is_registered(self, model) -> bool:
+        """
+        Check the registry for the given model.
+        """
+        return model in self._registry
+
     def setup(self):
+        # The user model is manageable out of the box; projects that
+        # register their own user studio take precedence.
+        self._register_default_user_studio()
+
         # Add token backend's view set to the
         # Content Studio router.
         self.token_backend.set_up_router()
@@ -139,57 +482,11 @@ class AdminSite(admin.AdminSite):
         if self.dashboard:
             self.dashboard.set_up_router()
 
-        self._validate_config_ids()
+    def _register_default_user_studio(self):
+        user_model = get_user_model()
 
-    def _validate_config_ids(self):
-        """
-        Fail fast at setup when extension, dashboard widget or component
-        IDs collide. IDs are derived from the class and its label/url/
-        name by default, so duplicates mean an explicit ID is needed.
-        """
-        errors = []
-
-        seen = {}
-        for extension in getattr(self, "extensions", None) or []:
-            key = str(extension.extension_id)
-            if key in seen:
-                errors.append(
-                    f"Duplicate extension ID {key}: "
-                    f"{seen[key]} and {extension.__class__.__name__}. "
-                    "Pass extension_id to disambiguate."
-                )
-            seen[key] = extension.__class__.__name__
-
-        if self.dashboard:
-            seen = {}
-            for widget in self.dashboard.widgets or []:
-                key = str(widget.widget_id)
-                if key in seen:
-                    errors.append(
-                        f"Duplicate dashboard widget ID {key}: "
-                        f"{seen[key]} and {widget.__class__.__name__}. "
-                        "Pass widget_id to disambiguate."
-                    )
-                seen[key] = widget.__class__.__name__
-
-        seen = {}
-        for model, admin_class in admin.site._registry.items():
-            for component in iter_components(admin_class):
-                key = str(component.component_id)
-                if key in seen:
-                    errors.append(
-                        f"Duplicate component ID {key}: "
-                        f"{seen[key]} and {component.__class__.__name__} "
-                        f"in {admin_class.__class__.__name__}. "
-                        "Pass component_id to disambiguate."
-                    )
-                seen[key] = component.__class__.__name__
-
-            if isinstance(admin_class, ModelAdmin):
-                errors.extend(_validate_list_config(admin_class))
-
-        if errors:
-            raise ImproperlyConfigured("\n".join(errors))
+        if not self.is_registered(user_model):
+            self.register(user_model)
 
     def get_thumbnail(self, obj) -> str:
         """
@@ -215,44 +512,47 @@ class AdminSite(admin.AdminSite):
         return tenant_model.objects.all()
 
 
-admin_site = AdminSite()
+admin_site = ContentStudioSite()
 
 
-LIST_VIEW_NAMES = {"table", "list"}
-
-
-def _validate_list_config(admin_class: "ModelAdmin") -> list[str]:
+def register(*models, site: ContentStudioSite = None):
     """
-    Fail fast at setup on misconfigured list pages. Content Studio
-    repurposes list_display for the list view, so an old-style list/tuple
-    (the classic admin's table columns) must be pointed at table_display
-    rather than silently ignored.
+    Register the given model classes and wrapped ModelStudio class with
+    the Content Studio site:
+
+        from content_studio import register
+        from content_studio.admin import ModelStudio
+
+        @register(Article)
+        class ArticleStudio(ModelStudio):
+            pass
+
+    The `site` kwarg is a Content Studio site to use instead of the
+    configured one.
     """
-    if isinstance(admin_class.list_display, (list, tuple)):
-        return [
-            f"{admin_class.__class__.__name__}.list_display configures the "
-            "list view and takes a mapping like "
-            "{'title': 'name', 'description': 'subtitle'}. For table "
-            "columns, use table_display."
-        ]
 
-    unknown_views = [
-        view for view in admin_class.list_views if view not in LIST_VIEW_NAMES
-    ]
+    def _model_studio_wrapper(studio_class):
+        if not models:
+            raise ValueError("At least one model must be passed to register.")
 
-    if unknown_views:
-        return [
-            f"{admin_class.__class__.__name__}.list_views contains unknown "
-            f"view(s) {', '.join(unknown_views)}. Available views: "
-            f"{', '.join(sorted(LIST_VIEW_NAMES))}."
-        ]
+        admin_site = site or cs_settings.ADMIN_SITE
 
-    return []
+        if not isinstance(admin_site, ContentStudioSite):
+            raise ValueError("site must be a ContentStudioSite instance.")
+
+        if not issubclass(studio_class, ModelStudio):
+            raise ValueError("Wrapped class must subclass ModelStudio.")
+
+        admin_site.register(models, studio_class=studio_class)
+
+        return studio_class
+
+    return _model_studio_wrapper
 
 
 def iter_components(admin_class):
     """
-    Yield the components configured in a model admin's edit_main and
+    Yield the components configured in a model studio's edit_main and
     edit_sidebar.
     """
     all_fields = getattr(admin_class, "edit_main", []) + getattr(
@@ -270,9 +570,9 @@ def iter_components(admin_class):
 
 def get_is_singleton(admin_class) -> bool:
     """
-    Return the effective singleton state of a model admin.
+    Return the effective singleton state of a model studio.
 
-    The admin's is_singleton attribute is the canonical declaration.
+    The studio's is_singleton attribute is the canonical declaration.
     A model-level marker (e.g. a class property like Blueprint's
     SingletonModel.is_singleton) is honored as a fallback for backward
     compatibility; concrete fields named is_singleton are ignored, since
@@ -294,173 +594,30 @@ def get_relation_display_for(
 ) -> "RelationDisplay":
     """
     Resolve the relation display for an object through its model's
-    Content Studio admin. Models registered with a plain Django admin (e.g.
-    django.contrib.auth's User) fall back to the string representation.
+    registered ModelStudio. Models without one fall back to the string
+    representation.
     """
-    related_admin = admin.site._registry.get(model)
+    related_studio = cs_settings.ADMIN_SITE._registry.get(model)
 
-    if isinstance(related_admin, ModelAdmin):
-        return related_admin.get_relation_display(obj, request)
+    if related_studio is not None:
+        return related_studio.get_relation_display(obj, request)
 
     return RelationDisplay(title=str(obj))
 
 
-T = TypeVar("T", bound=Model)
-
-
-class ModelAdmin(admin.ModelAdmin, Generic[T]):
-    """
-    Enhanced model admin for Django Content Studio and integration with
-    Django Content Framework. Although it's relatively backwards compatible,
-    some default behavior has been changed.
-    """
-
-    model: Type[T]
-
-    # Whether the model is a singleton and should not show
-    # the list view.
-    is_singleton: bool = False
-
-    # Override the widget used for certain fields by adding
-    # a map of field to widget. Fields that are not included
-    # will fall back to their default widget.
-    #
-    # @example
-    # widget_mapping = {'is_published': widgets.SwitchWidget}
-    widget_mapping: Optional[dict[str, Type[widgets.BaseWidget]]] = None
-
-    # Override the format used for certain fields by adding
-    # a map of field to format. Fields that are not included
-    # will fall back to their default format.
-    #
-    # @example
-    # format_mapping = {'file_size': widgets.FileSizeWidget}
-    format_mapping: Optional[dict[str, Type[formats.BaseFormat]]] = None
-
-    # We set a lower limit than Django's default of 100
-    list_per_page: int = 20
-
-    # Description shown below model name on list pages
-    list_description: str = ""
-
-    # The columns of the table view. This replaces Django admin's
-    # list_display, which Content Studio repurposes for the list view.
-    table_display: list[str] = ["__str__"]
-
-    # The anatomy of a list view row: roles mapped to field or model
-    # method names, e.g. {"title": "name", "description": "subtitle"}.
-    # Unlike the classic admin, list_display configures the list view —
-    # an old-style list/tuple raises ImproperlyConfigured at setup.
-    list_display: Optional[dict[str, str]] = None
-
-    # The views offered by the list page: "table" and/or "list". More than
-    # one enables a toggle in the interface.
-    list_views: list[str] = ["table"]
-
-    # Configure the main section in the edit-view.
-    edit_main: Union[
-        list[Union[FormSetGroup, FormSet, Field, Component, str]], list[str]
-    ] = []
-
-    # Configure the sidebar in the edit-view.
-    edit_sidebar: Union[list[Union[FormSet, Field, Component, str]], list[str]] = []
-
-    # The icon for this model will be shown in the menu and some other places.
-    icon: Optional[str] = None
-
-    def get_relation_display(
-        self, obj: models.Model, request: HttpRequest
-    ) -> "RelationDisplay":
-        """
-        How a related object appears wherever the studio renders it: relation
-        pickers, list views and selected-value badges. Override to customize;
-        the base implementation displays the object's string representation.
-        """
-        return RelationDisplay(title=str(obj))
-
-    def get_list_display(
-        self, obj: models.Model, request: HttpRequest
-    ) -> "ListDisplay":
-        """
-        The anatomy of a row in the list view. The base implementation
-        resolves the declarative list_display mapping (roles to field or
-        model method names); override for fully computed rows.
-        """
-        display = self.list_display or {}
-
-        def resolve(role: str) -> str:
-            field = display.get(role)
-
-            if not field:
-                return ""
-
-            value = getattr(obj, field)
-
-            return str(value() if callable(value) else value)
-
-        return ListDisplay(
-            title=resolve("title") or str(obj),
-            description=resolve("description"),
-            meta=resolve("meta"),
-        )
-
-    def check(self, **kwargs):
-        """
-        Content Studio renders its own interface; Django's changelist
-        checks inspect list_display, which the studio repurposes for the
-        list view. Run the checks with the changelist's expectation in
-        place, everything else applies as usual.
-        """
-        original = self.list_display
-        self.list_display = ("__str__",)
-        try:
-            return super().check(**kwargs)
-        finally:
-            self.list_display = original
-
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        # Don't allow adding more than one singleton object.
-        if get_is_singleton(self) and self.model.objects.exists():
-            return False
-
-        return super().has_add_permission(request)
-
-    def has_delete_permission(
-        self, request: HttpRequest, obj: Optional[T] = None
-    ) -> bool:
-        if get_is_singleton(self):
-            return False
-
-        return super().has_delete_permission(request, obj)
-
-    def get_component(self, component_id: uuid.UUID) -> Optional[Component]:
-        """
-        Retrieves a component from the edit_main or edit_sidebar attributes by ID.
-        :param component_id:
-        :return:
-        """
-        for component in iter_components(self):
-            if component.component_id == component_id:
-                return component
-
-        return None
-
-
 class AdminSerializer:
     """
-    Class for serializing Django admin classes.
+    Class for serializing model studios for the frontend.
     """
 
-    def __init__(self, admin_class: ModelAdmin):
+    def __init__(self, admin_class: ModelStudio):
         self.admin_class = admin_class
 
     def serialize(self, request: HttpRequest) -> dict[str, Any]:
         admin_class = self.admin_class
-        format_mapping = getattr(admin_class, "format_mapping", None) or {}
-        widget_mapping = getattr(admin_class, "widget_mapping", None) or {}
 
         return {
-            "icon": getattr(admin_class, "icon", None),
+            "icon": admin_class.icon,
             "is_singleton": get_is_singleton(admin_class),
             "edit": {
                 "main": self.serialize_edit_main(request),
@@ -469,26 +626,19 @@ class AdminSerializer:
                     {
                         "model": inline.model._meta.label_lower,
                         "fk_name": get_related_field_name(inline, admin_class.model),
-                        "list_display": getattr(inline, "table_display", None)
-                        or ["__str__"],
+                        "table_display": inline.table_display,
                     }
                     for inline in admin_class.inlines
                 ],
             },
             "list": {
                 "per_page": admin_class.list_per_page,
-                "description": getattr(admin_class, "list_description", ""),
+                "description": admin_class.list_description,
                 "display": self.get_table_display(),
-                "views": getattr(admin_class, "list_views", ["table"]),
+                "views": admin_class.list_views,
                 "search": len(admin_class.search_fields) > 0,
                 "filter": admin_class.list_filter,
                 "sortable_by": admin_class.sortable_by,
-            },
-            "widget_mapping": {
-                field: widget.serialize() for field, widget in widget_mapping.items()
-            },
-            "format_mapping": {
-                field: format.serialize() for field, format in format_mapping.items()
             },
             "permissions": {
                 "add_permission": admin_class.has_add_permission(request),
@@ -501,49 +651,20 @@ class AdminSerializer:
     def serialize_edit_main(self, request: HttpRequest) -> list[dict[str, Any]]:
         admin_class = self.admin_class
 
-        # An unset (or empty) edit_main falls back to every editable field,
-        # mirroring the Django admin's get_fields default. This also gives
-        # inline models without an admin of their own a complete form.
-        edit_main = getattr(admin_class, "edit_main", None) or admin_class.get_fields(
-            request
-        )
+        # An unset (or empty) edit_main falls back to every editable
+        # field. This also gives inline models without a studio of
+        # their own a complete form.
+        edit_main = admin_class.edit_main or admin_class.get_fields(request)
 
         return [i.serialize() for i in self.get_edit_main(edit_main)]
 
     def serialize_edit_sidebar(self, request: HttpRequest) -> list[dict[str, Any]]:
         admin_class = self.admin_class
 
-        return [
-            i.serialize()
-            for i in self.get_edit_sidebar(getattr(admin_class, "edit_sidebar", None))
-        ]
+        return [i.serialize() for i in self.get_edit_sidebar(admin_class.edit_sidebar)]
 
     def get_table_display(self) -> list[dict[str, Any]]:
-        admin_class = self.admin_class
-        fields = []
-
-        # Plain Django admins (e.g. django.contrib.auth's) lack the
-        # Content Studio attributes; fall back to their list_display.
-        for field in (
-            getattr(admin_class, "table_display", None)
-            or getattr(admin_class, "list_display", ())
-            or ["__str__"]
-        ):
-            if hasattr(admin_class, field):
-                method = getattr(admin_class, field)
-                description = getattr(method, "short_description", None)
-                empty_value = getattr(method, "empty_value", None)
-                fields.append(
-                    {
-                        "name": field,
-                        "description": description,
-                        "empty_value": empty_value,
-                    }
-                )
-            else:
-                fields.append({"name": field})
-
-        return fields
+        return [{"name": field} for field in self.admin_class.table_display]
 
     def get_edit_main(
         self,
@@ -584,65 +705,3 @@ class AdminSerializer:
             return edit_sidebar
 
         return [FormSet(fields=edit_sidebar)]
-
-
-class RelationDisplay:
-    """
-    The display of a related object wherever it appears in the studio:
-    relation pickers, list views and selected-value badges.
-
-    Besides title, description and icon, the display can carry initials
-    (shown as one character on a colored circle) and an avatar (an image
-    URL). When several are set, the interface shows one glyph with the
-    priority: avatar, then initials, then icon.
-    """
-
-    def __init__(
-        self,
-        title: str,
-        description: str = "",
-        icon: str = None,
-        initials: str = "",
-        avatar: str = None,
-    ):
-        self.title = title
-        self.description = description
-        # A CSS class, like the ModelAdmin icon.
-        self.icon = icon
-        self.initials = initials
-        # A URL to an image.
-        self.avatar = avatar
-
-
-class ListDisplay:
-    """
-    The anatomy of a row in the list view: a prominent title, a muted
-    description and a meta value rendered as a badge on the right.
-    """
-
-    def __init__(self, title: str, description: str = "", meta: str = ""):
-        self.title = title
-        self.description = description
-        self.meta = meta
-
-
-class ModelGroup:
-    name: str
-    label: str
-    icon: Optional[str]
-    color: Optional[str]
-    models: list[Type[Model]]
-
-    def __init__(
-        self,
-        name: str,
-        label: Optional[str] = None,
-        icon: Optional[str] = None,
-        color: Optional[str] = None,
-        models: Optional[list[Type[Model]]] = None,
-    ):
-        self.name = name
-        self.label = label or name.capitalize()
-        self.icon = icon
-        self.color = color
-        self.models = models or []

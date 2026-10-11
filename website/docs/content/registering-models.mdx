@@ -1,43 +1,45 @@
 # 📋 Registering models
 
-Models are registered with the `@register` decorator — the same shape as the
-Django admin — on a `ModelAdmin` subclass:
+Models are registered with the `@register` decorator on a `ModelStudio`
+subclass:
 
 ```python
 from content_studio import register
-from content_studio.admin import ModelAdmin
+from content_studio.admin import ModelStudio
 
 
 @register(Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleStudio(ModelStudio):
     table_display = ["title", "status", "published_at"]
 ```
 
-`@register` accepts multiple models, and `content_studio.display` is an alias
-for Django's `@display` decorator for calculated list columns:
+`@register` accepts multiple models, and registrations go to the Content
+Studio site configured in `CONTENT_STUDIO["ADMIN_SITE"]`:
 
 ```python
-from content_studio import display, register
-
-
-@register(Article)
-class ArticleAdmin(ModelAdmin):
-    table_display = ["title", "word_count"]
-
-    @display(description="Words")
-    def word_count(self, obj):
-        return len(obj.body.split())
+@register(Article, Category)
+class SharedStudio(ModelStudio):
+    pass
 ```
 
 :::note
-`register` and `display` are exposed lazily: `from content_studio import
-register` works anywhere in your code, without importing the admin machinery
-before Django is ready.
+`register` is exposed lazily: `from content_studio import register` works
+anywhere in your code, without importing the studio machinery before
+Django is ready.
 :::
 
-## ModelAdmin options
+## Content Studio owns its registry
 
-The familiar Django admin options drive the list view:
+Content Studio keeps its own registry — it does not read the Django
+admin's global registry. Models registered only with the classic Django
+admin do not appear in the studio; register each model you want to
+manage with `@register`.
+
+The one exception is the user model: it is registered automatically with
+a default studio, so user management works out of the box. Register your
+own studio for it to customize it.
+
+## ModelStudio options
 
 | Option | Effect |
 |--------|--------|
@@ -52,18 +54,19 @@ The familiar Django admin options drive the list view:
 
 ## Singletons
 
-Settings-style models with a single row declare `is_singleton` on the admin:
+Settings-style models with a single row declare `is_singleton` on the
+studio:
 
 ```python
 @register(SiteSettings)
-class SiteSettingsAdmin(ModelAdmin):
+class SiteSettingsStudio(ModelStudio):
     is_singleton = True
     edit_main = ["site_name", "tagline"]
 ```
 
 Singletons skip the list view: the single object opens directly in the
-editor, creating is only allowed while no object exists, and deletion is not
-offered.
+editor, creating is only allowed while no object exists, and deletion is
+not offered.
 
 :::note
 As a fallback for models that carry a model-level `is_singleton` marker (for
@@ -74,21 +77,25 @@ ignored.
 
 ## Inlines
 
-Related child models edit inside their parent's edit view. Declare them with
-the inline classes:
+Related child models edit inside their parent's edit view. Declare them
+with the inline class:
 
 ```python
-from content_studio.admin import ModelAdmin, StackedInline
+from content_studio.admin import InlineModelStudio, ModelStudio
 
 
-class ReviewInline(StackedInline):
+class ReviewInline(InlineModelStudio):
     model = Review
 
 
 @register(Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleStudio(ModelStudio):
     inlines = [ReviewInline]
 ```
+
+An inline declares its `model` and — when more than one foreign key
+points at the parent — the `fk_name` of the relation. Inline rows show
+the columns configured in the inline's `table_display`.
 
 Inlines live inside their parent's edit view and stay there: inline lists are
 always shown in the context of a parent, and inline objects cannot be attached
@@ -98,15 +105,15 @@ to a parent the user cannot see.
 
 Wherever a related object appears — relation pickers, list views and
 selected-value badges — its display is controlled by the **related model's
-admin** through `get_relation_display`. The default shows the object's
+studio** through `get_relation_display`. The default shows the object's
 string representation:
 
 ```python
-from content_studio.admin import ModelAdmin, RelationDisplay
+from content_studio.admin import ModelStudio, RelationDisplay
 
 
 @register(models.Category)
-class CategoryAdmin(ModelAdmin):
+class CategoryStudio(ModelStudio):
     def get_relation_display(self, obj, request):
         return RelationDisplay(
             title=obj.name,
@@ -116,13 +123,12 @@ class CategoryAdmin(ModelAdmin):
 ```
 
 `RelationDisplay` takes a `title` (required), a `description`, an `icon`
-(a CSS class, like the `ModelAdmin.icon`), `initials` (shown as one character on
+(a CSS class, like the `ModelStudio.icon`), `initials` (shown as one character on
 a colored circle — the color is derived from the full initials value) and an
 `avatar` (an image URL). Everything but the title is optional and omitted
 from the interface when empty. When several glyphs are set, one is shown with
-the priority: avatar, then initials, then icon. Models registered with a
-plain Django admin (like `django.contrib.auth`'s `User`) always fall back to
-the string representation.
+the priority: avatar, then initials, then icon. Models without a registered
+studio always fall back to the string representation.
 
 ## List views
 
@@ -132,7 +138,7 @@ more than one shows a toggle, and the choice persists in the URL:
 
 ```python
 @register(models.Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleStudio(ModelStudio):
     table_display = ["title", "status", "published_at"]
     list_views = ["table", "list"]
 ```
@@ -156,6 +162,30 @@ def get_list_display(self, obj, request):
 
 :::caution
 Unlike the classic Django admin, `list_display` configures the list view —
-not the table columns. Passing an old-style list raises
-`ImproperlyConfigured` at setup; use `table_display` for the columns.
+not the table columns. Passing an old-style list is reported by the
+`content_studio.E001` system check (`manage.py check`); use `table_display`
+for the columns.
 :::
+
+## Configuring the site
+
+The studio site is configured through the `CONTENT_STUDIO["ADMIN_SITE"]`
+setting, which points at a `ContentStudioSite` instance. The default site
+(`content_studio.admin.admin_site`) is enough for most projects; subclass
+`ContentStudioSite` to add a dashboard, model groups or extensions. Put the
+site instance in its own module (or above the registrations) so the
+`@register` decorator can import it while your `admin.py` runs:
+
+```python
+# apps/blog/studio.py
+from content_studio.admin import ContentStudioSite
+
+admin_site = ContentStudioSite()
+```
+
+```python
+# settings.py
+CONTENT_STUDIO = {
+    "ADMIN_SITE": "apps.blog.studio.admin_site",
+}
+```

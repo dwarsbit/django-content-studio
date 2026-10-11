@@ -1,28 +1,22 @@
 """
 Content Studio registration for the demo project — the documented pattern:
-`@register` the model, customize through `ModelAdmin` options.
+`@register` the model, customize through `ModelStudio` options on the site
+configured in CONTENT_STUDIO (demo.blog.studio.admin_site).
 """
 
 from content_studio import register
-from content_studio.admin import (
-    AdminSite,
-    ModelAdmin,
-    RelationDisplay,
-    StackedInline,
-)
-from content_studio.dashboard import Dashboard
+from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
 from content_studio.form import FormSet
 
 from . import models
-from .dashboard import ArticleCountWidget, LatestArticlesWidget
 
 
-class ReviewInline(StackedInline):
+class ReviewInline(InlineModelStudio):
     model = models.Review
 
 
 @register(models.Category)
-class CategoryAdmin(ModelAdmin):
+class CategoryAdmin(ModelStudio):
     table_display = ["name"]
     search_fields = ["name"]
 
@@ -35,7 +29,7 @@ class CategoryAdmin(ModelAdmin):
 
 
 @register(models.MediaItem)
-class MediaItemAdmin(ModelAdmin):
+class MediaItemAdmin(ModelStudio):
     table_display = ["name", "type"]
 
     def get_relation_display(self, obj, request):
@@ -48,12 +42,12 @@ class MediaItemAdmin(ModelAdmin):
 
 
 @register(models.MediaFolder)
-class MediaFolderAdmin(ModelAdmin):
+class MediaFolderAdmin(ModelStudio):
     table_display = ["name"]
 
 
 @register(models.Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleAdmin(ModelStudio):
     table_display = ["title", "status", "author", "published_at"]
     # The list view's rows; both views are offered, with a toggle.
     list_views = ["table", "list"]
@@ -76,7 +70,7 @@ class ArticleAdmin(ModelAdmin):
 
 
 @register(models.SiteSettings)
-class SiteSettingsAdmin(ModelAdmin):
+class SiteSettingsAdmin(ModelStudio):
     is_singleton = True
     edit_main = ["site_name", "tagline"]
 
@@ -84,14 +78,5 @@ class SiteSettingsAdmin(ModelAdmin):
 if models.blueprint_available:
 
     @register(models.LandingPage)
-    class LandingPageAdmin(ModelAdmin):
+    class LandingPageAdmin(ModelStudio):
         edit_main = ["title", "body"]
-
-
-class DemoAdminSite(AdminSite):
-    dashboard = Dashboard(
-        widgets=[ArticleCountWidget(), LatestArticlesWidget()],
-    )
-
-
-admin_site = DemoAdminSite()

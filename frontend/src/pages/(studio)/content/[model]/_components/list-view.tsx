@@ -36,8 +36,8 @@ export function ListView({
       <Table>
         <TableHeader>
           <TableRow>
-            {display.map(({ name, description }) => {
-              const label = description ?? model.fields[name]?.verbose_name;
+            {display.map(({ name }) => {
+              const label = model.fields[name]?.verbose_name;
               const active = name === ordering?.replace(/^-/, "");
               const descending = !!ordering?.startsWith("-");
               const isSortable =
@@ -106,13 +106,12 @@ export function ListView({
                 navigate({ hash: `#editor:${model.label}:${item.id}` })
               }
             >
-              {fields.map(({ name, empty_value }) => (
+              {fields.map(({ name }) => (
                 <TableCell key={name}>
                   <div className="truncate min-h-8 items-center flex">
                     <FormatRenderer
                       value={item[name]}
                       field={model.fields[name]}
-                      emptyValue={empty_value}
                     />
                   </div>
                 </TableCell>

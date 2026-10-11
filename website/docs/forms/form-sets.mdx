@@ -9,7 +9,7 @@ from content_studio.form import Field, FieldLayout, FormSet
 
 
 @register(Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleStudio(ModelStudio):
     edit_main = [
         FormSet(
             title="Content",
@@ -63,7 +63,7 @@ class ViewSiteLink(ButtonLink):
 
 
 @register(Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleStudio(ModelStudio):
     edit_sidebar = ["published_at", ViewSiteLink()]
 ```
 

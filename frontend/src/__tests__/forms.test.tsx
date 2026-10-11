@@ -123,8 +123,6 @@ function makeModel(
     tenant_field: null,
     admin: {
       is_singleton: false,
-      format_mapping: {},
-      widget_mapping: {},
       icon: null,
       list: {
         per_page: 10,
@@ -439,7 +437,7 @@ describe("Inline", () => {
     },
   });
 
-  it("loads rows through the inlines endpoint and renders list_display fields", async () => {
+  it("loads rows through the inlines endpoint and renders table_display fields", async () => {
     httpMock.get.mockResolvedValue({
       data: {
         pagination: { count: 1, current: 1, pages: 1 },
@@ -466,7 +464,7 @@ describe("Inline", () => {
           relModel="testapp.article"
           relId="art-1"
           model={imageModel}
-          adminModel={{ fk_name: "article", list_display: ["caption"] }}
+          adminModel={{ fk_name: "article", table_display: ["caption"] }}
         />
       </FormHarness>,
     );
@@ -499,7 +497,7 @@ describe("Inline", () => {
           relModel="testapp.article"
           relId="art-1"
           model={imageModel}
-          adminModel={{ fk_name: "article", list_display: ["caption"] }}
+          adminModel={{ fk_name: "article", table_display: ["caption"] }}
         />
       </FormHarness>,
     );

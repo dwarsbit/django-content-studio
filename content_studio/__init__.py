@@ -6,14 +6,14 @@ __license__ = "MIT"
 # Version synonym
 VERSION = __version__
 
-# The documented entry points (`from content_studio import register`) are
+# The documented entry point (`from content_studio import register`) is
 # resolved lazily: importing the admin module eagerly would require the
 # app registry to be ready.
-__all__ = ["register", "display"]
+__all__ = ["register"]
 
 
 def __getattr__(name):
-    if name in ("register", "display"):
+    if name == "register":
         from . import admin
 
         return getattr(admin, name)

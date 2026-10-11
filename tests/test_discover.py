@@ -49,11 +49,14 @@ class DiscoverEndpointTests(TestCase):
         self.assertEqual(data["media_library"]["models"]["folder_model"], "auth.group")
 
     def test_discover_lists_registered_models(self):
-        """Discover includes the registered admin models."""
+        """Discover includes the registered studios. Only the user model
+        is there out of the box; Group no longer rides in through the
+        Django admin's global registry."""
         response = self.client.get("/api/discover")
 
         self.assertEqual(response.status_code, 200)
 
         models = {model["label"] for model in response.json()["models"]}
         self.assertIn("auth.user", models)
-        self.assertIn("auth.group", models)
+        self.assertIn("testapp.article", models)
+        self.assertNotIn("auth.group", models)

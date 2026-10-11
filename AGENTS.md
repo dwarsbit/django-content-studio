@@ -25,7 +25,7 @@
 ```
 content_studio/
 ├── __init__.py           # Package entry point, exports main functions
-├── admin.py             # Enhanced AdminSite with widget/form mappings
+├── admin.py             # ModelStudio, InlineModelStudio, ContentStudioSite, registry
 ├── apps.py              # App configuration and registry
 ├── settings.py          # Content Studio specific settings (CONTENT_STUDIO namespace)
 ├── models.py            # Base models (ActivityLog)
@@ -38,6 +38,7 @@ content_studio/
 ├── form.py              # Form and field definitions
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
+├── checks.py            # System checks (content_studio.E001-E005)
 ├── utils.py             # Utility functions
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions
@@ -182,17 +183,23 @@ verifies the compiled assets, translations and a blueprint-less install.
 
 ## Code Organization
 
-### Admin Registration
+### Model Registration
 
-Models are registered with Content Studio using the `@register` decorator:
+Models are registered with Content Studio using the `@register` decorator on
+a `ModelStudio` subclass. Content Studio keeps its own registry (the site
+configured as `ADMIN_SITE`); the classic Django admin's registry is not read:
 
 ```python
 from content_studio import register
+from content_studio.admin import ModelStudio
 
-@register
-class MyModel:
-    pass
+@register(Article)
+class ArticleStudio(ModelStudio):
+    table_display = ["title"]
 ```
+
+The user model is registered automatically with a default studio unless a
+project registers its own.
 
 ### Widget System
 
@@ -211,7 +218,7 @@ Content Studio uses a widget system to render fields. Default mappings are defin
 
 Blueprint widgets are registered via a guarded import: Content Studio imports and works fully without django-blueprint. Never import blueprint at module top level without a guard.
 
-Custom widgets can be registered via the widget mapping.
+The mappings live on the `ContentStudioSite` (`default_widget_mapping`, `default_format_mapping`); there are no per-model overrides.
 
 ### Form System
 
@@ -223,7 +230,7 @@ Content Studio supports extensions for adding custom functionality. See `extensi
 
 ### Deterministic IDs
 
-Extensions, dashboard widgets and form components derive their IDs deterministically (`utils.derive_uuid`) from the class plus the values returned by `get_id_parts()` — override that method to return the properties that define the object's identity. An explicit `extension_id`, `widget_id` or `component_id` (UUID) takes precedence and disambiguates duplicates — duplicate IDs raise `ImproperlyConfigured` at setup. Never use `uuid4()` for these IDs, and never let a base class inspect subclass attributes to derive IDs; use `get_id_parts()` overrides instead.
+Extensions, dashboard widgets and form components derive their IDs deterministically (`utils.derive_uuid`) from the class plus the values returned by `get_id_parts()` — override that method to return the properties that define the object's identity. An explicit `extension_id`, `widget_id` or `component_id` (UUID) takes precedence and disambiguates duplicates — duplicate IDs are reported by the system checks in `checks.py`. Never use `uuid4()` for these IDs, and never let a base class inspect subclass attributes to derive IDs; use `get_id_parts()` overrides instead.
 
 ---
 
@@ -294,17 +301,14 @@ urlpatterns = [
 ### 1. Model Registration
 
 ```python
-# In your models.py or admin.py
-from content_studio import register, display
+# In your admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
 
-@register
-class Article:
-    title = models.CharField(max_length=200)
-    content = models.TextField()
-    
-    @display
-    def short_content(self):
-        return self.content[:100]
+@register(Article)
+class ArticleStudio(ModelStudio):
+    table_display = ["title"]
+    list_display = {"title": "title", "description": "short_content"}
 ```
 
 ### 2. Custom Widgets
@@ -366,7 +370,7 @@ poetry run test-cov    # With coverage
 
 1. Define the model in your app
 2. Register with `@register` decorator
-3. Optionally customize with `@display` for list views
+3. Optionally configure the list view with `list_display`
 
 ### Customizing the Dashboard
 

@@ -1,6 +1,6 @@
 """
-Tests for the model admin permission class: model-level and
-object-level checks delegated to the registered model admin.
+Tests for the model studio permission class: model-level and
+object-level checks delegated to the registered model studio.
 """
 
 import pytest
@@ -10,20 +10,20 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 
-from content_studio.admin import ModelAdmin, admin_site
-from content_studio.permissions import ModelAdminPermissions
+from content_studio.admin import ModelStudio, admin_site
+from content_studio.permissions import ModelStudioPermissions
 from content_studio.viewsets import BaseModelViewSet
 
 
-class RecordingAdmin(ModelAdmin):
-    """Stands in for the registered admin; records the permission calls."""
+class RecordingStudio(ModelStudio):
+    """Stands in for the registered studio; records the permission calls."""
 
     def __init__(self, model, admin_site, allowed_objects=None):
         super().__init__(model, admin_site)
         self.allowed_objects = allowed_objects or set()
         self.calls = []
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         self.calls.append(("add", None))
         return True
 
@@ -46,17 +46,17 @@ class RecordingAdmin(ModelAdmin):
         return obj.pk in self.allowed_objects
 
 
-def make_view_and_request(admin_model, method="GET"):
+def make_view_and_request(studio_model, method="GET"):
     class View:
-        _admin_model = admin_model
+        _admin_model = studio_model
 
     request = Request(RequestFactory().generic(method, "/"), parsers=[JSONParser()])
     return View(), request
 
 
 def test_model_level_checks_delegate_to_the_admin():
-    admin_model = RecordingAdmin(auth_models.User, admin_site)
-    permission = ModelAdminPermissions()
+    studio_model = RecordingStudio(auth_models.User, admin_site)
+    permission = ModelStudioPermissions()
 
     for method, expected in [
         ("GET", "view"),
@@ -65,28 +65,28 @@ def test_model_level_checks_delegate_to_the_admin():
         ("PATCH", "change"),
         ("DELETE", "delete"),
     ]:
-        admin_model.calls = []
-        view, request = make_view_and_request(admin_model, method)
+        studio_model.calls = []
+        view, request = make_view_and_request(studio_model, method)
         assert permission.has_permission(request, view) is True
-        assert admin_model.calls[0][0] == expected
+        assert studio_model.calls[0][0] == expected
 
 
 def test_object_level_checks_delegate_to_the_admin():
-    admin_model = RecordingAdmin(auth_models.User, admin_site, allowed_objects={1})
-    permission = ModelAdminPermissions()
+    studio_model = RecordingStudio(auth_models.User, admin_site, allowed_objects={1})
+    permission = ModelStudioPermissions()
     allowed = auth_models.User(pk=1)
     denied = auth_models.User(pk=2)
 
-    view, request = make_view_and_request(admin_model, "GET")
+    view, request = make_view_and_request(studio_model, "GET")
     assert permission.has_object_permission(request, view, allowed) is True
     assert permission.has_object_permission(request, view, denied) is False
 
-    view, request = make_view_and_request(admin_model, "DELETE")
+    view, request = make_view_and_request(studio_model, "DELETE")
     assert permission.has_object_permission(request, view, denied) is False
 
 
 def test_missing_admin_model_denies():
-    permission = ModelAdminPermissions()
+    permission = ModelStudioPermissions()
 
     view, request = make_view_and_request(None)
 
@@ -95,19 +95,19 @@ def test_missing_admin_model_denies():
 
 @pytest.mark.django_db
 def test_get_object_enforces_object_permissions():
-    """The viewset rejects objects the admin admin denies access to."""
+    """The viewset rejects objects the studio denies access to."""
     user = auth_models.User.objects.create_superuser(
         username="admin", email="a@example.com", password="x"
     )
     visible = auth_models.User.objects.create_user(username="visible", password="x")
     hidden = auth_models.User.objects.create_user(username="hidden", password="x")
 
-    admin_model = RecordingAdmin(
+    studio_model = RecordingStudio(
         auth_models.User, admin_site, allowed_objects={visible.pk}
     )
 
     class ViewSet(BaseModelViewSet):
-        _admin_model = admin_model
+        _admin_model = studio_model
         queryset = auth_models.User.objects.all()
 
     viewset = ViewSet()

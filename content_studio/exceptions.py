@@ -11,3 +11,17 @@ class NotConfigured(APIException):
     status_code = 501
     default_detail = "This feature is not configured."
     default_code = "not_configured"
+
+
+class AlreadyRegistered(Exception):
+    """
+    Raised when registering a model that is already registered with
+    the Content Studio site.
+    """
+
+
+class NotRegistered(Exception):
+    """
+    Raised when unregistering a model that is not registered with the
+    Content Studio site.
+    """

@@ -93,16 +93,12 @@ export interface Model {
   tenant_field: string | null;
   admin: {
     is_singleton: boolean;
-    format_mapping: Record<string, { name: FieldFormat }>;
-    widget_mapping: Record<string, { name: FieldWidget }>;
     icon: string | null;
     list: {
       per_page: number;
       description: string;
       display: {
         name: string;
-        description: string | null;
-        empty_value: string | null;
       }[];
       views?: string[];
       search: boolean;
@@ -115,7 +111,7 @@ export interface Model {
       inlines: {
         model: string;
         fk_name: string;
-        list_display: string[] | null;
+        table_display: string[];
       }[];
     };
     permissions: {

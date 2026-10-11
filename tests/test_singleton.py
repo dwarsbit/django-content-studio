@@ -11,7 +11,7 @@ from django.contrib.auth import models as auth_models
 from django.db import models
 from django.test import RequestFactory
 
-from content_studio.admin import ModelAdmin, admin_site, get_is_singleton
+from content_studio.admin import ModelStudio, admin_site, get_is_singleton
 
 
 class MarkerModel(models.Model):
@@ -35,30 +35,30 @@ def make_request(user):
 
 
 def test_admin_attribute_is_canonical():
-    model_admin = ModelAdmin(auth_models.User, admin_site)
-    model_admin.is_singleton = True
+    model_studio = ModelStudio(auth_models.User, admin_site)
+    model_studio.is_singleton = True
 
-    assert get_is_singleton(model_admin) is True
+    assert get_is_singleton(model_studio) is True
 
 
 def test_model_marker_is_a_fallback():
-    model_admin = ModelAdmin(MarkerModel, admin_site)
-    model_admin.is_singleton = False
+    model_studio = ModelStudio(MarkerModel, admin_site)
+    model_studio.is_singleton = False
 
-    assert get_is_singleton(model_admin) is True
+    assert get_is_singleton(model_studio) is True
 
 
 def test_no_singleton_state():
-    model_admin = ModelAdmin(auth_models.User, admin_site)
+    model_studio = ModelStudio(auth_models.User, admin_site)
 
-    assert get_is_singleton(model_admin) is False
+    assert get_is_singleton(model_studio) is False
 
 
 def test_is_singleton_field_is_ignored():
     """A concrete field named is_singleton is not a singleton marker."""
-    model_admin = ModelAdmin(FieldModel, admin_site)
+    model_studio = ModelStudio(FieldModel, admin_site)
 
-    assert get_is_singleton(model_admin) is False
+    assert get_is_singleton(model_studio) is False
 
 
 @pytest.mark.django_db
@@ -66,10 +66,10 @@ def test_singleton_add_permission_false_when_object_exists():
     user = auth_models.User.objects.create_superuser(
         username="admin", email="a@example.com", password="x"
     )
-    model_admin = ModelAdmin(auth_models.User, admin_site)
-    model_admin.is_singleton = True
+    model_studio = ModelStudio(auth_models.User, admin_site)
+    model_studio.is_singleton = True
 
-    assert model_admin.has_add_permission(make_request(user)) is False
+    assert model_studio.has_add_permission(make_request(user)) is False
 
 
 @pytest.mark.django_db
@@ -78,9 +78,9 @@ def test_singleton_add_permission_true_on_empty_table():
     user = auth_models.User.objects.create_superuser(
         username="admin", email="a@example.com", password="x"
     )
-    model_admin = ModelAdmin(MarkerModel, admin_site)
+    model_studio = ModelStudio(MarkerModel, admin_site)
 
-    assert model_admin.has_add_permission(make_request(user)) is True
+    assert model_studio.has_add_permission(make_request(user)) is True
 
 
 @pytest.mark.django_db
@@ -88,10 +88,10 @@ def test_singleton_delete_permission_is_false():
     user = auth_models.User.objects.create_superuser(
         username="admin", email="a@example.com", password="x"
     )
-    model_admin = ModelAdmin(auth_models.User, admin_site)
-    model_admin.is_singleton = True
+    model_studio = ModelStudio(auth_models.User, admin_site)
+    model_studio.is_singleton = True
 
-    assert model_admin.has_delete_permission(make_request(user)) is False
+    assert model_studio.has_delete_permission(make_request(user)) is False
 
 
 @pytest.mark.django_db
@@ -106,9 +106,9 @@ def test_serializer_reports_effective_singleton_state():
     request = Request(RequestFactory().get("/"))
     request.user = user
 
-    model_admin = ModelAdmin(auth_models.User, admin_site)
-    model_admin.is_singleton = True
-    data = AdminSerializer(model_admin).serialize(request)
+    model_studio = ModelStudio(auth_models.User, admin_site)
+    model_studio.is_singleton = True
+    data = AdminSerializer(model_studio).serialize(request)
 
     assert data["is_singleton"] is True
 

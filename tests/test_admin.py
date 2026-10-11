@@ -1,106 +1,104 @@
 """
-Tests for Django Content Studio admin functionality.
+Tests for the Content Studio site: registration and the default user
+studio.
 """
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.contrib.auth.models import User
-from django.test.client import RequestFactory
+
+from content_studio.admin import (
+    ContentStudioSite,
+    ModelStudio,
+    admin_site,
+)
+from content_studio.exceptions import AlreadyRegistered, NotRegistered
+from tests.testapp.models import Article, Category
 
 
-class AdminTests(TestCase):
-    """Test cases for admin functionality."""
-
+class ContentStudioSiteTests(TestCase):
     def setUp(self):
-        """Set up test data."""
-        self.factory = RequestFactory()
-        self.user = User.objects.create_user(
-            username="testuser", email="test@example.com", password="testpass123"
-        )
-        self.superuser = User.objects.create_superuser(
-            username="admin", email="admin@example.com", password="adminpass123"
-        )
+        self.site = ContentStudioSite()
 
-    def test_admin_login(self):
-        """Test that admin can login."""
-        self.client.login(username="admin", password="adminpass123")
-        response = self.client.get("/admin/")
-        self.assertEqual(response.status_code, 200)
+    def test_register_instantiates_the_studio(self):
+        self.site.register(Article, ModelStudio)
 
-    def test_user_login(self):
-        """Test that regular user can login."""
-        self.client.login(username="testuser", password="testpass123")
-        response = self.client.get("/admin/")
-        # Regular users might not have access to admin
-        self.assertIn(response.status_code, [200, 302])
+        assert self.site.is_registered(Article)
+        assert isinstance(self.site._registry[Article], ModelStudio)
+        assert self.site._registry[Article].model is Article
 
-    def test_admin_site_registration(self):
-        """Test that admin site is properly registered."""
-        from django.contrib import admin
-        from content_studio.admin import admin_site
+    def test_register_rejects_double_registration(self):
+        self.site.register(Article, ModelStudio)
 
-        # Check that our custom admin site is registered
-        self.assertIsNotNone(admin_site)
-        self.assertEqual(admin_site.name, "admin")
+        with self.assertRaises(AlreadyRegistered):
+            self.site.register(Article, ModelStudio)
 
+    def test_register_rejects_abstract_models(self):
+        from django.db import models
 
-class AdminSiteTests(TestCase):
-    """Test cases for custom admin site functionality."""
+        class Abstract(models.Model):
+            class Meta:
+                abstract = True
 
-    def setUp(self):
-        """Set up test data."""
-        self.factory = RequestFactory()
-        self.superuser = User.objects.create_superuser(
-            username="admin", email="admin@example.com", password="adminpass123"
-        )
+        with self.assertRaises(Exception):
+            self.site.register(Abstract, ModelStudio)
 
-    def test_admin_site_setup(self):
-        """Test that admin site setup completes without errors."""
-        from content_studio.admin import admin_site
+    def test_register_without_studio_class_uses_default(self):
+        self.site.register(Article)
 
-        # Mock the required attributes that might not be set up in tests
-        if not hasattr(admin_site, "token_backend"):
-            from content_studio.token_backends import TokenBackendManager
+        assert isinstance(self.site._registry[Article], ModelStudio)
 
-            admin_site.token_backend = TokenBackendManager()
+    def test_register_applies_options_through_subclassing(self):
+        self.site.register(Article, ModelStudio, list_per_page=7)
 
-        if not hasattr(admin_site, "login_backend"):
-            from content_studio.login_backends import LoginBackendManager
+        assert self.site._registry[Article].list_per_page == 7
+        assert issubclass(self.site._registry[Article].__class__, ModelStudio)
 
-            admin_site.login_backend = LoginBackendManager()
+    def test_unregister_removes_the_model(self):
+        self.site.register(Article, ModelStudio)
+        self.site.unregister(Article)
 
-        # Set dashboard to None to avoid issues
-        admin_site.dashboard = None
+        assert not self.site.is_registered(Article)
 
-        # This should not raise any exceptions
-        # We'll catch the specific error about already registered routers
-        # and consider that a success since it means setup was already done
+    def test_unregister_unknown_model_raises(self):
+        with self.assertRaises(NotRegistered):
+            self.site.unregister(Article)
+
+    def test_register_decorator_uses_the_configured_site(self):
+        from content_studio import register
+
+        # The test app registers Category already; get out of its way.
+        original = admin_site._registry.pop(Category)
+
         try:
-            admin_site.setup()
-            setup_completed = True
-        except Exception as e:
-            error_msg = str(e)
-            # If it's just that routers are already registered, that's fine
-            if "already registered" in error_msg:
-                setup_completed = True
-            else:
-                print(f"Setup failed with error: {e}")
-                setup_completed = False
 
-        self.assertTrue(setup_completed)
+            @register(Category)
+            class CategoryStudio(ModelStudio):
+                pass
 
-    def test_admin_site_index(self):
-        """Test that admin site index page loads."""
-        from content_studio.admin import admin_site
+            assert admin_site.is_registered(Category)
+            assert isinstance(admin_site._registry[Category], CategoryStudio)
 
-        # Create a request
-        request = RequestFactory().get("/admin/")
-        request.user = self.superuser
+        finally:
+            admin_site._registry[Category] = original
 
-        # Test that we can access the index view
-        try:
-            response = admin_site.index(request)
-            index_works = response.status_code == 200
-        except Exception:
-            index_works = False
+    def test_setup_registers_a_default_user_studio(self):
+        self.site._register_default_user_studio()
 
-        self.assertTrue(index_works)
+        assert self.site.is_registered(get_user_model())
+        assert isinstance(self.site._registry[get_user_model()], ModelStudio)
+
+    def test_setup_respects_a_custom_user_studio(self):
+        user_model = get_user_model()
+
+        class UserStudio(ModelStudio):
+            pass
+
+        self.site.register(user_model, UserStudio)
+        self.site._register_default_user_studio()
+
+        assert isinstance(self.site._registry[user_model], UserStudio)
+
+    def test_site_identity_defaults(self):
+        assert admin_site.name == "content_studio"
+        assert bool(admin_site.site_header)
+        assert bool(admin_site.site_title)

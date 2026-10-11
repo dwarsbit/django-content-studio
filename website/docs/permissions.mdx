@@ -6,19 +6,19 @@ sidebar_position: 4
 
 Content Studio reuses the Django admin's permission system. A user needs
 Django's model permissions to see and change content in the studio, and the
-familiar `ModelAdmin` hooks can restrict access further — per object.
+familiar `ModelStudio` hooks can restrict access further — per object.
 
 ## Model-level permissions
 
-Access is checked against the model admin's permission methods, which
+Access is checked against the model studio's permission methods, which
 default to Django's model permissions:
 
 | Method | Default behavior |
 |--------|------------------|
-| `has_view_permission(request)` | Django's `view` permission |
-| `has_add_permission(request)` | Django's `add` permission |
-| `has_change_permission(request)` | Django's `change` permission |
-| `has_delete_permission(request)` | Django's `delete` permission |
+| `has_view_permission(request, obj=None)` | Django's `view` permission |
+| `has_add_permission(request, obj=None)` | Django's `add` permission |
+| `has_change_permission(request, obj=None)` | Django's `change` permission |
+| `has_delete_permission(request, obj=None)` | Django's `delete` permission |
 
 A staff user needs the matching Django permission on the model — superusers
 have them all. Grant them like anywhere else in Django, through groups or
@@ -31,7 +31,7 @@ sees and edits the objects you allow:
 
 ```python
 @register(Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleStudio(ModelStudio):
     def has_view_permission(self, request, obj=None):
         if obj is None:
             return super().has_view_permission(request)
