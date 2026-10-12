@@ -188,3 +188,86 @@ def test_non_string_list_filter_is_safe():
     """A model admin without list_filter (e.g. inlines) allows no filtering."""
     with pytest.raises(ParseError):
         filter_via_action(auth_models.User, "username=admin", list_filter=())
+
+
+@pytest.mark.django_db
+def test_datetime_range_bounds():
+    """The date range filter bounds a datetime to start/end of day."""
+    from datetime import datetime
+
+    from django.utils import timezone
+
+    inside = auth_models.User.objects.create_user(username="in", password="x")
+    auth_models.User.objects.create_user(username="out", password="x")
+    inside.date_joined = timezone.make_aware(datetime(2026, 1, 5, 12, 30))
+    inside.save()
+
+    result = filter_via_action(
+        auth_models.User,
+        "date_joined__gte=2026-01-05T00:00&date_joined__lte=2026-01-05T23:59",
+        list_filter=("date_joined",),
+    )
+
+    assert set(result.values_list("username", flat=True)) == {"in"}
+
+
+@pytest.mark.django_db
+def test_number_range_bounds():
+    """The number filter sends __gte/__lte bounds."""
+    from tests.testapp.models import Article
+
+    Article.objects.create(title="In range", views=5)
+    Article.objects.create(title="Out of range", views=20)
+
+    result = filter_via_action(
+        Article,
+        "views__gte=1&views__lte=10",
+        list_filter=("views",),
+    )
+
+    assert set(result.values_list("title", flat=True)) == {"In range"}
+
+
+@pytest.mark.django_db
+def test_foreign_key_filter_matches_by_pk():
+    """The foreign key filter sends the related object's pk."""
+    from tests.testapp.models import Article
+
+    author = auth_models.User.objects.create_user(username="author", password="x")
+    Article.objects.create(title="By author", author=author)
+    Article.objects.create(title="Anonymous")
+
+    result = filter_via_action(
+        Article,
+        f"author={author.pk}",
+        list_filter=("author",),
+    )
+
+    assert set(result.values_list("title", flat=True)) == {"By author"}
+
+
+@pytest.mark.django_db
+def test_many_to_many_filter_matches_any():
+    """The many to many filter sends one pk (exact) or a comma-joined
+    list (any of)."""
+    from tests.testapp.models import Article, Category
+
+    news = Category.objects.create(name="News")
+    sports = Category.objects.create(name="Sports")
+    in_news = Article.objects.create(title="In news")
+    in_news.categories.add(news)
+    in_both = Article.objects.create(title="In both")
+    in_both.categories.add(news, sports)
+    uncategorized = Article.objects.create(title="Uncategorized")
+
+    result = filter_via_action(
+        Article, f"categories={news.pk}", list_filter=("categories",)
+    )
+    assert set(result.values_list("title", flat=True)) == {"In news", "In both"}
+
+    result = filter_via_action(
+        Article,
+        f"categories={news.pk},{sports.pk}",
+        list_filter=("categories",),
+    )
+    assert set(result.values_list("title", flat=True)) == {"In news", "In both"}

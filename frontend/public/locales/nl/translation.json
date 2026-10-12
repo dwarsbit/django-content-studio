@@ -73,7 +73,14 @@
     "list_view": "Lijstweergave",
     "empty_state": "Nog geen items",
     "filter": "Filteren",
-    "clear_all_filters": "Alle filters wissen"
+    "clear_all_filters": "Alle filters wissen",
+    "filters": {
+      "all": "Alle",
+      "yes": "Ja",
+      "no": "Nee",
+      "min": "Min",
+      "max": "Max"
+    }
   },
   "bulk": {
     "selected": "{{count}} geselecteerd",

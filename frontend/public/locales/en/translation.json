@@ -73,7 +73,14 @@
     "list_view": "List view",
     "empty_state": "No items yet",
     "filter": "Filter",
-    "clear_all_filters": "Clear all filters"
+    "clear_all_filters": "Clear all filters",
+    "filters": {
+      "all": "All",
+      "yes": "Yes",
+      "no": "No",
+      "min": "Min",
+      "max": "Max"
+    }
   },
   "bulk": {
     "selected": "{{count}} selected",

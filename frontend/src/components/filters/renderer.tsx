@@ -1,24 +1,40 @@
 import { type ComponentType, useMemo } from "react";
 
 import { useAdminInfo } from "@/hooks/use-admin-info";
-import { FieldWidget, type ModelField } from "@/types";
+import { FieldType, FieldWidget, type Model, type ModelField } from "@/types";
 
+import { BooleanFilter } from "./boolean-filter";
+import { DateRangeFilter } from "./date-range-filter";
+import { ForeignKeyFilter } from "./foreign-key-filter";
+import { ManyToManyFilter } from "./many-to-many-filter";
 import { MultiSelectFilter } from "./multi-select-filter";
+import { NumberFilter } from "./number-filter";
+import type {
+  FilterChanges,
+  FilterComponentProps,
+  FilterValues,
+} from "./types";
 
-type FilterComponent = ComponentType<{
-  value?: string;
-  onChange(value: string): void;
-  field: ModelField;
-}>;
+type FilterComponent = ComponentType<FilterComponentProps>;
+
+const NUMBER_TYPES = [
+  FieldType.IntegerField,
+  FieldType.DecimalField,
+  FieldType.FloatField,
+];
 
 export function FilterRenderer({
   field,
-  value,
+  name,
+  model,
+  values,
   onValueChange,
 }: {
   field: ModelField;
-  value: string;
-  onValueChange(value: string): void;
+  name: string;
+  model: Model;
+  values: FilterValues;
+  onValueChange(changes: FilterChanges): void;
 }) {
   const { data: info } = useAdminInfo();
   const widgetClass = field.widget_class ?? info?.widgets[field.type]?.name;
@@ -30,12 +46,36 @@ export function FilterRenderer({
     if (widgetClass === FieldWidget.MultiSelectWidget) {
       return MultiSelectFilter;
     }
+    if (field.type === FieldType.BooleanField) {
+      return BooleanFilter;
+    }
+    if (
+      field.type === FieldType.DateField ||
+      field.type === FieldType.DateTimeField
+    ) {
+      return DateRangeFilter;
+    }
+    if (NUMBER_TYPES.includes(field.type)) {
+      return NumberFilter;
+    }
+    if (widgetClass === FieldWidget.ForeignKeyWidget) {
+      return ForeignKeyFilter;
+    }
+    if (widgetClass === FieldWidget.ManyToManyWidget) {
+      return ManyToManyFilter;
+    }
     return null;
-  }, [field.choices, widgetClass]);
+  }, [field, widgetClass]);
 
   return (
     FilterComp && (
-      <FilterComp value={value} onChange={onValueChange} field={field} />
+      <FilterComp
+        field={field}
+        name={name}
+        model={model}
+        values={values}
+        onChange={onValueChange}
+      />
     )
   );
 }

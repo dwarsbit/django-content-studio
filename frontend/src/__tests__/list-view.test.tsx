@@ -31,7 +31,7 @@ vi.mock("@/hooks/use-admin-info", () => ({
 }));
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
 }));
 
 // ui/pagination.tsx unwraps a nested `default` from react-paginate's UMD
@@ -402,6 +402,215 @@ describe("ModelListPage", () => {
     expect(screen.getByTestId("location-search")).not.toHaveTextContent(
       "filters.status",
     );
+  });
+
+  it("renders a boolean filter and sends the chosen value to the API", async () => {
+    const user = userEvent.setup();
+    renderListPage(
+      makeModel({
+        list: { filter: ["is_published"] },
+        fields: {
+          ...articleFields,
+          is_published: {
+            type: FieldType.BooleanField,
+            verbose_name: "Published",
+          },
+        },
+      }),
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Published/ }));
+    await user.click(
+      await screen.findByRole("menuitemradio", {
+        name: "list_view.filters.yes",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(lastRequest().params).toMatchObject({ is_published: "true" }),
+    );
+    expect(screen.getByTestId("location-search")).toHaveTextContent(
+      "filters.is_published=true",
+    );
+
+    // Choosing "all" removes the filter again.
+    await user.click(await screen.findByRole("button", { name: /^Published/ }));
+    await user.click(
+      await screen.findByRole("menuitemradio", {
+        name: "list_view.filters.all",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(lastRequest().params.is_published).toBeUndefined(),
+    );
+    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
+      "filters.is_published",
+    );
+  });
+
+  it("renders a number filter and sends the range bounds to the API", async () => {
+    const user = userEvent.setup();
+    renderListPage(
+      makeModel({
+        list: { filter: ["views"] },
+        fields: {
+          ...articleFields,
+          views: { type: FieldType.IntegerField, verbose_name: "Views" },
+        },
+      }),
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Views/ }));
+    await user.type(await screen.findByLabelText("list_view.filters.min"), "5");
+    await user.type(
+      await screen.findByLabelText("list_view.filters.max"),
+      "10",
+    );
+    // Bounds commit on Enter; blur alone would work too.
+    await user.keyboard("{Enter}");
+
+    await waitFor(() =>
+      expect(lastRequest().params).toMatchObject({
+        views__gte: "5",
+        views__lte: "10",
+      }),
+    );
+    expect(screen.getByTestId("location-search")).toHaveTextContent(
+      "filters.views__gte=5&filters.views__lte=10",
+    );
+  });
+
+  it("loads date range bounds from the URL and clears them", async () => {
+    const user = userEvent.setup();
+    renderListPage(
+      makeModel({
+        list: { filter: ["published_at"] },
+        fields: {
+          ...articleFields,
+          published_at: {
+            type: FieldType.DateTimeField,
+            verbose_name: "Published at",
+          },
+        },
+      }),
+      "/content/testapp.article?filters.published_at__gte=2026-01-01T00:00&filters.published_at__lte=2026-02-01T23:59",
+    );
+
+    await screen.findByText("First Article");
+    expect(lastRequest().params).toMatchObject({
+      published_at__gte: "2026-01-01T00:00",
+      published_at__lte: "2026-02-01T23:59",
+    });
+    expect(
+      screen.getByRole("button", { name: /^Published at/ }),
+    ).toHaveTextContent("Jan 1, 2026 – Feb 1, 2026");
+
+    await user.click(screen.getByRole("button", { name: /^Published at/ }));
+    await user.click(
+      await screen.findByRole("button", { name: "common.clear" }),
+    );
+
+    await waitFor(() =>
+      expect(lastRequest().params.published_at__gte).toBeUndefined(),
+    );
+    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
+      "filters.published_at",
+    );
+  });
+
+  it("renders a foreign key filter and sends the selected id to the API", async () => {
+    const user = userEvent.setup();
+    httpGetMock.mockImplementation((url: string) =>
+      url === "/content/testapp.author/1"
+        ? Promise.resolve({ data: { id: "1", __str__: "John Doe" } })
+        : Promise.resolve({ data: makePaginated(articles) }),
+    );
+    httpPostMock.mockResolvedValue({
+      data: [{ id: "1", __str__: "John Doe" }],
+    });
+    renderListPage(
+      makeModel({
+        list: { filter: ["author"] },
+        fields: {
+          ...articleFields,
+          author: {
+            type: FieldType.CharField,
+            verbose_name: "Author",
+            widget_class: FieldWidget.ForeignKeyWidget,
+            related_model: "testapp.author",
+          },
+        },
+      }),
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Author/ }));
+    await user.click(await screen.findByText("John Doe"));
+
+    await waitFor(() =>
+      expect(lastRequest().params).toMatchObject({ author: "1" }),
+    );
+    expect(screen.getByTestId("location-search")).toHaveTextContent(
+      "filters.author=1",
+    );
+
+    // The trigger shows the selected relation, resolved from the API.
+    expect(
+      await screen.findByRole("button", { name: /Author\s*John\s*Doe/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders a many to many filter and sends the selection to the API", async () => {
+    const user = userEvent.setup();
+    httpGetMock.mockImplementation((url: string) => {
+      const id = url.split("/").at(-1);
+      return url.startsWith("/content/testapp.category/")
+        ? Promise.resolve({ data: { id, __str__: `Category ${id}` } })
+        : Promise.resolve({ data: makePaginated(articles) });
+    });
+    httpPostMock.mockResolvedValue({
+      data: [
+        { id: "1", __str__: "News" },
+        { id: "2", __str__: "Sports" },
+      ],
+    });
+    renderListPage(
+      makeModel({
+        list: { filter: ["categories"] },
+        fields: {
+          ...articleFields,
+          categories: {
+            type: FieldType.CharField,
+            verbose_name: "Categories",
+            widget_class: FieldWidget.ManyToManyWidget,
+            related_model: "testapp.category",
+          },
+        },
+      }),
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: /^Categories/ }),
+    );
+    // The popover stays open while toggling options.
+    await user.click(await screen.findByText("News"));
+    await user.click(await screen.findByText("Sports"));
+
+    await waitFor(() =>
+      expect(lastRequest().params).toMatchObject({ categories: "1,2" }),
+    );
+    expect(screen.getByTestId("location-search")).toHaveTextContent(
+      "filters.categories=1%2C2",
+    );
+
+    // While the modal popover is open the trigger is hidden from the
+    // accessibility tree; close it to assert the resolved labels.
+    await user.keyboard("{Escape}");
+    expect(
+      await screen.findByRole("button", {
+        name: /Category 1, Category 2/,
+      }),
+    ).toBeInTheDocument();
   });
 
   it("navigates to the editor when a row is clicked", async () => {

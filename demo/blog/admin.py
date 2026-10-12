@@ -49,7 +49,7 @@ class MediaFolderAdmin(ModelStudio):
 
 @register(models.Article)
 class ArticleAdmin(ModelStudio):
-    table_display = ["title", "status", "author", "published_at"]
+    table_display = ["title", "status", "featured", "views", "author", "published_at"]
     # The list view's rows; both views are offered, with a toggle.
     list_views = ["table", "list"]
     list_display = {
@@ -57,7 +57,17 @@ class ArticleAdmin(ModelStudio):
         "description": "body",
         "meta": "get_status_display",
     }
-    list_filter = ["status"]
+    # One field per filter type: choices (status), boolean (featured),
+    # number range (views), date range (published_at), foreign key
+    # (author) and many to many (categories).
+    list_filter = [
+        "status",
+        "featured",
+        "views",
+        "published_at",
+        "author",
+        "categories",
+    ]
     search_fields = ["title"]
     inlines = [ReviewInline]
     edit_main = [
@@ -67,7 +77,7 @@ class ArticleAdmin(ModelStudio):
             fields=["title", "body", "status", "categories", "cover"],
         ),
     ]
-    edit_sidebar = ["published_at", "author"]
+    edit_sidebar = ["published_at", "author", "featured", "views"]
 
     @bulk_action(
         label="Publish",

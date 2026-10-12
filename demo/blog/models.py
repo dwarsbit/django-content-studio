@@ -97,6 +97,8 @@ class Article(models.Model):
         on_delete=models.SET_NULL,
         related_name="+",
     )
+    featured = models.BooleanField(default=False)
+    views = models.PositiveIntegerField(default=0)
     published_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

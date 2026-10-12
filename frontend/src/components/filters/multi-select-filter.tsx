@@ -7,17 +7,15 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ModelField } from "@/types";
+
+import type { FilterComponentProps } from "./types";
 
 export function MultiSelectFilter({
   field,
-  value = "",
+  values,
   onChange,
-}: {
-  field: ModelField;
-  onChange(value: string): void;
-  value?: string;
-}) {
+}: FilterComponentProps) {
+  const value = values[""] ?? "";
   const valueArray = value.split(",");
   const choices = R.fromPairs(field.choices ?? []);
 
@@ -38,14 +36,15 @@ export function MultiSelectFilter({
             checked={valueArray.includes(key)}
             onSelect={(e) => {
               e.preventDefault();
-              onChange(
-                (valueArray.includes(key)
-                  ? valueArray.filter((i) => i !== key)
-                  : [...valueArray, key]
-                )
-                  .filter(Boolean)
-                  .join(","),
-              );
+              onChange({
+                "":
+                  (valueArray.includes(key)
+                    ? valueArray.filter((i) => i !== key)
+                    : [...valueArray, key]
+                  )
+                    .filter(Boolean)
+                    .join(",") || null,
+              });
             }}
           >
             {label}
