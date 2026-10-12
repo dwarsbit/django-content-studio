@@ -1,6 +1,6 @@
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import * as React from "react";
-import { PiCaretRightBold, PiCheckBold, PiCircleBold } from "react-icons/pi";
+import { PiCaretRightBold, PiCheckBold, PiCircleFill } from "react-icons/pi";
 
 import { cn } from "@/lib/utils";
 
@@ -133,7 +133,7 @@ function DropdownMenuRadioItem({
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
         <DropdownMenuPrimitive.ItemIndicator>
-          <PiCircleBold className="size-2 fill-current" />
+          <PiCircleFill className="size-2 fill-current" />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
