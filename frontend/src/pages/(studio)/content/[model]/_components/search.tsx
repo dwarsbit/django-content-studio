@@ -35,7 +35,6 @@ export function Search() {
 
   return (
     <Input
-      size="sm"
       className="w-[260px] shrink-0 max-w-full"
       placeholder={t("common.search")}
       value={local}

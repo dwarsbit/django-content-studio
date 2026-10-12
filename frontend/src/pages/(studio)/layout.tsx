@@ -9,10 +9,8 @@ export function StudioLayout() {
     <TenantProvider>
       <div className="h-screen flex items-stretch">
         <MainMenu />
-        <div className="flex-1 overflow-hidden bg-muted flex flex-col">
-          <div className="flex-1 bg-card border rounded-l-xl flex flex-col overflow-hidden">
-            <Outlet />
-          </div>
+        <div className="flex-1 overflow-hidden bg-background border-l flex flex-col">
+          <Outlet />
         </div>
       </div>
     </TenantProvider>

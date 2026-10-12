@@ -241,13 +241,11 @@ function EditorForm({
           }}
           onClose={onClose}
         />
-        <div className="flex flex-1 justify-center gap-8 overflow-y-auto scrollbar">
+        <div className="flex flex-1 justify-center p-6 gap-8 overflow-y-auto scrollbar">
           <div className="w-full max-w-2xl">
-            <div className="p-4">
-              <Main model={model} id={id} hiddenFields={hiddenFields} />
-            </div>
+            <Main model={model} id={id} hiddenFields={hiddenFields} />
           </div>
-          <div className="shrink-0 w-[280px]">
+          <div className="shrink-0 w-[320px]">
             <Aside model={model} hiddenFields={hiddenFields} />
           </div>
         </div>

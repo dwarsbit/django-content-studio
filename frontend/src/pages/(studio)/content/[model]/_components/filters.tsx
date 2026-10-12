@@ -36,7 +36,6 @@ export function Filters({ model }: { model: Model }) {
         key.startsWith("filters."),
       ) && (
         <Button
-          size="sm"
           variant="ghost"
           onClick={() =>
             setSearchParams((searchParams) => {

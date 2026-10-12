@@ -13,8 +13,8 @@ import { cn } from "@/lib/utils";
 import type { PaginatedResponse, Resource } from "@/types";
 
 import { Filters } from "./_components/filters";
-import { ListRowsView } from "./_components/list-rows";
 import { ListView } from "./_components/list-view";
+import { TableView } from "./_components/table-view";
 import { ContentEditorPage } from "./[id]/page";
 
 export function ModelListPage() {
@@ -73,7 +73,7 @@ export function ModelListPage() {
 
   return model && data ? (
     <div className="flex flex-col overflow-hidden">
-      <div className="flex items-center gap-4 px-8 py-2 border-b">
+      <div className="flex items-center gap-4 px-8 py-3 border-b">
         {model.admin.icon ? (
           <span
             className={cn(model.admin.icon, "text-lg text-muted-foreground")}
@@ -89,40 +89,6 @@ export function ModelListPage() {
             </div>
           )}
         </div>
-        {views.length > 1 && (
-          <div className="flex items-center gap-1 rounded-lg border p-1">
-            {views.includes("table") && (
-              <button
-                type="button"
-                title={t("list_view.table_view")}
-                onClick={() => setSearchParams(setView("table"))}
-                className={cn(
-                  "flex items-center justify-center size-6 rounded-md cursor-pointer",
-                  view === "table"
-                    ? "bg-foreground/10"
-                    : "hover:bg-foreground/5 text-muted-foreground",
-                )}
-              >
-                <PiTableBold />
-              </button>
-            )}
-            {views.includes("list") && (
-              <button
-                type="button"
-                title={t("list_view.list_view")}
-                onClick={() => setSearchParams(setView("list"))}
-                className={cn(
-                  "flex items-center justify-center size-6 rounded-md cursor-pointer",
-                  view === "list"
-                    ? "bg-foreground/10"
-                    : "hover:bg-foreground/5 text-muted-foreground",
-                )}
-              >
-                <PiRowsBold />
-              </button>
-            )}
-          </div>
-        )}
         {model.admin.permissions.add_permission && (
           <Link to={`/content/${model.label}/new`} className={buttonVariants()}>
             {t("common.create")}
@@ -130,25 +96,61 @@ export function ModelListPage() {
         )}
       </div>
 
-      <div className="px-8 py-2 border-b">
-        <Filters model={model} />
-      </div>
-      {view === "list" ? (
-        <ListRowsView items={data.results} model={model} />
-      ) : (
-        <ListView items={data.results} model={model} />
-      )}
-      <div className="py-2 border-t flex items-center justify-center">
-        <Pagination
-          current={data.pagination.current}
-          pages={data.pagination.pages}
-          onPageChange={(page) =>
-            setSearchParams((searchParams) => {
-              searchParams.set("page", `${page}`);
-              return searchParams;
-            })
-          }
-        />
+      <div className="px-8 py-6 space-y-4 w-full max-w-[1128px] mx-auto">
+        <div className="flex gap-3 items-center justify-between">
+          <Filters model={model} />
+          {views.length > 1 && (
+            <div className="flex items-center gap-1 rounded-lg border p-1">
+              {views.includes("table") && (
+                <button
+                  type="button"
+                  title={t("list_view.table_view")}
+                  onClick={() => setSearchParams(setView("table"))}
+                  className={cn(
+                    "flex items-center justify-center size-6 rounded-md cursor-pointer",
+                    view === "table"
+                      ? "bg-foreground/10"
+                      : "hover:bg-foreground/5 text-muted-foreground",
+                  )}
+                >
+                  <PiTableBold />
+                </button>
+              )}
+              {views.includes("list") && (
+                <button
+                  type="button"
+                  title={t("list_view.list_view")}
+                  onClick={() => setSearchParams(setView("list"))}
+                  className={cn(
+                    "flex items-center justify-center size-6 rounded-md cursor-pointer",
+                    view === "list"
+                      ? "bg-foreground/10"
+                      : "hover:bg-foreground/5 text-muted-foreground",
+                  )}
+                >
+                  <PiRowsBold />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        {view === "list" ? (
+          <ListView items={data.results} model={model} />
+        ) : (
+          <TableView items={data.results} model={model} />
+        )}
+        <div className="flex items-center justify-center">
+          <Pagination
+            current={data.pagination.current}
+            pages={data.pagination.pages}
+            onPageChange={(page) =>
+              setSearchParams((searchParams) => {
+                searchParams.set("page", `${page}`);
+                return searchParams;
+              })
+            }
+          />
+        </div>
       </div>
     </div>
   ) : (

@@ -2,10 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { PiDotsThreeBold, PiXBold } from "react-icons/pi";
+import { PiArrowLeftBold, PiDotsThreeBold, PiXBold } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -49,9 +48,6 @@ export function Header({
   const isCreate = !resource?.id;
   const isSingleton = model?.admin.is_singleton ?? false;
   const { isDirty } = form.formState;
-  const title = t(isCreate ? "editor.title_create" : "editor.title_edit", {
-    modelName: model.verbose_name.toLowerCase(),
-  });
   const editedAt =
     resource && info
       ? (resource[info.settings.edited_at_attr] as DateTimeString)
@@ -72,18 +68,49 @@ export function Header({
     model && (
       <>
         <DialogHeader className="items-center border-b z-10">
-          <div className="flex items-center gap-3 px-4 py-2 w-full">
+          <div className="flex items-center gap-3 px-4 py-3 w-full">
             {model.admin.icon && (
               <div className="size-6 flex items-center justify-center bg-gray-200 rounded-md text-gray-500">
                 <span className={cn(model.admin.icon, "text-[14px]")} />
               </div>
             )}
-            <div className="select-none">
-              {dialog ? (
-                <DialogTitle>{title}</DialogTitle>
-              ) : (
-                <h2 className="text-lg leading-none font-semibold">{title}</h2>
+            <div className="select-none flex items-center gap-1.5">
+              {!isSingleton && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  disabled={isSaving}
+                  onClick={async () => {
+                    if (dialog) {
+                      if (!isDirty) {
+                        return onClose?.();
+                      }
+
+                      const confirmed = await confirm({
+                        description: t("editor.unsaved_alert"),
+                      });
+
+                      if (confirmed) {
+                        onClose?.();
+                      }
+
+                      return;
+                    }
+
+                    onClose?.();
+                  }}
+                >
+                  <PiArrowLeftBold />
+                </Button>
               )}
+              {dialog ? (
+                <DialogTitle>{model.verbose_name_plural}</DialogTitle>
+              ) : (
+                <h2 className="text-sm leading-none font-semibold">
+                  {model.verbose_name_plural}
+                </h2>
+              )}
+              {resource && <div>{"/"}</div>}
               <div className="text-sm font-medium text-muted-foreground">
                 {resource?.__str__}
               </div>
@@ -94,72 +121,44 @@ export function Header({
                   {`${t("editor.last_edited")} ${dayjs(editedAt).fromNow()}`}
                 </div>
               ) : null}
-              <ButtonGroup>
-                <Button
-                  onClick={async () => {
-                    try {
-                      await onSave();
-                    } catch {
-                      // Errors are already surfaced by the save flow.
-                    }
-                  }}
-                  isLoading={isSaving}
-                >
-                  {t(isCreate ? "common.create" : "common.save")}
-                </Button>
-                {!isSingleton && !isCreate && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="outline">
-                        <PiDotsThreeBold />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onSelect={async () => {
-                          const confirmed = await confirm({
-                            title: t("common.delete_confirm_title"),
-                            description: t("common.delete_confirm_description"),
-                          });
-                          if (confirmed) {
-                            await mutateAsync(resource!.id);
-                            onDelete?.();
-                          }
-                        }}
-                      >
-                        {t("common.delete")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </ButtonGroup>
               <Button
-                size="icon"
-                variant="ghost"
-                disabled={isSaving}
                 onClick={async () => {
-                  if (dialog) {
-                    if (!isDirty) {
-                      return onClose?.();
-                    }
-
-                    const confirmed = await confirm({
-                      description: t("editor.unsaved_alert"),
-                    });
-
-                    if (confirmed) {
-                      onClose?.();
-                    }
-
-                    return;
+                  try {
+                    await onSave();
+                  } catch {
+                    // Errors are already surfaced by the save flow.
                   }
-
-                  onClose?.();
                 }}
+                isLoading={isSaving}
               >
-                <PiXBold />
+                {t(isCreate && !isSingleton ? "common.create" : "common.save")}
               </Button>
+              {!isSingleton && !isCreate && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="outline">
+                      <PiDotsThreeBold />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onSelect={async () => {
+                        const confirmed = await confirm({
+                          title: t("common.delete_confirm_title"),
+                          description: t("common.delete_confirm_description"),
+                        });
+                        if (confirmed) {
+                          await mutateAsync(resource!.id);
+                          onDelete?.();
+                        }
+                      }}
+                    >
+                      {t("common.delete")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </DialogHeader>

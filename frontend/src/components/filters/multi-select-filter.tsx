@@ -24,7 +24,7 @@ export function MultiSelectFilter({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline">
           {field.verbose_name}
           <span className="empty:hidden font-normal text-muted-foreground">
             {valueArray.map((value) => choices[value]).join(", ")}
