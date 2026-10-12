@@ -57,6 +57,8 @@ class ArticleAdmin(ModelStudio):
         "description": "body",
         "meta": "get_status_display",
     }
+    # Newest first, so the seeded demo article leads the list.
+    ordering = ["-pk"]
     # One field per filter type: choices (status), boolean (featured),
     # number range (views), date range (published_at), foreign key
     # (author) and many to many (categories).

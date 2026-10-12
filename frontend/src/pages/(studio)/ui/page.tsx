@@ -52,6 +52,7 @@ import {
   FieldWidget,
   type Model,
   type ModelField,
+  type PaginatedResponse,
   type Resource,
 } from "@/types";
 
@@ -274,7 +275,22 @@ function RelatedCell() {
     retry: false,
     queryKey: ["showcase", "related-cell"],
     async queryFn() {
-      const { data } = await http.get<Resource>("/content/demo_blog.article/1");
+      // The seeded demo article, by title — stable against ids and
+      // against other rows the (parallel) e2e suite creates.
+      const { data: list } = await http.get<PaginatedResponse<Resource>>(
+        "/content/demo_blog.article",
+        { params: { search: "Hello, Content Studio" } },
+      );
+      const demo = list.results[0];
+
+      if (!demo) {
+        return null;
+      }
+
+      const { data } = await http.get<Resource>(
+        `/content/demo_blog.article/${demo.id}`,
+      );
+
       return data;
     },
   });
