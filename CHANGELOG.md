@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Command palette with global search.** ⌘K (or Ctrl K, or the search
+  button on the main menu) opens a palette over the whole studio:
+  jump to the dashboard, the media library or any model you may view,
+  create a new object in any model you may add, open a model's trash,
+  switch the theme or log out — entries filter as you type. Typing
+  two characters or more also searches objects across every
+  registered model with `search_fields`: the same match the model's
+  own list view runs, permission- and tenant-scoped, trashed objects
+  excluded, capped at five results per model. Picking a result opens
+  the object in the editor.
 - **Soft delete and the trash.** A model studio can opt into a trash by
   naming the model's nullable timestamp field in `soft_delete`
   (django-blueprint's `SoftDeletableModel` uses `"removed_at"`).

@@ -10,6 +10,9 @@ dist-ssr
 __pycache__
 .coverage
 
+# The test project's database (tests/settings.py)
+/db.sqlite3
+
 # Demo project state
 /demo/db.sqlite3
 /demo/media/

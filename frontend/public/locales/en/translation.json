@@ -197,5 +197,22 @@
     "activity": {
       "empty": "No activity recorded yet"
     }
+  },
+  "palette": {
+    "open": "Search",
+    "title": "Command palette",
+    "placeholder": "Search or jump to...",
+    "navigate": "Navigate",
+    "create": "Create",
+    "create_item": "New {{model}}",
+    "trash": "Trash",
+    "trash_item": "Trash of {{model}}",
+    "search_results": "Search results",
+    "theme": "Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "theme_system": "System",
+    "logout": "Log out",
+    "empty": "No results."
   }
 }

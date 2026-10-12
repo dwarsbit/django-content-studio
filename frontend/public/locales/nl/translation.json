@@ -196,5 +196,22 @@
     "activity": {
       "empty": "Nog geen activiteit vastgelegd"
     }
+  },
+  "palette": {
+    "open": "Zoeken",
+    "title": "Commandopalet",
+    "placeholder": "Zoek of spring naar...",
+    "navigate": "Navigeren",
+    "create": "Aanmaken",
+    "create_item": "Nieuwe {{model}}",
+    "trash": "Prullenbak",
+    "trash_item": "Prullenbak van {{model}}",
+    "search_results": "Zoekresultaten",
+    "theme": "Thema",
+    "theme_light": "Licht",
+    "theme_dark": "Donker",
+    "theme_system": "Systeem",
+    "logout": "Uitloggen",
+    "empty": "Geen resultaten."
   }
 }

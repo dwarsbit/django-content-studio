@@ -321,6 +321,14 @@ export interface ActivityLogEntry {
   };
 }
 
+/** One model's results from the global search endpoint. */
+export interface SearchResultGroup {
+  model: string;
+  verbose_name: string;
+  icon: string | null;
+  results: { id: Id; title: string }[];
+}
+
 export interface MainMenuLinkConfig {
   url: string;
   icon: string | null;

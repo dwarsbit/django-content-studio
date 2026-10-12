@@ -16,6 +16,7 @@ import {
   PiFileTextBold,
   PiHouseSimpleBold,
   PiImageBold,
+  PiMagnifyingGlassBold,
   PiSignOutBold,
 } from "react-icons/pi";
 import {
@@ -58,7 +59,7 @@ const ExpandedContext = createContext<{
   toggleGroup: (label: string, isExpanded: boolean) => void;
 }>({ expandedItem: null, toggleGroup: () => {} });
 
-export function MainMenu() {
+export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
   const { t } = useTranslation();
   const { data: adminInfo } = useAdminInfo();
   const { data: discover } = useDiscover();
@@ -159,7 +160,32 @@ export function MainMenu() {
             </Button>
           </div>
 
-          <div className="flex-1 px-2 pb-2 pt-4 space-y-1 overflow-y-auto scrollbar">
+          <div className="flex-1 px-2 pb-2 pt-2 space-y-1 overflow-y-auto scrollbar">
+            <button
+              type="button"
+              onClick={onOpenPalette}
+              title={t("palette.open")}
+              className={cn(
+                "w-full flex items-center gap-2 rounded-md border bg-background h-8 px-2.5 text-sm text-muted-foreground hover:border-gray-400 hover:text-foreground cursor-pointer select-none",
+                collapsed && "justify-center px-0",
+              )}
+            >
+              <PiMagnifyingGlassBold className="shrink-0" />
+              {!collapsed && (
+                <>
+                  <span className="flex-1 text-left line-clamp-1">
+                    {t("palette.open")}
+                  </span>
+                  <kbd className="shrink-0 text-xs border rounded px-1 font-mono">
+                    {navigator.platform.toUpperCase().includes("MAC")
+                      ? "⌘K"
+                      : "Ctrl K"}
+                  </kbd>
+                </>
+              )}
+            </button>
+
+            <div className="h-3" />
             <MenuItem
               to="/"
               color="slate"

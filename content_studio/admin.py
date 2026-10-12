@@ -497,6 +497,14 @@ class ContentStudioSite:
         if self.dashboard:
             self.dashboard.set_up_router()
 
+        # Global search for the command palette.
+        from .router import content_studio_router
+        from .search import SearchViewSet
+
+        content_studio_router.register(
+            "api/search", SearchViewSet, basename="content_studio_search"
+        )
+
     def _register_default_user_studio(self):
         user_model = get_user_model()
 
