@@ -624,6 +624,30 @@ describe("ModelListPage", () => {
     );
   });
 
+  it("offers a trash link for models with soft delete configured", async () => {
+    renderListPage(
+      makeModel({
+        list: { filter: [], trash: true },
+      }),
+    );
+
+    await screen.findByText("First Article");
+
+    expect(
+      screen.getByRole("link", { name: "list_view.trash" }),
+    ).toHaveAttribute("href", "/content/testapp.article/trash");
+  });
+
+  it("offers no trash link without soft delete", async () => {
+    renderListPage(makeModel());
+
+    await screen.findByText("First Article");
+
+    expect(
+      screen.queryByRole("link", { name: "list_view.trash" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("hides the create button without the add permission", async () => {
     renderListPage(makeModel({ permissions: { add_permission: false } }));
 

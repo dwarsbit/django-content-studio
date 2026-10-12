@@ -121,6 +121,14 @@ export function ModelListPage() {
             </div>
           )}
         </div>
+        {model.admin.list.trash && (
+          <Link
+            to={`/content/${model.label}/trash`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            {t("list_view.trash")}
+          </Link>
+        )}
         {model.admin.permissions.add_permission && (
           <Link to={`/content/${model.label}/new`} className={buttonVariants()}>
             {t("common.create")}

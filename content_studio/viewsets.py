@@ -18,6 +18,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from .actions import get_bulk_actions
 from .admin import get_relation_display_for
+from .dashboard.activity_log import LogEntrySerializer
 from .filters import LookupFilter
 from .permissions import ModelStudioPermissions
 from .serializers import RelatedItemSerializer
@@ -122,7 +123,78 @@ class BaseModelViewSet(ModelViewSet):
             change_message="",
         )
 
+        # With soft_delete configured, deleting moves the object to the
+        # trash: the field is stamped instead of the row being removed.
+        soft_delete_field = self._admin_model.soft_delete
+        if soft_delete_field:
+            setattr(instance, soft_delete_field, timezone.now())
+            instance.save(update_fields=[soft_delete_field])
+            return
+
         instance.delete()
+
+    @action(methods=["get"], detail=False, url_path="trash")
+    def trash(self, request):
+        """
+        The model's trash: the soft-deleted objects, most recently
+        deleted first. Only exists when the studio configures
+        soft_delete; gated by view permission like the list.
+        """
+        if not self._admin_model.soft_delete:
+            raise NotFound("This model has no trash.")
+
+        return self.list(request)
+
+    @action(methods=["post"], detail=True, url_path="restore")
+    def restore(self, request, id):
+        """
+        Restore a soft-deleted object: clears the soft delete field and
+        moves the object back into the lists. Restoring is a change, and
+        is gated by change permission on the object.
+        """
+        soft_delete_field = self._admin_model.soft_delete
+
+        if not soft_delete_field:
+            raise NotFound("This model has no trash.")
+
+        instance = self.get_object()
+        setattr(instance, soft_delete_field, None)
+        instance.save(update_fields=[soft_delete_field])
+
+        LogEntry.objects.create(
+            user=self.request.user,
+            action_flag=CHANGE,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.id,
+            object_repr=str(instance)[:200],
+            change_message="Restored from trash.",
+        )
+
+        return Response({"id": instance.id, "__str__": str(instance)})
+
+    @action(methods=["delete"], detail=True, url_path="destroy")
+    def destroy_permanently(self, request, id):
+        """
+        Delete a soft-deleted object permanently, bypassing the trash.
+        Gated by delete permission on the object.
+        """
+        if not self._admin_model.soft_delete:
+            raise NotFound("This model has no trash.")
+
+        instance = self.get_object()
+
+        LogEntry.objects.create(
+            user=self.request.user,
+            action_flag=DELETION,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.id,
+            object_repr=str(instance)[:200],
+            change_message="",
+        )
+
+        instance.delete()
+
+        return Response(status=204)
 
     def get_object(self):
         """
@@ -154,6 +226,27 @@ class BaseModelViewSet(ModelViewSet):
             raise NotFound()
 
         return component.handle_request(obj=self.get_object(), request=request)
+
+    @action(methods=["get"], detail=True, url_path="activity")
+    def activity(self, request, id):
+        """
+        The object's history: the activity log entries recorded for it,
+        most recent first. The studio's equivalent of the Django admin's
+        history view, gated by view permission on the object like
+        retrieve.
+        """
+        obj = self.get_object()
+
+        entries = (
+            LogEntry.objects.filter(
+                content_type=ContentType.objects.get_for_model(obj),
+                object_id=obj.pk,
+            )
+            .select_related("user", "content_type")
+            .order_by("-action_time")
+        )
+
+        return Response(LogEntrySerializer(entries, many=True).data)
 
     @action(methods=["post"], detail=False, url_path="bulk")
     def bulk(self, request):

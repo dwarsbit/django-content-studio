@@ -3,7 +3,7 @@ from content_studio.actions import bulk_action
 from content_studio.admin import InlineModelStudio, ModelStudio
 from content_studio.form import FormSet, TableColumn
 
-from .models import Article, Category, Review, SiteSettings
+from .models import Article, Category, Note, Review, SiteSettings
 
 
 class ReviewInline(InlineModelStudio):
@@ -61,3 +61,9 @@ class ArticleAdmin(ModelStudio):
 class SiteSettingsAdmin(ModelStudio):
     is_singleton = True
     edit_main = ["site_name", "tagline"]
+
+
+@register(Note)
+class NoteAdmin(ModelStudio):
+    table_display = ["id", "title"]
+    soft_delete = "removed_at"

@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+- **Soft delete and the trash.** A model studio can opt into a trash by
+  naming the model's nullable timestamp field in `soft_delete`
+  (django-blueprint's `SoftDeletableModel` uses `"removed_at"`).
+  Deleting then stamps the field instead of removing the row — the
+  bulk delete action included, with a confirm message that announces
+  the trash instead of claiming the change is irreversible — the
+  object disappears from the lists, and the list view links to the
+  model's trash — a deep-linkable page at `/content/<model>/trash`
+  where trashed objects can be restored (change permission) or
+  permanently deleted (delete permission). Restoring is recorded in
+  the object's history. Models without the option keep the classic
+  hard delete; a misconfigured field is reported by the
+  `content_studio.E008` system check.
+- **Per-object history.** The activity recorded for an object — its
+  additions, changes and deletions, most recent first, with the acting
+  user — is available in the edit view through the `ActivityLog` form
+  component: opt-in, placed like any component
+  (`edit_sidebar = ["published_at", ActivityLog(title="History")]`),
+  with a translated default title of "Activity". The entries come
+  from the generated API's activity endpoint, gated by view
+  permission on the object.
+- **Filter controls for every field type on the list view.** A field
+  listed in `list_filter` now renders a control that fits the field,
+  instead of silently showing nothing for everything but choices:
+  boolean fields get a tri-state all/yes/no filter, date and datetime
+  fields a range calendar (datetime bounds cover the full picked days),
+  integer, decimal and float fields a min/max range, foreign keys a
+  searchable select over the related model's objects and many-to-many
+  fields a searchable multi-select matching any of the picked objects.
+  Choice fields keep the multi-select. Filters live in the URL as
+  `filters.<field>[__lookup]` values, so filtered views are
+  deep-linkable and survive the back button; everything is plain
+  Django — the filtering runs through the generated API's existing
+  lookup support, with no new model requirements.
 - **Bulk actions on the table view.** Model studios can declare batch
   operations with the `@bulk_action` decorator (`label`, `icon`,
   `confirm`, `allowed_permissions`, `destructive`); the built-in delete

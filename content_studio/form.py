@@ -5,6 +5,7 @@ import uuid
 from typing import Type
 
 from django.db.models import Model
+from django.utils.translation import gettext_lazy as _
 from rest_framework.response import Response
 
 from .utils import derive_uuid
@@ -251,4 +252,30 @@ class ButtonLink(Link):
             **super().serialize(),
             "icon": self.icon,
             "copy": self.copy,
+        }
+
+
+class ActivityLog(Component):
+    """
+    The object's activity log, rendered in the edit view where the
+    component is placed (usually the sidebar): the additions, changes
+    and deletions recorded for the object, most recent first. The
+    frontend fetches the entries through the generated API's activity
+    endpoint, so the component itself handles no requests.
+    """
+
+    component_type = "ActivityLog"
+
+    def __init__(self, title=None, component_id=None):
+        # Set before super().__init__(): get_id_parts() reads it.
+        self.title = title or _("Activity")
+        super().__init__(component_id)
+
+    def get_id_parts(self):
+        return (self.title,)
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "title": str(self.title),
         }

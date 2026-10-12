@@ -55,11 +55,11 @@ column. Fields set as `readonly` display their value without an input.
 
 ## Components
 
-Edit views can carry interactive components — currently links and buttons,
-pointing at anything from a "view on site" button to an external editor.
+Edit views can carry components — interactive ones like links and
+buttons, and display ones like the activity log.
 
 ```python
-from content_studio.form import ButtonLink
+from content_studio.form import ActivityLog, ButtonLink
 
 
 class ViewSiteLink(ButtonLink):
@@ -74,8 +74,13 @@ class ViewSiteLink(ButtonLink):
 
 @register(Article)
 class ArticleStudio(ModelStudio):
-    edit_sidebar = ["published_at", ViewSiteLink()]
+    edit_sidebar = ["published_at", "author", ViewSiteLink(), ActivityLog()]
 ```
+
+The shipped `ActivityLog` component renders the object's recorded
+history under an optional, translated title (defaulting to
+"Activity"); it needs no request handling — the entries come from
+the generated API's activity endpoint.
 
 Subclass `Component` for fully custom behavior: implement `handle_request(obj,
 request)` and the component gets its own endpoint. Components are looked

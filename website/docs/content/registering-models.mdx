@@ -50,6 +50,7 @@ own studio for it to customize it.
 | `list_per_page` | Page size (default 20) |
 | `list_description` | Description below the model name on list pages |
 | `ordering` | Default ordering of list views (falls back to `pk` for stable pagination) |
+| `soft_delete` | Opt-in trash: the model's nullable timestamp field marking trashed objects |
 | `icon` | Icon shown in the main menu |
 
 ## Singletons
@@ -246,6 +247,65 @@ actions = ["publish", "delete"] # exactly these, in this order
 
 Misconfigurations (unknown names, duplicates, shadowing the built-in
 delete) are reported by the `content_studio.E007` system check.
+
+## Soft delete and the trash
+
+Deleting is a hard delete by default. A model studio can opt into a
+trash instead: set `soft_delete` to the name of the model's nullable
+timestamp field that marks an object as trashed. Django Content Studio
+never assumes a field — with the option set:
+
+- deleting an object stamps the field instead of removing the row, and
+  the object disappears from the lists,
+- the list view links to the model's trash (`/content/<model>/trash`),
+  where trashed objects can be restored (needs change permission) or
+  permanently deleted (needs delete permission),
+- restoring is recorded in the object's history.
+
+```python
+@register(Article)
+class ArticleStudio(ModelStudio):
+    # Blueprint's SoftDeletableModel uses "removed_at".
+    soft_delete = "removed_at"
+```
+
+The field must exist and be a nullable date or datetime field, or the
+`content_studio.E008` system check reports the misconfiguration. The
+option is compatible with (but never requires) django-blueprint's
+`SoftDeletableModel`, whose `removed_at` field fits as-is.
+
+## Object history
+
+The activity log recorded for an object — every addition, change and
+deletion, most recent first — is available in the edit view through
+the `ActivityLog` form component. It is opt-in: place it in the
+sidebar (or any form set) with an optional title:
+
+```python
+from content_studio.form import ActivityLog
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_sidebar = ["published_at", "author", ActivityLog(title="History")]
+```
+
+The title defaults to "Activity" and is translated. The component
+renders only for saved objects; a create has no history. It is gated
+by view permission on the object, and works with plain Django models
+and Blueprint models alike.
+
+Inline placement renders the log inside its form set's section. For
+its own section instead, declare the sidebar as form sets — each
+renders as its own card:
+
+```python
+from content_studio.form import ActivityLog, FormSet
+
+edit_sidebar = [
+    FormSet(fields=["published_at", "author"]),
+    FormSet(fields=[ActivityLog()]),
+]
+```
 
 ## Configuring the site
 

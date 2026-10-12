@@ -96,3 +96,39 @@ def test_get_fields_respects_exclude():
     assert "views" not in fields
     assert "rating" not in fields
     assert "title" in fields
+
+
+def test_edit_sidebar_accepts_dedicated_form_sets():
+    """
+    The sidebar accepts its own form sets: a flat field list is wrapped
+    into one, while a list of form sets is used as-is — the way to give
+    a component like ActivityLog its own section.
+    """
+    from content_studio.admin import AdminSerializer
+    from content_studio.form import ActivityLog, FormSet
+
+    class FlatStudio(ModelStudio):
+        edit_sidebar = ["published_at", "rating", ActivityLog()]
+
+    class SectionsStudio(ModelStudio):
+        edit_sidebar = [
+            FormSet(fields=["published_at", "rating"]),
+            FormSet(fields=[ActivityLog()]),
+        ]
+
+    flat = AdminSerializer(FlatStudio(Article, admin_site)).get_edit_sidebar(
+        FlatStudio.edit_sidebar
+    )
+    sections = AdminSerializer(SectionsStudio(Article, admin_site)).get_edit_sidebar(
+        SectionsStudio.edit_sidebar
+    )
+
+    # A flat list becomes a single form set.
+    assert len(flat) == 1
+    fields = flat[0].serialize()["fields"]
+    assert [field["name"] for field in fields[:2]] == ["published_at", "rating"]
+    assert fields[2]["component_type"] == "ActivityLog"
+
+    # Declared form sets are kept, each its own section.
+    assert len(sections) == 2
+    assert sections[1].serialize()["fields"][0]["component_type"] == "ActivityLog"

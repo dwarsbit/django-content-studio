@@ -105,6 +105,7 @@ export interface Model {
       views?: string[];
       search: boolean;
       filter: string[];
+      trash?: boolean;
       sortable_by: string[] | null;
       actions: BulkAction[];
     };
@@ -207,9 +208,10 @@ export interface FormField {
   readonly: boolean;
   col_span: number;
   component_id: string;
-  component_type: "Link" | "LinkButton";
+  component_type: "Link" | "LinkButton" | "ActivityLog";
   copy: boolean;
   icon: string;
+  title?: string | null;
 }
 
 export enum FieldType {

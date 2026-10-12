@@ -63,3 +63,16 @@ class SiteSettings(models.Model):
 
     def __str__(self):
         return self.site_name
+
+
+class Note(models.Model):
+    title = models.CharField(max_length=100)
+    # The soft-delete timestamp; see NoteAdmin.soft_delete.
+    removed_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    class Meta:
+        verbose_name = "note"
+        verbose_name_plural = "notes"
+
+    def __str__(self):
+        return self.title

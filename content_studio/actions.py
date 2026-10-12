@@ -15,6 +15,7 @@ from django.contrib.admin.models import DELETION, LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.db import router
 from django.db.models.deletion import Collector
+from django.utils import timezone
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 
@@ -139,6 +140,46 @@ _DELETE_META = BulkActionMeta(
     destructive=True,
 )
 
+_SOFT_DELETE_META = BulkActionMeta(
+    label=_DELETE_META.label,
+    icon=_DELETE_META.icon,
+    confirm=_(
+        "The selected items will be moved to the trash, where they can be "
+        "restored. Are you sure you want to delete?"
+    ),
+    allowed_permissions=("delete",),
+    destructive=False,
+)
+
+
+def _soft_delete_action(field):
+    """
+    The built-in delete for studios that configure soft_delete: it
+    stamps the soft delete field instead of removing the rows, moving
+    the selected objects to the trash, and logs one LogEntry per
+    object. Returns the number of trashed objects.
+    """
+
+    def handler(request, queryset):
+        objects = list(queryset)
+        queryset.update(**{field: timezone.now()})
+
+        content_type = ContentType.objects.get_for_model(queryset.model)
+
+        for obj in objects:
+            LogEntry.objects.create(
+                user=request.user,
+                action_flag=DELETION,
+                content_type=content_type,
+                object_id=obj.pk,
+                object_repr=str(obj)[:200],
+                change_message="",
+            )
+
+        return len(objects)
+
+    return handler
+
 
 def declared_bulk_actions(studio) -> dict[str, Callable]:
     """
@@ -178,7 +219,16 @@ def get_bulk_actions(studio, request=None) -> list[BulkAction]:
 
     for name in names:
         if name == DELETE_ACTION_ID:
-            action = BulkAction(id=name, handler=delete_action, meta=_DELETE_META)
+            # The built-in delete honors a configured soft_delete: it
+            # moves the selection to the trash instead of removing it.
+            if getattr(studio, "soft_delete", ""):
+                action = BulkAction(
+                    id=name,
+                    handler=_soft_delete_action(studio.soft_delete),
+                    meta=_SOFT_DELETE_META,
+                )
+            else:
+                action = BulkAction(id=name, handler=delete_action, meta=_DELETE_META)
         else:
             handler = declared.get(name)
 

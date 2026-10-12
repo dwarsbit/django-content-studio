@@ -120,6 +120,8 @@ function makeModel(
     label?: string;
     fields?: Record<string, ModelField>;
     main?: { label: string; formsets: IFormSet[] }[];
+    list?: Partial<Model["admin"]["list"]>;
+    sidebar?: IFormSet[];
   } = {},
 ): Model {
   return {
@@ -138,6 +140,7 @@ function makeModel(
         filter: [],
         sortable_by: null,
         actions: [],
+        ...overrides.list,
       },
       edit: {
         main: overrides.main ?? [
@@ -152,7 +155,7 @@ function makeModel(
             ],
           },
         ],
-        sidebar: [],
+        sidebar: overrides.sidebar ?? [],
         inlines: [],
       },
       permissions: {
@@ -579,14 +582,18 @@ describe("Editor", () => {
   });
 
   it("loads an existing resource via GET and saves it via PUT", async () => {
-    httpMock.get.mockResolvedValue({
-      data: {
-        id: "abc-123",
-        title: "Existing title",
-        is_published: false,
-        __str__: "Existing title",
-      },
-    });
+    httpMock.get.mockImplementation((url: string) =>
+      url.endsWith("/activity")
+        ? Promise.resolve({ data: [] })
+        : Promise.resolve({
+            data: {
+              id: "abc-123",
+              title: "Existing title",
+              is_published: false,
+              __str__: "Existing title",
+            },
+          }),
+    );
     httpMock.put.mockResolvedValue({ data: {} });
     const onSave = vi.fn();
 
@@ -622,6 +629,207 @@ describe("Editor", () => {
     );
     expect(httpMock.post).not.toHaveBeenCalled();
     await waitFor(() => expect(onSave).toHaveBeenCalled());
+  });
+
+  it("shows the object's activity when the sidebar declares the component", async () => {
+    const activityField = {
+      type: "component" as const,
+      component_type: "ActivityLog" as const,
+      component_id: "activity-1",
+      name: "",
+      label: null,
+      readonly: false,
+      col_span: 1,
+      copy: false,
+      icon: "",
+      title: "Recent activity",
+    };
+    const entries = [
+      {
+        id: "2",
+        action_flag: 2 as const,
+        action_time: new Date(Date.now() - 60_000).toISOString(),
+        object_repr: "Existing title",
+        object_id: "abc-123",
+        object_model: "testapp.article",
+        user: { id: "1", __str__: "admin" },
+      },
+      {
+        id: "1",
+        action_flag: 1 as const,
+        action_time: new Date(Date.now() - 86_400_000).toISOString(),
+        object_repr: "Existing title",
+        object_id: "abc-123",
+        object_model: "testapp.article",
+        user: { id: "1", __str__: "admin" },
+      },
+    ];
+    httpMock.get.mockImplementation((url: string) =>
+      url.endsWith("/activity")
+        ? Promise.resolve({ data: entries })
+        : Promise.resolve({
+            data: {
+              id: "abc-123",
+              title: "Existing title",
+              is_published: false,
+              __str__: "Existing title",
+            },
+          }),
+    );
+
+    useDiscoverMock.mockReturnValue({
+      data: makeDiscover([
+        makeModel({
+          sidebar: [{ title: "", description: "", fields: [activityField] }],
+        }),
+      ]),
+    });
+
+    renderEditorPage(
+      <Editor
+        modelLabel="testapp.article"
+        id="abc-123"
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await screen.findByDisplayValue("Existing title");
+    expect(httpMock.get).toHaveBeenCalledWith(
+      "/content/testapp.article/abc-123/activity",
+    );
+
+    // The component renders its configured title, and the entries in
+    // order: the change flag translation key first, then the addition.
+    expect(screen.getByText("Recent activity")).toBeInTheDocument();
+    const flags = await screen.findAllByText(
+      /dashboard\.widgets\.activity_log\.action_flags\./,
+    );
+    expect(flags.map((flag) => flag.textContent)).toEqual([
+      "dashboard.widgets.activity_log.action_flags.2",
+      "dashboard.widgets.activity_log.action_flags.1",
+    ]);
+    expect(screen.getAllByText("admin")).toHaveLength(2);
+    expect(screen.getAllByText(/ago$/)).toHaveLength(2);
+  });
+
+  it("renders no activity and fetches nothing without the component", async () => {
+    httpMock.get.mockImplementation((url: string) =>
+      url.endsWith("/activity")
+        ? Promise.reject(new Error("should not fetch"))
+        : Promise.resolve({
+            data: {
+              id: "abc-123",
+              title: "Existing title",
+              is_published: false,
+              __str__: "Existing title",
+            },
+          }),
+    );
+
+    renderEditorPage(
+      <Editor
+        modelLabel="testapp.article"
+        id="abc-123"
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await screen.findByDisplayValue("Existing title");
+    expect(
+      screen.queryByText(/dashboard\.widgets\.activity_log\.action_flags\./),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the trash delete confirmation for soft-delete models", async () => {
+    useDiscoverMock.mockReturnValue({
+      data: makeDiscover([makeModel({ list: { trash: true } })]),
+    });
+    httpMock.get.mockImplementation((url: string) =>
+      url.endsWith("/activity")
+        ? Promise.resolve({ data: [] })
+        : Promise.resolve({
+            data: {
+              id: "abc-123",
+              title: "Existing title",
+              is_published: false,
+              __str__: "Existing title",
+            },
+          }),
+    );
+    httpMock.delete.mockResolvedValue({ data: {} });
+    const user = userEvent.setup();
+
+    renderEditorPage(
+      <ConfirmDialogProvider>
+        <Editor
+          modelLabel="testapp.article"
+          id="abc-123"
+          onSave={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </ConfirmDialogProvider>,
+    );
+    await screen.findByDisplayValue("Existing title");
+
+    await user.click(
+      screen.getByRole("button", { name: "editor.more_actions" }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: "common.delete" }),
+    );
+
+    // Soft delete is reversible; the message must not deny it.
+    expect(
+      await screen.findByText("common.delete_to_trash_confirm_description"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("common.delete_confirm_description"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the irreversible delete confirmation without soft delete", async () => {
+    httpMock.get.mockImplementation((url: string) =>
+      url.endsWith("/activity")
+        ? Promise.resolve({ data: [] })
+        : Promise.resolve({
+            data: {
+              id: "abc-123",
+              title: "Existing title",
+              is_published: false,
+              __str__: "Existing title",
+            },
+          }),
+    );
+    httpMock.delete.mockResolvedValue({ data: {} });
+    const user = userEvent.setup();
+
+    renderEditorPage(
+      <ConfirmDialogProvider>
+        <Editor
+          modelLabel="testapp.article"
+          id="abc-123"
+          onSave={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </ConfirmDialogProvider>,
+    );
+    await screen.findByDisplayValue("Existing title");
+
+    await user.click(
+      screen.getByRole("button", { name: "editor.more_actions" }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: "common.delete" }),
+    );
+
+    expect(
+      await screen.findByText("common.delete_confirm_description"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("common.delete_to_trash_confirm_description"),
+    ).not.toBeInTheDocument();
   });
 
   it("maps 400 field errors to the form and shows an error toast", async () => {

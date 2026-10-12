@@ -139,10 +139,13 @@ class DjangoContentStudioConfig(AppConfig):
                 user_model = get_user_model()
                 excluded_fields = None
                 # For list views we include the specified table_display fields.
-                if self.action == "list" and not self.is_singleton:
+                if self.action in ("list", "trash") and not self.is_singleton:
                     available_fields = ["id", "__str__"] + [
                         column.field for column in columns
                     ]
+                    # Trash rows also carry the removal timestamp.
+                    if self.action == "trash" and self._admin_model.soft_delete:
+                        available_fields.append(self._admin_model.soft_delete)
                     # Rows carry their resolved list display when the
                     # list view is enabled.
                     if "list" in self._admin_model.list_views:
@@ -167,7 +170,7 @@ class DjangoContentStudioConfig(AppConfig):
                 # Columns backed by a model studio method ship their
                 # computed value on every row, through the column's
                 # format (TextFormat when unset).
-                if self.action == "list" and not self.is_singleton:
+                if self.action in ("list", "trash") and not self.is_singleton:
                     method_columns = [
                         column
                         for column in columns
@@ -198,7 +201,7 @@ class DjangoContentStudioConfig(AppConfig):
                 # resolved list display so the frontend renders fully
                 # computed rows (declarative mapping or override).
                 if (
-                    self.action == "list"
+                    self.action in ("list", "trash")
                     and not self.is_singleton
                     and "list" in self._admin_model.list_views
                 ):
@@ -236,9 +239,26 @@ class DjangoContentStudioConfig(AppConfig):
                         )
                     self._check_parent_access(parent_id)
 
+                # Soft delete, when configured: the regular lists exclude
+                # trashed objects, the trash lists only those, and the
+                # restore/permanent-delete actions reach trashed
+                # objects unfiltered.
+                soft_delete_field = self._admin_model.soft_delete
+                if soft_delete_field:
+                    if self.action == "trash":
+                        qs = qs.filter(**{f"{soft_delete_field}__isnull": False})
+                    elif self.action not in ("restore", "destroy_permanently"):
+                        qs = qs.filter(**{f"{soft_delete_field}__isnull": True})
+
                 # Respect the model studio's ordering; fall back to pk so
-                # paginated pages are stable (and silent).
-                ordering = self._admin_model.ordering or ["pk"]
+                # paginated pages are stable (and silent). The trash
+                # falls back to most-recently-deleted first.
+                if self._admin_model.ordering:
+                    ordering = self._admin_model.ordering
+                elif self.action == "trash" and soft_delete_field:
+                    ordering = [f"-{soft_delete_field}"]
+                else:
+                    ordering = ["pk"]
                 return qs.order_by(*ordering)
 
             def _get_parent_id(self):

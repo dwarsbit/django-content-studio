@@ -14,7 +14,8 @@
     "clear": "Clear",
     "move": "Move",
     "delete_confirm_title": "Are you sure?",
-    "delete_confirm_description": "This action cannot be undone. Are you sure you want to delete?"
+    "delete_confirm_description": "This action cannot be undone. Are you sure you want to delete?",
+    "delete_to_trash_confirm_description": "The object will be moved to the trash, where it can be restored. Are you sure you want to delete?"
   },
   "app": {
     "copied_to_clipboard": "Copied to clipboard!",
@@ -74,6 +75,7 @@
     "empty_state": "No items yet",
     "filter": "Filter",
     "clear_all_filters": "Clear all filters",
+    "trash": "Trash",
     "filters": {
       "all": "All",
       "yes": "Yes",
@@ -179,5 +181,21 @@
       "model_not_found": "No admin model found for {{tenant}}. Add an admin model or manually create a {{tenant}}."
     },
     "shared_message": "{{content_type}} are shared between all {{tenant}}."
+  },
+  "trash": {
+    "title": "{{model}} — Trash",
+    "subtitle": "Deleted objects are kept here until they are permanently deleted.",
+    "empty": "The trash is empty",
+    "unavailable": "This model has no trash.",
+    "restore": "Restore",
+    "restored": "Restored",
+    "delete_permanently": "Delete permanently",
+    "delete_confirm": "This permanently deletes the object. This cannot be undone.",
+    "destroyed": "Deleted permanently"
+  },
+  "form_components": {
+    "activity": {
+      "empty": "No activity recorded yet"
+    }
   }
 }

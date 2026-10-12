@@ -14,7 +14,8 @@
     "clear": "Leeg maken",
     "move": "Verplaatsen",
     "delete_confirm_title": "Weet je het zeker?",
-    "delete_confirm_description": "Deze actie kan niet ongedaan gemaakt worden. Weet je zeker dat je dit wilt verwijderen?"
+    "delete_confirm_description": "Deze actie kan niet ongedaan gemaakt worden. Weet je zeker dat je dit wilt verwijderen?",
+    "delete_to_trash_confirm_description": "Het object wordt verplaatst naar de prullenbak, waar het hersteld kan worden. Weet je zeker dat je het wilt verwijderen?"
   },
   "app": {
     "copied_to_clipboard": "Gekopieerd naar klembord",
@@ -179,5 +180,21 @@
       "model_not_found": "Geen admin model gevonden voor {{tenant}}. Voeg een admin model toe of maak handmatig een {{tenant}} aan."
     },
     "shared_message": "{{content_type}} worden gedeeld tussen alle {{tenant}}."
+  },
+  "trash": {
+    "title": "{{model}} — Prullenbak",
+    "subtitle": "Verwijderde objecten blijven hier staan tot ze definitief worden verwijderd.",
+    "empty": "De prullenbak is leeg",
+    "unavailable": "Dit model heeft geen prullenbak.",
+    "restore": "Herstellen",
+    "restored": "Hersteld",
+    "delete_permanently": "Definitief verwijderen",
+    "delete_confirm": "Dit verwijdert het object definitief. Dit kan niet ongedaan worden gemaakt.",
+    "destroyed": "Definitief verwijderd"
+  },
+  "form_components": {
+    "activity": {
+      "empty": "Nog geen activiteit vastgelegd"
+    }
   }
 }

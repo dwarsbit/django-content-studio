@@ -5,10 +5,11 @@ Tests for the form system: fields, layouts, form sets and components.
 import uuid
 
 import pytest
-
+from django.utils.translation import override as override_language
 from rest_framework.response import Response
 
 from content_studio.form import (
+    ActivityLog,
     ButtonLink,
     Component,
     Field,
@@ -130,3 +131,28 @@ def test_base_link_requires_get_url():
 
     with pytest.raises(NotImplementedError):
         BareLink().get_url(obj=None, request=None)
+
+
+def test_activity_log_component_serializes_with_title():
+    component = ActivityLog()
+
+    data = component.serialize()
+
+    assert data["component_type"] == "ActivityLog"
+    assert uuid.UUID(data["component_id"])
+    assert data["title"] == "Activity"
+
+    titled = ActivityLog(title="History")
+
+    assert titled.serialize()["title"] == "History"
+    assert titled.component_id != component.component_id
+
+
+def test_activity_log_default_title_translates():
+    component = ActivityLog()
+
+    with override_language("nl"):
+        assert component.serialize()["title"] == "Activiteit"
+
+    with override_language("en"):
+        assert component.serialize()["title"] == "Activity"

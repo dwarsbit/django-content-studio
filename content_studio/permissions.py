@@ -27,6 +27,11 @@ class ModelStudioPermissions(BasePermission):
             # only gate here.
             return admin_model.has_view_permission(request)
 
+        if getattr(view, "action", None) == "restore":
+            # Restoring a trashed object is a change, whatever the
+            # HTTP method.
+            return admin_model.has_change_permission(request)
+
         if request.method == "POST":
             return admin_model.has_add_permission(request)
 
@@ -46,6 +51,12 @@ class ModelStudioPermissions(BasePermission):
 
         if request.method in SAFE_METHODS:
             return admin_model.has_view_permission(request, obj)
+
+        if (
+            getattr(request, "method", None) == "POST"
+            and getattr(view, "action", None) == "restore"
+        ):
+            return admin_model.has_change_permission(request, obj)
 
         if request.method in ("PUT", "PATCH"):
             return admin_model.has_change_permission(request, obj)

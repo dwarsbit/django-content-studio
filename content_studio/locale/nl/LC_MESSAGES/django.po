@@ -47,3 +47,15 @@ msgstr "Monitor en beheer geautomatiseerde taken"
 #: views.py:188
 msgid "Content"
 msgstr "Content"
+
+#: actions.py:129
+msgid ""
+"The selected items will be moved to the trash, where they can be "
+"restored. Are you sure you want to delete?"
+msgstr ""
+"De geselecteerde items worden verplaatst naar de prullenbak, waar ze "
+"hersteld kunnen worden. Weet je zeker dat je ze wilt verwijderen?"
+
+#: form.py:227
+msgid "Activity"
+msgstr "Activiteit"

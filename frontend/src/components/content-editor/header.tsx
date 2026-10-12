@@ -151,7 +151,14 @@ export function Header({
                       onSelect={async () => {
                         const confirmed = await confirm({
                           title: t("common.delete_confirm_title"),
-                          description: t("common.delete_confirm_description"),
+                          // With soft delete the object lands in the
+                          // trash and can be restored, which the
+                          // regular message denies.
+                          description: t(
+                            model.admin.list.trash
+                              ? "common.delete_to_trash_confirm_description"
+                              : "common.delete_confirm_description",
+                          ),
                         });
                         if (confirmed) {
                           await mutateAsync(resource!.id);

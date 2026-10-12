@@ -7,6 +7,8 @@ Django's check framework runs (`manage.py check`, runserver startup,
 
 from django.contrib.auth import get_user_model
 from django.core import checks
+from django.core.exceptions import FieldDoesNotExist
+from django.db import models
 
 from . import formats
 from .actions import (
@@ -363,6 +365,42 @@ def duplicate_id_errors(site) -> list[tuple[str, str]]:
     return errors
 
 
+def soft_delete_errors(studio) -> list[tuple[str, str]]:
+    """
+    A misconfigured soft_delete, as (check id, message) pairs. The
+    configured field must exist and be a nullable date or datetime
+    field: the trash stamps it and the lists filter on it being empty.
+    """
+    errors = []
+
+    if not studio.soft_delete:
+        return errors
+
+    try:
+        field = studio.model._meta.get_field(studio.soft_delete)
+    except FieldDoesNotExist:
+        errors.append(
+            (
+                "content_studio.E008",
+                f"{studio.__class__.__name__}.soft_delete refers to the "
+                f"unknown field '{studio.soft_delete}'.",
+            )
+        )
+        return errors
+
+    if not isinstance(field, models.DateField) or not field.null:
+        errors.append(
+            (
+                "content_studio.E008",
+                f"{studio.__class__.__name__}.soft_delete must name a "
+                "nullable date or datetime field; "
+                f"'{studio.soft_delete}' is not.",
+            )
+        )
+
+    return errors
+
+
 @checks.register()
 def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage]:
     site = cs_settings.ADMIN_SITE
@@ -379,6 +417,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in bulk_action_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in soft_delete_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, warning in edit_field_warnings(studio):

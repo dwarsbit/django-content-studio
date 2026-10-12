@@ -14,6 +14,7 @@ import { CatchAllPage } from "@/pages/(studio)/[...slug]/page";
 import { ContentEditorPage } from "@/pages/(studio)/content/[model]/[id]/page";
 import { ModelListLayout } from "@/pages/(studio)/content/[model]/layout";
 import { ContentIndexPage } from "@/pages/(studio)/content/[model]/page";
+import { ContentTrashPage } from "@/pages/(studio)/content/[model]/trash/page";
 import { StudioLayout } from "@/pages/(studio)/layout";
 import { MediaLibraryPage } from "@/pages/(studio)/media-library/[model]/page";
 import { UIPage } from "@/pages/(studio)/ui/page";
@@ -59,6 +60,10 @@ const router = createBrowserRouter(
                     {
                       path: "new",
                       element: <ContentEditorPage />,
+                    },
+                    {
+                      path: "trash",
+                      element: <ContentTrashPage />,
                     },
                     {
                       path: ":id",

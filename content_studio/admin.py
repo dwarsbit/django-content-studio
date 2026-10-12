@@ -223,6 +223,14 @@ class ModelStudio(BaseStudio[T]):
     # The default ordering of list results; falls back to pk.
     ordering: list[str] = []
 
+    # Soft delete, as an opt-in: the name of the model's nullable
+    # timestamp field that marks an object as trashed (Blueprint's
+    # SoftDeletableModel uses "removed_at"). Empty — the default —
+    # keeps the classic hard delete. When set, the delete action moves
+    # the object to the model's trash instead, where it can be restored
+    # or permanently deleted.
+    soft_delete: str = ""
+
     # Inline models edited on the parent's edit page.
     inlines: list[Type["InlineModelStudio"]] = []
 
@@ -321,6 +329,10 @@ class InlineModelStudio(BaseStudio[T]):
     list_views: list[str] = ["table"]
     search_fields: list[str] = []
     ordering: list[str] = []
+
+    # Inlines share the soft_delete surface for the shared viewset code;
+    # inline lists themselves are not trashed.
+    soft_delete: str = ""
 
     def __init__(self, parent_model: Type[Model], admin_site: "ContentStudioSite"):
         self.parent_model = parent_model
@@ -667,6 +679,7 @@ class AdminSerializer:
                 "views": admin_class.list_views,
                 "search": len(admin_class.search_fields) > 0,
                 "filter": admin_class.list_filter,
+                "trash": bool(admin_class.soft_delete),
                 "sortable_by": admin_class.sortable_by,
                 "actions": [
                     action.serialize()

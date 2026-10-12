@@ -6,7 +6,7 @@ configured in CONTENT_STUDIO (demo.blog.studio.admin_site).
 
 from content_studio import register
 from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
-from content_studio.form import FormSet
+from content_studio.form import ActivityLog, FormSet
 from content_studio.actions import bulk_action
 
 from . import models
@@ -68,6 +68,9 @@ class ArticleAdmin(ModelStudio):
         "author",
         "categories",
     ]
+    # Opt-in soft delete: deleting moves articles to the trash, where
+    # they can be restored or permanently deleted.
+    soft_delete = "removed_at"
     search_fields = ["title"]
     inlines = [ReviewInline]
     edit_main = [
@@ -77,7 +80,7 @@ class ArticleAdmin(ModelStudio):
             fields=["title", "body", "status", "categories", "cover"],
         ),
     ]
-    edit_sidebar = ["published_at", "author", "featured", "views"]
+    edit_sidebar = ["published_at", "author", "featured", "views", ActivityLog()]
 
     @bulk_action(
         label="Publish",
