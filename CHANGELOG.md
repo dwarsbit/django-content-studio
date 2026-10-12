@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **System check `content_studio.W001`:** required model fields missing
+  from the edit form are now reported as a warning by `manage.py check`.
+  A field counts as required when a save without it would fail validation
+  (editable, not nullable, not blank, no default), minus the fields
+  Content Studio fills itself (the created/edited stamps and the tenant
+  relation) and the user model's password. Required fields dropped
+  through `exclude` are reported as well; a warning is issued rather
+  than an error because fields can legitimately be filled
+  programmatically outside the form.
 - **Table columns:** `table_display` accepts `TableColumn` objects
   alongside field names — `TableColumn(field, header, format)` sets a
   custom column header, an explicit format, and references studio

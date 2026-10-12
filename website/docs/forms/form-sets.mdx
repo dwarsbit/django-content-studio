@@ -38,6 +38,16 @@ class ArticleStudio(ModelStudio):
 A list of plain fields is wrapped in a form set automatically, and a list of
 form sets in a group — so simple layouts stay simple.
 
+:::caution
+Every required model field must appear in `edit_main` or `edit_sidebar` —
+the editor only submits the fields it shows, so a required field left out
+(including through `exclude`) fails validation on save. Missing fields are
+reported by the `content_studio.W001` system check (`manage.py check`).
+Fields with a default, nullable fields and blank fields are never required,
+and neither are the fields Content Studio fills itself (the created/edited
+stamps and the tenant relation).
+:::
+
 ## Sidebar
 
 `edit_sidebar` works the same way and renders in the narrower sidebar

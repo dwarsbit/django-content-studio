@@ -5,12 +5,14 @@ Django's check framework runs (`manage.py check`, runserver startup,
 `makemigrations` and CI).
 """
 
+from django.contrib.auth import get_user_model
 from django.core import checks
 
 from . import formats
-from .admin import is_computed_column, iter_components
-from .form import TableColumn
+from .admin import AdminSerializer, is_computed_column, iter_components
+from .form import Field, TableColumn
 from .settings import cs_settings
+from .utils import get_tenant_field_name
 
 LIST_VIEW_NAMES = {"table", "list"}
 
@@ -95,6 +97,109 @@ def table_column_errors(studio) -> list[tuple[str, str]]:
         validate(inline, getattr(inline, "model", None))
 
     return errors
+
+
+def edit_field_warnings(studio) -> list[tuple[str, str]]:
+    """
+    Required model fields missing from the edit form, as (check id,
+    message) pairs. A field is required when the API would reject a
+    save without it, mirroring the serializer: editable, not nullable,
+    not blank and without a default.
+
+    Fields Content Studio fills itself never count: the created/edited
+    stamps from the settings, the tenant relation (set from the tenant
+    header) and the user model's password, which the API leaves out
+    entirely. An unset edit_main falls back to every editable field, so
+    only explicit configurations are at risk; required fields dropped
+    through exclude are reported all the same.
+    """
+    model = getattr(studio, "model", None)
+
+    if model is None:
+        return []
+
+    form_fields = edit_form_field_names(studio)
+
+    ignored = {
+        name
+        for name in (
+            cs_settings.CREATED_BY_ATTR,
+            cs_settings.EDITED_BY_ATTR,
+            cs_settings.EDITED_AT_ATTR,
+        )
+        if hasattr(model, name)
+    }
+
+    try:
+        tenant_field_name = get_tenant_field_name(model)
+    except ValueError:
+        tenant_field_name = None
+
+    if tenant_field_name:
+        ignored.add(tenant_field_name)
+
+    if model is get_user_model():
+        ignored.add("password")
+
+        if get_user_model().USERNAME_FIELD != "username":
+            ignored.add("username")
+
+    warnings = []
+
+    for field in model._meta.get_fields():
+        if (
+            not field.editable
+            or field.auto_created
+            or field.blank
+            or field.null
+            or field.has_default()
+            or field.name in ignored
+            or field.name in form_fields
+        ):
+            continue
+
+        warnings.append(
+            (
+                "content_studio.W001",
+                f"{studio.__class__.__name__}: the required field "
+                f"{field.name!r} is not in edit_main or edit_sidebar, so "
+                "saving objects will fail validation. Add the field to the "
+                "edit form or give the model field a default, make it "
+                "nullable or blank, or exclude it consciously by filling it "
+                "in programmatically.",
+            )
+        )
+
+    return warnings
+
+
+def edit_form_field_names(studio) -> set[str]:
+    """
+    The model field names the edit form exposes, mirroring
+    AdminSerializer's normalization of edit_main and edit_sidebar. An
+    unset edit_main falls back to every editable field minus exclude.
+    """
+    serializer = AdminSerializer(studio)
+    names = set()
+
+    edit_main = getattr(studio, "edit_main", None) or []
+
+    if not edit_main:
+        names.update(studio.get_fields(None))
+    else:
+        for group in serializer.get_edit_main(edit_main):
+            names.update(_field_names(group.get_fields()))
+
+    for form_set in serializer.get_edit_sidebar(getattr(studio, "edit_sidebar", None)):
+        names.update(_field_names(form_set.get_fields()))
+
+    return names
+
+
+def _field_names(fields) -> set[str]:
+    """The names of Field entries; Components are custom UI and carry no
+    model field name."""
+    return {field.name for field in fields if isinstance(field, Field)}
 
 
 def list_config_errors(studio) -> list[tuple[str, str]]:
@@ -203,6 +308,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
 
         for check_id, error in table_column_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, warning in edit_field_warnings(studio):
+            messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
     for check_id, error in duplicate_id_errors(site):
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))

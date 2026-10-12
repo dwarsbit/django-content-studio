@@ -38,7 +38,7 @@ content_studio/
 ├── form.py              # Form and field definitions
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E005)
+├── checks.py            # System checks (content_studio.E001-E006, W001)
 ├── utils.py             # Utility functions
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions
