@@ -71,7 +71,7 @@ function TableHead({
       )}
       {...props}
     >
-      <div className="border-b h-8 px-2 flex items-center">{children}</div>
+      <div className="border-b h-9 px-2 flex items-center">{children}</div>
     </th>
   );
 }

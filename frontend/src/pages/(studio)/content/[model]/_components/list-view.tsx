@@ -21,7 +21,7 @@ export function ListView({
   const navigate = useNavigate();
 
   return (
-    <div className="w-full flex-1 scrollbar overflow-auto">
+    <div className="w-full flex-1 border rounded-lg">
       {items.length === 0 && (
         <div className="text-center py-12">
           <span className="font-normal text-muted-foreground">

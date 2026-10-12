@@ -48,7 +48,7 @@ export function TableView({
         <TableHeader>
           <TableRow>
             {hasActions && (
-              <TableHead className="sticky top-0 z-10 bg-card w-10">
+              <TableHead className="sticky top-0 z-10 bg-muted w-10">
                 <Checkbox
                   checked={allSelected}
                   aria-label={t("bulk.select_all")}
@@ -68,7 +68,7 @@ export function TableView({
                 (R.isNil(sortable_by) || sortable_by.includes(name));
 
               return (
-                <TableHead key={name} className="sticky top-0 z-10 bg-card">
+                <TableHead key={name} className="sticky top-0 z-10 bg-muted">
                   {label && isSortable ? (
                     <button
                       onClick={() =>
