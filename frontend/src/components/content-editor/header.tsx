@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { PiArrowLeftBold, PiDotsThreeBold, PiXBold } from "react-icons/pi";
+import { PiArrowLeftBold, PiDotsThreeBold } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";

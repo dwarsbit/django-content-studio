@@ -236,6 +236,29 @@ describe("FormField", () => {
     expect(screen.getByRole("textbox")).toHaveValue("Hello");
   });
 
+  it("renders checkbox labels inline after the checkbox", () => {
+    render(
+      <FormHarness
+        defaultValues={{ title: "", status: "draft", is_published: false }}
+      >
+        <FormField
+          formField={makeFormField("is_published")}
+          model={makeModel()}
+        />
+      </FormHarness>,
+    );
+
+    const checkbox = screen.getByRole("checkbox");
+    const label = screen.getByText("Published");
+
+    // The label follows the checkbox in the DOM instead of sitting above
+    // it, and shares its row.
+    expect(checkbox.compareDocumentPosition(label)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(checkbox.parentElement).toContainElement(label);
+  });
+
   it("renders a read-only display instead of a widget for readonly fields", () => {
     const model = makeModel({
       fields: {

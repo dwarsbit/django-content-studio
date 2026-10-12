@@ -12,7 +12,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { WidgetRenderer } from "@/components/widgets/renderer";
-import type { FormField as IFormField, Model } from "@/types";
+import { useAdminInfo } from "@/hooks/use-admin-info";
+import { FieldWidget, type FormField as IFormField, type Model } from "@/types";
 
 const COMPONENTS: Partial<
   Record<
@@ -34,7 +35,17 @@ export function FormField({
   model: Model;
 }) {
   const form = useFormContext();
+  const { data: info } = useAdminInfo();
   const modelField = model.fields[formField.name];
+  const label = formField.label || modelField?.verbose_name;
+  const isReadonly = !modelField || modelField.readonly || formField.readonly;
+
+  // Checkboxes render their label inline after the box, not above it.
+  const isCheckbox =
+    !isReadonly &&
+    modelField !== undefined &&
+    (modelField.widget_class ?? info?.widgets[modelField.type]?.name) ===
+      FieldWidget.CheckboxWidget;
 
   return (
     <div>
@@ -42,26 +53,37 @@ export function FormField({
         <RootFormField
           control={form.control}
           name={formField.name}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {formField.label || modelField?.verbose_name}
-              </FormLabel>
-              {!modelField || modelField.readonly || formField.readonly ? (
-                <div className="min-h-8 flex items-center pl-3 bg-accent rounded-md cursor-default">
-                  <FormatRenderer value={field.value} field={modelField} />
-                </div>
-              ) : (
-                <FormControl>
-                  <WidgetRenderer model={model} {...field} />
-                </FormControl>
-              )}
-              {modelField?.help_text && (
-                <FormDescription>{modelField.help_text}</FormDescription>
-              )}
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const control = isReadonly ? (
+              <div className="min-h-8 flex items-center pl-3 bg-accent rounded-md cursor-default">
+                <FormatRenderer value={field.value} field={modelField} />
+              </div>
+            ) : (
+              <FormControl>
+                <WidgetRenderer model={model} {...field} />
+              </FormControl>
+            );
+
+            return (
+              <FormItem className={isCheckbox ? "gap-1" : undefined}>
+                {isCheckbox ? (
+                  <div className="flex items-center gap-2">
+                    {control}
+                    <FormLabel>{label}</FormLabel>
+                  </div>
+                ) : (
+                  <>
+                    <FormLabel>{label}</FormLabel>
+                    {control}
+                  </>
+                )}
+                {modelField?.help_text && (
+                  <FormDescription>{modelField.help_text}</FormDescription>
+                )}
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
       ) : (
         <div>
