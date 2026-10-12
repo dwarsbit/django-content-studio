@@ -102,9 +102,7 @@ export function ListView({
           {items.map((item) => (
             <TableRow
               key={item.id}
-              onClick={() =>
-                navigate({ hash: `#editor:${model.label}:${item.id}` })
-              }
+              onClick={() => navigate(`/content/${model.label}/${item.id}`)}
             >
               {fields.map(({ name, format }) => (
                 <TableCell key={name}>

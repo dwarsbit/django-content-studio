@@ -62,9 +62,7 @@ export function ActivityLogWidget({ widget }: { widget: DashboardWidget }) {
                     ) : (
                       <Link
                         className="hover:underline font-medium "
-                        to={{
-                          hash: `editor:${item.object_model}:${item.object_id}`,
-                        }}
+                        to={`/content/${item.object_model}/${item.object_id}`}
                       >
                         {item.object_repr}
                       </Link>

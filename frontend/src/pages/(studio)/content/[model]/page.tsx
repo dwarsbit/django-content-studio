@@ -15,6 +15,7 @@ import type { PaginatedResponse, Resource } from "@/types";
 import { Filters } from "./_components/filters";
 import { ListRowsView } from "./_components/list-rows";
 import { ListView } from "./_components/list-view";
+import { ContentEditorPage } from "./[id]/page";
 
 export function ModelListPage() {
   const { t } = useTranslation();
@@ -123,10 +124,7 @@ export function ModelListPage() {
           </div>
         )}
         {model.admin.permissions.add_permission && (
-          <Link
-            to={{ hash: `editor:${model.label}` }}
-            className={buttonVariants()}
-          >
+          <Link to={`/content/${model.label}/new`} className={buttonVariants()}>
             {t("common.create")}
           </Link>
         )}
@@ -158,4 +156,15 @@ export function ModelListPage() {
       <Spinner />
     </div>
   );
+}
+
+// The content index route: the list page, or — for singletons, which
+// have no list — the editor. While discover loads, the list page's
+// spinner covers the wait.
+export function ContentIndexPage() {
+  const { model: appLabel } = useParams<{ model: string }>();
+  const { data: discover } = useDiscover();
+  const model = discover?.models.find(R.whereEq({ label: appLabel }));
+
+  return model?.admin.is_singleton ? <ContentEditorPage /> : <ModelListPage />;
 }

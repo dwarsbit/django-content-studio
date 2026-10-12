@@ -202,11 +202,7 @@ export function MainMenu() {
                       <MenuItem
                         key={label}
                         isSubItem
-                        to={
-                          model.admin.is_singleton
-                            ? { hash: `editor:${model.label}` }
-                            : `/content/${model.label}`
-                        }
+                        to={`/content/${model.label}`}
                         label={model.verbose_name_plural}
                         icon={model.admin.icon ?? <PiFileTextBold />}
                       />

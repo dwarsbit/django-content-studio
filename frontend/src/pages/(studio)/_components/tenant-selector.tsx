@@ -49,9 +49,7 @@ export function TenantSelector() {
                   className="p-1 hover:bg-gray-200 cursor-pointer rounded"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate({
-                      hash: `editor:${tenantModel.label}:${tenant.id}`,
-                    });
+                    navigate(`/content/${tenantModel.label}/${tenant.id}`);
                   }}
                 >
                   <PiGearBold />
@@ -90,7 +88,7 @@ export function TenantSelector() {
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => navigate({ hash: `editor:${tenantModel.label}` })}
+              onClick={() => navigate(`/content/${tenantModel.label}/new`)}
             >
               {t("tenant.selector.add")}
             </Button>

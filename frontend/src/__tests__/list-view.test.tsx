@@ -177,7 +177,7 @@ function LocationProbe() {
   return (
     <>
       <span data-testid="location-search">{location.search}</span>
-      <span data-testid="location-hash">{location.hash}</span>
+      <span data-testid="location-pathname">{location.pathname}</span>
     </>
   );
 }
@@ -194,13 +194,13 @@ function renderListPage(
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>
+        <LocationProbe />
         <Routes>
           <Route
             path="/content/:model"
             element={
               <>
                 <ModelListPage />
-                <LocationProbe />
               </>
             }
           />
@@ -403,8 +403,8 @@ describe("ModelListPage", () => {
 
     await user.click(await screen.findByText("First Article"));
 
-    expect(screen.getByTestId("location-hash")).toHaveTextContent(
-      "#editor:testapp.article:1",
+    expect(screen.getByTestId("location-pathname")).toHaveTextContent(
+      "/content/testapp.article/1",
     );
   });
 
@@ -491,8 +491,8 @@ describe("ModelListPage views", () => {
 
     await userEvent.click(await screen.findByText("First Article"));
 
-    expect(screen.getByTestId("location-hash")).toHaveTextContent(
-      "editor:testapp.article:1",
+    expect(screen.getByTestId("location-pathname")).toHaveTextContent(
+      "/content/testapp.article/1",
     );
   });
 

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **The content editor is a route, not a dialog.** Objects open at
+  `/content/<model>/<id>`, creation at `/content/<model>/new` and
+  singletons on the model's index route — editor URLs are deep-linkable,
+  and the browser's back and forward buttons work as expected. Saving
+  keeps the editor open (after a create, the route becomes the new
+  object's), and leaving with unsaved changes asks for confirmation
+  (including reloads, via the browser's own prompt). Inline creation
+  stays dialog-based; list state (filters, page, view) is preserved on
+  the way back since it lives in the URL.
 - **System check `content_studio.W001`:** required model fields missing
   from the edit form are now reported as a warning by `manage.py check`.
   A field counts as required when a save without it would fail validation

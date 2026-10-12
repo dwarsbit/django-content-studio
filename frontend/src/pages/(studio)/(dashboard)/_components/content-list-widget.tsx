@@ -52,7 +52,7 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
           {data.content.map(({ id, model, title, description }) => (
             <li key={id}>
               <Link
-                to={{ hash: `editor:${model}:${id}` }}
+                to={`/content/${model}/${id}`}
                 className="block px-4 py-2 border-t hover:bg-gray-100"
               >
                 <div className="text-gray-700">{title}</div>

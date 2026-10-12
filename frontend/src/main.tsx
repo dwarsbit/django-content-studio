@@ -11,8 +11,9 @@ import { LoginPage } from "@/pages/(auth)/login/page";
 import { ResetPasswordPage } from "@/pages/(auth)/reset-password/page";
 import { DashboardPage } from "@/pages/(studio)/(dashboard)/page";
 import { CatchAllPage } from "@/pages/(studio)/[...slug]/page";
+import { ContentEditorPage } from "@/pages/(studio)/content/[model]/[id]/page";
 import { ModelListLayout } from "@/pages/(studio)/content/[model]/layout";
-import { ModelListPage } from "@/pages/(studio)/content/[model]/page";
+import { ContentIndexPage } from "@/pages/(studio)/content/[model]/page";
 import { StudioLayout } from "@/pages/(studio)/layout";
 import { MediaLibraryPage } from "@/pages/(studio)/media-library/[model]/page";
 import { UIPage } from "@/pages/(studio)/ui/page";
@@ -53,7 +54,15 @@ const router = createBrowserRouter(
                   children: [
                     {
                       index: true,
-                      element: <ModelListPage />,
+                      element: <ContentIndexPage />,
+                    },
+                    {
+                      path: "new",
+                      element: <ContentEditorPage />,
+                    },
+                    {
+                      path: ":id",
+                      element: <ContentEditorPage />,
                     },
                   ],
                 },

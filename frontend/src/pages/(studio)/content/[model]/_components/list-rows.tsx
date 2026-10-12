@@ -35,9 +35,7 @@ export function ListRowsView({
         return (
           <div
             key={item.id}
-            onClick={() =>
-              navigate({ hash: `#editor:${model.label}:${item.id}` })
-            }
+            onClick={() => navigate(`/content/${model.label}/${item.id}`)}
             className={cn(
               "flex items-center gap-4 px-8 py-3 border-b select-none",
               "hover:bg-foreground/5 cursor-pointer last:border-b-0",

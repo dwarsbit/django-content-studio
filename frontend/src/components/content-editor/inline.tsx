@@ -91,6 +91,7 @@ export function Inline({
           showCloseButton={false}
         >
           <Editor
+            dialog
             modelLabel={model.label}
             inlineOf={relModel}
             initialValues={{

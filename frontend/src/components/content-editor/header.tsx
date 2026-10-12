@@ -24,6 +24,7 @@ export function Header({
   resource,
   resourcePath,
   isSaving,
+  dialog = false,
   onSave,
   onDelete,
   onClose,
@@ -32,6 +33,10 @@ export function Header({
   resource?: Resource;
   resourcePath: string;
   isSaving: boolean;
+  // Whether the editor renders inside a Dialog: the title then is a
+  // DialogTitle and the close button confirms unsaved changes itself;
+  // routed editors rely on the navigation guard instead.
+  dialog?: boolean;
   onSave(): Promise<void>;
   onDelete?: VoidFunction;
   onClose?: VoidFunction;
@@ -44,6 +49,9 @@ export function Header({
   const isCreate = !resource?.id;
   const isSingleton = model?.admin.is_singleton ?? false;
   const { isDirty } = form.formState;
+  const title = t(isCreate ? "editor.title_create" : "editor.title_edit", {
+    modelName: model.verbose_name.toLowerCase(),
+  });
   const editedAt =
     resource && info
       ? (resource[info.settings.edited_at_attr] as DateTimeString)
@@ -63,7 +71,7 @@ export function Header({
   return (
     model && (
       <>
-        <DialogHeader className="items-center border-b shadow-md shadow-gray-700/5 z-10">
+        <DialogHeader className="items-center border-b z-10">
           <div className="flex items-center gap-3 px-4 py-2 w-full">
             {model.admin.icon && (
               <div className="size-6 flex items-center justify-center bg-gray-200 rounded-md text-gray-500">
@@ -71,9 +79,11 @@ export function Header({
               </div>
             )}
             <div className="select-none">
-              <DialogTitle>
-                {`${t(isCreate ? "editor.title_create" : "editor.title_edit", { modelName: model.verbose_name.toLowerCase() })}`}
-              </DialogTitle>
+              {dialog ? (
+                <DialogTitle>{title}</DialogTitle>
+              ) : (
+                <h2 className="text-lg leading-none font-semibold">{title}</h2>
+              )}
               <div className="text-sm font-medium text-muted-foreground">
                 {resource?.__str__}
               </div>
@@ -129,16 +139,23 @@ export function Header({
                 variant="ghost"
                 disabled={isSaving}
                 onClick={async () => {
-                  if (!isDirty) {
-                    return onClose?.();
-                  }
-                  const confirmed = await confirm({
-                    description: t("editor.unsaved_alert"),
-                  });
+                  if (dialog) {
+                    if (!isDirty) {
+                      return onClose?.();
+                    }
 
-                  if (confirmed) {
-                    onClose?.();
+                    const confirmed = await confirm({
+                      description: t("editor.unsaved_alert"),
+                    });
+
+                    if (confirmed) {
+                      onClose?.();
+                    }
+
+                    return;
                   }
+
+                  onClose?.();
                 }}
               >
                 <PiXBold />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -16,12 +16,16 @@ import { ConfirmDialogContext } from "@/lib/confirm-dialog-context";
 export function ConfirmDialogProvider({ children }: Props) {
   const [dialog, setDialog] = useState<ConfirmDialogProps | null>(null);
 
+  // Stable, so hooks depending on setDialog (useConfirmDialog consumers)
+  // do not re-run on every render.
+  const openDialog = useCallback((value: ConfirmDialogProps) => {
+    setDialog(value);
+  }, []);
+
   return (
     <ConfirmDialogContext.Provider
       value={{
-        setDialog(value) {
-          setDialog(value);
-        },
+        setDialog: openDialog,
       }}
     >
       <AlertDialog

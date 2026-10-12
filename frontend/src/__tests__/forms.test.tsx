@@ -4,14 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { AxiosError, type AxiosResponse } from "axios";
 import type { ReactElement, ReactNode } from "react";
 import { useForm } from "react-hook-form";
+import { createMemoryRouter, Link, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ConfirmDialogProvider } from "@/components/confirm-dialog-provider";
 import { Editor } from "@/components/content-editor/editor";
 import { FormField } from "@/components/content-editor/form-field";
 import { FormSet } from "@/components/content-editor/form-set";
 import { Inline } from "@/components/content-editor/inline";
 import { Main } from "@/components/content-editor/main";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import type {
   FormField as IFormField,
@@ -208,15 +209,13 @@ function renderWithQueryClient(ui: ReactElement) {
   );
 }
 
-// The editor's Header renders a Radix DialogTitle, which only mounts inside
-// a Dialog — the same context it is used in within Inline and the studio
-// pages.
-function renderEditorInDialog(ui: ReactElement) {
-  return renderWithQueryClient(
-    <Dialog open onOpenChange={() => {}}>
-      <DialogContent showCloseButton={false}>{ui}</DialogContent>
-    </Dialog>,
-  );
+// The editor is a routed page in production: the navigation guard
+// needs a data router, and the header renders a plain title outside
+// dialogs.
+function renderEditorPage(ui: ReactElement) {
+  const router = createMemoryRouter([{ path: "/", element: ui }]);
+
+  return renderWithQueryClient(<RouterProvider router={router} />);
 }
 
 describe("FormField", () => {
@@ -526,7 +525,7 @@ describe("Editor", () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
 
-    renderEditorInDialog(
+    renderEditorPage(
       <Editor modelLabel="testapp.article" onSave={onSave} onClose={onClose} />,
     );
 
@@ -562,7 +561,7 @@ describe("Editor", () => {
     httpMock.put.mockResolvedValue({ data: {} });
     const onSave = vi.fn();
 
-    renderEditorInDialog(
+    renderEditorPage(
       <Editor
         modelLabel="testapp.article"
         id="abc-123"
@@ -611,7 +610,7 @@ describe("Editor", () => {
     );
     const onSave = vi.fn();
 
-    renderEditorInDialog(
+    renderEditorPage(
       <Editor modelLabel="testapp.article" onSave={onSave} onClose={vi.fn()} />,
     );
 
@@ -626,5 +625,93 @@ describe("Editor", () => {
     expect(toastErrorMock).toHaveBeenCalledTimes(1);
     expect(onSave).not.toHaveBeenCalled();
     expect(httpMock.put).not.toHaveBeenCalled();
+  });
+});
+
+describe("Editor navigation guard", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    useAdminInfoMock.mockReturnValue({ data: adminInfo });
+    useDiscoverMock.mockReturnValue({
+      data: makeDiscover([makeModel()]),
+    });
+  });
+
+  it("blocks leaving a dirty form until confirmed, then proceeds", async () => {
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: (
+          <>
+            <Editor
+              modelLabel="testapp.article"
+              onSave={vi.fn()}
+              onClose={vi.fn()}
+            />
+            <Link to="/away">Leave</Link>
+          </>
+        ),
+      },
+      { path: "/away", element: <div>Away page</div> },
+    ]);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ConfirmDialogProvider>
+          <RouterProvider router={router} />
+        </ConfirmDialogProvider>
+      </QueryClientProvider>,
+    );
+
+    const user = userEvent.setup();
+    await user.type(await screen.findByRole("textbox"), "Hello World");
+
+    // Leaving with unsaved changes opens the confirm dialog...
+    await user.click(screen.getByText("Leave"));
+    expect(await screen.findByText("editor.unsaved_alert")).toBeVisible();
+    expect(screen.queryByText("Away page")).not.toBeInTheDocument();
+
+    // ...and confirming performs the navigation.
+    await user.click(screen.getByText("common.continue"));
+    expect(await screen.findByText("Away page")).toBeInTheDocument();
+  });
+
+  it("lets a pristine form navigate away without prompting", async () => {
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: (
+          <>
+            <Editor
+              modelLabel="testapp.article"
+              onSave={vi.fn()}
+              onClose={vi.fn()}
+            />
+            <Link to="/away">Leave</Link>
+          </>
+        ),
+      },
+      { path: "/away", element: <div>Away page</div> },
+    ]);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ConfirmDialogProvider>
+          <RouterProvider router={router} />
+        </ConfirmDialogProvider>
+      </QueryClientProvider>,
+    );
+
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Leave"));
+    expect(await screen.findByText("Away page")).toBeInTheDocument();
+    expect(screen.queryByText("editor.unsaved_alert")).not.toBeInTheDocument();
   });
 });
