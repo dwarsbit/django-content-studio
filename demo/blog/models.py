@@ -45,7 +45,9 @@ class MediaFolder(models.Model):
 
 class MediaItem(models.Model):
     name = models.CharField(max_length=200)
-    tags = models.CharField(max_length=500, blank=True)
+    # A list of strings, like Blueprint's TagField — the interface's
+    # tags input and search expect a list-typed field.
+    tags = models.JSONField(default=list, blank=True)
     type = models.CharField(max_length=10, default="file")
     file = models.FileField(upload_to="media/")
     alt_text = models.CharField(max_length=200, blank=True)

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- 🐛 **Opening a media item crashed the editor.** The demo's media
+  model declared `tags` as a plain character field while the
+  interface's tags input expects a list — the item editor failed with
+  "e.map is not a function". The demo now models the documented
+  contract (a list-typed `tags` field, like Blueprint's `TagField`),
+  the docs state the field type explicitly, and an e2e test opens an
+  uploaded item so the editor cannot regress silently.
 - **Theme colors only, and new status tokens.** The interface no
   longer uses raw palette colors: every surface rides on the theme's
   tokens, which fixes several dark mode gaps (the FK and date widget

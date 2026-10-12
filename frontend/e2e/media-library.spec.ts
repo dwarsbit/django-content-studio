@@ -34,3 +34,30 @@ test("uploads media and creates a folder", async ({ page }) => {
   await folderGroup.getByRole("button", { name: "Create" }).click();
   await expect(page.getByText(folderName)).toBeVisible();
 });
+
+test("opens an uploaded media item for editing", async ({ page }) => {
+  // The item editor renders the retrieved item — a tags value that is
+  // not a list crashes it ("e.map is not a function").
+  await page.getByRole("link", { name: "Media library" }).click();
+
+  const fileName = `e2e-open-${uniqueSuffix()}.png`;
+  await page.locator("input[type=file]").setInputFiles({
+    name: fileName,
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c6300010000050001" +
+        "0d0a2db40000000049454e44ae426082",
+      "hex",
+    ),
+  });
+  const card = page.getByRole("button", { name: new RegExp(fileName) });
+  await expect(card).toBeVisible();
+
+  // Opening the item renders the edit dialog: the crop preview, the
+  // name field and the tags input (empty, not crashed).
+  await card.click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel("Name")).toHaveValue(fileName);
+  await expect(dialog.getByText("Tags")).toBeVisible();
+});

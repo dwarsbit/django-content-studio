@@ -33,7 +33,9 @@ media model needs:
 - a `name` — used by the library's search
 - a `type` — `"image"`, `"video"`, `"audio"` or `"file"` drive the grid
   previews and thumbnails
-- optionally `tags`, searched alongside the name
+- optionally `tags`, searched alongside the name — a list-typed field
+  (a `JSONField` of strings, an `ArrayField`, or Blueprint's
+  `TagField`); the tags input in the item editor works on the list
 
 Folder models need a self-referencing `parent` field; the rest (name,
 children) follows from it. An unconfigured media library simply does not
