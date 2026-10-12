@@ -4,7 +4,12 @@ import userEvent from "@testing-library/user-event";
 import { AxiosError, type AxiosResponse } from "axios";
 import type { ReactElement, ReactNode } from "react";
 import { useForm } from "react-hook-form";
-import { createMemoryRouter, Link, RouterProvider } from "react-router";
+import {
+  createMemoryRouter,
+  Link,
+  RouterProvider,
+  useNavigate,
+} from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ConfirmDialogProvider } from "@/components/confirm-dialog-provider";
@@ -736,6 +741,69 @@ describe("Editor navigation guard", () => {
 
     await user.click(screen.getByText("Leave"));
     expect(await screen.findByText("Away page")).toBeInTheDocument();
+    expect(screen.queryByText("editor.unsaved_alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("Editor save navigation", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    useAdminInfoMock.mockReturnValue({ data: adminInfo });
+    useDiscoverMock.mockReturnValue({
+      data: makeDiscover([makeModel()]),
+    });
+  });
+
+  it("lets the navigation a create triggers pass without prompting", async () => {
+    // The page navigates to the created object's route; the save resets
+    // the form in the same tick, before React re-renders the (now
+    // pristine) dirty state the blocker reads.
+    httpMock.post.mockResolvedValue({
+      data: { id: "new-1", title: "Hello World", is_published: true },
+    });
+
+    function EditorPage() {
+      const navigate = useNavigate();
+
+      return (
+        <Editor
+          modelLabel="testapp.article"
+          onCreated={(id) => navigate(`/content/testapp.article/${id}`)}
+          onClose={vi.fn()}
+        />
+      );
+    }
+
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: (
+          <>
+            <EditorPage />
+            <Link to="/away">Leave</Link>
+          </>
+        ),
+      },
+      { path: "/content/testapp.article/:id", element: <div>Object page</div> },
+      { path: "/away", element: <div>Away page</div> },
+    ]);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ConfirmDialogProvider>
+          <RouterProvider router={router} />
+        </ConfirmDialogProvider>
+      </QueryClientProvider>,
+    );
+
+    const user = userEvent.setup();
+    await user.type(await screen.findByRole("textbox"), "Hello World");
+    await user.click(screen.getByRole("button", { name: "common.create" }));
+
+    expect(await screen.findByText("Object page")).toBeInTheDocument();
     expect(screen.queryByText("editor.unsaved_alert")).not.toBeInTheDocument();
   });
 });

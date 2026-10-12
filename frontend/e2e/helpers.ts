@@ -19,7 +19,7 @@ export async function login(page: Page) {
  * do not reach the input itself. Locate a field through its label text and
  * the first input or textarea that follows it.
  */
-export function fieldByLabel(scope: Locator, label: string): Locator {
+export function fieldByLabel(scope: Locator | Page, label: string): Locator {
   return scope
     .locator("label")
     .filter({ hasText: new RegExp(`^${label}$`) })

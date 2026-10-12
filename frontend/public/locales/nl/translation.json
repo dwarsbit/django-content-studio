@@ -64,7 +64,9 @@
     "field_validation_error_title": "Sommige velden zijn onjuist ingevuld",
     "field_validation_error_description": "Controleer de velden en probeer het opnieuw.",
     "unsaved_alert": "Je hebt niet-opgeslagen wijzigen. Weet je zeker dat je weg wilt gaan?",
-    "empty_state": "Nog geen items"
+    "empty_state": "Nog geen items",
+    "back_to_list": "Terug naar de lijst",
+    "more_actions": "Meer acties"
   },
   "list_view": {
     "table_view": "Tabelweergave",

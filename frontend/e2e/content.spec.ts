@@ -18,34 +18,46 @@ test("navigates to a model through the menu", async ({ page }) => {
 test("creates, edits and deletes an article", async ({ page }) => {
   const title = `E2E article ${uniqueSuffix()}`;
   const editedTitle = `${title} (edited)`;
-  const dialog = page.getByRole("dialog");
+  const editorUrl = /\/content\/demo_blog\.article\/\d+/;
+  const listUrl = /\/content\/demo_blog\.article$/;
 
   // Create
   await page.goto("/admin/content/demo_blog.article");
   await page.getByRole("link", { name: "Create" }).click();
-  await expect(dialog).toBeVisible();
-  await fieldByLabel(dialog, "title").fill(title);
-  await fieldByLabel(dialog, "body").fill("Written by the e2e suite.");
-  await dialog.locator("[data-slot=select-trigger]").click();
+  await expect(page).toHaveURL(/\/content\/demo_blog\.article\/new$/);
+  await fieldByLabel(page, "title").fill(title);
+  await fieldByLabel(page, "body").fill("Written by the e2e suite.");
+  await page.locator("[data-slot=select-trigger]").click();
   await page.getByRole("option", { name: "Published" }).click();
-  await dialog.getByRole("button", { name: "Create" }).click();
-  await expect(dialog).toHaveCount(0);
+  await page.getByRole("button", { name: "Create" }).click();
+  // Saving keeps the editor open; after a create, the route becomes the
+  // new object's.
+  await expect(page).toHaveURL(editorUrl);
+
+  await page.getByRole("button", { name: "Back to the list" }).click();
+  await expect(page).toHaveURL(listUrl);
   await expect(rowByText(page, title)).toBeVisible();
 
   // Edit
   await rowByText(page, title).click();
-  await expect(dialog).toBeVisible();
-  await fieldByLabel(dialog, "title").fill(editedTitle);
-  await dialog.getByRole("button", { name: "Save" }).click();
-  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(editorUrl);
+  await fieldByLabel(page, "title").fill(editedTitle);
+  await page.getByRole("button", { name: "Save" }).click();
+  // The header's breadcrumb shows the object's __str__, which refetches
+  // after a successful save.
+  await expect(page.getByText(editedTitle).first()).toBeVisible();
+  await page.getByRole("button", { name: "Back to the list" }).click();
+  await expect(page).toHaveURL(listUrl);
   await expect(rowByText(page, editedTitle)).toBeVisible();
 
   // Delete
   await rowByText(page, editedTitle).click();
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("group").getByRole("button").last().click();
+  await expect(page).toHaveURL(editorUrl);
+  await page.getByRole("button", { name: "More actions" }).click();
   await page.getByRole("menuitem", { name: "Delete" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
+  // Deleting navigates back to the list.
+  await expect(page).toHaveURL(listUrl);
   await expect(rowByText(page, editedTitle)).toHaveCount(0);
 });
 
@@ -54,11 +66,11 @@ test("searches the list", async ({ page }) => {
 
   await page.goto("/admin/content/demo_blog.article");
   await page.getByRole("link", { name: "Create" }).click();
-  await fieldByLabel(page.getByRole("dialog"), "title").fill(title);
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Create" })
-    .click();
+  await fieldByLabel(page, "title").fill(title);
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page).toHaveURL(/\/content\/demo_blog\.article\/\d+/);
+
+  await page.getByRole("button", { name: "Back to the list" }).click();
   await expect(rowByText(page, title)).toBeVisible();
 
   await page.getByPlaceholder("Search").fill(title);
@@ -71,18 +83,17 @@ test("adds an inline review to the seeded article", async ({ page }) => {
 
   await page.goto("/admin/content/demo_blog.article");
   await rowByText(page, "Hello, Content Studio").click();
-  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL(/\/content\/demo_blog\.article\/\d+/);
 
   await page.getByRole("tab", { name: "reviews" }).click();
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Create" })
-    .click();
+  await page.getByRole("button", { name: "Create" }).click();
 
-  const reviewDialog = page.getByRole("dialog").last();
+  // Inline creation stays dialog-based.
+  const reviewDialog = page.getByRole("dialog");
   await expect(reviewDialog).toBeVisible();
   await fieldByLabel(reviewDialog, "text").fill(reviewText);
   await reviewDialog.getByRole("button", { name: "Create" }).click();
+  await expect(reviewDialog).toHaveCount(0);
   await expect(
     // The inline column shows __str__, which the demo model truncates.
     rowByText(page, reviewText.slice(0, 20)),

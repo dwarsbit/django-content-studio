@@ -127,8 +127,22 @@ function EditorForm({
   // button, menu clicks) is blocked until confirmed, and a reload gets
   // the browser's own prompt. Dialog editors (inline creation) confirm
   // on their close button instead.
+  //
+  // The blocker reads isDirty from the last render, but a successful
+  // save resets the form in the same tick as the navigation it
+  // triggers — before React re-renders. A one-shot flag lets exactly
+  // that navigation through.
   const isDirty = form.formState.isDirty;
-  const blocker = useBlocker(dialog ? false : isDirty);
+  const allowNextNavigation = useRef(false);
+  const blocker = useBlocker(
+    dialog
+      ? () => false
+      : () => {
+          const allowed = allowNextNavigation.current;
+          allowNextNavigation.current = false;
+          return !allowed && form.formState.isDirty;
+        },
+  );
   const promptedBlocker = useRef<Blocker | null>(null);
 
   useEffect(() => {
@@ -195,6 +209,9 @@ function EditorForm({
       form.reset({ ...values, ...saved, id: savedId });
 
       if (!values.id && savedId != null) {
+        // The navigation this triggers must pass the guard despite the
+        // stale dirty state from the last render.
+        allowNextNavigation.current = true;
         onCreated?.(String(savedId));
       }
     } catch (e: unknown) {
@@ -237,6 +254,7 @@ function EditorForm({
             // The changes died with the object; leaving must not
             // trigger the navigation guard.
             form.reset();
+            allowNextNavigation.current = true;
             onDelete?.();
           }}
           onClose={onClose}

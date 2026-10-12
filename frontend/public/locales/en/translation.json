@@ -64,7 +64,9 @@
     "field_validation_error_title": "Some fields are invalid",
     "field_validation_error_description": "Please check the fields and try again.",
     "unsaved_alert": "There are unsaved changes. Are you sure you want to leave?",
-    "empty_state": "No items yet"
+    "empty_state": "No items yet",
+    "back_to_list": "Back to the list",
+    "more_actions": "More actions"
   },
   "list_view": {
     "table_view": "Table view",

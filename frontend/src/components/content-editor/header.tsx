@@ -80,6 +80,7 @@ export function Header({
                   size="icon"
                   variant="ghost"
                   disabled={isSaving}
+                  aria-label={t("editor.back_to_list")}
                   onClick={async () => {
                     if (dialog) {
                       if (!isDirty) {
@@ -136,7 +137,11 @@ export function Header({
               {!isSingleton && !isCreate && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="outline">
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      aria-label={t("editor.more_actions")}
+                    >
                       <PiDotsThreeBold />
                     </Button>
                   </DropdownMenuTrigger>
