@@ -9,6 +9,11 @@ from django.contrib.auth import get_user_model
 from django.core import checks
 
 from . import formats
+from .actions import (
+    BULK_ACTION_PERMISSIONS,
+    DELETE_ACTION_ID,
+    declared_bulk_actions,
+)
 from .admin import AdminSerializer, is_computed_column, iter_components
 from .form import Field, TableColumn
 from .settings import cs_settings
@@ -202,6 +207,70 @@ def _field_names(fields) -> set[str]:
     return {field.name for field in fields if isinstance(field, Field)}
 
 
+def bulk_action_errors(studio) -> list[tuple[str, str]]:
+    """
+    Misconfigured bulk actions, as (check id, message) pairs. An
+    explicit actions list must name the built-in delete or a declared
+    @bulk_action method (and each name only once); declared actions may
+    not shadow the built-in delete or list unknown permissions.
+    """
+    errors = []
+    declared = declared_bulk_actions(studio)
+    actions = getattr(studio, "actions", None)
+
+    if name := next((name for name in declared if name == DELETE_ACTION_ID), None):
+        errors.append(
+            (
+                "content_studio.E007",
+                f"{studio.__class__.__name__}.bulk action {name!r} shadows "
+                "the built-in delete action; give it another name.",
+            )
+        )
+
+    if actions is not None:
+        seen = set()
+
+        for name in actions:
+            if name != DELETE_ACTION_ID and name not in declared:
+                errors.append(
+                    (
+                        "content_studio.E007",
+                        f"{studio.__class__.__name__}.actions contains "
+                        f"{name!r}, which is not a @bulk_action method "
+                        "(or the built-in delete).",
+                    )
+                )
+
+            if name in seen:
+                errors.append(
+                    (
+                        "content_studio.E007",
+                        f"{studio.__class__.__name__}.actions contains "
+                        f"{name!r} more than once.",
+                    )
+                )
+            seen.add(name)
+
+    for name, handler in declared.items():
+        unknown = [
+            permission
+            for permission in handler.bulk_action.allowed_permissions
+            if permission not in BULK_ACTION_PERMISSIONS
+        ]
+
+        if unknown:
+            errors.append(
+                (
+                    "content_studio.E007",
+                    f"{studio.__class__.__name__}.bulk action {name!r} lists "
+                    f"unknown permission(s) {', '.join(unknown)}. Available: "
+                    f"{', '.join(BULK_ACTION_PERMISSIONS)}.",
+                )
+            )
+
+    return errors
+
+
 def list_config_errors(studio) -> list[tuple[str, str]]:
     """
     Misconfigured list pages, as (check id, message) pairs. Content
@@ -307,6 +376,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in table_column_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in bulk_action_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, warning in edit_field_warnings(studio):

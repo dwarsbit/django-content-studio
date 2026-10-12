@@ -9,11 +9,17 @@ import type { Model, ModelField, PaginatedResponse, Resource } from "@/types";
 import { FieldType, FieldWidget } from "@/types";
 
 const httpGetMock = vi.hoisted(() => vi.fn());
+const httpPostMock = vi.hoisted(() => vi.fn());
 const useDiscoverMock = vi.hoisted(() => vi.fn());
 const useAdminInfoMock = vi.hoisted(() => vi.fn());
+const confirmMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/hooks/use-http", () => ({
-  useHttp: () => ({ get: httpGetMock }),
+  useHttp: () => ({ get: httpGetMock, post: httpPostMock }),
+}));
+
+vi.mock("@/hooks/use-confirm-dialog", () => ({
+  default: () => confirmMock,
 }));
 
 vi.mock("@/hooks/use-discover", () => ({
@@ -117,6 +123,7 @@ function makeModel(overrides: ModelOverrides = {}): Model {
         search: true,
         filter: [],
         sortable_by: null,
+        actions: [],
         ...overrides.list,
       },
       edit: { main: [], sidebar: [], inlines: [] },
@@ -501,5 +508,102 @@ describe("ModelListPage views", () => {
     renderListPage(makeModel(), "/content/testapp.article?view=list");
 
     expect(await screen.findByText("Title")).toBeInTheDocument();
+  });
+});
+
+describe("bulk actions", () => {
+  const makeActions = () => [
+    {
+      id: "delete",
+      label: "Delete",
+      icon: null,
+      confirm: "Delete the selected items?",
+      destructive: true,
+    },
+    {
+      id: "publish",
+      label: "Publish",
+      icon: null,
+      confirm: null,
+      destructive: false,
+    },
+  ];
+
+  beforeEach(() => {
+    httpGetMock.mockReset();
+    httpGetMock.mockResolvedValue({ data: makePaginated(articles) });
+    useAdminInfoMock.mockReturnValue({ data: undefined });
+    confirmMock.mockReset();
+  });
+
+  it("renders no checkboxes without actions", async () => {
+    renderListPage(makeModel());
+
+    await screen.findByText("First Article");
+
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it("shows a checkbox column and the bulk bar while selecting", async () => {
+    const user = userEvent.setup();
+    renderListPage(makeModel({ list: { actions: makeActions() } }));
+
+    // A select-all checkbox plus one per row.
+    expect(await screen.findAllByRole("checkbox")).toHaveLength(3);
+
+    await user.click(screen.getAllByRole("checkbox")[1]);
+
+    expect(screen.getByText("bulk.selected")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Publish" })).toBeInTheDocument();
+  });
+
+  it("runs the selected action on the selected ids and clears the bar", async () => {
+    const user = userEvent.setup();
+    httpPostMock.mockResolvedValue({ data: { count: 1 } });
+    renderListPage(makeModel({ list: { actions: makeActions() } }));
+
+    await screen.findByText("First Article");
+    await user.click(screen.getAllByRole("checkbox")[1]);
+    await user.click(screen.getByRole("button", { name: "Publish" }));
+
+    await waitFor(() =>
+      expect(httpPostMock).toHaveBeenCalledWith(
+        "/content/testapp.article/bulk",
+        { action: "publish", ids: ["1"] },
+      ),
+    );
+
+    expect(await screen.findByText("First Article")).toBeInTheDocument();
+    expect(screen.queryByText("bulk.selected")).not.toBeInTheDocument();
+  });
+
+  it("asks for confirmation before destructive actions", async () => {
+    const user = userEvent.setup();
+    confirmMock.mockResolvedValue(false);
+    renderListPage(makeModel({ list: { actions: makeActions() } }));
+
+    await screen.findByText("First Article");
+    await user.click(screen.getAllByRole("checkbox")[1]);
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(await waitFor(() => confirmMock.mock.calls.length > 0));
+    expect(confirmMock).toHaveBeenCalledWith({
+      description: "Delete the selected items?",
+    });
+    expect(httpPostMock).not.toHaveBeenCalled();
+  });
+
+  it("selects all rows through the header checkbox", async () => {
+    const user = userEvent.setup();
+    renderListPage(makeModel({ list: { actions: makeActions() } }));
+
+    await screen.findByText("First Article");
+    await user.click(screen.getAllByRole("checkbox")[0]);
+
+    const checked = screen
+      .getAllByRole("checkbox")
+      .map((checkbox) => (checkbox as HTMLInputElement).dataset.state);
+
+    expect(checked).toEqual(["checked", "checked", "checked"]);
   });
 });

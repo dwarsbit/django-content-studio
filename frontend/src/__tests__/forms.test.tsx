@@ -132,6 +132,7 @@ function makeModel(
         search: false,
         filter: [],
         sortable_by: null,
+        actions: [],
       },
       edit: {
         main: overrides.main ?? [

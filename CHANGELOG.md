@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **Bulk actions on the table view.** Model studios can declare batch
+  operations with the `@bulk_action` decorator (`label`, `icon`,
+  `confirm`, `allowed_permissions`, `destructive`); the built-in delete
+  is offered by default, gated on delete permission, and deletes
+  through Django's Collector so deletion signals fire like the classic
+  admin. The `actions` attribute selects what is offered (None = delete
+  plus every declared action, [] disables them, an explicit list picks
+  exactly those names). Selecting rows in the table view shows a bulk
+  bar; selection is per page and the actions run through one endpoint,
+  permission-filtered per user and tenant-scoped like any list.
+  Misconfigurations are reported by the `content_studio.E007` system
+  check.
 - **The content editor is a route, not a dialog.** Objects open at
   `/content/<model>/<id>`, creation at `/content/<model>/new` and
   singletons on the model's index route — editor URLs are deep-linkable,

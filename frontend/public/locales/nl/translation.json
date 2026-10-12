@@ -73,6 +73,14 @@
     "filter": "Filteren",
     "clear_all_filters": "Alle filters wissen"
   },
+  "bulk": {
+    "selected": "{{count}} geselecteerd",
+    "count": "Toegepast op {{count}} items",
+    "done": "Actie uitgevoerd",
+    "clear": "Selectie wissen",
+    "select_all": "Alles selecteren",
+    "select_row": "Rij selecteren"
+  },
   "media_library": {
     "title": "Mediabibliotheek",
     "description": "Beheer je media-bestanden hier.",

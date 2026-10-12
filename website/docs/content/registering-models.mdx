@@ -198,6 +198,55 @@ not the table columns. Passing an old-style list is reported by the
 for the columns.
 :::
 
+## Bulk actions
+
+The table view offers bulk actions: select rows (all on the page through
+the header checkbox) and pick an action from the bar that appears.
+Selection is per page — paging, filtering or sorting clears it.
+
+The built-in delete action is offered by default, to users with delete
+permission. Custom actions are declared on the studio with the
+`@bulk_action` decorator; like the classic admin, they receive the
+request and a queryset of the selected rows:
+
+```python
+from content_studio.actions import bulk_action
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    @bulk_action(
+        label="Publish",
+        icon="ph-bold ph-paper-plane-tilt",
+        confirm="Publish the selected articles?",
+        allowed_permissions=["change"],
+    )
+    def publish(self, request, queryset):
+        queryset.update(status=Article.Status.PUBLISHED)
+        return f"Published {queryset.count()} articles."
+```
+
+`label` defaults to the prettified method name, `icon` is a Phosphor
+class (like the model icon), `confirm` is shown before the action runs,
+and `allowed_permissions` gates the action on the model-level
+permissions it lists (any of them; everyone who can see the list when
+empty). The return value shapes the success message: an int reports a
+count, a string is shown as-is.
+
+The `actions` attribute selects what is offered: `None` (the default)
+is the built-in delete plus every declared action, an empty list
+disables bulk actions entirely, and an explicit list offers exactly
+those names in that order — with `"delete"` naming the built-in:
+
+```python
+actions = None                  # delete + every @bulk_action method
+actions = []                    # no bulk actions
+actions = ["publish", "delete"] # exactly these, in this order
+```
+
+Misconfigurations (unknown names, duplicates, shadowing the built-in
+delete) are reported by the `content_studio.E007` system check.
+
 ## Configuring the site
 
 The studio site is configured through the `CONTENT_STUDIO["ADMIN_SITE"]`

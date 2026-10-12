@@ -334,6 +334,7 @@ function ShowcaseWidget({
         search: false,
         filter: [],
         sortable_by: null,
+        actions: [],
       },
       edit: { main: [], sidebar: [], inlines: [] },
       permissions: {

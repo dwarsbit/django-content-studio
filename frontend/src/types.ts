@@ -106,6 +106,7 @@ export interface Model {
       search: boolean;
       filter: string[];
       sortable_by: string[] | null;
+      actions: BulkAction[];
     };
     edit: {
       main: FormSetGroup[];
@@ -128,6 +129,14 @@ export interface Model {
     };
   };
   fields: Record<string, ModelField>;
+}
+
+export interface BulkAction {
+  id: string;
+  label: string;
+  icon: string | null;
+  confirm: string | null;
+  destructive: boolean;
 }
 
 export interface ModelField {

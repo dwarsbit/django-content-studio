@@ -73,6 +73,14 @@
     "filter": "Filter",
     "clear_all_filters": "Clear all filters"
   },
+  "bulk": {
+    "selected": "{{count}} selected",
+    "count": "Applied to {{count}} items",
+    "done": "Action applied",
+    "clear": "Clear selection",
+    "select_all": "Select all",
+    "select_row": "Select row"
+  },
   "media_library": {
     "title": "Media library",
     "description": "Manage your media files here.",

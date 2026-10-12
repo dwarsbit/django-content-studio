@@ -16,12 +16,17 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from .actions import get_bulk_actions
 from .admin import get_relation_display_for
 from .filters import LookupFilter
 from .permissions import ModelStudioPermissions
 from .serializers import RelatedItemSerializer
 from .settings import cs_settings
-from .utils import get_tenant_field_name, validate_tenant_access
+from .utils import (
+    get_tenant_field_name,
+    get_tenant_scoped_queryset,
+    validate_tenant_access,
+)
 
 
 class BaseModelViewSet(ModelViewSet):
@@ -149,6 +154,43 @@ class BaseModelViewSet(ModelViewSet):
             raise NotFound()
 
         return component.handle_request(obj=self.get_object(), request=request)
+
+    @action(methods=["post"], detail=False, url_path="bulk")
+    def bulk(self, request):
+        """
+        Run a bulk action on the selected rows: {"action": id,
+        "ids": [...]}. The action resolves per request — permissions
+        included — and runs on a tenant-scoped queryset of the ids, like
+        any list. The handler's return value becomes the response: an
+        int is a count, a str a message.
+        """
+        action_id = request.data.get("action")
+        ids = request.data.get("ids")
+
+        if not action_id or not isinstance(ids, list) or not ids:
+            raise ValidationError(
+                "A bulk action requires an action and a non-empty ids list."
+            )
+
+        actions = {
+            action.id: action for action in get_bulk_actions(self._admin_model, request)
+        }
+        action = actions.get(action_id)
+
+        if action is None:
+            raise NotFound("Unknown or unauthorized bulk action.")
+
+        queryset = get_tenant_scoped_queryset(request, self._model).filter(pk__in=ids)
+
+        result = action.handler(request, queryset)
+
+        if isinstance(result, str):
+            return Response({"message": result})
+
+        if isinstance(result, int):
+            return Response({"count": result})
+
+        return Response({})
 
     @action(methods=["post"], detail=False, url_path="relations/(?P<field_name>[^/]+)")
     def get_related_objects(self, request, field_name):

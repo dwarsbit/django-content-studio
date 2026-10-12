@@ -1,4 +1,5 @@
 from content_studio import register
+from content_studio.actions import bulk_action
 from content_studio.admin import InlineModelStudio, ModelStudio
 from content_studio.form import FormSet, TableColumn
 
@@ -42,6 +43,15 @@ class ArticleAdmin(ModelStudio):
         ),
     ]
     edit_sidebar = ["published_at", "rating", "author"]
+
+    @bulk_action(
+        label="Publish",
+        icon="ph-bold ph-paper-plane-tilt",
+        allowed_permissions=["change"],
+    )
+    def publish(self, request, queryset):
+        count = queryset.update(status=Article.Status.PUBLISHED)
+        return f"Published {count} articles."
 
     def get_body_preview(self, obj, request):
         return obj.body[:50] if obj.body else ""

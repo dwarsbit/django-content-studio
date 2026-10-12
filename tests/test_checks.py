@@ -12,6 +12,7 @@ from django.core.checks.registry import registry
 from content_studio.admin import ModelStudio, admin_site
 from content_studio.checks import check_content_studio
 from content_studio.form import Component, FieldLayout, FormSet
+from tests.testapp.admin import ArticleAdmin
 from tests.testapp.models import Article
 
 
@@ -131,3 +132,98 @@ def test_components_do_not_count_as_edit_fields():
         messages = check_content_studio()
 
     assert any(m.id == "content_studio.W001" and "title" in str(m) for m in messages)
+
+
+def test_unknown_bulk_action_name_surfaces_as_system_error():
+    from content_studio.actions import bulk_action
+
+    class Broken(ArticleAdmin):
+        actions = ["publish", "nope"]
+
+    original = admin_site._registry.pop(Article)
+    admin_site._registry[Article] = Broken(Article, admin_site)
+
+    try:
+        messages = check_content_studio()
+    finally:
+        del admin_site._registry[Article]
+        admin_site._registry[Article] = original
+
+    error = next(m for m in messages if m.id == "content_studio.E007")
+
+    assert "nope" in str(error)
+    assert "testapp.article" in error.obj
+
+
+def test_duplicate_bulk_action_name_surfaces_as_system_error():
+    class Doubled(ArticleAdmin):
+        actions = ["publish", "publish"]
+
+    original = admin_site._registry.pop(Article)
+    admin_site._registry[Article] = Doubled(Article, admin_site)
+
+    try:
+        messages = check_content_studio()
+    finally:
+        del admin_site._registry[Article]
+        admin_site._registry[Article] = original
+
+    assert any(
+        m.id == "content_studio.E007" and "more than once" in str(m) for m in messages
+    )
+
+
+def test_delete_shadowing_bulk_action_surfaces_as_system_error():
+    from content_studio.actions import bulk_action
+
+    class Shadowing(ArticleAdmin):
+        @bulk_action
+        def delete(self, request, queryset):
+            pass
+
+    original = admin_site._registry.pop(Article)
+    admin_site._registry[Article] = Shadowing(Article, admin_site)
+
+    try:
+        messages = check_content_studio()
+    finally:
+        del admin_site._registry[Article]
+        admin_site._registry[Article] = original
+
+    assert any(m.id == "content_studio.E007" and "shadows" in str(m) for m in messages)
+
+
+def test_unknown_action_permission_surfaces_as_system_error():
+    from content_studio.actions import bulk_action
+
+    class WrongPermission(ArticleAdmin):
+        @bulk_action(allowed_permissions=["publish"])
+        def archive(self, request, queryset):
+            pass
+
+    original = admin_site._registry.pop(Article)
+    admin_site._registry[Article] = WrongPermission(Article, admin_site)
+
+    try:
+        messages = check_content_studio()
+    finally:
+        del admin_site._registry[Article]
+        admin_site._registry[Article] = original
+
+    assert any(
+        m.id == "content_studio.E007" and "unknown permission" in str(m)
+        for m in messages
+    )
+
+
+def test_clean_bulk_actions_produce_no_errors():
+    original = admin_site._registry.pop(Article)
+    admin_site._registry[Article] = ArticleAdmin(Article, admin_site)
+
+    try:
+        messages = check_content_studio()
+    finally:
+        del admin_site._registry[Article]
+        admin_site._registry[Article] = original
+
+    assert not [m for m in messages if m.id == "content_studio.E007"]

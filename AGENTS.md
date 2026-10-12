@@ -38,8 +38,9 @@ content_studio/
 ├── form.py              # Form and field definitions
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E006, W001)
+├── checks.py            # System checks (content_studio.E001-E007, W001)
 ├── utils.py             # Utility functions
+├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions
 ├── dashboard/

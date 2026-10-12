@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.request import HttpRequest
 
 from . import widgets, formats
+from .actions import get_bulk_actions
 from .exceptions import AlreadyRegistered, NotRegistered
 from .form import FormSet, FormSetGroup, Field, Component, TableColumn
 from .login_backends import LoginBackendManager
@@ -209,6 +210,12 @@ class ModelStudio(BaseStudio[T]):
 
     # Fields the list filters can filter on. Only string entries count.
     list_filter: list[str] = []
+
+    # The bulk actions offered on the table view: None (the default)
+    # offers the built-in delete plus every @bulk_action method, an
+    # empty list disables bulk actions entirely, and an explicit list
+    # offers exactly those names (with "delete" naming the built-in).
+    actions: Optional[list[str]] = None
 
     # The columns that may be sorted on; None allows all.
     sortable_by: Optional[list[str]] = None
@@ -661,6 +668,10 @@ class AdminSerializer:
                 "search": len(admin_class.search_fields) > 0,
                 "filter": admin_class.list_filter,
                 "sortable_by": admin_class.sortable_by,
+                "actions": [
+                    action.serialize()
+                    for action in get_bulk_actions(admin_class, request)
+                ],
             },
             "permissions": {
                 "add_permission": admin_class.has_add_permission(request),

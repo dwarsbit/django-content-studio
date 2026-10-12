@@ -7,6 +7,7 @@ configured in CONTENT_STUDIO (demo.blog.studio.admin_site).
 from content_studio import register
 from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
 from content_studio.form import FormSet
+from content_studio.actions import bulk_action
 
 from . import models
 
@@ -67,6 +68,17 @@ class ArticleAdmin(ModelStudio):
         ),
     ]
     edit_sidebar = ["published_at", "author"]
+
+    @bulk_action(
+        label="Publish",
+        icon="ph-bold ph-paper-plane-tilt",
+        confirm="...",
+        allowed_permissions=["change"],
+        destructive=False,
+    )
+    def publish(self, request, queryset):
+        queryset.update(status=models.Article.Status.PUBLISHED)
+        return f"Published {queryset.count()} articles."
 
 
 @register(models.SiteSettings)

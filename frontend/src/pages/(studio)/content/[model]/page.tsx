@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import * as R from "ramda";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PiFileTextBold, PiRowsBold, PiTableBold } from "react-icons/pi";
 import { Link, useParams, useSearchParams } from "react-router";
@@ -12,6 +13,7 @@ import { useHttp } from "@/hooks/use-http";
 import { cn } from "@/lib/utils";
 import type { PaginatedResponse, Resource } from "@/types";
 
+import { BulkBar } from "./_components/bulk-bar";
 import { Filters } from "./_components/filters";
 import { ListView } from "./_components/list-view";
 import { TableView } from "./_components/table-view";
@@ -48,6 +50,36 @@ export function ModelListPage() {
           : result,
       {},
     );
+
+  // Selection is current-page: any URL change (page, filter, search,
+  // ordering, view) resets it — during render, the sanctioned way to
+  // adjust state to an external change.
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [lastParams, setLastParams] = useState(searchParams);
+
+  if (searchParams !== lastParams) {
+    setLastParams(searchParams);
+    setSelected(new Set());
+  }
+
+  const toggle = (id: string) =>
+    setSelected((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+
+  const toggleAll = (ids: string[]) =>
+    setSelected((previous) =>
+      ids.every((id) => previous.has(id)) ? new Set() : new Set(ids),
+    );
+
+  const clearSelection = () => setSelected(new Set());
+  const actions = model?.admin.list.actions ?? [];
 
   const { data } = useQuery({
     retry: false,
@@ -98,46 +130,63 @@ export function ModelListPage() {
 
       <div className="px-8 py-6 space-y-4 w-full max-w-[1128px] mx-auto">
         <div className="flex gap-3 items-center justify-between">
-          <Filters model={model} />
-          {views.length > 1 && (
-            <div className="flex items-center gap-1 rounded-lg border p-1">
-              {views.includes("table") && (
-                <button
-                  type="button"
-                  title={t("list_view.table_view")}
-                  onClick={() => setSearchParams(setView("table"))}
-                  className={cn(
-                    "flex items-center justify-center size-6 rounded-md cursor-pointer",
-                    view === "table"
-                      ? "bg-foreground/10"
-                      : "hover:bg-foreground/5 text-muted-foreground",
+          {view === "table" && selected.size > 0 && actions.length > 0 ? (
+            <BulkBar
+              modelLabel={model.label}
+              actions={actions}
+              ids={Array.from(selected)}
+              onDone={clearSelection}
+            />
+          ) : (
+            <>
+              <Filters model={model} />
+              {views.length > 1 && (
+                <div className="flex items-center gap-1 rounded-lg border p-1">
+                  {views.includes("table") && (
+                    <button
+                      type="button"
+                      title={t("list_view.table_view")}
+                      onClick={() => setSearchParams(setView("table"))}
+                      className={cn(
+                        "flex items-center justify-center size-6 rounded-md cursor-pointer",
+                        view === "table"
+                          ? "bg-foreground/10"
+                          : "hover:bg-foreground/5 text-muted-foreground",
+                      )}
+                    >
+                      <PiTableBold />
+                    </button>
                   )}
-                >
-                  <PiTableBold />
-                </button>
-              )}
-              {views.includes("list") && (
-                <button
-                  type="button"
-                  title={t("list_view.list_view")}
-                  onClick={() => setSearchParams(setView("list"))}
-                  className={cn(
-                    "flex items-center justify-center size-6 rounded-md cursor-pointer",
-                    view === "list"
-                      ? "bg-foreground/10"
-                      : "hover:bg-foreground/5 text-muted-foreground",
+                  {views.includes("list") && (
+                    <button
+                      type="button"
+                      title={t("list_view.list_view")}
+                      onClick={() => setSearchParams(setView("list"))}
+                      className={cn(
+                        "flex items-center justify-center size-6 rounded-md cursor-pointer",
+                        view === "list"
+                          ? "bg-foreground/10"
+                          : "hover:bg-foreground/5 text-muted-foreground",
+                      )}
+                    >
+                      <PiRowsBold />
+                    </button>
                   )}
-                >
-                  <PiRowsBold />
-                </button>
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
         {view === "list" ? (
           <ListView items={data.results} model={model} />
         ) : (
-          <TableView items={data.results} model={model} />
+          <TableView
+            items={data.results}
+            model={model}
+            selected={selected}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+          />
         )}
         <div className="flex items-center justify-center">
           <Pagination
