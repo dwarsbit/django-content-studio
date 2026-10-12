@@ -33,7 +33,7 @@ export function TenantSelector() {
     <Popover>
       <PopoverTrigger
         asChild
-        className="group w-full flex items-center justify-between gap-2 rounded-md hover:bg-gray-100 data-[state=open]:bg-gray-100 hover:cursor-pointer"
+        className="group w-full flex items-center justify-between gap-2 rounded-md hover:bg-accent data-[state=open]:bg-accent hover:cursor-pointer"
       >
         <div>
           {tenant && (
@@ -41,12 +41,12 @@ export function TenantSelector() {
               <Avatar className="size-7 shrink-0">
                 <AvatarFallback>{tenant.__str__[0]}</AvatarFallback>
               </Avatar>
-              <div className="flex-1 max-w-[84px] text-left font-semibold text-gray-900 truncate">
+              <div className="flex-1 max-w-[84px] text-left font-semibold text-foreground truncate">
                 {tenant.__str__}
               </div>
               {tenantModel?.admin.permissions.change_permission && (
                 <button
-                  className="p-1 hover:bg-gray-200 cursor-pointer rounded"
+                  className="p-1 hover:bg-accent cursor-pointer rounded"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/content/${tenantModel.label}/${tenant.id}`);
@@ -57,7 +57,7 @@ export function TenantSelector() {
               )}
             </>
           )}
-          <div className="p-1 group-hover:bg-gray-200 group-data-[state=open]:bg-gray-300 rounded">
+          <div className="p-1 group-hover:bg-accent group-data-[state=open]:bg-accent rounded">
             <PiCaretUpDownBold />
           </div>
         </div>

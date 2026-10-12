@@ -72,8 +72,8 @@ export function ItemCard({
               className="rounded aspect-square object-cover"
             />
           ) : (
-            <div className="rounded aspect-square w-full bg-gray-200 items-center justify-center flex">
-              <PiFileBold className="size-5 text-gray-400" />
+            <div className="rounded aspect-square w-full bg-muted items-center justify-center flex">
+              <PiFileBold className="size-5 text-muted-foreground" />
             </div>
           )}
           <div className="pt-2 font-medium mb-2 line-clamp-1 break-all text-left">
@@ -97,7 +97,7 @@ export function ItemCard({
             >
               {t(`media_library.file_types.${item.type}`)}
             </div>
-            <div className="text-sm font-medium text-gray-400">
+            <div className="text-sm font-medium text-muted-foreground">
               {!R.isNil(item.size) && bytes(item.size * 1000)}
             </div>
           </div>

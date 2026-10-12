@@ -28,10 +28,10 @@ export function ForgotPassword() {
 
   return (
     <div className="w-full max-w-md flex-1 flex flex-col items-center justify-center">
-      <h1 className="text-xl font-bold text-gray-700 text-center">
+      <h1 className="text-xl font-bold text-foreground text-center">
         {t("forgot_password.title")}
       </h1>
-      <div className="text-gray-500 text-center mb-12">
+      <div className="text-muted-foreground text-center mb-12">
         {t("forgot_password.subtitle")}
       </div>
       {error && (
@@ -41,9 +41,9 @@ export function ForgotPassword() {
           </AlertDescription>
         </Alert>
       )}
-      <form className="border border-gray-300 rounded-lg bg-background p-4 w-full shadow-sm shadow-gray-900/5">
+      <form className="border border-border rounded-lg bg-background p-4 w-full shadow-sm shadow-foreground/5">
         <div className="relative flex items-center mb-4">
-          <PiEnvelopeBold className="size-4 stroke-gray-400 absolute left-3" />
+          <PiEnvelopeBold className="size-4 stroke-muted-foreground absolute left-3" />
           <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}

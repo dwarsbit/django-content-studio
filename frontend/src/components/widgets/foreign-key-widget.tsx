@@ -61,7 +61,7 @@ export function ForeignKeyWidget({
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="w-full font-medium text-gray-700 flex items-center justify-between text-left border border-gray-300 hover:border-gray-400 cursor-pointer rounded-md px-3 h-8 select-none">
+      <PopoverTrigger className="w-full font-medium text-foreground flex items-center justify-between text-left border border-border hover:border-ring cursor-pointer rounded-md px-3 h-8 select-none">
         <div className="flex-1 flex items-center gap-2 min-w-0">
           <RelationGlyph
             avatar={value?.avatar}
@@ -75,7 +75,7 @@ export function ForeignKeyWidget({
         <FiChevronDown className="size-4 opacity-50" />
       </PopoverTrigger>
       <PopoverContent className="max-h-[400px] w-[var(--radix-popover-trigger-width)] overflow-hidden p-0 flex flex-col">
-        <div className="border-b border-gray-300">
+        <div className="border-b border-border">
           <Input
             autoFocus
             placeholder={t("common.search")}

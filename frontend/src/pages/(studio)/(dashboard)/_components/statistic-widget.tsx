@@ -33,13 +33,13 @@ export function StatisticWidget({ widget }: { widget: DashboardWidget }) {
       {data && (
         <div>
           <div className="flex items-center justify-between">
-            <h2 className="text-gray-400 truncate">{data.title}</h2>
+            <h2 className="text-muted-foreground truncate">{data.title}</h2>
             {numTrend! > 0 && (
               <Badge
                 variant="outline"
                 className={cn({
-                  "text-emerald-500": data.trend_sentiment === "positive",
-                  "text-rose-500": data.trend_sentiment === "negative",
+                  "text-success": data.trend_sentiment === "positive",
+                  "text-destructive": data.trend_sentiment === "negative",
                 })}
               >
                 {numTrend! < 0 ? <PiTrendDownBold /> : <PiTrendUpBold />}
@@ -48,7 +48,7 @@ export function StatisticWidget({ widget }: { widget: DashboardWidget }) {
             )}
           </div>
 
-          <div className="text-gray-800 mb-6 font-semibold text-3xl">
+          <div className="text-foreground mb-6 font-semibold text-3xl">
             <span>{data.prefix}</span>
             <span>{data.value}</span>
             <span>{data.suffix}</span>

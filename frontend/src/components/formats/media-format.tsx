@@ -23,7 +23,7 @@ export function MediaFormat({ value }: { value: unknown }) {
       alt=""
     />
   ) : (
-    <div className="size-8 rounded flex items-center justify-center bg-gray-200 shrink-0">
+    <div className="size-8 rounded flex items-center justify-center bg-muted shrink-0">
       {value.type === "file" && (
         <span>
           <PiFileBold />

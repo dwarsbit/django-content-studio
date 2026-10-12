@@ -47,7 +47,7 @@ function TableRow({
       onClick={onClick}
       className={cn(
         {
-          "hover:bg-foreground/3 data-[state=selected]:bg-foreground/3 [&_td]:cursor-pointer border-b last-of-type:border-b-0":
+          "hover:bg-muted data-[state=selected]:bg-accent [&_td]:cursor-pointer border-b last-of-type:border-b-0":
             onClick,
         },
         className,

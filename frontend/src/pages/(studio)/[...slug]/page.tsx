@@ -17,7 +17,7 @@ export function CatchAllPage() {
   return iframePage ? (
     <iframe src={iframePage.config.iframe_url} className="flex-1" />
   ) : (
-    <div className="flex-1 bg-white flex items-center justify-center">
+    <div className="flex-1 bg-background flex items-center justify-center">
       <span className="select-none">{t("app.not_found")}</span>
     </div>
   );

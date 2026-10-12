@@ -137,7 +137,7 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
           >
             {!collapsed && adminInfo && !tenant && (
               <>
-                <div className="bg-gradient-to-tl from-gray-900 to-gray-600 size-5 rounded flex items-center justify-center text-white font-black shrink-0">
+                <div className="bg-gradient-to-tl from-gray-900 to-gray-600 size-5 rounded flex items-center justify-center text-gray-50 font-black shrink-0">
                   {adminInfo.site_header[0]}
                 </div>
                 <h2 className="line-clamp-1 break-all text-base font-semibold text-foreground flex-1">
@@ -166,7 +166,7 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
               onClick={onOpenPalette}
               title={t("palette.open")}
               className={cn(
-                "w-full flex items-center gap-2 rounded-md border bg-background h-8 px-2.5 text-sm text-muted-foreground hover:border-gray-400 hover:text-foreground cursor-pointer select-none",
+                "w-full flex items-center gap-2 rounded-md border bg-background h-8 px-2.5 text-sm text-muted-foreground hover:border-ring hover:text-foreground cursor-pointer select-none",
                 collapsed && "justify-center px-0",
               )}
             >
@@ -247,7 +247,7 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
 
 const COLORS: Record<TailwindColor, string> = {
   slate: "bg-slate-200 text-slate-600",
-  gray: "bg-gray-200 text-gray-600",
+  gray: "bg-muted text-muted-foreground",
   zinc: "bg-zinc-200 text-zinc-600",
   neutral: "bg-neutral-200 text-neutral-600",
   stone: "bg-stone-200 text-stone-600",
@@ -300,9 +300,9 @@ function MenuItem({
       // @ts-expect-error due to mixed component
       to={to ?? undefined}
       className={cn(
-        "relative group flex items-center w-full font-medium gap-2.5 h-8 px-2 hover:bg-foreground/5 rounded hover:cursor-pointer",
+        "relative group flex items-center w-full font-medium gap-2.5 h-8 px-2 hover:bg-accent rounded hover:cursor-pointer",
         {
-          "bg-foreground/5": !R.isNil(to) && match,
+          "bg-accent": !R.isNil(to) && match,
           "justify-center": menuCollapsed,
         },
       )}
@@ -333,7 +333,7 @@ function MenuItem({
             {label}
           </span>
           {children ? (
-            <div className="group-hover:bg-foreground/5 p-1 rounded">
+            <div className="group-hover:bg-accent p-1 rounded">
               {expanded ? <PiCaretDownBold /> : <PiCaretRightBold />}
             </div>
           ) : null}
@@ -433,7 +433,7 @@ function UserMenu() {
                 <div className="text-xs font-medium text-foreground text-center">
                   {adminInfo.site_title}
                 </div>
-                <div className="text-xs font-medium text-gray-400 text-center">{`v${adminInfo.version}`}</div>
+                <div className="text-xs font-medium text-muted-foreground text-center">{`v${adminInfo.version}`}</div>
               </div>
             )}
           </DropdownMenuContent>

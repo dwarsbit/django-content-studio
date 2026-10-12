@@ -107,7 +107,7 @@ export function TenantSetupPage() {
             </div>
           </div>
         ) : (
-          <div className="max-w-prose text-center text-amber-500 bg-amber-50 p-3 rounded-md font-medium leading-snug">
+          <div className="max-w-prose text-center text-warning bg-warning/10 p-3 rounded-md font-medium leading-snug">
             {t("tenant.setup.model_not_found", {
               tenant: tenantModel.verbose_name,
             })}

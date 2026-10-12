@@ -43,14 +43,14 @@ export function DateTimeWidget({
         }
       }}
     >
-      <PopoverTrigger className="h-8 border border-gray-300 hover:border-gray-400 data-[state=open]:border-gray-400 px-3 rounded-md flex items-center select-none cursor-pointer">
+      <PopoverTrigger className="h-8 border border-border hover:border-ring data-[state=open]:border-ring px-3 rounded-md flex items-center select-none cursor-pointer">
         <div className="flex-1 text-left">
           {date$ ? (
-            <span className="text-gray-700 font-medium">
+            <span className="text-foreground font-medium">
               {date$.format("ll LT")}
             </span>
           ) : (
-            <span className="text-gray-400">
+            <span className="text-muted-foreground">
               {t("widgets.date_picker.placeholder")}
             </span>
           )}

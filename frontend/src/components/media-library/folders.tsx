@@ -108,7 +108,7 @@ function Folder({
         <ContextMenu>
           <ContextMenuTrigger asChild>
             <button
-              className="w-full text-left group font-medium text-sm px-4 py-0.5 flex items-center gap-2 hover:bg-foreground/10 rounded-md data-[state=open]:bg-gray-100"
+              className="w-full text-left group font-medium text-sm px-4 py-0.5 flex items-center gap-2 hover:bg-foreground/10 rounded-md data-[state=open]:bg-accent"
               onClick={onSelect}
             >
               <span className="size-5 bg-blue-50 p-px rounded flex items-center justify-center text-blue-500">

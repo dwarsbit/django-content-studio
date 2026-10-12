@@ -32,7 +32,7 @@ export function ManyMediaWidget({
           </Avatar>
           {!field.readonly && (
             <button
-              className="absolute bg-white/50 rounded p-3 left-1/2 -translate-x-1/2 invisible group-hover:visible"
+              className="absolute bg-background/90 text-foreground rounded p-3 left-1/2 -translate-x-1/2 invisible group-hover:visible"
               onClick={(e) => {
                 e.preventDefault();
                 onChange?.(R.reject(R.whereEq({ id: item.id }), value));
@@ -50,7 +50,7 @@ export function ManyMediaWidget({
           onChange?.([...(value ?? []), ...(Array.isArray(v) ? v : [v])])
         }
       >
-        <button className="cursor-pointer aspect-square flex flex-col gap-1 items-center justify-center border border-dashed border-stone-300 hover:border-stone-400 text-stone-400 text-center text-sm font-medium rounded-md p-1">
+        <button className="cursor-pointer aspect-square flex flex-col gap-1 items-center justify-center border border-dashed border-border hover:border-ring text-muted-foreground text-center text-sm font-medium rounded-md p-1">
           <PiImage className="size-6" />
           {t("widgets.media_widget.select_media")}
         </button>

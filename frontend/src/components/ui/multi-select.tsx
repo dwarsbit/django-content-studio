@@ -462,7 +462,7 @@ const MultiSelect = React.forwardRef<
       >
         <div
           className={cn(
-            "flex w-full items-center justify-between gap-1 rounded-md border bg-background hover:border-gray-400 focus-within:border-gray-400 min-h-8 px-3 py-1",
+            "flex w-full items-center justify-between gap-1 rounded-md border bg-background hover:border-ring focus-within:border-ring min-h-8 px-3 py-1",
             {
               "cursor-text": !disabled && selected.length !== 0,
             },
@@ -505,7 +505,7 @@ const MultiSelect = React.forwardRef<
                     }}
                     onClick={() => handleUnselect(option)}
                   >
-                    <PiXBold className="size-3 text-gray-400" />
+                    <PiXBold className="size-3 text-muted-foreground" />
                   </button>
                 </Badge>
               );
@@ -560,7 +560,7 @@ const MultiSelect = React.forwardRef<
                 "hidden",
             )}
           >
-            <PiXBold className="size-3 text-gray-500" />
+            <PiXBold className="size-3 text-muted-foreground" />
           </button>
           <PiCaretDownBold
             className={cn(
@@ -576,7 +576,7 @@ const MultiSelect = React.forwardRef<
         <div className="relative">
           {open && (
             <CommandList
-              className="absolute top-1 z-10 w-full rounded-md border border-gray-300 bg-popover text-popover-foreground shadow-md shadow-gray-900/5 outline-none"
+              className="absolute top-1 z-10 w-full rounded-md border border-border bg-popover text-popover-foreground shadow-md shadow-foreground/5 outline-none"
               onMouseLeave={() => {
                 setOnScrollbar(false);
               }}

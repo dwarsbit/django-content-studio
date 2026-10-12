@@ -21,7 +21,7 @@ export function ListView({
   const navigate = useNavigate();
 
   return (
-    <div className="w-full flex-1 border rounded-lg">
+    <div className="w-full flex-1 border rounded-lg overflow-hidden">
       {items.length === 0 && (
         <div className="text-center py-12">
           <span className="font-normal text-muted-foreground">
@@ -38,7 +38,7 @@ export function ListView({
             onClick={() => navigate(`/content/${model.label}/${item.id}`)}
             className={cn(
               "flex items-center gap-4 px-8 py-3 border-b select-none",
-              "hover:bg-foreground/5 cursor-pointer last:border-b-0",
+              "hover:bg-muted cursor-pointer last:border-b-0",
             )}
           >
             <div className="flex-1 min-w-0">

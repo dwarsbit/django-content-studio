@@ -5,6 +5,20 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* The gray scale rides on the theme's mauve family (oklch hue
+     ~320–326, like every other token below): Tailwind's stock gray
+     leans blue and reads as a different palette. */
+  --color-gray-50: oklch(0.985 0.002 325.6);
+  --color-gray-100: oklch(0.96 0.003 325.6);
+  --color-gray-200: oklch(0.922 0.005 325.62);
+  --color-gray-300: oklch(0.87 0.007 324.5);
+  --color-gray-400: oklch(0.711 0.019 323.02);
+  --color-gray-500: oklch(0.542 0.034 322.5);
+  --color-gray-600: oklch(0.435 0.029 321.78);
+  --color-gray-700: oklch(0.364 0.029 323.89);
+  --color-gray-800: oklch(0.263 0.024 320.12);
+  --color-gray-900: oklch(0.212 0.019 322.12);
+  --color-gray-950: oklch(0.145 0.008 326);
   --font-heading: var(--font-sans);
   --font-sans: "Geist Variable", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -24,6 +38,8 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -56,13 +72,17 @@
   --popover-foreground: oklch(0.145 0.008 326);
   --primary: oklch(0.212 0.019 322.12);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.96 0.003 325.6);
+  --secondary: oklch(0.922 0.005 325.62);
   --secondary-foreground: oklch(0.212 0.019 322.12);
-  --muted: oklch(0.96 0.003 325.6);
+  --muted: oklch(0.985 0.002 325.6);
   --muted-foreground: oklch(0.542 0.034 322.5);
   --accent: oklch(0.96 0.003 325.6);
   --accent-foreground: oklch(0.212 0.019 322.12);
   --destructive: oklch(0.577 0.245 27.325);
+  /* Status colors: saturated in light mode, lightened on dark
+     backgrounds like destructive. */
+  --success: oklch(0.627 0.194 149.214);
+  --warning: oklch(0.666 0.179 58.318);
   --border: oklch(0.922 0.005 325.62);
   --input: oklch(0.922 0.005 325.62);
   --ring: oklch(0.711 0.019 323.02);
@@ -98,6 +118,8 @@
   --accent: oklch(0.263 0.024 320.12);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.792 0.155 152.935);
+  --warning: oklch(0.828 0.189 84.429);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.542 0.034 322.5);
@@ -128,7 +150,8 @@
     @apply cursor-pointer;
   }
   .scrollbar {
-    --scrollbar-foreground: rgba(0, 0, 0, 0.1);
+    /* The theme's border token: visible on light and dark alike. */
+    --scrollbar-foreground: var(--border);
     --scrollbar-background: transparent;
     /* Foreground, Background */
     scrollbar-color: var(--scrollbar-foreground) var(--scrollbar-background);
@@ -144,7 +167,7 @@
       border-radius: 40px;
     }
     &::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.25);
+      background: color-mix(in oklab, var(--foreground) 30%, transparent);
     }
     &::-webkit-scrollbar-track {
       /* Background */

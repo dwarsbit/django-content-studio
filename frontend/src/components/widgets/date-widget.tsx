@@ -32,14 +32,14 @@ export function DateWidget({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="h-8 border border-gray-300 hover:border-gray-400 px-3 rounded-md cursor-pointer data-[state=open]:border-gray-400 flex items-center select-none">
+      <PopoverTrigger className="h-8 border border-border hover:border-ring px-3 rounded-md cursor-pointer data-[state=open]:border-ring flex items-center select-none">
         <div className="flex-1 text-left">
           {date$ ? (
-            <span className="text-gray-700 font-medium">
+            <span className="text-foreground font-medium">
               {date$.format("ll")}
             </span>
           ) : (
-            <span className="text-gray-400">
+            <span className="text-muted-foreground">
               {t("widgets.date_picker.placeholder")}
             </span>
           )}

@@ -30,7 +30,7 @@ export function Filters({
         />
         <InputGroupAddon align="inline-end">
           <InputGroupButton
-            className={cn({ "bg-gray-100": filters.searchInFolder })}
+            className={cn({ "bg-accent": filters.searchInFolder })}
             onClick={() =>
               onFilterChange(
                 R.assoc("searchInFolder", !filters.searchInFolder, filters),

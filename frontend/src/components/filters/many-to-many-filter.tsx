@@ -98,7 +98,7 @@ export function ManyToManyFilter({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="h-8 font-medium text-gray-700 gap-2"
+          className="h-8 font-medium text-foreground gap-2"
         >
           {field.verbose_name}
           <span className="font-normal text-muted-foreground empty:hidden">
@@ -119,7 +119,7 @@ export function ManyToManyFilter({
         className="max-h-[400px] w-[var(--radix-popover-trigger-width)] overflow-hidden p-0 flex flex-col"
         align="start"
       >
-        <div className="border-b border-gray-300">
+        <div className="border-b border-border">
           <Input
             autoFocus
             placeholder={t("common.search")}
@@ -160,7 +160,7 @@ export function ManyToManyFilter({
           </CommandList>
         </Command>
         {selected.length > 0 && (
-          <div className="border-t border-gray-300 p-2">
+          <div className="border-t border-border p-2">
             <button
               type="button"
               className="w-full text-sm text-muted-foreground hover:text-foreground rounded-sm py-1 cursor-pointer"

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Theme colors only, and new status tokens.** The interface no
+  longer uses raw palette colors: every surface rides on the theme's
+  tokens, which fixes several dark mode gaps (the FK and date widget
+  triggers, selects, menus, the scrollbar, tooltips and overlays now
+  flip correctly). The gray scale is redefined on the theme's mauve
+  family instead of Tailwind's blue-leaning default, and a `success`
+  and a `warning` token join `destructive` — saturated in light mode,
+  lightened in dark — carrying the dashboard's trend and status
+  colors. A dark mode e2e spec pins the computed colors so raw palette
+  values cannot creep back in.
 - **Command palette with global search.** ⌘K (or Ctrl K, or the search
   button on the main menu) opens a palette over the whole studio:
   jump to the dashboard, the media library or any model you may view,

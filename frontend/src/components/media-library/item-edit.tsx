@@ -84,7 +84,7 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
   return (
     <Form {...form}>
       <div className="flex">
-        <div className="w-96 p-6 bg-gray-200 rounded-l-lg flex items-center">
+        <div className="w-96 p-6 bg-muted rounded-l-lg flex items-center">
           <FormField
             control={form.control}
             name="crop"

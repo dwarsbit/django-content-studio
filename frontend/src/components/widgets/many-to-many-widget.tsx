@@ -79,7 +79,7 @@ export function ManyToManyWidget({
         <div
           role="combobox"
           tabIndex={0}
-          className="w-full min-h-8 flex flex-wrap items-center gap-1 rounded-md border bg-background hover:border-gray-400 focus-within:border-gray-400 cursor-pointer text-left px-3 py-1 select-none"
+          className="w-full min-h-8 flex flex-wrap items-center gap-1 rounded-md border bg-background hover:border-ring focus-within:border-ring cursor-pointer text-left px-3 py-1 select-none"
         >
           {value.map((option) => (
             <Badge
@@ -115,7 +115,7 @@ export function ManyToManyWidget({
         </div>
       </PopoverTrigger>
       <PopoverContent className="max-h-[400px] w-[var(--radix-popover-trigger-width)] overflow-hidden p-0 flex flex-col">
-        <div className="border-b border-gray-300">
+        <div className="border-b border-border">
           <Input
             autoFocus
             placeholder={t("common.search")}

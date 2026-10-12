@@ -71,7 +71,7 @@ export function ForeignKeyFormat({
           text="text-[10px]"
         />
       ) : model?.admin.icon ? (
-        <span className={cn(model.admin.icon, "text-gray-500")} />
+        <span className={cn(model.admin.icon, "text-muted-foreground")} />
       ) : null}
       {value ? (label ?? String(value)) : "-"}
     </div>

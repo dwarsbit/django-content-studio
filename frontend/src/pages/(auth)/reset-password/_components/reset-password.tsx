@@ -71,10 +71,10 @@ export function ResetPassword() {
 
   return (
     <div className="w-full max-w-md flex-1 flex flex-col items-center justify-center">
-      <h1 className="text-xl font-bold text-gray-700 text-center">
+      <h1 className="text-xl font-bold text-foreground text-center">
         {t("reset_password.title")}
       </h1>
-      <div className="text-gray-500 text-center mb-12">
+      <div className="text-muted-foreground text-center mb-12">
         {t("reset_password.subtitle")}
       </div>
       {error && (
@@ -85,7 +85,7 @@ export function ResetPassword() {
         </Alert>
       )}
 
-      <form className="border border-gray-300 rounded-lg bg-background p-4 space-y-4 w-full shadow-sm shadow-gray-900/5">
+      <form className="border border-border rounded-lg bg-background p-4 space-y-4 w-full shadow-sm shadow-foreground/5">
         <div className="relative flex flex-col gap-3 items-center justify-center">
           <Label>{t("reset_password.enter_code")}</Label>
           <InputOTP
@@ -109,7 +109,7 @@ export function ResetPassword() {
         {validCode && (
           <>
             <div className="relative flex items-center mb-6">
-              <PiLockBold className="size-4 stroke-gray-400 absolute left-3" />
+              <PiLockBold className="size-4 stroke-muted-foreground absolute left-3" />
               <Input
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -132,9 +132,9 @@ export function ResetPassword() {
                 }}
               >
                 {passwordVisible ? (
-                  <PiEyeClosedBold className="size-4 stroke-gray-600" />
+                  <PiEyeClosedBold className="size-4 stroke-muted-foreground" />
                 ) : (
-                  <PiEyeBold className="size-4 stroke-gray-600" />
+                  <PiEyeBold className="size-4 stroke-muted-foreground" />
                 )}
               </button>
             </div>

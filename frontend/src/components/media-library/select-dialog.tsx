@@ -131,7 +131,7 @@ function SelectDialogContent({
                 key={item.id}
                 item={item}
                 className={cn("relative", {
-                  "border-gray-400": isSelected,
+                  "border-ring": isSelected,
                 })}
                 onClick={() => {
                   if (multiple) {
@@ -173,10 +173,10 @@ function SelectDialogContent({
               <img
                 src={item.thumbnail}
                 alt=""
-                className="size-10 rounded-md object-cover border-2 border-white"
+                className="size-10 rounded-md object-cover border-2 border-gray-50"
               />
             ) : (
-              <div className="size-10 bg-gray-100 rounded-md border-2 border-white" />
+              <div className="size-10 bg-accent rounded-md border-2 border-gray-50" />
             ),
           )}
         </div>
@@ -215,10 +215,10 @@ function DropzoneArea({
   return (
     <div {...getRootProps()} className="flex-1 flex flex-col overflow-hidden">
       {isDragActive && (
-        <div className="absolute left-0 right-0 bottom-0 top-0 flex items-center justify-center select-none z-20 bg-slate-900/40 rounded-md">
+        <div className="absolute left-0 right-0 bottom-0 top-0 flex items-center justify-center select-none z-20 bg-gray-950/40 rounded-md">
           <div className="relative rounded-lg border-dashed border aspect-square flex items-center justify-center p-12">
             <div className="rounded-lg border aspect-square animate-ping size-full absolute" />
-            <span className="text-white font-medium">
+            <span className="text-gray-50 font-medium">
               {t("widgets.media_widget.upload_label")}
             </span>
           </div>

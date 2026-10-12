@@ -67,7 +67,7 @@ function SingleMedia({
         />
       )}
 
-      <div className="absolute invisible group-hover:visible top-0 bottom-0 left-0 right-0 bg-slate-900/40  rounded-md flex items-center justify-center">
+      <div className="absolute invisible group-hover:visible top-0 bottom-0 left-0 right-0 bg-gray-950/40  rounded-md flex items-center justify-center">
         <div className="flex gap-2">
           <SelectDialog
             multiple={!!field.multiple}
@@ -123,7 +123,7 @@ function MultipleMedia({
           </Avatar>
           {!field.readonly && (
             <button
-              className="absolute bg-white/50 rounded p-3 left-1/2 -translate-x-1/2 invisible group-hover:visible"
+              className="absolute bg-background/90 text-foreground rounded p-3 left-1/2 -translate-x-1/2 invisible group-hover:visible"
               onClick={(e) => {
                 e.preventDefault();
                 onChange?.(R.reject(R.whereEq({ id: item.id }), value ?? []));
@@ -141,7 +141,7 @@ function MultipleMedia({
           onChange?.([...(value ?? []), ...(Array.isArray(v) ? v : [v])])
         }
       >
-        <button className="cursor-pointer aspect-square flex flex-col gap-1 items-center justify-center border border-dashed border-stone-300 hover:border-stone-400 text-stone-400 text-center text-sm font-medium rounded-md p-1">
+        <button className="cursor-pointer aspect-square flex flex-col gap-1 items-center justify-center border border-dashed border-border hover:border-ring text-muted-foreground text-center text-sm font-medium rounded-md p-1">
           <PiImage className="size-6" />
           {t("widgets.media_widget.select_media")}
         </button>

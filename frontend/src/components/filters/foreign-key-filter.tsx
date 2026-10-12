@@ -76,7 +76,7 @@ export function ForeignKeyFilter({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="h-8 font-medium text-gray-700 gap-2"
+          className="h-8 font-medium text-foreground gap-2"
         >
           {field.verbose_name}
           <span className="flex-1 flex items-center gap-2 min-w-0 empty:hidden font-normal text-muted-foreground">
@@ -96,7 +96,7 @@ export function ForeignKeyFilter({
         className="max-h-[400px] w-[var(--radix-popover-trigger-width)] overflow-hidden p-0 flex flex-col"
         align="start"
       >
-        <div className="border-b border-gray-300">
+        <div className="border-b border-border">
           <Input
             autoFocus
             placeholder={t("common.search")}
@@ -138,7 +138,7 @@ export function ForeignKeyFilter({
           </CommandList>
         </Command>
         {value && (
-          <div className="border-t border-gray-300 p-2">
+          <div className="border-t border-border p-2">
             <button
               type="button"
               className="w-full text-sm text-muted-foreground hover:text-foreground rounded-sm py-1 cursor-pointer"

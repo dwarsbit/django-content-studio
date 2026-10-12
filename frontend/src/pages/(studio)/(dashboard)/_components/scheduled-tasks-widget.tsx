@@ -51,11 +51,11 @@ export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
       ) : (
         <div>
           <div className="p-4">
-            <h2 className="font-medium text-gray-900">{data.title}</h2>
-            <div className="text-gray-500">{data.description}</div>
+            <h2 className="font-medium text-foreground">{data.title}</h2>
+            <div className="text-muted-foreground">{data.description}</div>
           </div>
           {R.isEmpty(data.tasks) ? (
-            <div className="py-12 text-center text-gray-400 select-none">
+            <div className="py-12 text-center text-muted-foreground select-none">
               {t("dashboard.widgets.scheduled_tasks.empty")}
             </div>
           ) : (
@@ -64,18 +64,20 @@ export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
                 <li key={idx} className="border-t p-4">
                   <div className="mb-1 flex items-start justify-between">
                     <div>
-                      <h4 className="text-gray-700">{task.title}</h4>
-                      <div className="text-gray-500">{task.description}</div>
+                      <h4 className="text-foreground">{task.title}</h4>
+                      <div className="text-muted-foreground">
+                        {task.description}
+                      </div>
                     </div>
 
                     <Badge
                       className={cn({
-                        "bg-emerald-100 text-emerald-500":
-                          task.status === "SUCCESS",
-                        "bg-rose-100 text-rose-500": task.status === "FAILURE",
-                        "bg-gray-100 text-gray-500":
+                        "bg-success/10 text-success": task.status === "SUCCESS",
+                        "bg-destructive/10 text-destructive":
+                          task.status === "FAILURE",
+                        "bg-accent text-muted-foreground":
                           task.status === "SCHEDULED",
-                        "bg-blue-100 text-blue-600": task.status === "RUNNING",
+                        "bg-primary/10 text-primary": task.status === "RUNNING",
                       })}
                     >
                       {task.status === "RUNNING" && (
@@ -86,7 +88,7 @@ export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
                       )}
                     </Badge>
                   </div>
-                  <div className="flex gap-3 items-center text-sm text-gray-500">
+                  <div className="flex gap-3 items-center text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <PiClockBold />
                       {dayjs(task.last_run_at).fromNow()}

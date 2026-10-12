@@ -70,7 +70,7 @@ export function Header({
         <DialogHeader className="items-center border-b z-10">
           <div className="flex items-center gap-3 px-4 py-3 w-full">
             {model.admin.icon && (
-              <div className="size-6 flex items-center justify-center bg-gray-200 rounded-md text-gray-500">
+              <div className="size-6 flex items-center justify-center bg-muted rounded-md text-muted-foreground">
                 <span className={cn(model.admin.icon, "text-[14px]")} />
               </div>
             )}
