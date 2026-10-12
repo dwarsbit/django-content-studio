@@ -41,7 +41,7 @@ export function ForgotPassword() {
           </AlertDescription>
         </Alert>
       )}
-      <form className="border border-border rounded-lg bg-background p-4 w-full shadow-sm shadow-foreground/5">
+      <form className="border rounded-xl bg-card p-4 sm:p-8 w-full shadow-lg shadow-foreground/5">
         <div className="relative flex items-center mb-4">
           <PiEnvelopeBold className="size-4 stroke-muted-foreground absolute left-3" />
           <Input

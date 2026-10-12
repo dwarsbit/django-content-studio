@@ -85,7 +85,7 @@ export function ResetPassword() {
         </Alert>
       )}
 
-      <form className="border border-border rounded-lg bg-background p-4 space-y-4 w-full shadow-sm shadow-foreground/5">
+      <form className="border rounded-xl bg-card p-4 sm:p-8 space-y-4 w-full shadow-lg shadow-foreground/5">
         <div className="relative flex flex-col gap-3 items-center justify-center">
           <Label>{t("reset_password.enter_code")}</Label>
           <InputOTP
