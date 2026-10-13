@@ -215,13 +215,7 @@ function MediaLibrary() {
             </div>
           ) : null}
 
-          {view === "grid" && (
-            <GridView
-              items={items}
-              selectedIds={selected}
-              onToggleSelect={toggleSelect}
-            />
-          )}
+          {view === "grid" && <GridView items={items} />}
           {view === "list" && <ListView items={items} onOpen={setEditing} />}
           {view === "table" && (
             <TableView

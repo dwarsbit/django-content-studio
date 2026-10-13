@@ -140,6 +140,14 @@ test("offers list and table views with URL-lived type filters", async ({
   await page.getByRole("cell", { name: document }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByText(/selected/)).toHaveCount(0);
+
+  // Grid cards carry no selection either: clicking a card opens the
+  // editor, and only the table's checkboxes select.
+  await page.keyboard.press("Escape");
+  await page.getByTitle("Grid view").click();
+  await expect(page.getByRole("checkbox", { name: "Select item" })).toHaveCount(
+    0,
+  );
 });
 
 test("bulk deletes the selected items", async ({ page }) => {
