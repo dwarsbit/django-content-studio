@@ -62,7 +62,7 @@ function SelectDialogContent({
   const [selection, setSelection] = useState<MediaItem[]>([]);
   const [page, setPage] = useState(1);
   const [folder, setFolder] = useState<string | null>(null);
-  const { data } = useListMedia({ folder, page, filters: { search } });
+  const { data } = useListMedia({ folder, page, search });
   const pendingCount = useIsMutating({
     mutationKey: ["media-library", "items"],
   });

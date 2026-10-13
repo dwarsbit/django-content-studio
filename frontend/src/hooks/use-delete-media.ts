@@ -14,6 +14,9 @@ export function useDeleteMedia() {
       await queryClient.invalidateQueries({
         queryKey: ["media-library", "items"],
       });
+      await queryClient.invalidateQueries({
+        queryKey: ["media-library", "tags"],
+      });
     },
   });
 }

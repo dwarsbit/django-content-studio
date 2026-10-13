@@ -19,6 +19,7 @@ import { useDiscover } from "@/hooks/use-discover";
 import { useFolderPath } from "@/hooks/use-folder-path";
 import { useListFolder } from "@/hooks/use-list-folder";
 import { cn } from "@/lib/utils";
+import type { MediaFolder } from "@/types";
 
 export function Folders({
   parent,
@@ -92,7 +93,7 @@ function Folder({
   folder,
   onSelect,
 }: {
-  folder: { id: string; name: string };
+  folder: MediaFolder;
   onSelect: VoidFunction;
 }) {
   const { t } = useTranslation();
@@ -115,6 +116,11 @@ function Folder({
                 <PiFolder size={14} />
               </span>
               <span>{folder.name}</span>
+              {folder.count != null && (
+                <span className="ml-auto text-muted-foreground text-xs">
+                  {folder.count}
+                </span>
+              )}
             </button>
           </ContextMenuTrigger>
           <ContextMenuContent>

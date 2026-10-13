@@ -9,10 +9,14 @@ import type { Id } from "@/types";
 export function UploadButton({
   folder = null,
   multiple = false,
+  onFiles,
   ...props
 }: React.ComponentProps<typeof Button> & {
   folder?: Id | null;
   multiple?: boolean;
+  /** Overrides the default toast-based upload (the media library's
+   * page routes files through its progress-tracking upload). */
+  onFiles?(files: File[]): void;
 }) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +41,11 @@ export function UploadButton({
         onChange={async (e) => {
           const { files } = e.target;
           if (files) {
-            await handleUpload(Array.from(files), folder);
+            if (onFiles) {
+              onFiles(Array.from(files));
+            } else {
+              await handleUpload(Array.from(files), folder);
+            }
           }
         }}
       />

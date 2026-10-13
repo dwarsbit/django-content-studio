@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- **Media library v2.** The library grows from a grid into a full
+  list page: grid, list and table views behind a toggle (the table
+  with sortable columns for whatever the model carries), type and
+  tags filters with any-of semantics (the tags filter a
+  searchable select of the tags currently on the library's items),
+  and bulk actions — delete
+  (confirmed) and move to folder — over a per-page selection. The
+  search, filters, view and ordering all live in the URL, so any
+  state is deep-linkable; the media API gains the type and tags
+  filters, explicit ordering with a stable newest-first default, a
+  permission-checked bulk endpoint, and folder item counts. Files
+  can be dragged onto the library (per-file progress), and each
+  item's context menu offers Copy URL and Download.
 - 🐛 **Opening a media item crashed the editor.** The demo's media
   model declared `tags` as a plain character field while the
   interface's tags input expects a list — the item editor failed with
@@ -9,6 +22,12 @@
   contract (a list-typed `tags` field, like Blueprint's `TagField`),
   the docs state the field type explicitly, and an e2e test opens an
   uploaded item so the editor cannot regress silently.
+- 🐛 **Saving a media item did nothing.** Integer primary keys
+  arrive from the API as JSON numbers while the editor's form schema
+  treats ids as strings — the resolver rejected the id and the save
+  was silently dropped, because the id has no rendered field to show
+  the error. The id is now normalized at the form boundary, and the
+  e2e test saves a rename through the dialog.
 - **Theme colors only, and new status tokens.** The interface no
   longer uses raw palette colors: every surface rides on the theme's
   tokens, which fixes several dark mode gaps (the FK and date widget

@@ -69,7 +69,14 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
     // The schema only pins down required fields; the values themselves are a
     // full media item, so the resolver is widened to the form's value type.
     resolver: zodResolver(formSchema) as unknown as Resolver<MediaItem>,
-    defaultValues: data,
+    // The API serializes integer primary keys as JSON numbers; the
+    // form schema (and the rest of the app) treats ids as strings.
+    // Without the cast, the resolver rejects the id and saving does
+    // nothing — silently, because the id has no rendered field.
+    defaultValues: {
+      ...data,
+      id: data.id != null ? String(data.id) : data.id,
+    },
   });
 
   const onSubmit = async (values: MediaItem) => {

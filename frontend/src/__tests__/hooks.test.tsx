@@ -191,14 +191,20 @@ describe("useListMedia", () => {
     });
 
     const { result } = renderHook(
-      () =>
-        useListMedia({ folder: null, page: 1, filters: { search: undefined } }),
+      () => useListMedia({ folder: null, page: 1 }),
       { wrapper: makeWrapper().Wrapper },
     );
 
     await waitFor(() => expect(result.current.data).toEqual(items));
     expect(httpMock.get).toHaveBeenCalledWith("/media-library/items", {
-      params: { folder: "root", search: undefined, page: 1 },
+      params: {
+        folder: "root",
+        search: undefined,
+        type: undefined,
+        tags: undefined,
+        ordering: undefined,
+        page: 1,
+      },
     });
   });
 
@@ -218,14 +224,22 @@ describe("useListMedia", () => {
         useListMedia({
           folder: "folder-1",
           page: 2,
-          filters: { search: "photo", searchInFolder: true },
+          search: "photo",
+          searchInFolder: true,
         }),
       { wrapper: makeWrapper().Wrapper },
     );
 
     await waitFor(() =>
       expect(httpMock.get).toHaveBeenCalledWith("/media-library/items", {
-        params: { folder: "folder-1", search: "photo", page: 2 },
+        params: {
+          folder: "folder-1",
+          search: "photo",
+          type: undefined,
+          tags: undefined,
+          ordering: undefined,
+          page: 2,
+        },
       }),
     );
   });
@@ -245,14 +259,22 @@ describe("useListMedia", () => {
       () =>
         useListMedia({
           folder: "folder-1",
-          filters: { search: "photo", searchInFolder: false },
+          search: "photo",
+          searchInFolder: false,
         }),
       { wrapper: makeWrapper().Wrapper },
     );
 
     await waitFor(() =>
       expect(httpMock.get).toHaveBeenCalledWith("/media-library/items", {
-        params: { folder: undefined, search: "photo", page: undefined },
+        params: {
+          folder: undefined,
+          search: "photo",
+          type: undefined,
+          tags: undefined,
+          ordering: undefined,
+          page: undefined,
+        },
       }),
     );
   });

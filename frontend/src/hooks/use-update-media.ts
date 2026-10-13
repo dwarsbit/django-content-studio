@@ -21,6 +21,9 @@ export function useUpdateMedia() {
       await queryClient.invalidateQueries({
         queryKey: ["media-library", "items"],
       });
+      await queryClient.invalidateQueries({
+        queryKey: ["media-library", "tags"],
+      });
     },
   });
 }

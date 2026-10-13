@@ -15,7 +15,11 @@
     "move": "Verplaatsen",
     "delete_confirm_title": "Weet je het zeker?",
     "delete_confirm_description": "Deze actie kan niet ongedaan gemaakt worden. Weet je zeker dat je dit wilt verwijderen?",
-    "delete_to_trash_confirm_description": "Het object wordt verplaatst naar de prullenbak, waar het hersteld kan worden. Weet je zeker dat je het wilt verwijderen?"
+    "delete_to_trash_confirm_description": "Het object wordt verplaatst naar de prullenbak, waar het hersteld kan worden. Weet je zeker dat je het wilt verwijderen?",
+    "select_item": "Item selecteren",
+    "download": "Downloaden",
+    "done": "Klaar",
+    "copied_to_clipboard": "Gekopieerd naar het klembord!"
   },
   "app": {
     "copied_to_clipboard": "Gekopieerd naar klembord",
@@ -103,6 +107,24 @@
       "image": "Afbeelding",
       "video": "Video",
       "audio": "Audio"
+    },
+    "grid_view": "Rasterweergave",
+    "list_view": "Lijstweergave",
+    "table_view": "Tabelweergave",
+    "drop_to_upload": "Sleep bestanden om te uploaden",
+    "items_count_one": "{{count}} item",
+    "items_count_other": "{{count}} items",
+    "copy_url": "URL kopiëren",
+    "filters": {
+      "type": "Type",
+      "tags": "Tags",
+      "no_tags": "Nog geen tags"
+    },
+    "columns": {
+      "name": "Naam",
+      "type": "Type",
+      "size": "Grootte",
+      "tags": "Tags"
     }
   },
   "widgets": {

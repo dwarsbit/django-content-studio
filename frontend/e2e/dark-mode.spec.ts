@@ -7,7 +7,11 @@ import { expect, test } from "@playwright/test";
  * flipping, a raw palette color crept back in.
  */
 
-function computed(page: import("@playwright/test").Page, selector: string, prop: string) {
+function computed(
+  page: import("@playwright/test").Page,
+  selector: string,
+  prop: string,
+) {
   return page.evaluate(
     ({ selector, prop }) => {
       const el = document.querySelector(selector);
@@ -21,9 +25,7 @@ test("the studio surfaces follow the theme tokens in light and dark mode", async
   page,
 }) => {
   await page.goto("/admin/");
-  await page
-    .getByPlaceholder("Enter your username")
-    .fill("admin");
+  await page.getByPlaceholder("Enter your username").fill("admin");
   await page.getByPlaceholder("Enter your password").fill("admin1234");
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.getByRole("link", { name: "Dashboard" }).waitFor();
@@ -31,33 +33,33 @@ test("the studio surfaces follow the theme tokens in light and dark mode", async
   // Light mode: the root tokens.
   expect(await computed(page, "body", "backgroundColor")).toBe("oklch(1 0 0)");
   expect(await computed(page, "body", "color")).toContain("oklch(0.145");
-  expect(
-    await computed(page, 'nav button[title]', "borderColor"),
-  ).toContain("oklch(0.922");
+  expect(await computed(page, "nav button[title]", "borderColor")).toContain(
+    "oklch(0.922",
+  );
 
   // Dark mode: switch through the theme storage the provider reads.
   await page.evaluate(() => localStorage.setItem("theme", "dark"));
   await page.reload();
   await page.getByRole("link", { name: "Dashboard" }).waitFor();
 
-  expect(
-    await computed(page, "body", "backgroundColor"),
-  ).toBe("oklch(0.145 0.008 326)");
+  expect(await computed(page, "body", "backgroundColor")).toBe(
+    "oklch(0.145 0.008 326)",
+  );
   expect(await computed(page, "body", "color")).toBe("oklch(0.985 0 0)");
   // Borders flip to translucent white, not a fixed gray.
-  expect(
-    await computed(page, 'nav button[title]', "borderColor"),
-  ).toBe("oklch(1 0 0 / 0.1)");
+  expect(await computed(page, "nav button[title]", "borderColor")).toBe(
+    "oklch(1 0 0 / 0.1)",
+  );
 
   // The command palette renders with the dark popover tokens.
   await page.keyboard.press("Meta+k");
   await page.getByPlaceholder("Search or jump to...").waitFor();
-  expect(
-    await computed(page, '[role="dialog"]', "backgroundColor"),
-  ).toBe("oklch(0.212 0.019 322.12)");
-  expect(
-    await computed(page, '[role="dialog"]', "borderColor"),
-  ).toBe("oklch(1 0 0 / 0.1)");
+  expect(await computed(page, '[role="dialog"]', "backgroundColor")).toBe(
+    "oklch(0.212 0.019 322.12)",
+  );
+  expect(await computed(page, '[role="dialog"]', "borderColor")).toBe(
+    "oklch(1 0 0 / 0.1)",
+  );
   await page.keyboard.press("Escape");
 
   // The list view: table borders and headers flip too.

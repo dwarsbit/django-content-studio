@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useHttp } from "@/hooks/use-http";
-import type { PaginatedResponse } from "@/types";
+import type { MediaFolder, PaginatedResponse } from "@/types";
 
 export function useListFolder({
   parent,
@@ -19,20 +19,16 @@ export function useListFolder({
     refetchOnWindowFocus: true,
     queryKey: ["media-library", "folders", parent, page, limit],
     async queryFn() {
-      const { data } = await http.get<
-        PaginatedResponse<{
-          id: string;
-          name: string;
-          parent: string | null;
-          has_children: boolean;
-        }>
-      >(`/media-library/folders`, {
-        params: {
-          parent,
-          page,
-          limit,
+      const { data } = await http.get<PaginatedResponse<MediaFolder>>(
+        `/media-library/folders`,
+        {
+          params: {
+            parent,
+            page,
+            limit,
+          },
         },
-      });
+      );
       return data;
     },
   });

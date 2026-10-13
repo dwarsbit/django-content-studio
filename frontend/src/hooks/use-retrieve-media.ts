@@ -12,7 +12,9 @@ export function useRetrieveMedia(id: string) {
 
   return useQuery({
     retry: false,
-    enabled: !R.isNil(model),
+    // An empty id means "nothing opened yet" (the item edit dialog
+    // stays mounted for its close animation).
+    enabled: !R.isNil(model) && !R.isEmpty(id),
     queryKey: ["media-library", "items", id],
     placeholderData: keepPreviousData,
     async queryFn() {

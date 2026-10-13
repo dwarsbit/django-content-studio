@@ -47,6 +47,32 @@ The library is fully managed in the interface: upload files (with tags in the
 same go when the model has a `tags` field), move them between folders, edit
 their details and crop images — all against the models you configure.
 
+Three views are offered through a toggle: the **grid** (thumbnails), a
+**list** of rich rows and a **table** with sortable columns (name, type and
+size — whatever the configured model carries). The view, the search, the
+filters and the ordering all live in the URL, so filtered views are
+deep-linkable and survive reloads and the back button.
+
+The search box matches the name and the tags. Two filters narrow the items:
+
+- the **type** — any of image, video, audio and file
+- the **tags** — a searchable multi-select of the tags currently on
+  the library's items, matching any of the selected tags
+
+When folders are configured, the search either stays in the current folder
+or searches across the whole library, through the toggle next to the
+search box. Folders carry their item counts, and the header shows the
+total.
+
+Select items (a checkbox on every card, row or table line) to run bulk
+actions: **delete** — with confirmation — and **move to folder**. The
+actions run through one endpoint, permission-checked per action (delete
+needs the model's delete permission, moving its change permission).
+
+Files can also be uploaded by dragging them onto the library, with
+per-file progress, and each item's context menu offers **Copy URL** and
+**Download**.
+
 ## Hooks
 
 - **`AdminSite.get_thumbnail(obj)`** — returns the thumbnail URL for an image

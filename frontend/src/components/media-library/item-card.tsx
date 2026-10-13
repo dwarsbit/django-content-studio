@@ -3,11 +3,15 @@ import * as R from "ramda";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  PiCheckBold,
+  PiDownloadBold,
   PiFileBold,
   PiFolderBold,
   PiFoldersBold,
   PiHouseBold,
+  PiLinkBold,
 } from "react-icons/pi";
+import { useCopyToClipboard } from "react-use";
 import { toast } from "sonner";
 
 import { ItemEdit } from "@/components/media-library/item-edit";
@@ -33,15 +37,21 @@ export function ItemCard({
   className,
   children,
   onClick,
+  selected = false,
+  onToggleSelect,
   ...props
 }: {
   item: MediaItem;
+  /** Selection state, driven by the page's bulk selection. */
+  selected?: boolean;
+  onToggleSelect?(): void;
 } & React.ComponentProps<"button">) {
   const { t } = useTranslation();
   const { mutateAsync: deleteMedia, isPending } = useDeleteMedia();
   const { mutateAsync: updateMedia } = useUpdateMedia();
   const confirm = useConfirmDialog();
   const [edit, setEdit] = useState(false);
+  const [, copy] = useCopyToClipboard();
 
   return (
     <ContextMenu>
@@ -57,13 +67,35 @@ export function ItemCard({
             setEdit(true);
           }}
           className={cn(
-            "cursor-pointer border rounded-md bg-card p-2 data-[state=open]:border-ring flex flex-col",
+            "group/card relative cursor-pointer border rounded-md bg-card p-2 data-[state=open]:border-ring flex flex-col",
+            selected && "border-ring",
             {
               "animate-pulse pointer-events-none select-none": isPending,
             },
             className,
           )}
         >
+          {onToggleSelect && (
+            <span
+              role="checkbox"
+              aria-checked={selected}
+              aria-label={t("common.select_item")}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSelect();
+              }}
+              className={cn(
+                "absolute top-1 left-1 z-10 size-4 rounded-[4px] border bg-background cursor-pointer",
+                "opacity-0 group-hover/card:opacity-100 data-[selected=true]:opacity-100",
+                selected
+                  ? "border-primary bg-primary text-primary-foreground flex items-center justify-center"
+                  : "hover:border-ring",
+              )}
+              data-selected={selected}
+            >
+              {selected && <PiCheckBold className="size-3" />}
+            </span>
+          )}
           {children}
           {item.type === "image" ? (
             <img
@@ -107,6 +139,21 @@ export function ItemCard({
       <ContextMenuContent>
         <ContextMenuItem onSelect={() => setEdit(true)}>
           {t("common.edit")}
+        </ContextMenuItem>
+        <ContextMenuItem
+          onSelect={() => {
+            copy(item.file);
+            toast.success(t("common.copied_to_clipboard"));
+          }}
+        >
+          <PiLinkBold className="size-3.5" />
+          {t("media_library.copy_url")}
+        </ContextMenuItem>
+        <ContextMenuItem asChild>
+          <a href={item.file} download>
+            <PiDownloadBold className="size-3.5" />
+            {t("common.download")}
+          </a>
         </ContextMenuItem>
         <ContextMenuSub>
           <ContextMenuSubTrigger>{t("common.move")}</ContextMenuSubTrigger>

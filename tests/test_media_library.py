@@ -3,6 +3,8 @@ Tests for the media library viewsets.
 """
 
 import pytest
+from django.contrib.auth import models as auth_models
+from django.test import override_settings
 from django.db import models
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
@@ -14,6 +16,7 @@ from content_studio.media_library.viewsets import (
     MediaLibraryViewSet,
 )
 from content_studio.serializers import RelatedItemSerializer
+from content_studio.token_backends.jwt import create_access_token
 
 
 class FolderModel(models.Model):
@@ -131,3 +134,270 @@ def test_folder_path_survives_cyclic_data():
 
         data = response.data
         assert [folder["name"] for folder in data] == ["two", "one"]
+
+
+class ItemModel(models.Model):
+    """The media model contract: name, list-typed tags, type, file,
+    folder — plus the optional size."""
+
+    name = models.CharField(max_length=100)
+    tags = models.JSONField(default=list, blank=True)
+    type = models.CharField(max_length=10)
+    file = models.FileField(upload_to="media/", blank=True)
+    folder = models.ForeignKey(
+        FolderModel, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    size = models.IntegerField(default=0)
+
+    class Meta:
+        app_label = "content_studio"
+
+    def __str__(self):
+        return self.name
+
+
+MEDIA_SETTINGS = {
+    "ADMIN_SITE": "content_studio.admin.admin_site",
+    "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
+    "MEDIA_LIBRARY_FOLDER_MODEL": "test_media_library.FolderModel",
+}
+
+
+@pytest.fixture
+def media_settings():
+    """Configure the media library models for the test. Django's
+    override_settings sends setting_changed, which cs_settings listens
+    for — pytest-django's settings fixture would not."""
+    with override_settings(CONTENT_STUDIO=MEDIA_SETTINGS):
+        yield
+
+
+def media_client(user):
+    client = APIClient()
+    token = create_access_token(user)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    return client
+
+
+@pytest.mark.django_db
+def test_items_filter_by_type(media_settings):
+    user = make_superuser()
+    ItemModel.objects.create(name="clip one", type="video")
+    ItemModel.objects.create(name="doc", type="file")
+    ItemModel.objects.create(name="audio", type="audio")
+
+    response = media_client(user).get(
+        "/api/media-library/items", {"type": "video,audio"}
+    )
+
+    assert response.status_code == 200
+    names = [item["name"] for item in response.json()["results"]]
+    assert sorted(names) == ["audio", "clip one"]
+
+
+@pytest.mark.django_db
+def test_items_filter_by_tags_any_of(media_settings):
+    user = make_superuser()
+    ItemModel.objects.create(name="a", type="video", tags=["hero"])
+    ItemModel.objects.create(name="b", type="video", tags=["summer"])
+    ItemModel.objects.create(name="c", type="video", tags=["winter"])
+
+    response = media_client(user).get(
+        "/api/media-library/items", {"tags": "hero,summer"}
+    )
+
+    assert response.status_code == 200
+    names = [item["name"] for item in response.json()["results"]]
+    assert sorted(names) == ["a", "b"]
+
+
+@pytest.mark.django_db
+def test_items_order_by_name_and_size(media_settings):
+    user = make_superuser()
+    ItemModel.objects.create(name="beta", type="file", size=5)
+    ItemModel.objects.create(name="alpha", type="file", size=10)
+
+    by_name = media_client(user).get("/api/media-library/items", {"ordering": "name"})
+    by_size = media_client(user).get("/api/media-library/items", {"ordering": "-size"})
+
+    assert [i["name"] for i in by_name.json()["results"]] == ["alpha", "beta"]
+    assert [i["size"] for i in by_size.json()["results"]] == [10, 5]
+
+
+@pytest.mark.django_db
+def test_items_default_to_newest_first(media_settings):
+    """Stable pagination: without an ordering param, newest first."""
+    user = make_superuser()
+    for i in range(3):
+        ItemModel.objects.create(name=f"item {i}", type="file")
+
+    response = media_client(user).get("/api/media-library/items")
+
+    names = [item["name"] for item in response.json()["results"]]
+    assert names == ["item 2", "item 1", "item 0"]
+
+
+@pytest.mark.django_db
+def test_bulk_delete_removes_items_and_logs(media_settings):
+    user = make_superuser()
+    keep = ItemModel.objects.create(name="keep", type="file")
+    gone = ItemModel.objects.create(name="gone", type="file")
+
+    response = media_client(user).post(
+        "/api/media-library/items/bulk",
+        {"action": "delete", "ids": [gone.pk]},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["count"] == 1
+    assert list(ItemModel.objects.values_list("pk", flat=True)) == [keep.pk]
+
+
+@pytest.mark.django_db
+def test_bulk_move_moves_items_to_the_folder(media_settings):
+    user = make_superuser()
+    folder = FolderModel.objects.create(name="target")
+    one = ItemModel.objects.create(name="one", type="file")
+    two = ItemModel.objects.create(name="two", type="file")
+
+    response = media_client(user).post(
+        "/api/media-library/items/bulk",
+        {"action": "move", "ids": [one.pk, two.pk], "folder": folder.pk},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["count"] == 2
+    assert sorted(ItemModel.objects.values_list("folder", flat=True)) == [
+        folder.pk,
+        folder.pk,
+    ]
+
+    # Moving without a folder moves to the root.
+    response = media_client(user).post(
+        "/api/media-library/items/bulk",
+        {"action": "move", "ids": [one.pk]},
+        format="json",
+    )
+    assert ItemModel.objects.get(pk=one.pk).folder is None
+
+
+@pytest.mark.django_db
+def test_bulk_move_to_unknown_folder_returns_404(media_settings):
+    user = make_superuser()
+    item = ItemModel.objects.create(name="one", type="file")
+
+    response = media_client(user).post(
+        "/api/media-library/items/bulk",
+        {"action": "move", "ids": [item.pk], "folder": 12345},
+        format="json",
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_bulk_requires_permissions(media_settings):
+    """The bulk endpoint gates on view; the actions on their own
+    permissions."""
+    staff = auth_models.User.objects.create_user(
+        username="staff", password="x", is_staff=True
+    )
+    item = ItemModel.objects.create(name="one", type="file")
+
+    # Without view permission, the endpoint is closed off entirely.
+    response = media_client(staff).post(
+        "/api/media-library/items/bulk",
+        {"action": "delete", "ids": [item.pk]},
+        format="json",
+    )
+    assert response.status_code == 403
+
+    # Invalid payloads are reported.
+    response = media_client(make_superuser()).post(
+        "/api/media-library/items/bulk", {"action": "nope", "ids": [1]}, format="json"
+    )
+    assert response.status_code == 400
+
+    # A missing permission for the specific action is denied.
+    viewer = auth_models.User.objects.create_user(
+        username="viewer", password="x", is_staff=True
+    )
+    viewer.user_permissions.set(
+        [
+            auth_models.Permission.objects.get(
+                content_type__app_label="content_studio", codename="view_itemmodel"
+            )
+        ]
+    )
+    response = media_client(viewer).post(
+        "/api/media-library/items/bulk",
+        {"action": "delete", "ids": [item.pk]},
+        format="json",
+    )
+    assert response.status_code == 403
+    assert ItemModel.objects.filter(pk=item.pk).exists()
+
+
+@pytest.mark.django_db
+def test_folders_carry_item_counts(media_settings):
+    user = make_superuser()
+    folder = FolderModel.objects.create(name="one")
+    FolderModel.objects.create(name="two", parent=folder)
+    ItemModel.objects.create(name="a", type="file", folder=folder)
+    ItemModel.objects.create(name="b", type="file", folder=folder)
+
+    response = media_client(user).get("/api/media-library/folders")
+
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert [folder["count"] for folder in results] == [2]
+
+
+def make_superuser():
+    from django.contrib.auth import models as auth_models
+
+    from content_studio.token_backends.jwt import create_access_token
+
+    user = auth_models.User.objects.create_superuser(username="admin", password="x")
+    return user
+
+
+@pytest.mark.django_db
+def test_tags_endpoint_lists_unique_tags_sorted(media_settings):
+    make_superuser()
+    ItemModel.objects.create(name="a", type="video", tags=["Hero", "summer"])
+    ItemModel.objects.create(name="b", type="video", tags=["hero", "winter"])
+    ItemModel.objects.create(name="c", type="video", tags=["summer"])
+
+    response = media_client(auth_models.User.objects.get(username="admin")).get(
+        "/api/media-library/items/tags"
+    )
+
+    assert response.status_code == 200
+    # Unique case-sensitively, sorted case-insensitively.
+    assert response.json() == ["Hero", "hero", "summer", "winter"]
+
+
+@pytest.mark.django_db
+def test_tags_endpoint_handles_plain_tag_values(media_settings):
+    """A tags field holding plain strings yields those as options."""
+    make_superuser()
+    ItemModel.objects.create(name="a", type="video", tags="banner")
+
+    response = media_client(auth_models.User.objects.get(username="admin")).get(
+        "/api/media-library/items/tags"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == ["banner"]
+
+
+@pytest.mark.django_db
+def test_tags_endpoint_requires_authentication(media_settings):
+    """Reads are open to authenticated users, like the media list
+    itself; anonymous requests are rejected."""
+    response = APIClient().get("/api/media-library/items/tags")
+
+    assert response.status_code == 401

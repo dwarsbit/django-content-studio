@@ -284,10 +284,19 @@ export interface MediaItem {
   thumbnail: string;
   file: string;
   crop?: CropValue[];
-  tags: [];
+  tags: string[];
   alt_text: string;
   type: "file" | "image" | "video" | "audio";
   size: number;
+}
+
+export interface MediaFolder {
+  id: string;
+  name: string;
+  parent: string | null;
+  has_children: boolean;
+  /** The folder's direct items; null without a media model. */
+  count?: number | null;
 }
 
 export interface Dashboard {

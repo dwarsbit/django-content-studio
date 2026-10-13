@@ -38,12 +38,22 @@ def build_media_folder_serializer(folder_model):
 
     class MediaFolderSerializer(serializers.ModelSerializer):
         has_children = serializers.SerializerMethodField()
+        count = serializers.SerializerMethodField()
 
         class Meta:
             model = folder_model
-            fields = ["id", "name", "parent", "has_children"]
+            fields = ["id", "name", "parent", "has_children", "count"]
 
         def get_has_children(self, obj):
             return obj.children.exists()
+
+        def get_count(self, obj):
+            """The folder's direct items; None without a media model."""
+            media_model = cs_settings.MEDIA_LIBRARY_MODEL
+
+            if not media_model:
+                return None
+
+            return media_model.objects.filter(folder_id=obj.pk).count()
 
     return MediaFolderSerializer

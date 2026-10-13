@@ -14,11 +14,14 @@ export function useCreateMedia() {
       name,
       file,
       type,
+      onProgress,
     }: {
       folder: string | null;
       name: string;
       file: File;
       type: string;
+      /** Upload progress, 0-100. */
+      onProgress?(progress: number): void;
     }) {
       const { data } = await http.postForm<MediaItem>(
         "/media-library/items",
@@ -32,6 +35,11 @@ export function useCreateMedia() {
           headers: {
             "Content-Type": "multipart/form-data",
           },
+          onUploadProgress: (event) => {
+            if (event.total) {
+              onProgress?.(Math.round((event.loaded / event.total) * 100));
+            }
+          },
         },
       );
 
@@ -40,6 +48,9 @@ export function useCreateMedia() {
     async onSuccess() {
       await queryClient.invalidateQueries({
         queryKey: ["media-library", "items"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["media-library", "tags"],
       });
     },
   });

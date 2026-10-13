@@ -8,11 +8,19 @@ import type { MediaItem, PaginatedResponse } from "@/types";
 export function useListMedia({
   folder,
   page,
-  filters,
+  search,
+  searchInFolder,
+  type,
+  tags,
+  ordering,
 }: {
   folder?: string | null;
   page?: number;
-  filters: { search?: string; searchInFolder?: boolean };
+  search?: string;
+  searchInFolder?: boolean;
+  type?: string;
+  tags?: string;
+  ordering?: string;
 }) {
   const http = useHttp();
   const { data: discover } = useDiscover();
@@ -21,18 +29,23 @@ export function useListMedia({
   return useQuery({
     retry: false,
     enabled: !R.isNil(model),
-    queryKey: ["media-library", "items", { folder, page, filters }],
+    queryKey: [
+      "media-library",
+      "items",
+      { folder, page, search, searchInFolder, type, tags, ordering },
+    ],
     placeholderData: keepPreviousData,
     async queryFn() {
       const { data } = await http.get<PaginatedResponse<MediaItem>>(
         `/media-library/items`,
         {
           params: {
-            folder:
-              filters.searchInFolder || !filters.search
-                ? (folder ?? "root")
-                : undefined,
-            search: filters.search,
+            // A global search ignores the current folder, like before.
+            folder: searchInFolder || !search ? (folder ?? "root") : undefined,
+            search: search || undefined,
+            type: type || undefined,
+            tags: tags || undefined,
+            ordering: ordering || undefined,
             page,
           },
         },

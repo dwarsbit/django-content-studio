@@ -15,7 +15,11 @@
     "move": "Move",
     "delete_confirm_title": "Are you sure?",
     "delete_confirm_description": "This action cannot be undone. Are you sure you want to delete?",
-    "delete_to_trash_confirm_description": "The object will be moved to the trash, where it can be restored. Are you sure you want to delete?"
+    "delete_to_trash_confirm_description": "The object will be moved to the trash, where it can be restored. Are you sure you want to delete?",
+    "select_item": "Select item",
+    "download": "Download",
+    "done": "Done",
+    "copied_to_clipboard": "Copied to clipboard!"
   },
   "app": {
     "copied_to_clipboard": "Copied to clipboard!",
@@ -104,6 +108,24 @@
       "image": "Image",
       "video": "Video",
       "audio": "Audio"
+    },
+    "grid_view": "Grid view",
+    "list_view": "List view",
+    "table_view": "Table view",
+    "drop_to_upload": "Drop files to upload",
+    "items_count_one": "{{count}} item",
+    "items_count_other": "{{count}} items",
+    "copy_url": "Copy URL",
+    "filters": {
+      "type": "Type",
+      "tags": "Tags",
+      "no_tags": "No tags yet"
+    },
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "size": "Size",
+      "tags": "Tags"
     }
   },
   "widgets": {
