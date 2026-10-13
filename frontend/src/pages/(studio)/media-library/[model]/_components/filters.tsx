@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FaPhotoVideo } from "react-icons/fa";
 import { useSearchParams } from "react-router";
 import { useDebounce } from "react-use";
 
@@ -68,7 +69,7 @@ export function Filters({ folders }: { folders: boolean }) {
   };
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex flex-1 items-center gap-2 flex-wrap">
       <Input
         className="w-[260px] shrink-0 max-w-full"
         placeholder={t("common.search")}
@@ -76,36 +77,38 @@ export function Filters({ folders }: { folders: boolean }) {
         onChange={(e) => setSearchLocal(e.target.value)}
       />
 
-      <MultiSelect
-        className="w-[240px] max-w-full"
-        options={(mediaTags ?? []).map((tag) => ({ value: tag, label: tag }))}
-        value={tags
-          .split(",")
-          .filter(Boolean)
-          .map((tag) => ({ value: tag, label: tag }))}
-        onChange={(options) =>
-          setSearchParams((searchParams) => {
-            const value = options.map((option) => option.value).join(",");
-            if (value) {
-              searchParams.set("tags", value);
-            } else {
-              searchParams.delete("tags");
-            }
-            return searchParams;
-          })
-        }
-        placeholder={t("media_library.filters.tags")}
-        emptyIndicator={t("media_library.filters.no_tags")}
-        hidePlaceholderWhenSelected
-      />
+      <div className="w-[240px] max-w-full">
+        <MultiSelect
+          options={(mediaTags ?? []).map((tag) => ({ value: tag, label: tag }))}
+          value={tags
+            .split(",")
+            .filter(Boolean)
+            .map((tag) => ({ value: tag, label: tag }))}
+          onChange={(options) =>
+            setSearchParams((searchParams) => {
+              const value = options.map((option) => option.value).join(",");
+              if (value) {
+                searchParams.set("tags", value);
+              } else {
+                searchParams.delete("tags");
+              }
+              return searchParams;
+            })
+          }
+          placeholder={t("media_library.filters.tags")}
+          emptyIndicator={t("media_library.filters.no_tags")}
+          hidePlaceholderWhenSelected
+        />
+      </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(
-            "h-8 px-3 rounded-md border bg-background text-sm font-medium whitespace-nowrap cursor-pointer hover:bg-accent",
+            "h-8 px-3 inline-flex items-center gap-1.5 rounded-md border bg-background text-sm font-medium whitespace-nowrap cursor-pointer hover:bg-accent",
             types.length > 0 && "bg-accent",
           )}
         >
+          <FaPhotoVideo />
           {types.length
             ? types
                 .map((type) => t(`media_library.file_types.${type}`))

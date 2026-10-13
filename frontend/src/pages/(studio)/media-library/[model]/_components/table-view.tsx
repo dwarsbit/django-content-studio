@@ -100,72 +100,76 @@ export function TableView({
   };
 
   return (
-    <table className="w-full border text-sm">
-      <thead>
-        <tr className="border-b bg-accent">
-          <th className="w-10 px-3 py-2">
-            <input
-              type="checkbox"
-              aria-label={t("bulk.select_all")}
-              checked={allSelected}
-              onChange={() => onToggleAll(items.map((item) => String(item.id)))}
-              className="size-4 accent-primary cursor-pointer"
-            />
-          </th>
-          {columns.map((column) => (
-            <th
-              key={column.name}
-              className={cn("px-3 py-2 text-left", column.className)}
-            >
-              {column.sortable ? (
-                <button
-                  type="button"
-                  onClick={() => cycleOrdering(column.name)}
-                  className="flex items-center gap-1 cursor-pointer hover:text-foreground"
-                >
-                  {column.label}
-                  {ordering === column.name ||
-                  ordering === `-${column.name}` ? (
-                    <PiCaretUpDownBold className="size-3" />
-                  ) : (
-                    <PiCaretUpDownBold className="size-3 opacity-30" />
-                  )}
-                </button>
-              ) : (
-                column.label
-              )}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((item) => (
-          <tr
-            key={item.id}
-            className="border-b last:border-b-0 cursor-pointer hover:bg-accent"
-            onClick={() => onOpen(String(item.id))}
-          >
-            <td className="px-3 py-2">
+    <div className="overflow-hidden rounded-lg border">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b bg-accent">
+            <th className="w-10 px-3 py-2">
               <input
                 type="checkbox"
-                aria-label={t("common.select_item")}
-                checked={selectedIds.has(String(item.id))}
-                onChange={() => onToggleSelect(String(item.id))}
-                onClick={(e) => e.stopPropagation()}
+                aria-label={t("bulk.select_all")}
+                checked={allSelected}
+                onChange={() =>
+                  onToggleAll(items.map((item) => String(item.id)))
+                }
                 className="size-4 accent-primary cursor-pointer"
               />
-            </td>
+            </th>
             {columns.map((column) => (
-              <td
+              <th
                 key={column.name}
-                className={cn("px-3 py-2", column.className)}
+                className={cn("px-3 py-2 text-left", column.className)}
               >
-                {column.render(item)}
-              </td>
+                {column.sortable ? (
+                  <button
+                    type="button"
+                    onClick={() => cycleOrdering(column.name)}
+                    className="flex items-center gap-1 cursor-pointer hover:text-foreground"
+                  >
+                    {column.label}
+                    {ordering === column.name ||
+                    ordering === `-${column.name}` ? (
+                      <PiCaretUpDownBold className="size-3" />
+                    ) : (
+                      <PiCaretUpDownBold className="size-3 opacity-30" />
+                    )}
+                  </button>
+                ) : (
+                  column.label
+                )}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr
+              key={item.id}
+              className="border-b last:border-b-0 cursor-pointer hover:bg-accent"
+              onClick={() => onOpen(String(item.id))}
+            >
+              <td className="px-3 py-2">
+                <input
+                  type="checkbox"
+                  aria-label={t("common.select_item")}
+                  checked={selectedIds.has(String(item.id))}
+                  onChange={() => onToggleSelect(String(item.id))}
+                  onClick={(e) => e.stopPropagation()}
+                  className="size-4 accent-primary cursor-pointer"
+                />
+              </td>
+              {columns.map((column) => (
+                <td
+                  key={column.name}
+                  className={cn("px-3 py-2", column.className)}
+                >
+                  {column.render(item)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

@@ -128,31 +128,6 @@ function MediaLibrary() {
           <h1 className="text-xl/tight font-semibold mb-0.5">
             {t("media_library.title")}
           </h1>
-          {hasFolders ? (
-            <div
-              className={cn({
-                invisible: search && !searchInFolder,
-              })}
-            >
-              <FolderPath
-                folder={folder}
-                onSelect={(folder) =>
-                  setSearchParams((searchParams) => {
-                    if (folder) {
-                      searchParams.set("folder", folder);
-                    } else {
-                      searchParams.delete("folder");
-                    }
-                    return searchParams;
-                  })
-                }
-              />
-            </div>
-          ) : (
-            <div className="text-muted-foreground">
-              {t("media_library.description")}
-            </div>
-          )}
         </div>
         {data && (
           <div className="text-muted-foreground text-sm whitespace-nowrap">
@@ -190,76 +165,90 @@ function MediaLibrary() {
         </div>
       </div>
 
-      {hasFolders && !(search && !searchInFolder) && (
-        <div className="mb-4 px-5">
-          <Folders
-            parent={folder}
-            onSelect={(folder) =>
-              setSearchParams((searchParams) => {
-                if (folder) {
-                  searchParams.set("folder", folder);
-                } else {
-                  searchParams.delete("folder");
+      <div className="flex items-start gap-6 px-5">
+        {hasFolders && !(search && !searchInFolder) && (
+          <div className="w-[320px] shrink-0">
+            <div className="mb-3">
+              <FolderPath
+                folder={folder}
+                onSelect={(folder) =>
+                  setSearchParams((searchParams) => {
+                    if (folder) {
+                      searchParams.set("folder", folder);
+                    } else {
+                      searchParams.delete("folder");
+                    }
+                    return searchParams;
+                  })
                 }
-                return searchParams;
-              })
-            }
-          />
-        </div>
-      )}
-
-      <div
-        {...getRootProps()}
-        className="px-5 overflow-y-auto scrollbar flex-1"
-      >
-        {isDragActive && (
-          <div className="mb-4 border-2 border-dashed rounded-lg py-12 text-center text-muted-foreground select-none">
-            {t("media_library.drop_to_upload")}
-          </div>
-        )}
-
-        {selectedIds.length > 0 ? (
-          <div className="mb-4">
-            <MediaBulkBar
-              ids={selectedIds}
-              onDone={() => setSelected(new Set())}
-            />
-          </div>
-        ) : null}
-
-        {view === "grid" && (
-          <GridView
-            items={items}
-            selectedIds={selected}
-            onToggleSelect={toggleSelect}
-          />
-        )}
-        {view === "list" && <ListView items={items} onOpen={setEditing} />}
-        {view === "table" && (
-          <TableView
-            items={items}
-            selectedIds={selected}
-            onToggleSelect={toggleSelect}
-            onToggleAll={toggleAll}
-            onOpen={setEditing}
-            ordering={ordering ?? null}
-            onOrderingChange={(value) => setParam("ordering", value)()}
-          />
-        )}
-
-        <div className="py-5">
-          {data && (
-            <Pagination
-              current={data.pagination.current}
-              pages={data.pagination.pages}
-              onPageChange={(page) =>
+              />
+            </div>
+            <Folders
+              parent={folder}
+              onSelect={(folder) =>
                 setSearchParams((searchParams) => {
-                  searchParams.set("page", `${page}`);
+                  if (folder) {
+                    searchParams.set("folder", folder);
+                  } else {
+                    searchParams.delete("folder");
+                  }
                   return searchParams;
                 })
               }
             />
+          </div>
+        )}
+
+        <div {...getRootProps()} className="overflow-y-auto scrollbar flex-1">
+          {isDragActive && (
+            <div className="mb-4 border-2 border-dashed rounded-lg py-12 text-center text-muted-foreground select-none">
+              {t("media_library.drop_to_upload")}
+            </div>
           )}
+
+          {selectedIds.length > 0 ? (
+            <div className="mb-4">
+              <MediaBulkBar
+                ids={selectedIds}
+                onDone={() => setSelected(new Set())}
+              />
+            </div>
+          ) : null}
+
+          {view === "grid" && (
+            <GridView
+              items={items}
+              selectedIds={selected}
+              onToggleSelect={toggleSelect}
+            />
+          )}
+          {view === "list" && <ListView items={items} onOpen={setEditing} />}
+          {view === "table" && (
+            <TableView
+              items={items}
+              selectedIds={selected}
+              onToggleSelect={toggleSelect}
+              onToggleAll={toggleAll}
+              onOpen={setEditing}
+              ordering={ordering ?? null}
+              onOrderingChange={(value) => setParam("ordering", value)()}
+            />
+          )}
+
+          <div className="py-5">
+            {data && (
+              <Pagination
+                current={data.pagination.current}
+                pages={data.pagination.pages}
+                onPageChange={(page) =>
+                  setSearchParams((searchParams) => {
+                    searchParams.set("page", `${page}`);
+                    return searchParams;
+                  })
+                }
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
