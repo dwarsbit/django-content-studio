@@ -3,6 +3,7 @@ Django settings for testing content_studio.
 """
 
 import os
+import tempfile
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -82,6 +83,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+
+# Keep test uploads out of the repository: file fields write to a
+# throwaway directory instead of the default media/ next to the CWD.
+MEDIA_ROOT = tempfile.mkdtemp(prefix="content_studio_tests_")
 
 # Keep test emails out of SMTP
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"

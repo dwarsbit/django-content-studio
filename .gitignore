@@ -13,6 +13,9 @@ __pycache__
 # The test project's database (tests/settings.py)
 /db.sqlite3
 
+# Stray media uploads (tests use a temp MEDIA_ROOT)
+/media/
+
 # Demo project state
 /demo/db.sqlite3
 /demo/media/
