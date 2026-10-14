@@ -23,6 +23,8 @@ class DiscoverEndpointTests(TestCase):
         self.assertEqual(data["extensions"], [])
         self.assertEqual(data["media_library"]["enabled"], False)
         self.assertEqual(data["media_library"]["folders"], False)
+        self.assertEqual(data["media_library"]["crop"], False)
+        self.assertEqual(data["media_library"]["focus_point"], None)
         self.assertEqual(data["media_library"]["models"]["media_model"], None)
         self.assertEqual(data["media_library"]["models"]["folder_model"], None)
         self.assertEqual(data["dashboard"], {"widgets": []})
@@ -47,6 +49,23 @@ class DiscoverEndpointTests(TestCase):
         self.assertEqual(data["media_library"]["folders"], True)
         self.assertEqual(data["media_library"]["models"]["media_model"], "auth.user")
         self.assertEqual(data["media_library"]["models"]["folder_model"], "auth.group")
+
+    def test_discover_announces_crop_and_focus_point(self):
+        """Cropping is announced when the admin site defines a
+        crop_image method; the focus point as its attribute name."""
+        from content_studio.admin import admin_site
+
+        admin_site.crop_image = lambda obj, crop_info: None
+
+        try:
+            with override_settings(CONTENT_STUDIO={"FOCUS_POINT_ATTR": "focus_point"}):
+                response = self.client.get("/api/discover")
+        finally:
+            del admin_site.crop_image
+
+        media_library = response.json()["media_library"]
+        self.assertEqual(media_library["crop"], True)
+        self.assertEqual(media_library["focus_point"], "focus_point")
 
     def test_discover_lists_registered_models(self):
         """Discover includes the registered studios. Only the user model

@@ -4,6 +4,7 @@ Tests for the media library viewsets.
 
 import pytest
 from django.contrib.auth import models as auth_models
+from django.core.files.base import ContentFile
 from django.test import override_settings
 from django.db import models
 from rest_framework.parsers import JSONParser
@@ -401,3 +402,115 @@ def test_tags_endpoint_requires_authentication(media_settings):
     response = APIClient().get("/api/media-library/items/tags")
 
     assert response.status_code == 401
+
+
+CROP_INFO = {"x": "10.00", "y": "20.00", "width": "50.00", "height": "40.00"}
+
+
+@pytest.mark.django_db
+def test_crop_without_site_hook_returns_501(media_settings):
+    """Cropping is only offered when the admin site defines
+    crop_image(obj, crop_info)."""
+    item = ItemModel.objects.create(name="one", type="image")
+
+    response = media_client(make_superuser()).post(
+        f"/api/media-library/items/{item.pk}/crop",
+        {"crop": CROP_INFO},
+        format="json",
+    )
+
+    assert response.status_code == 501
+
+
+@pytest.mark.django_db
+def test_crop_validates_the_payload(media_settings):
+    """A crop requires a non-empty crop info object."""
+    from content_studio.admin import admin_site
+
+    item = ItemModel.objects.create(name="one", type="image")
+    admin_site.crop_image = lambda obj, crop_info: None
+
+    try:
+        client = media_client(make_superuser())
+        assert (
+            client.post(
+                f"/api/media-library/items/{item.pk}/crop", {}, format="json"
+            ).status_code
+            == 400
+        )
+        assert (
+            client.post(
+                f"/api/media-library/items/{item.pk}/crop",
+                {"crop": {}},
+                format="json",
+            ).status_code
+            == 400
+        )
+    finally:
+        del admin_site.crop_image
+
+
+@pytest.mark.django_db
+def test_crop_applies_through_the_site_hook(media_settings):
+    """The crop info is handed to crop_image(obj, crop_info); how
+    cropping is done is up to the site. The response carries the
+    updated item."""
+    from content_studio.admin import admin_site
+
+    calls = []
+    admin_site.crop_image = lambda obj, crop_info: calls.append((obj, crop_info))
+
+    try:
+        item = ItemModel.objects.create(
+            name="one",
+            type="image",
+            file=ContentFile(b"image", name="one.png"),
+        )
+
+        response = media_client(make_superuser()).post(
+            f"/api/media-library/items/{item.pk}/crop",
+            {"crop": CROP_INFO},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        assert calls == [(item, CROP_INFO)]
+        assert response.json()["id"] == item.pk
+    finally:
+        del admin_site.crop_image
+
+
+@pytest.mark.django_db
+def test_crop_requires_change_permission(media_settings):
+    """Cropping is gated on the change permission, not the add
+    permission DjangoModelPermissions would map a POST to."""
+    from content_studio.admin import admin_site
+
+    calls = []
+    admin_site.crop_image = lambda obj, crop_info: calls.append((obj, crop_info))
+
+    try:
+        item = ItemModel.objects.create(name="one", type="image")
+
+        viewer = auth_models.User.objects.create_user(
+            username="viewer", password="x", is_staff=True
+        )
+        viewer.user_permissions.set(
+            [
+                auth_models.Permission.objects.get(
+                    content_type__app_label="content_studio",
+                    codename="view_itemmodel",
+                )
+            ]
+        )
+
+        response = media_client(viewer).post(
+            f"/api/media-library/items/{item.pk}/crop",
+            {"crop": CROP_INFO},
+            format="json",
+        )
+
+        assert response.status_code == 403
+        assert calls == []
+    finally:
+        del admin_site.crop_image

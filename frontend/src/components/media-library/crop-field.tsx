@@ -12,8 +12,9 @@ export function CropField({
   image,
   className,
 }: {
-  value?: CropValue[];
-  onChange?(crop: CropValue[]): void;
+  // A pending crop selection; undefined leaves the image uncropped.
+  value?: CropValue;
+  onChange?(crop: CropValue | undefined): void;
   image: string;
   className?: string;
 }) {
@@ -21,24 +22,26 @@ export function CropField({
     <ReactCrop
       ruleOfThirds
       crop={
-        value?.[0] && {
-          ...value[0],
-          x: Number(value[0].x),
-          y: Number(value[0].y),
-          width: Number(value[0].width),
-          height: Number(value[0].height),
+        value && {
+          ...value,
+          x: Number(value.x),
+          y: Number(value.y),
+          width: Number(value.width),
+          height: Number(value.height),
         }
       }
       className="w-full"
       onChange={(_, p) =>
-        onChange?.([
-          R.evolve({
-            x: (n) => n.toFixed(2),
-            y: (n) => n.toFixed(2),
-            width: (n) => n.toFixed(2),
-            height: (n) => n.toFixed(2),
-          })(p),
-        ])
+        onChange?.(
+          p
+            ? R.evolve({
+                x: (n) => n.toFixed(2),
+                y: (n) => n.toFixed(2),
+                width: (n) => n.toFixed(2),
+                height: (n) => n.toFixed(2),
+              })(p)
+            : undefined,
+        )
       }
     >
       <img alt="" src={image} className={cn("w-full rounded", className)} />

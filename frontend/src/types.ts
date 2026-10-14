@@ -280,13 +280,18 @@ export interface CropValue {
   unit: "%";
 }
 
+// The focus point on an image, as percentages of its dimensions.
+export interface FocusPointValue {
+  x: number;
+  y: number;
+}
+
 export interface MediaItem {
   id: string;
   folder: string | null;
   name: string;
   thumbnail: string;
   file: string;
-  crop?: CropValue[];
   tags: string[];
   alt_text: string;
   type: "file" | "image" | "video" | "audio";

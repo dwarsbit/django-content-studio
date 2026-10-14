@@ -125,6 +125,12 @@
       "type": "Type",
       "size": "Grootte",
       "tags": "Tags"
+    },
+    "crop": "Bijsnijden",
+    "focus_point": {
+      "title": "Focuspunt",
+      "set": "Focuspunt instellen",
+      "remove": "Focuspunt verwijderen"
     }
   },
   "widgets": {

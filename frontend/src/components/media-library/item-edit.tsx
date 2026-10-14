@@ -1,10 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { type Resolver, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { CropField } from "@/components/media-library/crop-field";
+import { FocusPointField } from "@/components/media-library/focus-point-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import {
@@ -17,11 +19,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TagInput } from "@/components/ui/tag-input";
+import { useCropMedia } from "@/hooks/use-crop-media";
+import { useDiscover } from "@/hooks/use-discover";
 import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
 import { useUpdateMedia } from "@/hooks/use-update-media";
 import { getErrorMessage } from "@/lib/utils";
-import type { MediaItem } from "@/types";
+import type { CropValue, FocusPointValue, MediaItem } from "@/types";
 
 export function ItemEdit({
   itemId,
@@ -61,7 +66,30 @@ function ItemEditContent({
 
 function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
   const { t } = useTranslation();
+  const { data: discover } = useDiscover();
   const { mutateAsync } = useUpdateMedia();
+  const { mutateAsync: cropMedia } = useCropMedia();
+
+  const mediaLibrary = discover?.media_library;
+
+  // Crop and focus point only apply to images.
+  const isImage = data.type === "image";
+  const cropEnabled = isImage && (mediaLibrary?.crop ?? false);
+  const focusPointAttr = isImage ? (mediaLibrary?.focus_point ?? null) : null;
+  const focusPointValue = focusPointAttr
+    ? ((data as unknown as Record<string, FocusPointValue | null>)[
+        focusPointAttr
+      ] ?? null)
+    : null;
+
+  const [tab, setTab] = useState<"crop" | "focus">("crop");
+  // A crop selection is not stored on the item: undefined means no crop
+  // is sent. The focus point lives on the item's focus point attribute.
+  const [crop, setCrop] = useState<CropValue | undefined>(undefined);
+  const [focusPoint, setFocusPoint] = useState<FocusPointValue | null>(
+    focusPointValue,
+  );
+
   const formSchema = z.looseObject({
     id: z.string().readonly(),
   });
@@ -81,7 +109,26 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
 
   const onSubmit = async (values: MediaItem) => {
     try {
-      await mutateAsync(values);
+      // The focus point is a dynamic attribute on the item; merge the
+      // editor's value into the payload under its configured name.
+      const payload: MediaItem = focusPointAttr
+        ? { ...values, [focusPointAttr]: focusPoint }
+        : values;
+
+      await mutateAsync(payload);
+
+      // The crop is applied after the update: it goes through the
+      // site's crop_image hook rather than the item's own fields. A
+      // failed crop keeps the dialog open, so it can be retried.
+      if (cropEnabled && crop) {
+        try {
+          await cropMedia({ id: data.id, crop });
+        } catch (e: unknown) {
+          toast.error(getErrorMessage(e));
+          return;
+        }
+      }
+
       onSave();
     } catch (e: unknown) {
       toast.error(getErrorMessage(e));
@@ -91,24 +138,60 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
   return (
     <Form {...form}>
       <div className="flex">
-        <div className="w-96 p-6 bg-muted rounded-l-lg flex items-center">
-          <FormField
-            control={form.control}
-            name="crop"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
+        {isImage && (
+          <div className="w-96 p-6 bg-muted rounded-l-lg flex items-center">
+            {cropEnabled && focusPointAttr ? (
+              <Tabs
+                value={tab}
+                onValueChange={(value) => setTab(value as "crop" | "focus")}
+                className="w-full"
+              >
+                <TabsList className="mb-3">
+                  <TabsTrigger value="crop">
+                    {t("media_library.crop")}
+                  </TabsTrigger>
+                  <TabsTrigger value="focus">
+                    {t("media_library.focus_point.title")}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="crop">
                   <CropField
-                    {...field}
+                    value={crop}
+                    onChange={setCrop}
                     image={data.thumbnail}
                     className="size-auto object-contain rounded-md"
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                </TabsContent>
+                <TabsContent value="focus">
+                  <FocusPointField
+                    value={focusPoint}
+                    onChange={setFocusPoint}
+                    image={data.thumbnail}
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : cropEnabled ? (
+              <CropField
+                value={crop}
+                onChange={setCrop}
+                image={data.thumbnail}
+                className="w-full"
+              />
+            ) : focusPointAttr ? (
+              <FocusPointField
+                value={focusPoint}
+                onChange={setFocusPoint}
+                image={data.thumbnail}
+              />
+            ) : (
+              <img
+                alt={data.alt_text}
+                src={data.thumbnail}
+                className="w-full rounded"
+              />
             )}
-          />
-        </div>
+          </div>
+        )}
 
         <div className="flex-1 flex flex-col p-6">
           <div className="space-y-3 flex-1">

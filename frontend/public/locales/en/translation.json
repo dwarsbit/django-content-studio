@@ -126,6 +126,12 @@
       "type": "Type",
       "size": "Size",
       "tags": "Tags"
+    },
+    "crop": "Crop",
+    "focus_point": {
+      "title": "Focus point",
+      "set": "Set focus point",
+      "remove": "Remove focus point"
     }
   },
   "widgets": {

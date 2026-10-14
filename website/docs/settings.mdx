@@ -76,6 +76,15 @@ Import path strings of the media and folder models for the
 [media library](/docs/media-library). Both default to `None` — the library is
 disabled.
 
+## FOCUS_POINT_ATTR {#focus_point_attr}
+
+Field name on the media item model holding the focus point, for the
+[media library](/docs/media-library)'s focus point editor. The field must be a
+`JSONField`; the editor stores `{"x": 0-100, "y": 0-100}` — percentages of the
+image's dimensions. Default `None` — the editor is disabled. Setting it without
+`MEDIA_LIBRARY_MODEL`, pointing it at a missing field, or at a non-JSON field
+is reported by the `content_studio.E009` system check.
+
 ## TENANT_MODEL {#tenant_model}
 
 Import path string of the tenant model for

@@ -8,6 +8,7 @@ from contextlib import contextmanager
 import pytest
 from django.core import checks as django_checks
 from django.core.checks.registry import registry
+from django.test import override_settings
 
 from content_studio.admin import ModelStudio, admin_site
 from content_studio.checks import check_content_studio
@@ -227,3 +228,61 @@ def test_clean_bulk_actions_produce_no_errors():
         admin_site._registry[Article] = original
 
     assert not [m for m in messages if m.id == "content_studio.E007"]
+
+
+@pytest.mark.django_db
+def test_focus_point_attr_without_media_model_is_an_error():
+    """FOCUS_POINT_ATTR needs a media item model to point at."""
+    with override_settings(CONTENT_STUDIO={"FOCUS_POINT_ATTR": "focus_point"}):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E009")
+
+    assert "MEDIA_LIBRARY_MODEL" in str(error)
+
+
+@pytest.mark.django_db
+def test_focus_point_attr_must_exist_on_the_media_model():
+    with override_settings(
+        CONTENT_STUDIO={
+            "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
+            "FOCUS_POINT_ATTR": "focus_point",
+        }
+    ):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E009")
+
+    assert "unknown field 'focus_point'" in str(error)
+
+
+@pytest.mark.django_db
+def test_focus_point_attr_must_be_a_json_field():
+    with override_settings(
+        CONTENT_STUDIO={
+            "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
+            "FOCUS_POINT_ATTR": "name",
+        }
+    ):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E009")
+
+    assert "must name a JSONField" in str(error)
+
+
+@pytest.mark.django_db
+def test_focus_point_attr_on_a_json_field_produces_no_error():
+    with override_settings(
+        CONTENT_STUDIO={
+            "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
+            "FOCUS_POINT_ATTR": "tags",
+        }
+    ):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.E009"]
+
+
+def test_focus_point_attr_unset_produces_no_error():
+    assert not [m for m in check_content_studio() if m.id == "content_studio.E009"]

@@ -36,6 +36,10 @@ media model needs:
 - optionally `tags`, searched alongside the name — a list-typed field
   (a `JSONField` of strings, an `ArrayField`, or Blueprint's
   `TagField`); the tags input in the item editor works on the list
+- optionally a `JSONField` for the focus point — set
+  [`FOCUS_POINT_ATTR`](/docs/settings#focus_point_attr) to its name and the
+  item editor offers a click-to-set focus point, stored as
+  `{"x": 0-100, "y": 0-100}` (percentages of the image's dimensions)
 
 Folder models need a self-referencing `parent` field; the rest (name,
 children) follows from it. An unconfigured media library simply does not
@@ -44,8 +48,9 @@ appear in the interface.
 ## Managing media
 
 The library is fully managed in the interface: upload files (with tags in the
-same go when the model has a `tags` field), move them between folders, edit
-their details and crop images — all against the models you configure.
+same go when the model has a `tags` field), move them between folders and edit
+their details — all against the models you configure. Image items can carry a
+crop selection (see [cropping](#cropping)) and a focus point, applied on save.
 
 Three views are offered through a toggle: the **grid** (thumbnails), a
 **list** of rich rows and a **table** with sortable columns (name, type and
@@ -81,6 +86,13 @@ per-file progress, and each item's context menu offers **Copy URL** and
 - **`AdminSite.get_media_serializer_fields(media_model)`** — controls which
   fields the serializer exposes. The default is `__all__`; override to keep
   sensitive custom fields out of the API.
+- **`AdminSite.crop_image(obj, crop_info)`** — enables cropping. The base
+  `AdminSite` does not define it; add the method to your site subclass and the
+  item editor offers a crop selection for images. The crop info — the
+  selection as percentages, `{"x": "10.00", "y": "20.00", "width": "50.00",
+  "height": "40.00", "unit": "%"}` — is passed through verbatim when the item
+  is saved; what cropping means (a derivative, an in-place resize, a stored
+  preset) is up to the implementation.
 
 ```python
 class CustomAdminSite(AdminSite):
@@ -89,4 +101,19 @@ class CustomAdminSite(AdminSite):
 
     def get_media_serializer_fields(self, media_model):
         return ["id", "name", "type", "tags", "file", "folder"]
+
+    def crop_image(self, obj, crop_info):
+        # Apply the crop to obj's file however your project sees fit.
+        ...
 ```
+
+## Cropping and focus points
+
+A crop does not live on the media item: selecting one in the item editor sends
+it to the site's `crop_image(obj, crop_info)` hook (see
+[Hooks](#hooks)), which returns control to the editor with the updated item.
+Without the hook, no crop UI appears.
+
+The focus point, by contrast, is stored on the item: name its `JSONField` with
+[`FOCUS_POINT_ATTR`](/docs/settings#focus_point_attr) and the editor offers a
+click-to-set focus point saved with the rest of the item's details.

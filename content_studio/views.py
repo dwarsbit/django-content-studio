@@ -120,6 +120,12 @@ class AdminApiViewSet(ViewSet):
         data["media_library"] = {
             "enabled": media_model is not None,
             "folders": folder_model is not None,
+            # Cropping is offered when the site defines the
+            # crop_image(obj, crop_info) hook.
+            "crop": callable(getattr(self.admin_site, "crop_image", None)),
+            # The media item attribute holding the focus point; None
+            # disables the focus point editor.
+            "focus_point": cs_settings.FOCUS_POINT_ATTR,
             "models": {
                 "media_model": (media_model._meta.label_lower if media_model else None),
                 "folder_model": (

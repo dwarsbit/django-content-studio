@@ -29,7 +29,8 @@ class MediaLibraryPermissions(DjangoModelPermissions):
     Django's model permissions, with the bulk endpoint gated on view
     only: the actions enforce their own permissions (delete for
     deleting, change for moving), mirroring the content bulk
-    endpoint.
+    endpoint. Cropping is gated on change: DjangoModelPermissions
+    would map the crop action's POST to the add permission.
     """
 
     def has_permission(self, request, view):
@@ -41,6 +42,16 @@ class MediaLibraryPermissions(DjangoModelPermissions):
 
             return request.user.has_perm(
                 f"{media_model._meta.app_label}.view_{media_model._meta.model_name}"
+            )
+
+        if getattr(view, "action", None) == "crop":
+            media_model = view.get_media_model()
+
+            if media_model is None:
+                return False
+
+            return request.user.has_perm(
+                f"{media_model._meta.app_label}.change_{media_model._meta.model_name}"
             )
 
         return super().has_permission(request, view)
@@ -159,6 +170,41 @@ class MediaLibraryViewSet(ModelViewSet):
                 tags.add(str(value))
 
         return Response(sorted(tags, key=lambda tag: (tag.lower(), tag)))
+
+    @action(methods=["post"], detail=True, url_path="crop")
+    def crop(self, request, id=None):
+        """
+        Apply a crop to a media item: {"crop": {...}}. The crop info is
+        handed to the admin site's crop_image(obj, crop_info) hook,
+        which decides what cropping means for the project — it is only
+        offered when the site defines the method. Returns the updated
+        item, so the frontend can refresh the thumbnail.
+        """
+        model = self.get_media_model()
+
+        if not model:
+            raise NotFound("The media library model is not defined.")
+
+        crop_image = getattr(cs_settings.ADMIN_SITE, "crop_image", None)
+
+        if not callable(crop_image):
+            raise NotConfigured(
+                "Cropping requires a crop_image(obj, crop_info) method on "
+                "the admin site."
+            )
+
+        crop_info = request.data.get("crop", None)
+
+        if not isinstance(crop_info, dict) or not crop_info:
+            raise ValidationError(
+                "A crop requires a non-empty crop info object, like "
+                '{"x": 0, "y": 0, "width": 50, "height": 50, "unit": "%"}.'
+            )
+
+        obj = self.get_object()
+        crop_image(obj, crop_info)
+
+        return Response(self.get_serializer(obj).data)
 
     @action(methods=["post"], detail=False, url_path="bulk")
     def bulk(self, request):

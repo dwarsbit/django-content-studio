@@ -401,6 +401,55 @@ def soft_delete_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def focus_point_errors() -> list[tuple[str, str]]:
+    """
+    A misconfigured FOCUS_POINT_ATTR, as (check id, message) pairs.
+    The attribute must exist on the media item model and be a JSONField:
+    the frontend stores the focus point in it as {"x": 0-100, "y": 0-100}.
+    """
+    errors = []
+
+    attr = cs_settings.FOCUS_POINT_ATTR
+
+    if not attr:
+        return errors
+
+    media_model = cs_settings.MEDIA_LIBRARY_MODEL
+
+    if not media_model:
+        errors.append(
+            (
+                "content_studio.E009",
+                "FOCUS_POINT_ATTR is set but MEDIA_LIBRARY_MODEL is not; "
+                "the focus point attribute needs a media item model.",
+            )
+        )
+        return errors
+
+    try:
+        field = media_model._meta.get_field(attr)
+    except FieldDoesNotExist:
+        errors.append(
+            (
+                "content_studio.E009",
+                f"FOCUS_POINT_ATTR refers to the unknown field '{attr}' on "
+                f"{media_model._meta.label_lower}.",
+            )
+        )
+        return errors
+
+    if not isinstance(field, models.JSONField):
+        errors.append(
+            (
+                "content_studio.E009",
+                f"FOCUS_POINT_ATTR must name a JSONField; '{attr}' on "
+                f"{media_model._meta.label_lower} is not.",
+            )
+        )
+
+    return errors
+
+
 @checks.register()
 def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage]:
     site = cs_settings.ADMIN_SITE
@@ -426,6 +475,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
     for check_id, error in duplicate_id_errors(site):
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in focus_point_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     return messages

@@ -7,6 +7,7 @@ import { useAdminInfo } from "@/hooks/use-admin-info";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useCreateFolder } from "@/hooks/use-create-folder";
 import { useCreateMedia } from "@/hooks/use-create-media";
+import { useCropMedia } from "@/hooks/use-crop-media";
 import { useDeleteFolder } from "@/hooks/use-delete-folder";
 import { useDeleteMedia } from "@/hooks/use-delete-media";
 import { useDiscover } from "@/hooks/use-discover";
@@ -51,6 +52,8 @@ const DISCOVER_FIXTURE = {
   media_library: {
     enabled: true,
     folders: true,
+    crop: false,
+    focus_point: null,
     models: { media_model: "media.image", folder_model: "media.folder" },
   },
 };
@@ -389,6 +392,53 @@ describe("useUpdateMedia", () => {
     expect(httpMock.patch).toHaveBeenCalledWith(
       "/media-library/items/media-1",
       expect.not.objectContaining({ file: expect.anything() }),
+    );
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["media-library", "items"],
+    });
+  });
+});
+
+describe("useCropMedia", () => {
+  it("crops a media item and refreshes it", async () => {
+    const cropped = makeMediaItem({ name: "cropped.png" });
+    httpMock.post.mockResolvedValue({ data: cropped });
+    const { Wrapper, queryClient } = makeWrapper();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+    const setSpy = vi.spyOn(queryClient, "setQueryData");
+
+    const { result } = renderHook(() => useCropMedia(), { wrapper: Wrapper });
+
+    let returned: MediaItem | undefined;
+    await act(async () => {
+      returned = await result.current.mutateAsync({
+        id: "media-1",
+        crop: {
+          x: "10.00",
+          y: "20.00",
+          width: "50.00",
+          height: "40.00",
+          unit: "%",
+        },
+      });
+    });
+
+    expect(returned).toEqual(cropped);
+    expect(httpMock.post).toHaveBeenCalledWith(
+      "/media-library/items/media-1/crop",
+      {
+        crop: {
+          x: "10.00",
+          y: "20.00",
+          width: "50.00",
+          height: "40.00",
+          unit: "%",
+        },
+      },
+    );
+    expect(setSpy).toHaveBeenCalledWith(
+      ["media-library", "items", "media-1"],
+      cropped,
     );
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["media-library", "items"],
