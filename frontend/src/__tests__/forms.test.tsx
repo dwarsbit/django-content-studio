@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AxiosError, type AxiosResponse } from "axios";
 import type { ReactElement, ReactNode } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   createMemoryRouter,
   Link,
@@ -206,6 +206,14 @@ function FormHarness({
   return <Form {...form}>{children}</Form>;
 }
 
+// Renders the watched form value, to observe changes made through
+// label clicks.
+function ValueProbe({ name }: { name: keyof FormValues }) {
+  const value = useWatch<FormValues>({ name });
+
+  return <span data-testid="watched-value">{String(value)}</span>;
+}
+
 function renderWithQueryClient(ui: ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -288,6 +296,48 @@ describe("FormField", () => {
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
     expect(checkbox.parentElement).toContainElement(label);
+  });
+
+  it("toggles the checkbox through its label", async () => {
+    render(
+      <FormHarness
+        defaultValues={{ title: "", status: "draft", is_published: false }}
+      >
+        <FormField
+          formField={makeFormField("is_published")}
+          model={makeModel()}
+        />
+        <ValueProbe name="is_published" />
+      </FormHarness>,
+    );
+
+    expect(screen.getByTestId("watched-value")).toHaveTextContent("false");
+
+    await userEvent.click(screen.getByText("Published"));
+
+    expect(screen.getByTestId("watched-value")).toHaveTextContent("true");
+  });
+
+  it("toggles the switch through its label", async () => {
+    render(
+      <FormHarness
+        defaultValues={{ title: "", status: "draft", is_published: false }}
+      >
+        <FormField
+          formField={makeFormField("is_published", {
+            widget: FieldWidget.SwitchWidget,
+          })}
+          model={makeModel()}
+        />
+        <ValueProbe name="is_published" />
+      </FormHarness>,
+    );
+
+    expect(screen.getByTestId("watched-value")).toHaveTextContent("false");
+
+    await userEvent.click(screen.getByText("Published"));
+
+    expect(screen.getByTestId("watched-value")).toHaveTextContent("true");
   });
 
   it("renders a read-only display instead of a widget for readonly fields", () => {

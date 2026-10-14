@@ -30,6 +30,12 @@ type WidgetComponent = ComponentType<{
   model: Model;
   field: ModelField;
   name: string;
+  // Form control wiring: the id associates the control with its label
+  // (clicking the label toggles checkbox- and switch-based widgets);
+  // the aria props tie help text and errors to the control.
+  id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean;
 }>;
 
 // Widget value shapes are model-defined at runtime; each widget instantiates
@@ -65,6 +71,9 @@ export function WidgetRenderer({
   model,
   name,
   widgetClass: widgetClassOverride,
+  id,
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
 }: {
   value: unknown;
   onChange(value: unknown): void;
@@ -72,6 +81,9 @@ export function WidgetRenderer({
   name: string;
   // Widget override from the form field's configuration.
   widgetClass?: FieldWidget | null;
+  id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean;
 }) {
   const { data: info } = useAdminInfo();
   const field = model.fields[name];
@@ -98,6 +110,9 @@ export function WidgetRenderer({
       model={model}
       field={field}
       name={name}
+      id={id}
+      aria-describedby={ariaDescribedBy}
+      aria-invalid={ariaInvalid}
     />
   );
 }

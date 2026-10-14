@@ -51,6 +51,12 @@ export function FormField({
     !isReadonly &&
     modelField !== undefined &&
     widgetClass === FieldWidget.CheckboxWidget;
+  // The label toggles checkbox- and switch-based controls through its
+  // htmlFor association, so it reads as clickable.
+  const labelToggles =
+    !isReadonly &&
+    (widgetClass === FieldWidget.CheckboxWidget ||
+      widgetClass === FieldWidget.SwitchWidget);
 
   return (
     <div>
@@ -78,11 +84,15 @@ export function FormField({
                 {isCheckbox ? (
                   <div className="flex items-center gap-2">
                     {control}
-                    <FormLabel>{label}</FormLabel>
+                    <FormLabel className="cursor-pointer">{label}</FormLabel>
                   </div>
                 ) : (
                   <>
-                    <FormLabel>{label}</FormLabel>
+                    <FormLabel
+                      className={labelToggles ? "cursor-pointer" : undefined}
+                    >
+                      {label}
+                    </FormLabel>
                     {control}
                   </>
                 )}
