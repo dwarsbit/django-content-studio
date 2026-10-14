@@ -1,0 +1,44 @@
+---
+sidebar_position: 14
+---
+
+# 🔎 System checks
+
+Content Studio validates its configuration through Django's check
+framework (`manage.py check`, runserver startup, `makemigrations`, CI).
+Errors mean a configuration is broken at runtime — a typo that would
+otherwise fail silently or crash a request. Warnings mean the
+configuration runs, but with an unintended consequence. Nothing blocks
+startup; the exit code of `manage.py check` differs.
+
+## Errors
+
+| ID | Catches |
+|----|---------|
+| `content_studio.E001` | `list_display` set to a list or tuple — it configures the list view and takes a mapping; for table columns use `table_display`. |
+| `content_studio.E002` | `list_views` containing unknown view names. |
+| `content_studio.E003` | Duplicate extension IDs — pass `extension_id` to disambiguate. |
+| `content_studio.E004` | Duplicate dashboard widget IDs — pass `widget_id` to disambiguate. |
+| `content_studio.E005` | Duplicate component IDs — pass `component_id` to disambiguate. |
+| `content_studio.E006` | `table_display` entries that are neither field names nor `TableColumn` objects, duplicate columns, columns that resolve to neither a model field, `__str__` nor a studio method, and formats that are not `content_studio.formats` classes. Inlines are validated too. |
+| `content_studio.E007` | Bulk actions: an `actions` list naming unknown or duplicate actions, a `@bulk_action` shadowing the built-in delete, and unknown permissions. |
+| `content_studio.E008` | `soft_delete` naming an unknown field, or a field that is not a nullable date or datetime. |
+| `content_studio.E009` | [`FOCUS_POINT_ATTR`](/docs/settings#focus_point_attr) without a `MEDIA_LIBRARY_MODEL`, or naming a field that does not exist or is not a `JSONField`. |
+| `content_studio.E010` | Edit form fields naming anything but a model field — they would render as empty read-only boxes — and `Field(widget=...)` overrides that are not `content_studio.widgets` classes. |
+| `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that do not resolve to a field, and `list_display` values that are neither a field nor a model method. Inlines are validated too. |
+| `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key to the parent model. |
+| `content_studio.E013` | Site-level `default_widget_mapping` / `default_format_mapping` values that are not widget or format classes. |
+
+## Warnings
+
+| ID | Catches |
+|----|---------|
+| `content_studio.W001` | A required model field missing from `edit_main` and `edit_sidebar` — saving fails validation. Fields with a default, nullable fields and blank fields never count, and neither do the fields Content Studio fills itself. |
+| `content_studio.W002` | A required model field configured `readonly=True` in the edit form — the value can never be provided, so saving fails validation. |
+| `content_studio.W003` | A choice-driven widget (`SelectWidget`, `MultiSelectWidget`, `ToggleGroupWidget`, `RadioButtonWidget`) on a field without choices — it would render empty. |
+| `content_studio.W004` | `sortable_by` names that are not `table_display` columns — the sort UI only attaches to table columns. |
+| `content_studio.W005` | Non-string `list_filter` entries (filter classes, tuples) — only field-name strings are filterable, the rest is ignored. |
+| `content_studio.W006` | A model group listing a model that is not registered with the site — a dead menu entry. |
+| `content_studio.W007` | A media library model missing the documented contract fields (`file`, `name`, `type`), or a folder model missing `name` / `parent`. |
+| `content_studio.W008` | A `crop_image` hook on the admin site without a configured `MEDIA_LIBRARY_MODEL` — the hook is never called. |
+| `content_studio.W009` | An empty `LOGIN_BACKENDS` setting — nobody can sign in. |

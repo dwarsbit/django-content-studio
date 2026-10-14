@@ -43,7 +43,9 @@ media model needs:
 
 Folder models need a self-referencing `parent` field; the rest (name,
 children) follows from it. An unconfigured media library simply does not
-appear in the interface.
+appear in the interface. Missing contract fields are reported by the
+`content_studio.W007` system check (see
+[System checks](/docs/system-checks)).
 
 ## Managing media
 

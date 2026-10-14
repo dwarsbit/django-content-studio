@@ -8,13 +8,15 @@ from contextlib import contextmanager
 import pytest
 from django.core import checks as django_checks
 from django.core.checks.registry import registry
+from django.db import models
 from django.test import override_settings
 
-from content_studio.admin import ModelStudio, admin_site
+from content_studio import widgets
+from content_studio.admin import InlineModelStudio, ModelStudio, admin_site
 from content_studio.checks import check_content_studio
-from content_studio.form import Component, FieldLayout, FormSet
+from content_studio.form import Component, Field, FieldLayout, FormSet
 from tests.testapp.admin import ArticleAdmin
-from tests.testapp.models import Article
+from tests.testapp.models import Article, Review
 
 
 def test_check_is_registered_with_django():
@@ -286,3 +288,332 @@ def test_focus_point_attr_on_a_json_field_produces_no_error():
 
 def test_focus_point_attr_unset_produces_no_error():
     assert not [m for m in check_content_studio() if m.id == "content_studio.E009"]
+
+
+# --- E010: edit form configuration -----------------------------------------
+
+
+def test_unknown_edit_field_name_surfaces_as_system_error():
+    """A Field naming anything but a model field renders as an empty
+    read-only box in the editor."""
+
+    class Typo(ModelStudio):
+        edit_main = [Field("titel")]
+
+    with swapped_article_studio(Typo):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E010")
+
+    assert "titel" in str(error)
+
+
+def test_unknown_sidebar_field_name_surfaces_as_system_error():
+    class Typo(ModelStudio):
+        edit_sidebar = [Field("titel")]
+
+    with swapped_article_studio(Typo):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E010")
+
+    assert "titel" in str(error)
+
+
+def test_non_widget_edit_field_widget_surfaces_as_system_error():
+    class BadWidget(ModelStudio):
+        edit_main = [Field("title", widget=dict)]
+
+    with swapped_article_studio(BadWidget):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E010")
+
+    assert "content_studio.widgets" in str(error)
+
+
+def test_widget_override_produces_no_error():
+    class Fine(ModelStudio):
+        edit_main = [Field("title", widget=widgets.TextAreaWidget)]
+
+    with swapped_article_studio(Fine):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.E010"]
+
+
+# --- E011: list page lookups ------------------------------------------------
+
+
+def test_unresolvable_list_configuration_surfaces_as_system_errors():
+    class Broken(ModelStudio):
+        search_fields = ["titel"]
+        ordering = ["-titel"]
+        list_filter = ["titel"]
+        list_display = {"title": "titel"}
+
+    with swapped_article_studio(Broken):
+        messages = check_content_studio()
+
+    errors = [m for m in messages if m.id == "content_studio.E011"]
+
+    assert len(errors) == 4
+    assert all("titel" in str(error) for error in errors)
+
+
+def test_resolvable_list_configuration_produces_no_error():
+    """Related lookups, descending and random ordering, pk and model
+    methods all resolve."""
+
+    class Fine(ModelStudio):
+        search_fields = ["title", "author__username"]
+        ordering = ["title", "-pk", "?"]
+        list_filter = ["status", "published_at"]
+        list_display = {"title": "title", "meta": "get_status_display"}
+
+    with swapped_article_studio(Fine):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.E011"]
+
+
+def test_inline_list_configuration_is_checked():
+    class ReviewInline(InlineModelStudio):
+        model = Review
+        search_fields = ["titel"]
+
+    class Broken(ModelStudio):
+        inlines = [ReviewInline]
+
+    with swapped_article_studio(Broken):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E011")
+
+    assert "ReviewInline.search_fields" in str(error)
+
+
+# --- E012: inline fk_name ---------------------------------------------------
+
+
+def test_unknown_inline_fk_name_surfaces_as_system_error():
+    class Inline(InlineModelStudio):
+        model = Review
+        fk_name = "titel"
+
+    class Broken(ModelStudio):
+        inlines = [Inline]
+
+    with swapped_article_studio(Broken):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E012")
+
+    assert "unknown field" in str(error)
+
+
+def test_inline_fk_name_to_wrong_target_surfaces_as_system_error():
+    class Inline(InlineModelStudio):
+        model = Review
+        fk_name = "stars"
+
+    class Broken(ModelStudio):
+        inlines = [Inline]
+
+    with swapped_article_studio(Broken):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E012")
+
+    assert "foreign key" in str(error)
+
+
+def test_inline_fk_name_to_parent_fk_produces_no_error():
+    class Inline(InlineModelStudio):
+        model = Review
+        fk_name = "article"
+
+    class Fine(ModelStudio):
+        inlines = [Inline]
+
+    with swapped_article_studio(Fine):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.E012"]
+
+
+# --- E013: widget and format mappings ---------------------------------------
+
+
+def test_non_widget_mapping_value_surfaces_as_system_error():
+    original = admin_site.default_widget_mapping
+    admin_site.default_widget_mapping = {models.CharField: object}
+
+    try:
+        messages = check_content_studio()
+    finally:
+        admin_site.default_widget_mapping = original
+
+    error = next(m for m in messages if m.id == "content_studio.E013")
+
+    assert "default_widget_mapping" in str(error)
+
+
+def test_non_format_mapping_value_surfaces_as_system_error():
+    original = admin_site.default_format_mapping
+    admin_site.default_format_mapping = {models.CharField: object}
+
+    try:
+        messages = check_content_studio()
+    finally:
+        admin_site.default_format_mapping = original
+
+    error = next(m for m in messages if m.id == "content_studio.E013")
+
+    assert "default_format_mapping" in str(error)
+
+
+# --- W002: required fields configured readonly -------------------------------
+
+
+def test_required_field_configured_readonly_surfaces_as_warning():
+    class ReadOnly(ModelStudio):
+        edit_main = [Field("title", readonly=True), "body"]
+
+    with swapped_article_studio(ReadOnly):
+        messages = check_content_studio()
+
+    warning = next(m for m in messages if m.id == "content_studio.W002")
+
+    assert "title" in str(warning)
+    assert isinstance(warning, django_checks.Warning)
+
+
+def test_optional_field_configured_readonly_produces_no_warning():
+    class ReadOnly(ModelStudio):
+        edit_main = [Field("body", readonly=True), "title"]
+
+    with swapped_article_studio(ReadOnly):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.W002"]
+
+
+# --- W003: choice widgets on fields without choices ---------------------------
+
+
+def test_choice_widget_without_choices_surfaces_as_warning():
+    class NoChoices(ModelStudio):
+        edit_main = [Field("title", widget=widgets.ToggleGroupWidget)]
+
+    with swapped_article_studio(NoChoices):
+        messages = check_content_studio()
+
+    warning = next(m for m in messages if m.id == "content_studio.W003")
+
+    assert "title" in str(warning)
+    assert "ToggleGroupWidget" in str(warning)
+
+
+def test_choice_widget_on_choice_field_produces_no_warning():
+    class Fine(ModelStudio):
+        edit_main = [Field("status", widget=widgets.ToggleGroupWidget)]
+
+    with swapped_article_studio(Fine):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.W003"]
+
+
+# --- W004: sortable_by outside table_display ---------------------------------
+
+
+def test_sortable_by_without_column_surfaces_as_warning():
+    class Sort(ModelStudio):
+        sortable_by = ["views"]
+        table_display = ["id", "title"]
+
+    with swapped_article_studio(Sort):
+        messages = check_content_studio()
+
+    warning = next(m for m in messages if m.id == "content_studio.W004")
+
+    assert "views" in str(warning)
+
+
+def test_sortable_by_on_columns_produces_no_warning():
+    class Sort(ModelStudio):
+        sortable_by = ["title"]
+        table_display = ["id", "title"]
+
+    with swapped_article_studio(Sort):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.W004"]
+
+
+# --- W005: non-string list_filter entries -------------------------------------
+
+
+def test_non_string_list_filter_entry_surfaces_as_warning():
+    class WithFilterTuple(ModelStudio):
+        list_filter = ["status", ("published_at", "SomeFilter")]
+
+    with swapped_article_studio(WithFilterTuple):
+        messages = check_content_studio()
+
+    warning = next(m for m in messages if m.id == "content_studio.W005")
+
+    assert "SomeFilter" in str(warning)
+
+
+# --- Site-level warnings ------------------------------------------------------
+
+
+def test_model_group_with_unregistered_model_surfaces_as_warning():
+    from content_studio.admin import ModelGroup
+
+    original = admin_site.model_groups
+    admin_site.model_groups = [ModelGroup(name="content", models=[Article, Review])]
+
+    try:
+        messages = check_content_studio()
+    finally:
+        admin_site.model_groups = original
+
+    warning = next(m for m in messages if m.id == "content_studio.W006")
+
+    assert "testapp.review" in str(warning)
+
+
+def test_media_model_missing_contract_fields_surfaces_as_warning():
+    with override_settings(
+        CONTENT_STUDIO={"MEDIA_LIBRARY_MODEL": "tests.testapp.models.Review"}
+    ):
+        messages = check_content_studio()
+
+    warning = next(m for m in messages if m.id == "content_studio.W007")
+
+    assert "file" in str(warning)
+
+
+def test_crop_hook_without_media_library_surfaces_as_warning():
+    admin_site.crop_image = lambda obj, crop_info: None
+
+    try:
+        messages = check_content_studio()
+    finally:
+        del admin_site.crop_image
+
+    warning = next(m for m in messages if m.id == "content_studio.W008")
+
+    assert "crop_image" in str(warning)
+
+
+def test_empty_login_backends_surfaces_as_warning():
+    with override_settings(CONTENT_STUDIO={"LOGIN_BACKENDS": []}):
+        messages = check_content_studio()
+
+    warning = next(m for m in messages if m.id == "content_studio.W009")
+
+    assert "LOGIN_BACKENDS" in str(warning)
