@@ -462,7 +462,7 @@ const MultiSelect = React.forwardRef<
       >
         <div
           className={cn(
-            "flex w-full items-center justify-between gap-1 rounded-md border bg-background hover:border-ring focus-within:border-ring min-h-8 px-3 py-1",
+            "flex w-full items-center justify-between gap-1 rounded-md border bg-background hover:border-ring focus-within:border-ring min-h-9 px-3 py-1",
             {
               "cursor-text": !disabled && selected.length !== 0,
             },
