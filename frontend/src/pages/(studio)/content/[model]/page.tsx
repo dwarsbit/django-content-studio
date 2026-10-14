@@ -29,15 +29,29 @@ export function ModelListPage() {
   const page = Number(searchParams.get("page") ?? "1");
   const ordering = searchParams.get("ordering");
   const search = searchParams.get("search");
-  // The views the admin offers; more than one shows a toggle. The choice
-  // lives in the URL so reloads and shared links keep it.
+  // The views the admin offers; more than one shows a toggle. The
+  // choice is remembered per content type in local storage.
   const views = model?.admin.list.views ?? ["table"];
-  const viewParam = searchParams.get("view");
-  const view = views.includes(viewParam ?? "") ? viewParam : views[0];
-  const setView = (next: string) => (params: URLSearchParams) => {
-    params.set("view", next);
-    return params;
+
+  // Reads the remembered choice, falling back to the first offered
+  // view when nothing (or a no longer offered view) is stored.
+  const storedView = (label: string) => {
+    const remembered = localStorage.getItem(`__dcs_list_view__:${label}`);
+
+    return remembered && views.includes(remembered) ? remembered : views[0];
   };
+
+  const [view, setViewState] = useState<string>(() =>
+    model?.label ? storedView(model.label) : views[0],
+  );
+  const [lastLabel, setLastLabel] = useState(model?.label);
+
+  // Navigating between content types re-reads the remembered choice.
+  if (model && model.label !== lastLabel) {
+    setLastLabel(model.label);
+    setViewState(storedView(model.label));
+  }
+
   const filters = Array.from(searchParams.entries())
     .filter(([key]) => key.startsWith("filters."))
     .reduce(
@@ -52,7 +66,7 @@ export function ModelListPage() {
     );
 
   // Selection is current-page: any URL change (page, filter, search,
-  // ordering, view) resets it — during render, the sanctioned way to
+  // ordering) resets it — during render, the sanctioned way to
   // adjust state to an external change.
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [lastParams, setLastParams] = useState(searchParams);
@@ -61,6 +75,17 @@ export function ModelListPage() {
     setLastParams(searchParams);
     setSelected(new Set());
   }
+
+  const setView = (next: string) => {
+    setViewState(next);
+
+    if (model) {
+      localStorage.setItem(`__dcs_list_view__:${model.label}`, next);
+    }
+
+    // Selection is current-page: switching views resets it.
+    setSelected(new Set());
+  };
 
   const toggle = (id: string) =>
     setSelected((previous) => {
@@ -154,7 +179,7 @@ export function ModelListPage() {
                     <button
                       type="button"
                       title={t("list_view.table_view")}
-                      onClick={() => setSearchParams(setView("table"))}
+                      onClick={() => setView("table")}
                       className={cn(
                         "flex items-center justify-center size-6 rounded-md cursor-pointer",
                         view === "table"
@@ -169,7 +194,7 @@ export function ModelListPage() {
                     <button
                       type="button"
                       title={t("list_view.list_view")}
-                      onClick={() => setSearchParams(setView("list"))}
+                      onClick={() => setView("list")}
                       className={cn(
                         "flex items-center justify-center size-6 rounded-md cursor-pointer",
                         view === "list"

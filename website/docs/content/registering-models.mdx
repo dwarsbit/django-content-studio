@@ -135,7 +135,8 @@ studio always fall back to the string representation.
 
 The list page can render as a **table** (the default) or as a **list** of
 readable rows. Which views a model offers is declared with `list_views`;
-more than one shows a toggle, and the choice persists in the URL:
+more than one shows a toggle, and the choice is remembered per content
+type in the browser's local storage:
 
 ```python
 @register(models.Article)

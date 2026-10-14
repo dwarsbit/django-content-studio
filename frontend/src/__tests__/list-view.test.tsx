@@ -71,6 +71,7 @@ vi.mock("react-paginate", () => {
 window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 interface ModelOverrides {
+  label?: string;
   list?: Partial<Model["admin"]["list"]>;
   permissions?: Partial<Model["admin"]["permissions"]>;
   fields?: Record<string, ModelField>;
@@ -106,7 +107,7 @@ const filteredArticleFields: Record<string, ModelField> = {
 
 function makeModel(overrides: ModelOverrides = {}): Model {
   return {
-    label: "testapp.article",
+    label: overrides.label ?? "testapp.article",
     verbose_name: "Article",
     verbose_name_plural: "Articles",
     tenant_field: null,
@@ -697,6 +698,7 @@ describe("ModelListPage views", () => {
     httpGetMock.mockReset();
     httpGetMock.mockResolvedValue({ data: makePaginated(listArticles) });
     useAdminInfoMock.mockReturnValue({ data: undefined });
+    localStorage.clear();
   });
 
   it("renders the table and no toggle when only one view is offered", async () => {
@@ -708,7 +710,7 @@ describe("ModelListPage views", () => {
     expect(screen.queryByTitle("list_view.list_view")).not.toBeInTheDocument();
   });
 
-  it("switches to the list view through the toggle and keeps it in the URL", async () => {
+  it("switches to the list view through the toggle and remembers the choice", async () => {
     renderListPage(makeModel({ list: { views: ["table", "list"] } }));
 
     await userEvent.click(await screen.findByTitle("list_view.list_view"));
@@ -718,15 +720,42 @@ describe("ModelListPage views", () => {
     expect(screen.getByText("The second body")).toBeInTheDocument();
     expect(screen.getByText("Draft")).toBeInTheDocument();
     expect(screen.getByText("Published")).toBeInTheDocument();
-    expect(screen.getByTestId("location-search")).toHaveTextContent(
-      "view=list",
+    // The choice is remembered per content type, not in the URL.
+    expect(localStorage.getItem("__dcs_list_view__:testapp.article")).toBe(
+      "list",
     );
+    expect(screen.getByTestId("location-search")).toHaveTextContent("");
+  });
+
+  it("restores a remembered choice for the content type", async () => {
+    localStorage.setItem("__dcs_list_view__:testapp.article", "list");
+    renderListPage(makeModel({ list: { views: ["table", "list"] } }));
+
+    // The stored choice renders the list view, not the table.
+    expect(await screen.findByText("The first body")).toBeInTheDocument();
+    expect(screen.queryByText("Title")).not.toBeInTheDocument();
+  });
+
+  it("does not carry a choice over to another content type", async () => {
+    localStorage.setItem("__dcs_list_view__:testapp.article", "list");
+    renderListPage(
+      makeModel({
+        label: "testapp.note",
+        list: { views: ["table", "list"] },
+      }),
+      "/content/testapp.note",
+    );
+
+    // The note starts at its first offered view: the table.
+    expect(await screen.findByText("Title")).toBeInTheDocument();
+    expect(screen.queryByText("The first body")).not.toBeInTheDocument();
   });
 
   it("opens the editor when a list row is clicked", async () => {
+    localStorage.setItem("__dcs_list_view__:testapp.article", "list");
     renderListPage(
       makeModel({ list: { views: ["table", "list"] } }),
-      "/content/testapp.article?view=list",
+      "/content/testapp.article",
     );
 
     await userEvent.click(await screen.findByText("First Article"));
@@ -736,9 +765,10 @@ describe("ModelListPage views", () => {
     );
   });
 
-  it("falls back to the first offered view when the URL asks for another", async () => {
-    // views offers only the table; ?view=list is ignored.
-    renderListPage(makeModel(), "/content/testapp.article?view=list");
+  it("falls back to the first offered view when the remembered choice is unavailable", async () => {
+    // views offers only the table; a remembered "list" is ignored.
+    localStorage.setItem("__dcs_list_view__:testapp.article", "list");
+    renderListPage(makeModel());
 
     expect(await screen.findByText("Title")).toBeInTheDocument();
   });
