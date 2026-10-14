@@ -34,6 +34,11 @@ class MyStudioSite(ContentStudioSite):
 
 Unknown field types fall back to a plain input; unknown widget names fall
 back to a read-only display. Choice fields render as selects automatically.
+Two widgets outside the default mapping are available for overrides:
+a `SwitchWidget` for `BooleanField`s better presented as a toggle, and a
+`ToggleGroupWidget` for choice fields better presented as a group of
+toggles — exactly one active at a time, and a required field cannot be
+left without one.
 
 ## Per-field override
 

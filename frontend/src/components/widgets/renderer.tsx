@@ -17,9 +17,11 @@ import { MultiSelectWidget } from "./multi-select-widget";
 import { RichTextWidget } from "./rich-text-widget";
 import { SelectWidget } from "./select-widget";
 import { SlugWidget } from "./slug-widget";
+import { SwitchWidget } from "./switch-widget";
 import { TagWidget } from "./tag-widget";
 import { TextAreaWidget } from "./text-area-widget";
 import { TimeWidget } from "./time-widget";
+import { ToggleGroupWidget } from "./toggle-group-widget";
 import { URLPathWidget } from "./url-path-widget";
 
 type WidgetComponent = ComponentType<{
@@ -49,9 +51,11 @@ const WIDGETS = {
   [FieldWidget.RichTextWidget]: RichTextWidget,
   [FieldWidget.SelectWidget]: SelectWidget,
   [FieldWidget.SlugWidget]: SlugWidget,
+  [FieldWidget.SwitchWidget]: SwitchWidget,
   [FieldWidget.TagWidget]: TagWidget,
   [FieldWidget.TextAreaWidget]: TextAreaWidget,
   [FieldWidget.TimeWidget]: TimeWidget,
+  [FieldWidget.ToggleGroupWidget]: ToggleGroupWidget,
   [FieldWidget.URLPathWidget]: URLPathWidget,
 } as Partial<Record<FieldWidget, WidgetComponent>>;
 

@@ -73,11 +73,8 @@ describe("WidgetRenderer", () => {
       />,
     );
 
-    // SwitchWidget is not implemented in the frontend registry: the
-    // fallback widget renders the value read-only.
-    const input = screen.getByRole("textbox");
-    expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute("readonly");
+    // The field's widget_class override wins over the default mapping.
+    expect(screen.getByRole("switch")).toBeInTheDocument();
   });
 
   it("falls back to a plain input when no widget is known", () => {
@@ -124,6 +121,34 @@ describe("WidgetRenderer", () => {
     // Radix selects reveal their options only when opened; asserting
     // the trigger is the stable contract.
     expect(screen.getByRole("combobox")).toBeInTheDocument();
+  });
+
+  it("renders a toggle group for the ToggleGroupWidget on a choice field", () => {
+    useAdminInfoMock.mockReturnValue({ data: { widgets: {} } });
+
+    render(
+      <WidgetRenderer
+        model={makeModel({
+          status: {
+            type: FieldType.CharField,
+            required: true,
+            widget_class: FieldWidget.ToggleGroupWidget,
+            choices: [
+              ["draft", "Draft"],
+              ["published", "Published"],
+            ],
+          },
+        })}
+        name="status"
+        value="draft"
+        onChange={vi.fn()}
+      />,
+    );
+
+    // The active choice shows as the pressed toggle; the inactive
+    // one is not.
+    expect(screen.getByRole("radio", { name: "Draft" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Published" })).not.toBeChecked();
   });
 
   it("renders the fallback widget for unknown widget classes", () => {

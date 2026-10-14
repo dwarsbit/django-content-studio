@@ -267,6 +267,7 @@ export enum FieldWidget {
   SlugWidget = "SlugWidget",
   SwitchWidget = "SwitchWidget",
   TextAreaWidget = "TextAreaWidget",
+  ToggleGroupWidget = "ToggleGroupWidget",
   TimeWidget = "TimeWidget",
   URLPathWidget = "URLPathWidget",
   TagWidget = "TagWidget",

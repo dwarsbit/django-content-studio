@@ -23,6 +23,10 @@ class SwitchWidget(BaseWidget):
     pass
 
 
+class ToggleGroupWidget(BaseWidget):
+    pass
+
+
 class CheckboxWidget(BaseWidget):
     pass
 
