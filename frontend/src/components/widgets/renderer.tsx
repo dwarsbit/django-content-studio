@@ -60,16 +60,22 @@ export function WidgetRenderer({
   onChange,
   model,
   name,
+  widgetClass: widgetClassOverride,
 }: {
   value: unknown;
   onChange(value: unknown): void;
   model: Model;
   name: string;
+  // Widget override from the form field's configuration.
+  widgetClass?: FieldWidget | null;
 }) {
   const { data: info } = useAdminInfo();
   const field = model.fields[name];
   const widgetClass =
-    field.widget_class ?? info?.widgets[field.type]?.name ?? null;
+    widgetClassOverride ??
+    field.widget_class ??
+    info?.widgets[field.type]?.name ??
+    null;
 
   const WidgetComp = useMemo<WidgetComponent>(() => {
     if (widgetClass === null) {

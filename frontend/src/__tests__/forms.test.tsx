@@ -81,6 +81,7 @@ function makeFormField(
     label: null,
     readonly: false,
     col_span: 1,
+    widget: null,
     component_id: "",
     component_type: "LinkButton",
     copy: false,
@@ -243,6 +244,27 @@ describe("FormField", () => {
     );
 
     expect(screen.getByRole("textbox")).toHaveValue("Hello");
+  });
+
+  it("renders the form field's widget override instead of the default widget", () => {
+    render(
+      <FormHarness
+        defaultValues={{ title: "Hello", status: "draft", is_published: false }}
+      >
+        <FormField
+          formField={makeFormField("title", {
+            widget: FieldWidget.TextAreaWidget,
+          })}
+          model={makeModel()}
+        />
+      </FormHarness>,
+    );
+
+    // The admin info maps CharField to InputWidget; the form field's
+    // override wins and renders a textarea instead.
+    const textbox = screen.getByRole("textbox");
+    expect(textbox).toHaveValue("Hello");
+    expect(textbox.tagName).toBe("TEXTAREA");
   });
 
   it("renders checkbox labels inline after the checkbox", () => {
@@ -640,6 +662,7 @@ describe("Editor", () => {
       label: null,
       readonly: false,
       col_span: 1,
+      widget: null,
       copy: false,
       icon: "",
       title: "Recent activity",

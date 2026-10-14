@@ -8,6 +8,7 @@ import pytest
 from django.utils.translation import override as override_language
 from rest_framework.response import Response
 
+from content_studio import widgets
 from content_studio.form import (
     ActivityLog,
     ButtonLink,
@@ -39,7 +40,14 @@ def test_field_serialization():
         "col_span": 2,
         "label": "Title",
         "readonly": True,
+        "widget": None,
     }
+
+
+def test_field_serialization_with_widget():
+    data = Field("body", widget=widgets.TextAreaWidget).serialize()
+
+    assert data["widget"] == "TextAreaWidget"
 
 
 def test_field_layout_wraps_and_normalizes():
@@ -54,6 +62,7 @@ def test_field_layout_wraps_and_normalizes():
                 "col_span": 1,
                 "label": None,
                 "readonly": False,
+                "widget": None,
             },
             {
                 "type": "field",
@@ -61,6 +70,7 @@ def test_field_layout_wraps_and_normalizes():
                 "col_span": 3,
                 "label": None,
                 "readonly": False,
+                "widget": None,
             },
         ],
         "columns": 2,

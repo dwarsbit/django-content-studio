@@ -207,6 +207,9 @@ export interface FormField {
   label: string | null;
   readonly: boolean;
   col_span: number;
+  // Widget override from the form configuration; falls back to the
+  // model field's default widget when null.
+  widget: FieldWidget | null;
   component_id: string;
   component_type: "Link" | "LinkButton" | "ActivityLog";
   copy: boolean;

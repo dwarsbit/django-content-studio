@@ -43,11 +43,14 @@ export function FormField({
   const isReadonly = !modelField || modelField.readonly || formField.readonly;
 
   // Checkboxes render their label inline after the box, not above it.
+  const widgetClass =
+    formField.widget ??
+    modelField?.widget_class ??
+    info?.widgets[modelField?.type ?? ""]?.name;
   const isCheckbox =
     !isReadonly &&
     modelField !== undefined &&
-    (modelField.widget_class ?? info?.widgets[modelField.type]?.name) ===
-      FieldWidget.CheckboxWidget;
+    widgetClass === FieldWidget.CheckboxWidget;
 
   return (
     <div>
@@ -62,7 +65,11 @@ export function FormField({
               </div>
             ) : (
               <FormControl>
-                <WidgetRenderer model={model} {...field} />
+                <WidgetRenderer
+                  model={model}
+                  {...field}
+                  widgetClass={formField.widget}
+                />
               </FormControl>
             );
 

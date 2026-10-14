@@ -17,12 +17,20 @@ class Field:
     """
 
     def __init__(
-        self, name: str, col_span: int = 1, label: str = None, readonly: bool = False
+        self,
+        name: str,
+        col_span: int = 1,
+        label: str = None,
+        readonly: bool = False,
+        widget: Type = None,
     ):
         self.name = name
         self.col_span = col_span
         self.label = label
         self.readonly = readonly
+        # The widget class rendering the field. None falls back to
+        # the field type's default widget.
+        self.widget = widget
 
     def serialize(self):
         return {
@@ -31,6 +39,7 @@ class Field:
             "col_span": self.col_span,
             "label": self.label,
             "readonly": self.readonly,
+            "widget": self.widget.__name__ if self.widget else None,
         }
 
 

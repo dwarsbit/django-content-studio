@@ -26,8 +26,8 @@ class ArticleStudio(ModelStudio):
 
 ## Building blocks
 
-- **`Field(name, col_span=1, label=None, readonly=False)`** — one model field.
-  Strings are shorthand for `Field(name)`.
+- **`Field(name, col_span=1, label=None, readonly=False, widget=None)`** — one
+  model field. Strings are shorthand for `Field(name)`.
 - **`FieldLayout(fields=[...], columns=1)`** — a field group rendered in `columns`
   columns.
 - **`FormSet(title, description, fields)`** — a titled block of fields; the
@@ -52,6 +52,10 @@ stamps and the tenant relation).
 
 `edit_sidebar` works the same way and renders in the narrower sidebar
 column. Fields set as `readonly` display their value without an input.
+
+A field's editing widget can be overridden per field by passing a widget
+class: `Field("summary", widget=widgets.TextAreaWidget)`. See
+[Widgets](/docs/forms/widgets) for the available widgets.
 
 ## Components
 

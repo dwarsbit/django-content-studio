@@ -35,6 +35,30 @@ class MyStudioSite(ContentStudioSite):
 Unknown field types fall back to a plain input; unknown widget names fall
 back to a read-only display. Choice fields render as selects automatically.
 
+## Per-field override
+
+The mapping is a default, not a verdict: pass a widget class to a `Field` in
+`edit_main` or `edit_sidebar` to render that one field differently.
+
+```python
+from content_studio.form import Field, FormSet
+from content_studio import widgets
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_main = [
+        FormSet(
+            fields=[
+                Field("summary", widget=widgets.TextAreaWidget),
+            ],
+        ),
+    ]
+```
+
+The override applies to the editing widget only; read-only fields keep
+formatting their value through the format mapping.
+
 ## Custom widgets
 
 Widgets are markers: subclass `BaseWidget`, add it to a site's
