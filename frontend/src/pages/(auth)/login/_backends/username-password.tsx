@@ -62,20 +62,20 @@ export function UsernamePasswordBackend({
 
   return (
     <div className="w-full max-w-md flex-1 flex flex-col items-center justify-center">
-      <h1 className="text-xl font-bold text-foreground text-center">
+      <h1 className="text-xl font-bold text-gray-50 text-center select-none">
         {t("login.title")}
       </h1>
-      <div className="text-muted-foreground text-center mb-12">
+      <div className="text-gray-400 text-center mb-12 select-none">
         {t("login.subtitle")}
       </div>
       {error && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" className="mb-4 bg-rose-200 border-none">
           <AlertDescription className="justify-center">
             {error.message}
           </AlertDescription>
         </Alert>
       )}
-      <form className="border rounded-xl bg-card p-4 sm:p-8 w-full shadow-lg shadow-foreground/5">
+      <form className="rounded-xl bg-card p-4 sm:p-8 w-full shadow-2xl">
         <div className="relative flex items-center mb-4">
           {emailField ? (
             <PiEnvelopeBold className="size-4 stroke-muted-foreground absolute left-3" />
@@ -83,6 +83,7 @@ export function UsernamePasswordBackend({
             <PiUserBold className="size-4 stroke-muted-foreground absolute left-3" />
           )}
           <Input
+            size="lg"
             value={credentials.username}
             onChange={(e) =>
               setCredentials({ ...credentials, username: e.target.value })
@@ -97,9 +98,10 @@ export function UsernamePasswordBackend({
             disabled={isPending}
           />
         </div>
-        <div className="relative flex items-center mb-6">
+        <div className="relative flex items-center mb-4">
           <PiLockBold className="size-4 stroke-muted-foreground absolute left-3" />
           <Input
+            size="lg"
             value={credentials.password}
             onChange={(e) =>
               setCredentials({ ...credentials, password: e.target.value })
@@ -129,13 +131,14 @@ export function UsernamePasswordBackend({
             )}
           </button>
         </div>
-        <div className="mb-4">
+        <div className="mb-5">
           <Label>
             <Checkbox />
             {t("login.remember_me")}
           </Label>
         </div>
         <Button
+          size="lg"
           className="w-full mb-2"
           disabled={isPending}
           onClick={(e) => {
@@ -153,7 +156,7 @@ export function UsernamePasswordBackend({
           </div>
         )}
       </form>
-      <div className="text-center text-sm text-muted-foreground mt-4">
+      <div className="text-center text-sm text-gray-400 mt-4 select-none">
         {t("login.no_account")}
       </div>
     </div>

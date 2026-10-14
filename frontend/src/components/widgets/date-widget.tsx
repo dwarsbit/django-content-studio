@@ -32,7 +32,7 @@ export function DateWidget({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="h-8 border border-border hover:border-ring px-3 rounded-md cursor-pointer data-[state=open]:border-ring flex items-center select-none">
+      <PopoverTrigger className="h-9   border border-border hover:border-ring px-3 rounded-md cursor-pointer data-[state=open]:border-ring flex items-center select-none">
         <div className="flex-1 text-left">
           {date$ ? (
             <span className="text-foreground font-medium">

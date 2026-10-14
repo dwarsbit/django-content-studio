@@ -9,8 +9,9 @@ const inputVariants = cva("", {
       default: "border bg-background",
     },
     size: {
-      sm: "h-7",
-      default: "h-8",
+      sm: "h-8",
+      default: "h-9",
+      lg: "h-10",
     },
   },
   defaultVariants: {

@@ -61,7 +61,7 @@ export function ForeignKeyWidget({
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="w-full font-medium text-foreground flex items-center justify-between text-left border border-border hover:border-ring cursor-pointer rounded-md px-3 h-8 select-none">
+      <PopoverTrigger className="w-full font-medium text-foreground flex items-center justify-between text-left border border-border hover:border-ring cursor-pointer rounded-md px-3 h-9 select-none">
         <div className="flex-1 flex items-center gap-2 min-w-0">
           <RelationGlyph
             avatar={value?.avatar}

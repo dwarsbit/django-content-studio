@@ -28,7 +28,7 @@ export function StudioLayout() {
       <>
         <div className="h-screen flex items-stretch">
           <MainMenu onOpenPalette={() => setPaletteOpen(true)} />
-          <div className="flex-1 overflow-hidden bg-background border-l flex flex-col">
+          <div className="flex-1 overflow-hidden bg-background flex flex-col">
             <Outlet />
           </div>
         </div>

@@ -43,7 +43,7 @@ export function DateTimeWidget({
         }
       }}
     >
-      <PopoverTrigger className="h-8 border border-border hover:border-ring data-[state=open]:border-ring px-3 rounded-md flex items-center select-none cursor-pointer">
+      <PopoverTrigger className="h-9 border border-border hover:border-ring data-[state=open]:border-ring px-3 rounded-md flex items-center select-none cursor-pointer">
         <div className="flex-1 text-left">
           {date$ ? (
             <span className="text-foreground font-medium">

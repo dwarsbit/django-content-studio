@@ -22,8 +22,11 @@ export function LoginPage() {
       })}
 
       <div className="py-12 flex flex-col items-center">
-        <div className="text-xs text-muted-foreground text-center mb-2 cursor-default">
-          Django Content Studio v{adminInfo.version}
+        <div className="text-center mb-2 select-none">
+          <div className="text-sm font-medium text-gray-50 ">
+            Django Content Studio
+          </div>
+          <div className="text-xs text-gray-400">{`v${adminInfo.version}`}</div>
         </div>
         {adminInfo.health_check && (
           <div

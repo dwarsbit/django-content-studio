@@ -96,7 +96,7 @@ function CommandList({
     <CommandPrimitive.List
       data-slot="command-list"
       className={cn(
-        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto",
+        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto scrollbar",
         className,
       )}
       {...props}
@@ -153,7 +153,7 @@ function CommandItem({
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        "data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground text-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-pointer items-center gap-2 rounded-sm p-2 outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "data-[selected=true]:bg-accent data-[selected=true]:text-secondary-foreground text-secondary-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-pointer items-center gap-3 rounded-sm px-3 py-1.5 outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 text-sm font-medium",
         className,
       )}
       {...props}

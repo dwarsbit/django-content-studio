@@ -79,7 +79,7 @@ export function ManyToManyWidget({
         <div
           role="combobox"
           tabIndex={0}
-          className="w-full min-h-8 flex flex-wrap items-center gap-1 rounded-md border bg-background hover:border-ring focus-within:border-ring cursor-pointer text-left px-3 py-1 select-none"
+          className="w-full min-h-9 flex flex-wrap items-center gap-1 rounded-md border bg-background hover:border-ring focus-within:border-ring cursor-pointer text-left px-3 py-1 select-none"
         >
           {value.map((option) => (
             <Badge

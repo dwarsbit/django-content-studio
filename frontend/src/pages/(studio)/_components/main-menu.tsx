@@ -19,6 +19,7 @@ import {
   PiMagnifyingGlassBold,
   PiSignOutBold,
 } from "react-icons/pi";
+import { TbCommand } from "react-icons/tb";
 import {
   Link,
   type Path,
@@ -123,123 +124,130 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
   return (
     <ExpandedContext value={{ expandedItem, toggleGroup }}>
       <CollapsedContext value={collapsed}>
-        <nav
-          className={cn(
-            "shrink-0 flex flex-col bg-muted transition-[width] duration-200",
-            collapsed ? "w-14" : "w-[240px]",
-          )}
-        >
-          <div
+        <div className="p-4 flex flex-col">
+          <nav
             className={cn(
-              "flex items-center py-3 select-none",
-              collapsed ? "justify-center px-2" : "gap-2 px-4",
+              "shrink-0 flex-1 flex flex-col bg-muted rounded-xl transition-[width] duration-200",
+              collapsed ? "w-14" : "w-[240px]",
             )}
           >
-            {!collapsed && adminInfo && !tenant && (
-              <>
-                <div className="bg-gradient-to-tl from-gray-900 to-gray-600 size-5 rounded flex items-center justify-center text-gray-50 font-black shrink-0">
-                  {adminInfo.site_header[0]}
-                </div>
-                <h2 className="line-clamp-1 break-all text-base font-semibold text-foreground flex-1">
-                  {adminInfo.site_header}
-                </h2>
-              </>
-            )}
-            {!collapsed && tenant && (
-              <div className="flex-1">
-                <TenantSelector />
-              </div>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 size-7"
-              onClick={() => setCollapsed(!collapsed)}
-            >
-              {collapsed ? <PiCaretRightBold /> : <PiCaretLeftBold />}
-            </Button>
-          </div>
-
-          <div className="flex-1 px-2 pb-2 pt-2 space-y-1 overflow-y-auto scrollbar">
-            <button
-              type="button"
-              onClick={onOpenPalette}
-              title={t("palette.open")}
+            <div
               className={cn(
-                "w-full flex items-center gap-2 rounded-md border bg-background h-8 px-2.5 text-sm text-muted-foreground hover:border-ring hover:text-foreground cursor-pointer select-none",
-                collapsed && "justify-center px-0",
+                "flex items-center py-3 select-none",
+                collapsed ? "justify-center px-2" : "gap-2 px-4",
               )}
             >
-              <PiMagnifyingGlassBold className="shrink-0" />
-              {!collapsed && (
+              {!collapsed && adminInfo && !tenant && (
                 <>
-                  <span className="flex-1 text-left line-clamp-1">
-                    {t("palette.open")}
-                  </span>
-                  <kbd className="shrink-0 text-xs border rounded px-1 font-mono">
-                    {navigator.platform.toUpperCase().includes("MAC")
-                      ? "⌘K"
-                      : "Ctrl K"}
-                  </kbd>
+                  <div className="bg-gradient-to-tl from-gray-900 to-gray-600 size-5 rounded flex items-center justify-center text-gray-50 font-black shrink-0">
+                    {adminInfo.site_header[0]}
+                  </div>
+                  <h2 className="line-clamp-1 break-all text-base font-semibold text-foreground flex-1">
+                    {adminInfo.site_header}
+                  </h2>
                 </>
               )}
-            </button>
-
-            <div className="h-3" />
-            <MenuItem
-              to="/"
-              color="slate"
-              icon={<PiHouseSimpleBold />}
-              label={t("main_menu.dashboard")}
-            />
-            {discover?.media_library.enabled && (
-              <MenuItem
-                to="/media-library"
-                color="pink"
-                icon={<PiImageBold />}
-                label={t("main_menu.media_library")}
-              />
-            )}
-
-            {linkExtensions.map(({ extension_id, config }) => (
-              <MenuItem
-                key={extension_id}
-                to={config.url}
-                color={config.color ?? undefined}
-                icon={<span className={config.icon ?? undefined} />}
-                label={config.label}
-              />
-            ))}
-
-            <div className="h-4" role="separator" />
-
-            {discover?.model_groups.map((group) => (
-              <MenuItem
-                key={group.name}
-                color={group.color ?? "blue"}
-                icon={group.icon ?? <PiFileTextBold />}
-                label={group.label}
+              {!collapsed && tenant && (
+                <div className="flex-1">
+                  <TenantSelector />
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 size-7"
+                onClick={() => setCollapsed(!collapsed)}
               >
-                {group.models
-                  .map((label) => {
-                    const model = discover.models.find(R.whereEq({ label }));
+                {collapsed ? <PiCaretRightBold /> : <PiCaretLeftBold />}
+              </Button>
+            </div>
 
-                    return model ? (
-                      <MenuItem
-                        key={label}
-                        isSubItem
-                        to={`/content/${model.label}`}
-                        label={model.verbose_name_plural}
-                        icon={model.admin.icon ?? <PiFileTextBold />}
-                      />
-                    ) : null;
-                  })
-                  .filter((el) => !R.isNil(el))}
-              </MenuItem>
-            ))}
-          </div>
-          <UserMenu />
-        </nav>
+            <div className="flex-1 px-2 pb-2 pt-2 space-y-1 overflow-y-auto scrollbar">
+              <button
+                type="button"
+                onClick={onOpenPalette}
+                title={t("palette.open")}
+                className={cn(
+                  "w-full flex items-center gap-2 rounded-md border shadow-sm bg-background h-8 px-3 text-sm text-muted-foreground hover:border-ring hover:text-foreground cursor-pointer select-none",
+                  collapsed && "justify-center px-0",
+                )}
+              >
+                <PiMagnifyingGlassBold className="shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1 text-left line-clamp-1">
+                      {t("palette.open")}
+                    </span>
+                    <kbd className="shrink-0 text-xs font-medium">
+                      {navigator.platform.toUpperCase().includes("MAC") ? (
+                        <div className="inline-flex items-center gap-0.5">
+                          <TbCommand />
+                          <span>K</span>
+                        </div>
+                      ) : (
+                        "Ctrl K"
+                      )}
+                    </kbd>
+                  </>
+                )}
+              </button>
+
+              <div className="h-3" />
+              <MenuItem
+                to="/"
+                color="slate"
+                icon={<PiHouseSimpleBold />}
+                label={t("main_menu.dashboard")}
+              />
+              {discover?.media_library.enabled && (
+                <MenuItem
+                  to="/media-library"
+                  color="pink"
+                  icon={<PiImageBold />}
+                  label={t("main_menu.media_library")}
+                />
+              )}
+
+              {linkExtensions.map(({ extension_id, config }) => (
+                <MenuItem
+                  key={extension_id}
+                  to={config.url}
+                  color={config.color ?? undefined}
+                  icon={<span className={config.icon ?? undefined} />}
+                  label={config.label}
+                />
+              ))}
+
+              <div className="h-4" role="separator" />
+
+              {discover?.model_groups.map((group) => (
+                <MenuItem
+                  key={group.name}
+                  color={group.color ?? "blue"}
+                  icon={group.icon ?? <PiFileTextBold />}
+                  label={group.label}
+                >
+                  {group.models
+                    .map((label) => {
+                      const model = discover.models.find(R.whereEq({ label }));
+
+                      return model ? (
+                        <MenuItem
+                          key={label}
+                          isSubItem
+                          to={`/content/${model.label}`}
+                          label={model.verbose_name_plural}
+                          icon={model.admin.icon ?? <PiFileTextBold />}
+                        />
+                      ) : null;
+                    })
+                    .filter((el) => !R.isNil(el))}
+                </MenuItem>
+              ))}
+            </div>
+            <UserMenu />
+          </nav>
+        </div>
       </CollapsedContext>
     </ExpandedContext>
   );
@@ -300,7 +308,7 @@ function MenuItem({
       // @ts-expect-error due to mixed component
       to={to ?? undefined}
       className={cn(
-        "relative group flex items-center w-full font-medium gap-2.5 h-8 px-2 hover:bg-accent rounded hover:cursor-pointer",
+        "relative group flex items-center w-full font-medium gap-2.5 h-8 px-2 hover:bg-accent rounded-md hover:cursor-pointer",
         {
           "bg-accent": !R.isNil(to) && match,
           "justify-center": menuCollapsed,
@@ -326,7 +334,7 @@ function MenuItem({
         <span
           className={cn(
             "flex items-center justify-between flex-1",
-            isSubItem ? "text-muted-foreground" : "text-foreground",
+            isSubItem ? "text-accent-foreground" : "text-secondary-foreground",
           )}
         >
           <span className="first-letter:uppercase line-clamp-1 break-all">
@@ -355,7 +363,9 @@ function MenuItem({
         item
       )}
       {children && expanded ? (
-        <div className={cn({ "pl-3": !menuCollapsed })}>{children}</div>
+        <div className={cn({ "pl-3 space-y-1": !menuCollapsed })}>
+          {children}
+        </div>
       ) : null}
     </>
   );

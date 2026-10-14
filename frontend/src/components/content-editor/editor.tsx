@@ -238,7 +238,7 @@ function EditorForm({
 
   return model && initialized ? (
     <Form {...form}>
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden max-w-[1200px] mx-auto w-full">
         <TenantInfo label={model.label} />
         <Header
           model={model}
@@ -261,7 +261,7 @@ function EditorForm({
         />
         <div className="flex flex-col items-center overflow-y-auto scrollbar">
           <div className="flex p-6 w-full gap-6 justify-center">
-            <div className="flex-1 max-w-[760px]">
+            <div className="flex-1">
               <Main model={model} id={id} hiddenFields={hiddenFields} />
             </div>
             <div className="shrink-0 w-[320px] empty:hidden">

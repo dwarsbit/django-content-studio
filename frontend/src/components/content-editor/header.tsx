@@ -67,11 +67,11 @@ export function Header({
   return (
     model && (
       <>
-        <DialogHeader className="items-center border-b z-10">
-          <div className="flex items-center gap-3 px-4 py-3 w-full">
+        <DialogHeader className="items-center z-10">
+          <div className="flex items-center gap-3 px-4 pb-3 pt-6 w-full">
             {model.admin.icon && (
               <div className="size-6 flex items-center justify-center bg-muted rounded-md text-muted-foreground">
-                <span className={cn(model.admin.icon, "text-[14px]")} />
+                <span className={cn(model.admin.icon, "text-base")} />
               </div>
             )}
             <div className="select-none flex items-center gap-1.5">
@@ -112,7 +112,7 @@ export function Header({
                 </h2>
               )}
               {resource && <div>{"/"}</div>}
-              <div className="text-sm font-medium text-muted-foreground">
+              <div className="text-sm font-medium text-accent-foreground">
                 {resource?.__str__}
               </div>
             </div>
@@ -122,24 +122,14 @@ export function Header({
                   {`${t("editor.last_edited")} ${dayjs(editedAt).fromNow()}`}
                 </div>
               ) : null}
-              <Button
-                onClick={async () => {
-                  try {
-                    await onSave();
-                  } catch {
-                    // Errors are already surfaced by the save flow.
-                  }
-                }}
-                isLoading={isSaving}
-              >
-                {t(isCreate && !isSingleton ? "common.create" : "common.save")}
-              </Button>
+
               {!isSingleton && !isCreate && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       size="icon"
-                      variant="outline"
+                      variant="ghost"
+                      className="rounded-full"
                       aria-label={t("editor.more_actions")}
                     >
                       <PiDotsThreeBold />
@@ -171,6 +161,20 @@ export function Header({
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+
+              <Button
+                className="rounded-full px-6"
+                onClick={async () => {
+                  try {
+                    await onSave();
+                  } catch {
+                    // Errors are already surfaced by the save flow.
+                  }
+                }}
+                isLoading={isSaving}
+              >
+                {t(isCreate && !isSingleton ? "common.create" : "common.save")}
+              </Button>
             </div>
           </div>
         </DialogHeader>

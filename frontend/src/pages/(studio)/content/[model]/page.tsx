@@ -104,8 +104,8 @@ export function ModelListPage() {
   });
 
   return model && data ? (
-    <div className="flex flex-col overflow-hidden">
-      <div className="flex items-center gap-4 px-8 py-3 border-b">
+    <div className="flex flex-col overflow-hidden w-full max-w-[1200px] mx-auto pr-8 pl-4">
+      <div className="flex items-center gap-4 pb-3 pt-6 w-full">
         {model.admin.icon ? (
           <span
             className={cn(model.admin.icon, "text-lg text-muted-foreground")}
@@ -136,7 +136,7 @@ export function ModelListPage() {
         )}
       </div>
 
-      <div className="px-8 py-6 space-y-4 w-full max-w-[1128px] mx-auto">
+      <div className="py-6 space-y-4 w-full">
         <div className="flex gap-3 items-center justify-between">
           {view === "table" && selected.size > 0 && actions.length > 0 ? (
             <BulkBar

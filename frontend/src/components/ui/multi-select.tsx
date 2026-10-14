@@ -450,7 +450,7 @@ const MultiSelect = React.forwardRef<
           commandProps?.onKeyDown?.(e);
         }}
         className={cn(
-          "min-h-8 overflow-visible bg-transparent",
+          "min-h-9 overflow-visible bg-transparent",
           commandProps?.className,
         )}
         shouldFilter={

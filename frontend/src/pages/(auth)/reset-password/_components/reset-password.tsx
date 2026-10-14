@@ -71,21 +71,21 @@ export function ResetPassword() {
 
   return (
     <div className="w-full max-w-md flex-1 flex flex-col items-center justify-center">
-      <h1 className="text-xl font-bold text-foreground text-center">
+      <h1 className="text-xl font-bold text-gray-50 text-center select-none">
         {t("reset_password.title")}
       </h1>
-      <div className="text-muted-foreground text-center mb-12">
+      <div className="text-gray-400 text-center mb-12 select-none">
         {t("reset_password.subtitle")}
       </div>
       {error && (
-        <Alert variant="destructive" className="mb-4">
+        <Alert variant="destructive" className="mb-4 bg-rose-200 border-none">
           <AlertDescription className="justify-center">
             {error.message}
           </AlertDescription>
         </Alert>
       )}
 
-      <form className="border rounded-xl bg-card p-4 sm:p-8 space-y-4 w-full shadow-lg shadow-foreground/5">
+      <form className="rounded-xl bg-card p-4 sm:p-8 w-full shadow-2xl">
         <div className="relative flex flex-col gap-3 items-center justify-center">
           <Label>{t("reset_password.enter_code")}</Label>
           <InputOTP
