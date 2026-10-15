@@ -69,6 +69,11 @@ vi.mock("react-paginate", () => {
 });
 
 window.HTMLElement.prototype.scrollIntoView = vi.fn();
+// Radix Select's listbox uses the pointer capture API, which jsdom
+// does not implement.
+window.HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
+window.HTMLElement.prototype.releasePointerCapture = vi.fn();
+window.HTMLElement.prototype.setPointerCapture = vi.fn();
 
 interface ModelOverrides {
   label?: string;
@@ -771,6 +776,75 @@ describe("ModelListPage views", () => {
     renderListPage(makeModel());
 
     expect(await screen.findByText("Title")).toBeInTheDocument();
+  });
+
+  it("uses the default ordering in the list view when sortable_by is not defined", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem("__dcs_list_view__:testapp.article", "list");
+    renderListPage(
+      makeModel({ list: { views: ["table", "list"] } }),
+      "/content/testapp.article?ordering=-title",
+    );
+
+    await screen.findByText("The first body");
+
+    // The ordering parameter is kept in the URL but not sent: the list
+    // view always uses the server's default ordering.
+    expect(screen.getByTestId("location-search")).toHaveTextContent(
+      "ordering=-title",
+    );
+    expect(lastRequest().params.ordering).toBeNull();
+
+    // The table view picks the ordering back up.
+    await user.click(screen.getByTitle("list_view.table_view"));
+    await waitFor(() =>
+      expect(lastRequest().params).toMatchObject({ ordering: "-title" }),
+    );
+  });
+
+  it("sorts the list view through the sort select when sortable_by is defined", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem("__dcs_list_view__:testapp.article", "list");
+    renderListPage(
+      makeModel({ list: { views: ["table", "list"], sortable_by: ["title"] } }),
+    );
+
+    await screen.findByText("The first body");
+    expect(lastRequest().params.ordering).toBeNull();
+
+    // Choosing a field sorts ascending.
+    await user.click(
+      screen.getByRole("combobox", { name: "list_view.sort_by" }),
+    );
+    await user.click(await screen.findByRole("option", { name: "Title" }));
+
+    await waitFor(() =>
+      expect(lastRequest().params).toMatchObject({ ordering: "title" }),
+    );
+    expect(screen.getByTestId("location-search")).toHaveTextContent(
+      "ordering=title",
+    );
+
+    // The direction toggle flips to descending.
+    await user.click(screen.getByTitle("list_view.sort_descending"));
+    await waitFor(() =>
+      expect(lastRequest().params).toMatchObject({ ordering: "-title" }),
+    );
+
+    // The default option returns to the server's default ordering.
+    await user.click(
+      screen.getByRole("combobox", { name: "list_view.sort_by" }),
+    );
+    await user.click(
+      await screen.findByRole("option", {
+        name: "list_view.default_ordering",
+      }),
+    );
+
+    await waitFor(() => expect(lastRequest().params.ordering).toBeNull());
+    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
+      "ordering",
+    );
   });
 });
 

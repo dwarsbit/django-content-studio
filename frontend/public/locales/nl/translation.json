@@ -79,6 +79,10 @@
     "empty_state": "Nog geen items",
     "filter": "Filteren",
     "clear_all_filters": "Alle filters wissen",
+    "sort_by": "Sorteren op",
+    "default_ordering": "Standaard volgorde",
+    "sort_ascending": "Oplopend sorteren",
+    "sort_descending": "Aflopend sorteren",
     "filters": {
       "all": "Alle",
       "yes": "Ja",

@@ -119,6 +119,13 @@ class DjangoContentStudioConfig(AppConfig):
         allowed_ordering = ["id", "pk"] + [
             column.field for column in columns if column.field in model_field_names
         ]
+        # A sortable_by declaration narrows ordering to exactly those
+        # columns; entries without a queryset equivalent are dropped.
+        sortable_by = getattr(admin_model, "sortable_by", None)
+        if sortable_by is not None:
+            allowed_ordering = [
+                field for field in sortable_by if field in allowed_ordering
+            ]
 
         class Pagination(ContentPagination):
             page_size = admin_model.list_per_page

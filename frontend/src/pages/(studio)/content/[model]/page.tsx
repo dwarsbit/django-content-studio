@@ -16,6 +16,7 @@ import type { PaginatedResponse, Resource } from "@/types";
 import { BulkBar } from "./_components/bulk-bar";
 import { Filters } from "./_components/filters";
 import { ListView } from "./_components/list-view";
+import { SortSelect } from "./_components/sort-select";
 import { TableView } from "./_components/table-view";
 import { ContentEditorPage } from "./[id]/page";
 
@@ -32,6 +33,7 @@ export function ModelListPage() {
   // The views the admin offers; more than one shows a toggle. The
   // choice is remembered per content type in local storage.
   const views = model?.admin.list.views ?? ["table"];
+  const sortableBy = model?.admin.list.sortable_by ?? null;
 
   // Reads the remembered choice, falling back to the first offered
   // view when nothing (or a no longer offered view) is stored.
@@ -51,6 +53,12 @@ export function ModelListPage() {
     setLastLabel(model.label);
     setViewState(storedView(model.label));
   }
+
+  // Without sortable_by the list view always uses the default
+  // ordering; the parameter stays in the URL for the table to pick
+  // back up.
+  const effectiveOrdering =
+    view === "list" && R.isNil(sortableBy) ? null : ordering;
 
   const filters = Array.from(searchParams.entries())
     .filter(([key]) => key.startsWith("filters."))
@@ -109,7 +117,11 @@ export function ModelListPage() {
   const { data } = useQuery({
     retry: false,
     enabled: !R.isNil(model),
-    queryKey: ["resources", appLabel, { search, page, ordering, filters }],
+    queryKey: [
+      "resources",
+      appLabel,
+      { search, page, ordering: effectiveOrdering, filters },
+    ],
     placeholderData: keepPreviousData,
     async queryFn() {
       const { data } = await http.get<PaginatedResponse<Resource>>(
@@ -119,7 +131,7 @@ export function ModelListPage() {
             ...filters,
             search: search || undefined,
             page,
-            ordering,
+            ordering: effectiveOrdering,
           },
         },
       );
@@ -173,40 +185,45 @@ export function ModelListPage() {
           ) : (
             <>
               <Filters model={model} />
-              {views.length > 1 && (
-                <div className="flex items-center gap-1 rounded-lg border p-1">
-                  {views.includes("table") && (
-                    <button
-                      type="button"
-                      title={t("list_view.table_view")}
-                      onClick={() => setView("table")}
-                      className={cn(
-                        "flex items-center justify-center size-6 rounded-md cursor-pointer",
-                        view === "table"
-                          ? "bg-foreground/10"
-                          : "hover:bg-foreground/5 text-muted-foreground",
-                      )}
-                    >
-                      <PiTableBold />
-                    </button>
-                  )}
-                  {views.includes("list") && (
-                    <button
-                      type="button"
-                      title={t("list_view.list_view")}
-                      onClick={() => setView("list")}
-                      className={cn(
-                        "flex items-center justify-center size-6 rounded-md cursor-pointer",
-                        view === "list"
-                          ? "bg-foreground/10"
-                          : "hover:bg-foreground/5 text-muted-foreground",
-                      )}
-                    >
-                      <PiRowsBold />
-                    </button>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {view === "list" && !R.isNil(sortableBy) && (
+                  <SortSelect model={model} />
+                )}
+                {views.length > 1 && (
+                  <div className="flex items-center gap-1 rounded-lg border p-1">
+                    {views.includes("table") && (
+                      <button
+                        type="button"
+                        title={t("list_view.table_view")}
+                        onClick={() => setView("table")}
+                        className={cn(
+                          "flex items-center justify-center size-6 rounded-md cursor-pointer",
+                          view === "table"
+                            ? "bg-foreground/10"
+                            : "hover:bg-foreground/5 text-muted-foreground",
+                        )}
+                      >
+                        <PiTableBold />
+                      </button>
+                    )}
+                    {views.includes("list") && (
+                      <button
+                        type="button"
+                        title={t("list_view.list_view")}
+                        onClick={() => setView("list")}
+                        className={cn(
+                          "flex items-center justify-center size-6 rounded-md cursor-pointer",
+                          view === "list"
+                            ? "bg-foreground/10"
+                            : "hover:bg-foreground/5 text-muted-foreground",
+                        )}
+                      >
+                        <PiRowsBold />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

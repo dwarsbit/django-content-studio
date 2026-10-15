@@ -10,7 +10,7 @@ from content_studio.admin import ModelStudio, admin_site
 from content_studio.checks import table_column_errors
 from content_studio.form import TableColumn
 from tests.test_e2e_crud import AuthenticatedTestCase
-from tests.testapp.models import Article
+from tests.testapp.models import Article, Note
 
 
 @pytest.mark.django_db
@@ -76,6 +76,24 @@ class TableColumnsTests(AuthenticatedTestCase):
         response = client.get("/api/content/testapp.article?ordering=title")
         titles = [row["title"] for row in response.json()["results"]]
         assert titles == ["A", "B"]
+
+    def test_ordering_is_restricted_to_sortable_by(self):
+        """With sortable_by declared, ordering by any other column is
+        dropped instead of applied."""
+        Note.objects.create(title="B")
+        Note.objects.create(title="A")
+
+        client = self.client_for(self.superuser)
+
+        response = client.get("/api/content/testapp.note?ordering=title")
+        titles = [row["title"] for row in response.json()["results"]]
+        assert titles == ["A", "B"]
+
+        # "id" is a real column but outside NoteAdmin's sortable_by:
+        # dropped, so the default (pk ascending) ordering holds.
+        response = client.get("/api/content/testapp.note?ordering=-id")
+        titles = [row["title"] for row in response.json()["results"]]
+        assert titles == ["B", "A"]
 
 
 def test_string_entries_normalize_to_columns():

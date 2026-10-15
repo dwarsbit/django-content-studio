@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **List view sorting.** The list view no longer inherits the table's
+  sorting: without a `sortable_by` declaration it always uses the
+  studio's default ordering, and with one it gains a select (to the
+  left of the view toggle) that sorts by exactly the declared fields,
+  with a direction toggle next to it. The table view keeps sorting by
+  every sortable column when `sortable_by` is absent and by exactly
+  the declared columns otherwise — and the API now enforces the same
+  restriction, dropping `ordering` parameters outside `sortable_by`
+  instead of applying them.
 - **Media library v2.** The library grows from a grid into a full
   list page: grid, list and table views behind a toggle (the table
   with sortable columns for whatever the model carries), type and

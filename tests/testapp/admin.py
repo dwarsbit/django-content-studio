@@ -66,4 +66,5 @@ class SiteSettingsAdmin(ModelStudio):
 @register(Note)
 class NoteAdmin(ModelStudio):
     table_display = ["id", "title"]
+    sortable_by = ["title"]
     soft_delete = "removed_at"

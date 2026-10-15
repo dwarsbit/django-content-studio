@@ -79,6 +79,10 @@
     "empty_state": "No items yet",
     "filter": "Filter",
     "clear_all_filters": "Clear all filters",
+    "sort_by": "Sort by",
+    "default_ordering": "Default ordering",
+    "sort_ascending": "Sort ascending",
+    "sort_descending": "Sort descending",
     "trash": "Trash",
     "filters": {
       "all": "All",
