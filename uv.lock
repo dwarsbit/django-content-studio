@@ -38,7 +38,7 @@ wheels = [
 
 [[package]]
 name = "django-content-studio"
-version = "1.0.0b28"
+version = "1.0.0rc1"
 source = { editable = "." }
 dependencies = [
     { name = "django" },

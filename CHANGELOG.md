@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## v1.0.0-rc.1
+
+- 🎉 **The beta era closes.** Twenty-eight pre-releases (beta.1 →
+  beta.28) grew Content Studio from an initial prototype into a
+  complete alternative to the Django admin: a React interface over a
+  generated REST backend, model registration with a widget, filter
+  and format system, bulk actions, dashboards, a media library, soft
+  delete, JWT authentication, multi-tenancy, internationalization
+  and password reset — working with any plain Django model, with or
+  without django-blueprint. No per-version backfill: the tag history
+  and PyPI releases remain the record for the individual betas; the
+  entries below cover everything since beta.28.
+
 - **Media library state joins the remembered-state model.** The
   media library's view, its type and tags filters and its ordering
   are remembered per media model, like the content list's state,
@@ -190,6 +203,3 @@
 - 🐛 The frontend previously sent an `Authorization: JWT` header prefix,
   which simplejwt's default configuration rejects; requests now send the
   standard `Bearer` prefix.
-
-## v1.0.0-beta.1
-Initial pre-release! 🎉
