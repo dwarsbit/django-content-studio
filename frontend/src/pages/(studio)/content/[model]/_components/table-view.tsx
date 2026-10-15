@@ -1,7 +1,7 @@
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { PiArrowDownBold, PiArrowUpBold } from "react-icons/pi";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate } from "react-router";
 
 import { FormatRenderer } from "@/components/formats/renderer";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,6 +20,8 @@ export function TableView({
   items,
   model,
   selected,
+  ordering,
+  onOrderingChange,
   onToggle,
   onToggleAll,
 }: {
@@ -27,14 +29,16 @@ export function TableView({
   model: Model;
   // The selected ids, when the model offers bulk actions.
   selected?: Set<string>;
+  // The remembered ordering: a field name, prefixed with "-" for
+  // descending, or null for the default ordering.
+  ordering?: string | null;
+  onOrderingChange?: (next: string | null) => void;
   onToggle?: (id: string) => void;
   onToggleAll?: (ids: string[]) => void;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const fields = model.admin.list.display;
-  const ordering = searchParams.get("ordering");
   const { sortable_by, display } = model.admin.list;
   const hasActions = (model.admin.list.actions ?? []).length > 0;
   const allSelected =
@@ -71,23 +75,15 @@ export function TableView({
                 <TableHead key={name} className="sticky top-0 z-10 bg-muted">
                   {label && isSortable ? (
                     <button
-                      onClick={() =>
-                        setSearchParams((searchParams) => {
-                          if (!active) {
-                            searchParams.set("ordering", name);
-                            return searchParams;
-                          }
-
-                          if (descending) {
-                            searchParams.delete("ordering");
-                            return searchParams;
-                          }
-
-                          searchParams.set("ordering", `-${name}`);
-
-                          return searchParams;
-                        })
-                      }
+                      onClick={() => {
+                        if (!active) {
+                          onOrderingChange?.(name);
+                        } else if (descending) {
+                          onOrderingChange?.(null);
+                        } else {
+                          onOrderingChange?.(`-${name}`);
+                        }
+                      }}
                       className={cn(
                         "group inline-flex items-center gap-1 hover:bg-foreground/10 p-1 -mx-1 rounded-md cursor-pointer",
                       )}

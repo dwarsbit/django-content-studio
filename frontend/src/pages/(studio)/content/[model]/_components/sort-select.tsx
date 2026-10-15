@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { PiArrowDownBold, PiArrowUpBold } from "react-icons/pi";
-import { useSearchParams } from "react-router";
 
 import {
   Select,
@@ -12,21 +11,29 @@ import {
 import { cn } from "@/lib/utils";
 import type { Model } from "@/types";
 
-// The select's stand-in for "no ordering parameter": the server's
-// default ordering applies. Radix rejects empty item values, so the
-// sentinel cannot collide with a field name.
+// The select's stand-in for "no ordering": the server's default
+// ordering applies. Radix rejects empty item values, so the sentinel
+// cannot collide with a field name.
 const DEFAULT = "__default__";
 
 /**
  * The list view's sort control, shown when the studio declares
  * sortable_by: a select for the field and a direction toggle next to
- * it. Both write the shared ordering URL parameter.
+ * it. Both change the remembered ordering.
  */
-export function SortSelect({ model }: { model: Model }) {
+export function SortSelect({
+  model,
+  ordering,
+  onOrderingChange,
+}: {
+  model: Model;
+  // The remembered ordering: a field name, prefixed with "-" for
+  // descending, or null for the default ordering.
+  ordering: string | null;
+  onOrderingChange: (next: string | null) => void;
+}) {
   const { t } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
   const sortableBy = model.admin.list.sortable_by ?? [];
-  const ordering = searchParams.get("ordering");
   const field = ordering?.replace(/^-/, "");
   const descending = !!ordering?.startsWith("-");
 
@@ -39,17 +46,13 @@ export function SortSelect({ model }: { model: Model }) {
     <div className="flex items-center gap-2">
       <Select
         value={field ?? DEFAULT}
-        onValueChange={(value) =>
-          setSearchParams((searchParams) => {
-            if (value === DEFAULT) {
-              searchParams.delete("ordering");
-            } else {
-              searchParams.set("ordering", descending ? `-${value}` : value);
-            }
-
-            return searchParams;
-          })
-        }
+        onValueChange={(value) => {
+          if (value === DEFAULT) {
+            onOrderingChange(null);
+          } else {
+            onOrderingChange(descending ? `-${value}` : value);
+          }
+        }}
       >
         <SelectTrigger size="sm" aria-label={t("list_view.sort_by")}>
           <SelectValue />
@@ -78,12 +81,7 @@ export function SortSelect({ model }: { model: Model }) {
               ? t("list_view.sort_ascending")
               : t("list_view.sort_descending")
           }
-          onClick={() =>
-            setSearchParams((searchParams) => {
-              searchParams.set("ordering", descending ? field : `-${field}`);
-              return searchParams;
-            })
-          }
+          onClick={() => onOrderingChange(descending ? field : `-${field}`)}
           className={cn(
             "flex items-center justify-center size-8 rounded-md border cursor-pointer",
             "hover:bg-foreground/5 text-muted-foreground",

@@ -228,6 +228,7 @@ describe("ModelListPage", () => {
     httpGetMock.mockReset();
     httpGetMock.mockResolvedValue({ data: makePaginated(articles) });
     useAdminInfoMock.mockReturnValue({ data: undefined });
+    localStorage.clear();
   });
 
   it("renders a row per result with the configured list columns", async () => {
@@ -280,7 +281,7 @@ describe("ModelListPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("cycles the ordering parameter when a sortable header is clicked", async () => {
+  it("cycles the ordering when a sortable header is clicked and remembers it", async () => {
     const user = userEvent.setup();
     renderListPage(makeModel());
 
@@ -290,14 +291,24 @@ describe("ModelListPage", () => {
     await waitFor(() =>
       expect(lastRequest().params).toMatchObject({ ordering: "title" }),
     );
+    expect(localStorage.getItem("__dcs_list_ordering__:testapp.article")).toBe(
+      "title",
+    );
+    expect(screen.getByTestId("location-search")).toHaveTextContent("");
 
     await user.click(titleHeader);
     await waitFor(() =>
       expect(lastRequest().params).toMatchObject({ ordering: "-title" }),
     );
+    expect(localStorage.getItem("__dcs_list_ordering__:testapp.article")).toBe(
+      "-title",
+    );
 
     await user.click(titleHeader);
     await waitFor(() => expect(lastRequest().params.ordering).toBeNull());
+    expect(
+      localStorage.getItem("__dcs_list_ordering__:testapp.article"),
+    ).toBeNull();
   });
 
   it("only offers sorting for columns listed in sortable_by", async () => {
@@ -382,19 +393,26 @@ describe("ModelListPage", () => {
     await waitFor(() =>
       expect(lastRequest().params).toMatchObject({ status: "published" }),
     );
-    expect(screen.getByTestId("location-search")).toHaveTextContent(
-      "filters.status=published",
-    );
+    // The filter is remembered per content type, not in the URL.
+    expect(
+      JSON.parse(
+        localStorage.getItem("__dcs_list_filters__:testapp.article") ?? "{}",
+      ),
+    ).toEqual({ status: "published" });
+    expect(screen.getByTestId("location-search")).toHaveTextContent("");
   });
 
-  it("loads a filter from the URL and clears it with the clear-all button", async () => {
+  it("loads a remembered filter and clears it with the clear-all button", async () => {
     const user = userEvent.setup();
+    localStorage.setItem(
+      "__dcs_list_filters__:testapp.article",
+      JSON.stringify({ status: "published" }),
+    );
     renderListPage(
       makeModel({
         list: { filter: ["status"], sortable_by: ["title"] },
         fields: filteredArticleFields,
       }),
-      "/content/testapp.article?filters.status=published",
     );
 
     await screen.findByText("First Article");
@@ -405,9 +423,9 @@ describe("ModelListPage", () => {
     );
 
     await waitFor(() => expect(lastRequest().params.status).toBeUndefined());
-    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
-      "filters.status",
-    );
+    expect(
+      localStorage.getItem("__dcs_list_filters__:testapp.article"),
+    ).toBeNull();
   });
 
   it("renders a boolean filter and sends the chosen value to the API", async () => {
@@ -435,9 +453,11 @@ describe("ModelListPage", () => {
     await waitFor(() =>
       expect(lastRequest().params).toMatchObject({ is_published: "true" }),
     );
-    expect(screen.getByTestId("location-search")).toHaveTextContent(
-      "filters.is_published=true",
-    );
+    expect(
+      JSON.parse(
+        localStorage.getItem("__dcs_list_filters__:testapp.article") ?? "{}",
+      ),
+    ).toEqual({ is_published: "true" });
 
     // Choosing "all" removes the filter again.
     await user.click(await screen.findByRole("button", { name: /^Published/ }));
@@ -450,9 +470,9 @@ describe("ModelListPage", () => {
     await waitFor(() =>
       expect(lastRequest().params.is_published).toBeUndefined(),
     );
-    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
-      "filters.is_published",
-    );
+    expect(
+      localStorage.getItem("__dcs_list_filters__:testapp.article"),
+    ).toBeNull();
   });
 
   it("renders a number filter and sends the range bounds to the API", async () => {
@@ -482,13 +502,22 @@ describe("ModelListPage", () => {
         views__lte: "10",
       }),
     );
-    expect(screen.getByTestId("location-search")).toHaveTextContent(
-      "filters.views__gte=5&filters.views__lte=10",
-    );
+    expect(
+      JSON.parse(
+        localStorage.getItem("__dcs_list_filters__:testapp.article") ?? "{}",
+      ),
+    ).toEqual({ views__gte: "5", views__lte: "10" });
   });
 
-  it("loads date range bounds from the URL and clears them", async () => {
+  it("loads a remembered date range and clears it", async () => {
     const user = userEvent.setup();
+    localStorage.setItem(
+      "__dcs_list_filters__:testapp.article",
+      JSON.stringify({
+        published_at__gte: "2026-01-01T00:00",
+        published_at__lte: "2026-02-01T23:59",
+      }),
+    );
     renderListPage(
       makeModel({
         list: { filter: ["published_at"] },
@@ -500,7 +529,6 @@ describe("ModelListPage", () => {
           },
         },
       }),
-      "/content/testapp.article?filters.published_at__gte=2026-01-01T00:00&filters.published_at__lte=2026-02-01T23:59",
     );
 
     await screen.findByText("First Article");
@@ -520,9 +548,9 @@ describe("ModelListPage", () => {
     await waitFor(() =>
       expect(lastRequest().params.published_at__gte).toBeUndefined(),
     );
-    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
-      "filters.published_at",
-    );
+    expect(
+      localStorage.getItem("__dcs_list_filters__:testapp.article"),
+    ).toBeNull();
   });
 
   it("renders a foreign key filter and sends the selected id to the API", async () => {
@@ -556,9 +584,11 @@ describe("ModelListPage", () => {
     await waitFor(() =>
       expect(lastRequest().params).toMatchObject({ author: "1" }),
     );
-    expect(screen.getByTestId("location-search")).toHaveTextContent(
-      "filters.author=1",
-    );
+    expect(
+      JSON.parse(
+        localStorage.getItem("__dcs_list_filters__:testapp.article") ?? "{}",
+      ),
+    ).toEqual({ author: "1" });
 
     // The trigger shows the selected relation, resolved from the API.
     expect(
@@ -605,9 +635,11 @@ describe("ModelListPage", () => {
     await waitFor(() =>
       expect(lastRequest().params).toMatchObject({ categories: "1,2" }),
     );
-    expect(screen.getByTestId("location-search")).toHaveTextContent(
-      "filters.categories=1%2C2",
-    );
+    expect(
+      JSON.parse(
+        localStorage.getItem("__dcs_list_filters__:testapp.article") ?? "{}",
+      ),
+    ).toEqual({ categories: "1,2" });
 
     // While the modal popover is open the trigger is hidden from the
     // accessibility tree; close it to assert the resolved labels.
@@ -781,17 +813,15 @@ describe("ModelListPage views", () => {
   it("uses the default ordering in the list view when sortable_by is not defined", async () => {
     const user = userEvent.setup();
     localStorage.setItem("__dcs_list_view__:testapp.article", "list");
-    renderListPage(
-      makeModel({ list: { views: ["table", "list"] } }),
-      "/content/testapp.article?ordering=-title",
-    );
+    localStorage.setItem("__dcs_list_ordering__:testapp.article", "-title");
+    renderListPage(makeModel({ list: { views: ["table", "list"] } }));
 
     await screen.findByText("The first body");
 
-    // The ordering parameter is kept in the URL but not sent: the list
-    // view always uses the server's default ordering.
-    expect(screen.getByTestId("location-search")).toHaveTextContent(
-      "ordering=-title",
+    // The remembered ordering is kept, but not sent: the list view
+    // always uses the server's default ordering.
+    expect(localStorage.getItem("__dcs_list_ordering__:testapp.article")).toBe(
+      "-title",
     );
     expect(lastRequest().params.ordering).toBeNull();
 
@@ -821,14 +851,17 @@ describe("ModelListPage views", () => {
     await waitFor(() =>
       expect(lastRequest().params).toMatchObject({ ordering: "title" }),
     );
-    expect(screen.getByTestId("location-search")).toHaveTextContent(
-      "ordering=title",
+    expect(localStorage.getItem("__dcs_list_ordering__:testapp.article")).toBe(
+      "title",
     );
 
     // The direction toggle flips to descending.
     await user.click(screen.getByTitle("list_view.sort_descending"));
     await waitFor(() =>
       expect(lastRequest().params).toMatchObject({ ordering: "-title" }),
+    );
+    expect(localStorage.getItem("__dcs_list_ordering__:testapp.article")).toBe(
+      "-title",
     );
 
     // The default option returns to the server's default ordering.
@@ -842,9 +875,9 @@ describe("ModelListPage views", () => {
     );
 
     await waitFor(() => expect(lastRequest().params.ordering).toBeNull());
-    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
-      "ordering",
-    );
+    expect(
+      localStorage.getItem("__dcs_list_ordering__:testapp.article"),
+    ).toBeNull();
   });
 });
 

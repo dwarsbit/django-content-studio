@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **List filters and ordering move to local storage.** The content
+  list's filters and sort are now remembered per content type, like
+  the view choice, instead of living in the URL: returning to a
+  content type restores them, and the URL keeps only the page and
+  the search term.
 - **List view sorting.** The list view no longer inherits the table's
   sorting: without a `sortable_by` declaration it always uses the
   studio's default ordering, and with one it gains a select (to the

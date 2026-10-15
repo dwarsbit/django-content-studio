@@ -28,7 +28,6 @@ export function ModelListPage() {
   const model = discover?.models.find(R.whereEq({ label: appLabel }));
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page") ?? "1");
-  const ordering = searchParams.get("ordering");
   const search = searchParams.get("search");
   // The views the admin offers; more than one shows a toggle. The
   // choice is remembered per content type in local storage.
@@ -43,39 +42,49 @@ export function ModelListPage() {
     return remembered && views.includes(remembered) ? remembered : views[0];
   };
 
+  // The remembered ordering ("" meaning none) and filters (a flat
+  // record of "field" / "field__lookup" to value), per content type.
+  const storedOrdering = (label: string) =>
+    localStorage.getItem(`__dcs_list_ordering__:${label}`);
+  const storedFilters = (label: string) => {
+    try {
+      return JSON.parse(
+        localStorage.getItem(`__dcs_list_filters__:${label}`) ?? "{}",
+      ) as Record<string, string>;
+    } catch {
+      return {};
+    }
+  };
+
   const [view, setViewState] = useState<string>(() =>
     model?.label ? storedView(model.label) : views[0],
   );
+  const [ordering, setOrderingState] = useState<string | null>(() =>
+    model?.label ? storedOrdering(model.label) : null,
+  );
+  const [filters, setFiltersState] = useState<Record<string, string>>(() =>
+    model?.label ? storedFilters(model.label) : {},
+  );
   const [lastLabel, setLastLabel] = useState(model?.label);
 
-  // Navigating between content types re-reads the remembered choice.
+  // Navigating between content types re-reads the remembered choice,
+  // ordering and filters.
   if (model && model.label !== lastLabel) {
     setLastLabel(model.label);
     setViewState(storedView(model.label));
+    setOrderingState(storedOrdering(model.label));
+    setFiltersState(storedFilters(model.label));
   }
 
   // Without sortable_by the list view always uses the default
-  // ordering; the parameter stays in the URL for the table to pick
+  // ordering; the stored ordering is kept for the table to pick
   // back up.
   const effectiveOrdering =
     view === "list" && R.isNil(sortableBy) ? null : ordering;
 
-  const filters = Array.from(searchParams.entries())
-    .filter(([key]) => key.startsWith("filters."))
-    .reduce(
-      (result, [key, value]) =>
-        value
-          ? {
-              ...result,
-              [key.replace("filters.", "")]: value,
-            }
-          : result,
-      {},
-    );
-
-  // Selection is current-page: any URL change (page, filter, search,
-  // ordering) resets it — during render, the sanctioned way to
-  // adjust state to an external change.
+  // Selection is current-page: any URL change (page, search) or
+  // change of the remembered ordering or filters resets it — during
+  // render, the sanctioned way to adjust state to an external change.
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [lastParams, setLastParams] = useState(searchParams);
 
@@ -92,6 +101,37 @@ export function ModelListPage() {
     }
 
     // Selection is current-page: switching views resets it.
+    setSelected(new Set());
+  };
+
+  const setOrdering = (next: string | null) => {
+    setOrderingState(next);
+
+    if (model) {
+      if (next) {
+        localStorage.setItem(`__dcs_list_ordering__:${model.label}`, next);
+      } else {
+        localStorage.removeItem(`__dcs_list_ordering__:${model.label}`);
+      }
+    }
+
+    setSelected(new Set());
+  };
+
+  const setFilters = (next: Record<string, string>) => {
+    setFiltersState(next);
+
+    if (model) {
+      if (R.isEmpty(next)) {
+        localStorage.removeItem(`__dcs_list_filters__:${model.label}`);
+      } else {
+        localStorage.setItem(
+          `__dcs_list_filters__:${model.label}`,
+          JSON.stringify(next),
+        );
+      }
+    }
+
     setSelected(new Set());
   };
 
@@ -184,10 +224,18 @@ export function ModelListPage() {
             />
           ) : (
             <>
-              <Filters model={model} />
+              <Filters
+                model={model}
+                values={filters}
+                onValuesChange={setFilters}
+              />
               <div className="flex items-center gap-2">
                 {view === "list" && !R.isNil(sortableBy) && (
-                  <SortSelect model={model} />
+                  <SortSelect
+                    model={model}
+                    ordering={ordering}
+                    onOrderingChange={setOrdering}
+                  />
                 )}
                 {views.length > 1 && (
                   <div className="flex items-center gap-1 rounded-lg border p-1">
@@ -234,6 +282,8 @@ export function ModelListPage() {
             items={data.results}
             model={model}
             selected={selected}
+            ordering={ordering}
+            onOrderingChange={setOrdering}
             onToggle={toggle}
             onToggleAll={toggleAll}
           />
