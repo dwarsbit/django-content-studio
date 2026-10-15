@@ -1,6 +1,6 @@
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
-import { PiArrowDownBold, PiArrowUpBold } from "react-icons/pi";
+import { TbCaretDownFilled, TbCaretUpFilled } from "react-icons/tb";
 import { useNavigate } from "react-router";
 
 import { FormatRenderer } from "@/components/formats/renderer";
@@ -106,20 +106,20 @@ export function TableView({
                         }
                       }}
                       className={cn(
-                        "group inline-flex items-center gap-1 hover:bg-foreground/10 p-1 -mx-1 rounded-md cursor-pointer",
+                        "group inline-flex items-center gap-1 cursor-pointer hover:text-secondary-foreground",
                         "outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       )}
                     >
                       <span>{label}</span>
                       <span
                         className={cn({
-                          "invisible group-hover:visible": !active,
+                          invisible: !active,
                         })}
                       >
-                        {descending || !active ? (
-                          <PiArrowUpBold />
+                        {descending ? (
+                          <TbCaretUpFilled />
                         ) : (
-                          <PiArrowDownBold />
+                          <TbCaretDownFilled />
                         )}
                       </span>
                     </button>

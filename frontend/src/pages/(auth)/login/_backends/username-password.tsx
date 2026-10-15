@@ -62,6 +62,10 @@ export function UsernamePasswordBackend({
 
   return (
     <div className="w-full max-w-md flex-1 flex flex-col items-center justify-center">
+      <img
+        src={`${(window as any).DCS_STATIC_PREFIX}img/icon.svg`}
+        className="size-14 mb-4"
+      />
       <h1 className="text-xl font-bold text-gray-50 text-center select-none">
         {t("login.title")}
       </h1>

@@ -4,6 +4,12 @@ from ..router import content_studio_router
 from ..settings import cs_settings
 from .username_password import UsernamePasswordBackend
 
+# The login backends Content Studio ships, as import path strings —
+# what the init_content_studio management command offers.
+AVAILABLE_LOGIN_BACKENDS = [
+    "content_studio.login_backends.UsernamePasswordBackend",
+]
+
 
 class LoginRateThrottle(AnonRateThrottle):
     """

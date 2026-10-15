@@ -14,6 +14,7 @@ Django = ">=5,<7"
 djangorestframework = ">=3.16,<4"
 rich = "^14.3.3"
 pyjwt = ">=2,<3"
+pick = ">=2.5,<3"
 
 [tool.poetry]
 packages = [{include = "content_studio"}]

@@ -46,6 +46,32 @@ urlpatterns = [
 The interface (and everything it needs) is served under this prefix — no
 further URL configuration required.
 
+## Initialize Content Studio
+
+The `init_content_studio` command sets up the pieces above and beyond:
+
+```bash
+python manage.py init_content_studio
+```
+
+It asks which model to use for the media library (item and folder — none
+by default), whether to use a tenant model, and which login backend to
+enable (today: `UsernamePasswordBackend`). The prompts are arrow-key
+selections; **ESC** asks for confirmation to abort the command. It then:
+
+- creates a `studio.py` next to your settings with a `ContentStudioSite`
+  instance, with the customization hooks commented in;
+- adds the `CONTENT_STUDIO` block to your settings, pointing
+  `ADMIN_SITE` at the new site — reported and skipped when a
+  `CONTENT_STUDIO` block already exists, so nothing you configured by
+  hand gets rewritten.
+
+Every choice can also be passed as a flag, so the command runs unattended:
+`--media-item`, `--media-folder`, `--tenant` (each as `app_label.Model`)
+and `--login-backend`, plus `--no-input` to accept the defaults for
+everything unset. The command validates its choices through
+[System checks](/docs/system-checks) — run `manage.py check` afterwards.
+
 ## Register a model
 
 ```python
