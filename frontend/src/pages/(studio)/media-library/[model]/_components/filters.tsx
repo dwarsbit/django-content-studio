@@ -16,19 +16,32 @@ import { useMediaTags } from "@/hooks/use-media-tags";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/types";
 
-const TYPES: MediaItem["type"][] = ["image", "video", "audio", "file"];
-
 /**
- * The media library's filters, all in the URL: a debounced search,
- * the file types (any-of), the tags (any-of, comma-separated) and —
- * with folders — whether the search stays in the current folder.
+ * The media library's filters: a debounced search and — with folders —
+ * whether the search stays in the current folder (both in the URL),
+ * plus the remembered file types (any-of) and tags (any-of,
+ * comma-separated).
  */
-export function Filters({ folders }: { folders: boolean }) {
+export function Filters({
+  folders,
+  typeOptions,
+  type,
+  tags,
+  onTypeChange,
+  onTagsChange,
+}: {
+  folders: boolean;
+  typeOptions: MediaItem["type"][];
+  // The remembered type and tags filters, comma-separated values.
+  type?: string;
+  tags?: string;
+  onTypeChange: (next: string | undefined) => void;
+  onTagsChange: (next: string | undefined) => void;
+}) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get("search") ?? "";
-  const types = (searchParams.get("type") ?? "").split(",").filter(Boolean);
-  const tags = searchParams.get("tags") ?? "";
+  const types = (type ?? "").split(",").filter(Boolean);
   const searchInFolder = searchParams.get("searchInFolder") === "true";
 
   const [searchLocal, setSearchLocal] = useState(search);
@@ -40,12 +53,15 @@ export function Filters({ folders }: { folders: boolean }) {
         return;
       }
 
+      // A new term strands the current page, so searching returns to
+      // the first page.
       setSearchParams((searchParams) => {
         if (searchLocal) {
           searchParams.set("search", searchLocal);
         } else {
           searchParams.delete("search");
         }
+        searchParams.delete("page");
         return searchParams;
       });
     },
@@ -58,14 +74,7 @@ export function Filters({ folders }: { folders: boolean }) {
       ? types.filter((current) => current !== type)
       : [...types, type];
 
-    setSearchParams((searchParams) => {
-      if (next.length) {
-        searchParams.set("type", next.join(","));
-      } else {
-        searchParams.delete("type");
-      }
-      return searchParams;
-    });
+    onTypeChange(next.length ? next.join(",") : undefined);
   };
 
   return (
@@ -80,20 +89,16 @@ export function Filters({ folders }: { folders: boolean }) {
       <div className="w-[240px] max-w-full">
         <MultiSelect
           options={(mediaTags ?? []).map((tag) => ({ value: tag, label: tag }))}
-          value={tags
+          value={(tags ?? "")
             .split(",")
             .filter(Boolean)
             .map((tag) => ({ value: tag, label: tag }))}
           onChange={(options) =>
-            setSearchParams((searchParams) => {
-              const value = options.map((option) => option.value).join(",");
-              if (value) {
-                searchParams.set("tags", value);
-              } else {
-                searchParams.delete("tags");
-              }
-              return searchParams;
-            })
+            onTagsChange(
+              options.length
+                ? options.map((option) => option.value).join(",")
+                : undefined,
+            )
           }
           placeholder={t("media_library.filters.tags")}
           emptyIndicator={t("media_library.filters.no_tags")}
@@ -116,7 +121,7 @@ export function Filters({ folders }: { folders: boolean }) {
             : t("media_library.filters.type")}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          {TYPES.map((type) => (
+          {typeOptions.map((type) => (
             <DropdownMenuCheckboxItem
               key={type}
               checked={types.includes(type)}

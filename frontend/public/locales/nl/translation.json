@@ -77,6 +77,7 @@
     "table_view": "Tabelweergave",
     "list_view": "Lijstweergave",
     "empty_state": "Nog geen items",
+    "no_results": "Niets komt overeen met de huidige zoekopdracht of filters",
     "filter": "Filteren",
     "clear_all_filters": "Alle filters wissen",
     "sort_by": "Sorteren op",

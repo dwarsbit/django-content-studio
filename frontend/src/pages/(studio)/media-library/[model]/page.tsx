@@ -21,6 +21,7 @@ import { useDiscover } from "@/hooks/use-discover";
 import { useListMedia } from "@/hooks/use-list-media";
 import { useMediaUpload } from "@/hooks/use-media-upload";
 import { cn } from "@/lib/utils";
+import type { MediaItem } from "@/types";
 
 import { MediaBulkBar } from "./_components/bulk-bar";
 import { Filters } from "./_components/filters";
@@ -30,6 +31,7 @@ import { TableView } from "./_components/table-view";
 import { UploadsPanel } from "./_components/uploads-panel";
 
 const VIEWS = ["grid", "list", "table"] as const;
+const TYPES: MediaItem["type"][] = ["image", "video", "audio", "file"];
 
 export function MediaLibraryPage() {
   return <MediaLibrary />;
@@ -42,15 +44,64 @@ function MediaLibrary() {
   const hasFolders = discover?.media_library.folders ?? false;
 
   const [searchParams, setSearchParams] = useSearchParams();
+  // The URL keeps what locates the request: the folder, the search
+  // term and the page. The view, the type and tags filters and the
+  // ordering are remembered per media model, like the content list.
   const page = Number(searchParams.get("page") ?? "1");
   const folder = searchParams.get("folder");
   const search = searchParams.get("search") ?? "";
   const searchInFolder = searchParams.get("searchInFolder") === "true";
-  const type = searchParams.get("type") ?? undefined;
-  const tags = searchParams.get("tags") ?? undefined;
-  const ordering = searchParams.get("ordering") ?? undefined;
-  const viewParam = searchParams.get("view") ?? undefined;
-  const view = R.includes(viewParam, VIEWS) ? viewParam : "grid";
+
+  // Reads the remembered view, filters (type and tags) and ordering,
+  // dropping values that no longer apply (an unknown view or file
+  // type cannot be selected anymore).
+  const storedView = (label: string) => {
+    const remembered = localStorage.getItem(`__dcs_media_view__:${label}`);
+
+    return remembered && R.includes(remembered, VIEWS) ? remembered : "grid";
+  };
+  const storedFilters = (label: string) => {
+    try {
+      const remembered = JSON.parse(
+        localStorage.getItem(`__dcs_media_filters__:${label}`) ?? "{}",
+      ) as { type?: string; tags?: string };
+
+      return {
+        type:
+          remembered.type &&
+          remembered.type.split(",").every((entry) => R.includes(entry, TYPES))
+            ? remembered.type
+            : undefined,
+        tags: remembered.tags,
+      };
+    } catch {
+      return {};
+    }
+  };
+  const storedOrdering = (label: string) =>
+    localStorage.getItem(`__dcs_media_ordering__:${label}`);
+
+  const [view, setViewState] = useState<string>(() =>
+    model ? storedView(model) : "grid",
+  );
+  const [filters, setFiltersState] = useState<{ type?: string; tags?: string }>(
+    () => (model ? storedFilters(model) : {}),
+  );
+  const [ordering, setOrderingState] = useState<string | null>(() =>
+    model ? storedOrdering(model) : null,
+  );
+  const [lastLabel, setLastLabel] = useState(model);
+
+  // A media model appearing (or changing) re-reads the remembered
+  // state.
+  if (model && model !== lastLabel) {
+    setLastLabel(model);
+    setViewState(storedView(model));
+    setFiltersState(storedFilters(model));
+    setOrderingState(storedOrdering(model));
+  }
+
+  const { type, tags } = filters;
 
   const { uploads, start } = useMediaUpload(folder);
   const { data } = useListMedia({
@@ -60,7 +111,7 @@ function MediaLibrary() {
     searchInFolder,
     type,
     tags,
-    ordering,
+    ordering: ordering ?? undefined,
   });
 
   // Selection is current-page: any URL change (page, folder, filter,
@@ -77,15 +128,57 @@ function MediaLibrary() {
     setSelected(new Set());
   }
 
-  const setParam = (key: string, value: string | null) => () =>
+  // Narrowing or re-sorting the library can strand the current page,
+  // so every remembered-state change returns to the first page.
+  const resetPage = () =>
     setSearchParams((searchParams) => {
-      if (value) {
-        searchParams.set(key, value);
-      } else {
-        searchParams.delete(key);
-      }
+      searchParams.delete("page");
       return searchParams;
     });
+
+  const setView = (next: string) => {
+    setViewState(next);
+
+    if (model) {
+      localStorage.setItem(`__dcs_media_view__:${model}`, next);
+    }
+
+    // Selection is current-page: switching views resets it.
+    setSelected(new Set());
+  };
+
+  const setFilters = (next: { type?: string; tags?: string }) => {
+    setFiltersState(next);
+
+    if (model) {
+      if (next.type || next.tags) {
+        localStorage.setItem(
+          `__dcs_media_filters__:${model}`,
+          JSON.stringify(next),
+        );
+      } else {
+        localStorage.removeItem(`__dcs_media_filters__:${model}`);
+      }
+    }
+
+    resetPage();
+    setSelected(new Set());
+  };
+
+  const setOrdering = (next: string | null) => {
+    setOrderingState(next);
+
+    if (model) {
+      if (next) {
+        localStorage.setItem(`__dcs_media_ordering__:${model}`, next);
+      } else {
+        localStorage.removeItem(`__dcs_media_ordering__:${model}`);
+      }
+    }
+
+    resetPage();
+    setSelected(new Set());
+  };
 
   const toggleSelect = (id: string) =>
     setSelected((previous) => {
@@ -138,7 +231,14 @@ function MediaLibrary() {
       </div>
 
       <div className="mb-4 px-5 flex items-start justify-between gap-4">
-        <Filters folders={hasFolders} />
+        <Filters
+          folders={hasFolders}
+          typeOptions={TYPES}
+          type={type}
+          tags={tags}
+          onTypeChange={(next) => setFilters({ ...filters, type: next })}
+          onTagsChange={(next) => setFilters({ ...filters, tags: next })}
+        />
         <div className="flex items-center gap-1 rounded-lg border p-1">
           {(
             [
@@ -151,9 +251,10 @@ function MediaLibrary() {
               key={name}
               type="button"
               title={t(`media_library.${label}`)}
-              onClick={setParam("view", name)}
+              onClick={() => setView(name)}
               className={cn(
-                "flex items-center justify-center size-6 rounded-md cursor-pointer",
+                "flex items-center justify-center size-6 rounded-md cursor-pointer outline-none",
+                "focus-visible:ring-2 focus-visible:ring-ring",
                 view === name
                   ? "bg-foreground/10"
                   : "hover:bg-foreground/5 text-muted-foreground",
@@ -224,8 +325,8 @@ function MediaLibrary() {
               onToggleSelect={toggleSelect}
               onToggleAll={toggleAll}
               onOpen={setEditing}
-              ordering={ordering ?? null}
-              onOrderingChange={(value) => setParam("ordering", value)()}
+              ordering={ordering}
+              onOrderingChange={setOrdering}
             />
           )}
 

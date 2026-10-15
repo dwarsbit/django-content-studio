@@ -10,7 +10,8 @@ import type { MediaItem } from "@/types";
 /**
  * The media library's table view: a row per item with sortable
  * headers where the API supports ordering. Clicking a header cycles
- * ascending and descending; the ordering lives in the URL.
+ * ascending and descending; the ordering is remembered per media
+ * model.
  */
 export function TableView({
   items,
@@ -118,13 +119,25 @@ export function TableView({
             {columns.map((column) => (
               <th
                 key={column.name}
+                aria-sort={
+                  column.sortable
+                    ? ordering === column.name
+                      ? "ascending"
+                      : ordering === `-${column.name}`
+                        ? "descending"
+                        : "none"
+                    : undefined
+                }
                 className={cn("px-3 py-2 text-left", column.className)}
               >
                 {column.sortable ? (
                   <button
                     type="button"
                     onClick={() => cycleOrdering(column.name)}
-                    className="flex items-center gap-1 cursor-pointer hover:text-foreground"
+                    className={cn(
+                      "flex items-center gap-1 cursor-pointer hover:text-foreground outline-none",
+                      "focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+                    )}
                   >
                     {column.label}
                     {ordering === column.name ||

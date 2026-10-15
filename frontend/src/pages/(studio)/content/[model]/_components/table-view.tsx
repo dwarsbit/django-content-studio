@@ -16,6 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { FieldFormat, Model } from "@/types";
 
+import { EmptyState } from "./empty-state";
+
 export function TableView({
   items,
   model,
@@ -24,6 +26,8 @@ export function TableView({
   onOrderingChange,
   onToggle,
   onToggleAll,
+  filtered,
+  onClear,
 }: {
   items: { id: string; [p: string]: unknown }[];
   model: Model;
@@ -35,6 +39,11 @@ export function TableView({
   onOrderingChange?: (next: string | null) => void;
   onToggle?: (id: string) => void;
   onToggleAll?: (ids: string[]) => void;
+  // Whether a search term or remembered filters narrow the list;
+  // drives the empty state's no-results notice.
+  filtered?: boolean;
+  // Clears the search term and the remembered filters.
+  onClear?: () => void;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -72,7 +81,19 @@ export function TableView({
                 (R.isNil(sortable_by) || sortable_by.includes(name));
 
               return (
-                <TableHead key={name} className="sticky top-0 z-10 bg-muted">
+                <TableHead
+                  key={name}
+                  aria-sort={
+                    isSortable
+                      ? active
+                        ? descending
+                          ? "descending"
+                          : "ascending"
+                        : "none"
+                      : undefined
+                  }
+                  className="sticky top-0 z-10 bg-muted"
+                >
                   {label && isSortable ? (
                     <button
                       onClick={() => {
@@ -86,6 +107,7 @@ export function TableView({
                       }}
                       className={cn(
                         "group inline-flex items-center gap-1 hover:bg-foreground/10 p-1 -mx-1 rounded-md cursor-pointer",
+                        "outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       )}
                     >
                       <span>{label}</span>
@@ -114,11 +136,13 @@ export function TableView({
             <TableRow>
               <TableCell
                 colSpan={fields.length + (hasActions ? 1 : 0)}
-                className="text-center py-12"
+                className="text-center"
               >
-                <span className="font-normal text-muted-foreground">
-                  {t("list_view.empty_state")}
-                </span>
+                <EmptyState
+                  model={model}
+                  filtered={!!filtered}
+                  onClear={onClear}
+                />
               </TableCell>
             </TableRow>
           )}

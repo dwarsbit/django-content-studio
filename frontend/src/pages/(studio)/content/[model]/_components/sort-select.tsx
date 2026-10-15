@@ -83,8 +83,8 @@ export function SortSelect({
           }
           onClick={() => onOrderingChange(descending ? field : `-${field}`)}
           className={cn(
-            "flex items-center justify-center size-8 rounded-md border cursor-pointer",
-            "hover:bg-foreground/5 text-muted-foreground",
+            "flex items-center justify-center size-8 rounded-md border cursor-pointer outline-none",
+            "hover:bg-foreground/5 text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring",
           )}
         >
           {descending ? <PiArrowDownBold /> : <PiArrowUpBold />}

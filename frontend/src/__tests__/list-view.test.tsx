@@ -246,13 +246,62 @@ describe("ModelListPage", () => {
     expect(lastRequest().params).toMatchObject({ page: 1 });
   });
 
-  it("shows the empty state when the response has no results", async () => {
+  it("invites creation in the empty state", async () => {
     httpGetMock.mockResolvedValue({ data: makePaginated([]) });
     renderListPage(makeModel());
 
     expect(
       await screen.findByText("list_view.empty_state"),
     ).toBeInTheDocument();
+    // The header and the empty state both offer creation.
+    const create = screen.getAllByRole("link", { name: "common.create" });
+    expect(create).toHaveLength(2);
+    expect(create[1]).toHaveAttribute("href", "/content/testapp.article/new");
+  });
+
+  it("offers no create button in the empty state without the add permission", async () => {
+    httpGetMock.mockResolvedValue({ data: makePaginated([]) });
+    renderListPage(makeModel({ permissions: { add_permission: false } }));
+
+    await screen.findByText("list_view.empty_state");
+
+    expect(
+      screen.queryByRole("link", { name: "common.create" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows a no-results notice that clears the search and filters", async () => {
+    httpGetMock.mockResolvedValue({ data: makePaginated([]) });
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "__dcs_list_filters__:testapp.article",
+      JSON.stringify({ status: "published" }),
+    );
+    renderListPage(
+      makeModel({
+        list: { filter: ["status"] },
+        fields: filteredArticleFields,
+      }),
+      "/content/testapp.article?search=hello",
+    );
+
+    expect(await screen.findByText("list_view.no_results")).toBeInTheDocument();
+    expect(screen.queryByText("list_view.empty_state")).not.toBeInTheDocument();
+
+    // The toolbar and the empty state both offer clearing; the empty
+    // state's also clears the search term.
+    await user.click(
+      screen.getAllByRole("button", { name: "list_view.clear_all_filters" })[1],
+    );
+
+    await waitFor(() => expect(lastRequest().params.search).toBeUndefined());
+    expect(lastRequest().params.status).toBeUndefined();
+    expect(
+      localStorage.getItem("__dcs_list_filters__:testapp.article"),
+    ).toBeNull();
+    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
+      "search=",
+    );
   });
 
   it("sends the search term to the API when the search input changes", async () => {
@@ -309,6 +358,120 @@ describe("ModelListPage", () => {
     expect(
       localStorage.getItem("__dcs_list_ordering__:testapp.article"),
     ).toBeNull();
+  });
+
+  it("exposes the sort state through aria-sort", async () => {
+    const user = userEvent.setup();
+    renderListPage(makeModel());
+
+    const title = await screen.findByRole("columnheader", {
+      name: "Title",
+    });
+    expect(title).toHaveAttribute("aria-sort", "none");
+
+    await user.click(screen.getByRole("button", { name: "Title" }));
+    expect(title).toHaveAttribute("aria-sort", "ascending");
+
+    await user.click(screen.getByRole("button", { name: "Title" }));
+    expect(title).toHaveAttribute("aria-sort", "descending");
+
+    await user.click(screen.getByRole("button", { name: "Title" }));
+    expect(title).toHaveAttribute("aria-sort", "none");
+
+    // Columns that cannot be sorted carry no aria-sort at all.
+    expect(
+      screen.getByRole("columnheader", { name: "Status" }),
+    ).toHaveAttribute("aria-sort", "none");
+  });
+
+  it("returns to the first page when the ordering changes", async () => {
+    const user = userEvent.setup();
+    renderListPage(makeModel(), "/content/testapp.article?page=2");
+
+    await screen.findByText("First Article");
+    await user.click(screen.getByRole("button", { name: "Title" }));
+
+    await waitFor(() =>
+      expect(lastRequest().params).toMatchObject({
+        page: 1,
+        ordering: "title",
+      }),
+    );
+    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
+      "page=",
+    );
+  });
+
+  it("returns to the first page when a filter changes", async () => {
+    const user = userEvent.setup();
+    renderListPage(
+      makeModel({
+        list: { filter: ["status"], sortable_by: ["title"] },
+        fields: filteredArticleFields,
+      }),
+      "/content/testapp.article?page=2",
+    );
+
+    await screen.findByText("First Article");
+    await user.click(await screen.findByRole("button", { name: "Status" }));
+    await user.click(
+      await screen.findByRole("menuitemcheckbox", { name: "Published" }),
+    );
+
+    await waitFor(() =>
+      expect(lastRequest().params).toMatchObject({
+        page: 1,
+        status: "published",
+      }),
+    );
+    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
+      "page=",
+    );
+  });
+
+  it("returns to the first page when the search term changes", async () => {
+    const user = userEvent.setup();
+    renderListPage(makeModel(), "/content/testapp.article?page=2");
+
+    await screen.findByText("First Article");
+    await user.type(
+      await screen.findByPlaceholderText("common.search"),
+      "hello",
+    );
+
+    await waitFor(
+      () =>
+        expect(lastRequest().params).toMatchObject({
+          page: 1,
+          search: "hello",
+        }),
+      { timeout: 2000 },
+    );
+    expect(screen.getByTestId("location-search")).not.toHaveTextContent(
+      "page=",
+    );
+  });
+
+  it("drops remembered state that no longer matches the model", async () => {
+    localStorage.setItem("__dcs_list_ordering__:testapp.article", "removed");
+    localStorage.setItem(
+      "__dcs_list_filters__:testapp.article",
+      JSON.stringify({ status: "published", bogus: "x" }),
+    );
+    // status is not a sortable_by column, so the ordering would be
+    // dropped even if it named a real field.
+    renderListPage(
+      makeModel({
+        list: { sortable_by: ["title"] },
+        fields: filteredArticleFields,
+      }),
+    );
+
+    await screen.findByText("First Article");
+
+    expect(lastRequest().params.ordering).toBeNull();
+    expect(lastRequest().params.status).toBeUndefined();
+    expect(lastRequest().params.bogus).toBeUndefined();
   });
 
   it("only offers sorting for columns listed in sortable_by", async () => {

@@ -1,9 +1,10 @@
-import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Model, Resource } from "@/types";
+
+import { EmptyState } from "./empty-state";
 
 /**
  * The list view: rows instead of a table. Each row is driven by the
@@ -13,21 +14,27 @@ import type { Model, Resource } from "@/types";
 export function ListView({
   items,
   model,
+  filtered,
+  onClear,
 }: {
   items: Resource[];
   model: Model;
+  // Whether a search term or remembered filters narrow the list;
+  // drives the empty state's no-results notice.
+  filtered?: boolean;
+  // Clears the search term and the remembered filters.
+  onClear?: () => void;
 }) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
     <div className="w-full flex-1 border rounded-lg overflow-hidden">
       {items.length === 0 && (
-        <div className="text-center py-12">
-          <span className="font-normal text-muted-foreground">
-            {t("list_view.empty_state")}
-          </span>
-        </div>
+        <EmptyState
+          model={model}
+          filtered={!!filtered}
+          onClear={onClear}
+        />
       )}
       {items.map((item) => {
         const display = item.list_display;

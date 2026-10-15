@@ -77,6 +77,7 @@
     "table_view": "Table view",
     "list_view": "List view",
     "empty_state": "No items yet",
+    "no_results": "Nothing matches the current search or filters",
     "filter": "Filter",
     "clear_all_filters": "Clear all filters",
     "sort_by": "Sort by",

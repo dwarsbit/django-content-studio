@@ -20,12 +20,15 @@ export function Search() {
         return;
       }
 
+      // A new term strands the current page, so searching returns to
+      // the first page.
       setSearchParams((searchParams) => {
         if (local) {
           searchParams.set("search", local);
         } else {
           searchParams.delete("search");
         }
+        searchParams.delete("page");
         return searchParams;
       });
     },

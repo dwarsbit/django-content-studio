@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **Media library state joins the remembered-state model.** The
+  media library's view, its type and tags filters and its ordering
+  are remembered per media model, like the content list's state,
+  instead of the URL; the URL keeps only the folder, the search term
+  and the page. Remembered values that no longer apply (an unknown
+  view or file type) are dropped, and the table's headers expose
+  their sort state through aria-sort.
+- **List page polish.** Narrowing or re-sorting a list returns to the
+  first page instead of stranding the current one; the empty state
+  invites creation (permission-checked) and, while a search term or
+  filters are active, shows a no-results notice that offers clearing
+  them; remembered filters and ordering are validated against the
+  current studio configuration so stale values are dropped instead
+  of sent; and sortable headers expose their sort state through
+  aria-sort with visible focus rings.
 - **List filters and ordering move to local storage.** The content
   list's filters and sort are now remembered per content type, like
   the view choice, instead of living in the URL: returning to a

@@ -42,15 +42,47 @@ export function ModelListPage() {
     return remembered && views.includes(remembered) ? remembered : views[0];
   };
 
-  // The remembered ordering ("" meaning none) and filters (a flat
+  // The remembered ordering (null meaning none) and filters (a flat
   // record of "field" / "field__lookup" to value), per content type.
+  // A remembered value can outlive the studio's configuration — a
+  // removed column, filter or sortable field is dropped instead of
+  // being sent as an ignored parameter.
+  const sanitizeOrdering = (ordering: string | null) => {
+    const name = ordering?.replace(/^-/, "");
+
+    return ordering &&
+      name &&
+      model &&
+      !R.isNil(model.fields[name]) &&
+      model.admin.list.display.some((column) => column.name === name) &&
+      (R.isNil(sortableBy) || sortableBy.includes(name))
+      ? ordering
+      : null;
+  };
+  const sanitizeFilters = (filters: Record<string, string>) => {
+    if (!model) {
+      return {};
+    }
+
+    const filterable = new Set(model.admin.list.filter ?? []);
+
+    return Object.fromEntries(
+      Object.entries(filters).filter(([key]) => {
+        const name = key.split("__")[0];
+
+        return filterable.has(name) && !R.isNil(model.fields[name]);
+      }),
+    );
+  };
   const storedOrdering = (label: string) =>
-    localStorage.getItem(`__dcs_list_ordering__:${label}`);
+    sanitizeOrdering(localStorage.getItem(`__dcs_list_ordering__:${label}`));
   const storedFilters = (label: string) => {
     try {
-      return JSON.parse(
-        localStorage.getItem(`__dcs_list_filters__:${label}`) ?? "{}",
-      ) as Record<string, string>;
+      return sanitizeFilters(
+        JSON.parse(
+          localStorage.getItem(`__dcs_list_filters__:${label}`) ?? "{}",
+        ) as Record<string, string>,
+      );
     } catch {
       return {};
     }
@@ -104,6 +136,14 @@ export function ModelListPage() {
     setSelected(new Set());
   };
 
+  // Narrowing or re-sorting the list can strand the current page, so
+  // every state change returns to the first page.
+  const resetPage = () =>
+    setSearchParams((searchParams) => {
+      searchParams.delete("page");
+      return searchParams;
+    });
+
   const setOrdering = (next: string | null) => {
     setOrderingState(next);
 
@@ -115,6 +155,7 @@ export function ModelListPage() {
       }
     }
 
+    resetPage();
     setSelected(new Set());
   };
 
@@ -132,6 +173,7 @@ export function ModelListPage() {
       }
     }
 
+    resetPage();
     setSelected(new Set());
   };
 
@@ -150,6 +192,18 @@ export function ModelListPage() {
     setSelected((previous) =>
       ids.every((id) => previous.has(id)) ? new Set() : new Set(ids),
     );
+
+  // Whether a search term or remembered filters narrow the list —
+  // the empty state's no-results notice depends on it — and clearing
+  // both.
+  const filtered = !R.isEmpty(filters) || !!search;
+  const clearContext = () => {
+    setFilters({});
+    setSearchParams((searchParams) => {
+      searchParams.delete("search");
+      return searchParams;
+    });
+  };
 
   const clearSelection = () => setSelected(new Set());
   const actions = model?.admin.list.actions ?? [];
@@ -245,7 +299,8 @@ export function ModelListPage() {
                         title={t("list_view.table_view")}
                         onClick={() => setView("table")}
                         className={cn(
-                          "flex items-center justify-center size-6 rounded-md cursor-pointer",
+                          "flex items-center justify-center size-6 rounded-md cursor-pointer outline-none",
+                          "focus-visible:ring-2 focus-visible:ring-ring",
                           view === "table"
                             ? "bg-foreground/10"
                             : "hover:bg-foreground/5 text-muted-foreground",
@@ -260,7 +315,8 @@ export function ModelListPage() {
                         title={t("list_view.list_view")}
                         onClick={() => setView("list")}
                         className={cn(
-                          "flex items-center justify-center size-6 rounded-md cursor-pointer",
+                          "flex items-center justify-center size-6 rounded-md cursor-pointer outline-none",
+                          "focus-visible:ring-2 focus-visible:ring-ring",
                           view === "list"
                             ? "bg-foreground/10"
                             : "hover:bg-foreground/5 text-muted-foreground",
@@ -276,7 +332,12 @@ export function ModelListPage() {
           )}
         </div>
         {view === "list" ? (
-          <ListView items={data.results} model={model} />
+          <ListView
+            items={data.results}
+            model={model}
+            filtered={filtered}
+            onClear={clearContext}
+          />
         ) : (
           <TableView
             items={data.results}
@@ -286,6 +347,8 @@ export function ModelListPage() {
             onOrderingChange={setOrdering}
             onToggle={toggle}
             onToggleAll={toggleAll}
+            filtered={filtered}
+            onClear={clearContext}
           />
         )}
         <div className="flex items-center justify-center">
