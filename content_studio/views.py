@@ -78,7 +78,11 @@ class AdminApiViewSet(ViewSet):
             ],
             "token_backend": self.admin_site.token_backend.active_backend.get_info(),
             "formats": {
-                model_class.__name__: frmt.serialize()
+                (
+                    model_class
+                    if isinstance(model_class, str)
+                    else model_class.__name__
+                ): frmt.serialize()
                 for model_class, frmt in self.admin_site.default_format_mapping.items()
             },
             "widgets": get_widgets(),

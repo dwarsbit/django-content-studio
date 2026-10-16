@@ -87,7 +87,7 @@ async function upload(page: import("@playwright/test").Page, name: string) {
   ).toBeVisible();
 }
 
-test("offers list and table views with URL-lived type filters", async ({
+test("offers list and table views with remembered type filters", async ({
   page,
 }) => {
   await page.getByRole("link", { name: "Media library" }).click();
@@ -115,8 +115,9 @@ test("offers list and table views with URL-lived type filters", async ({
     0,
   );
 
-  // The filter lives in the URL.
-  await expect(page).toHaveURL(/type=file/);
+  // The type filter is remembered: it survives a reload.
+  await page.reload();
+  await expect(page.getByRole("columnheader", { name: "Name" })).toBeVisible();
 
   // The list view renders rows (scoped: the uploads panel shows the
   // name briefly as well) and carries no selection: clicking a row
@@ -217,12 +218,16 @@ test("filters by tag through the searchable select", async ({ page }) => {
   await expect(dialog).toHaveCount(0);
 
   // The tags select offers the library's tags; picking one narrows
-  // the items and lives in the URL.
+  // the items and is remembered across reloads.
   await page.getByPlaceholder("Tags").click();
   await page.getByRole("option", { name: "hero" }).click();
   await page.keyboard.press("Escape");
 
   await expect(page.getByRole("button", { name: tagged })).toBeVisible();
   await expect(page.getByRole("button", { name: untagged })).toHaveCount(0);
-  await expect(page).toHaveURL(/tags=hero/);
+
+  // The tag filter survives a reload.
+  await page.reload();
+  await expect(page.getByRole("button", { name: tagged })).toBeVisible();
+  await expect(page.getByRole("button", { name: untagged })).toHaveCount(0);
 });

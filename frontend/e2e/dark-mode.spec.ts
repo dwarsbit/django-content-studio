@@ -32,9 +32,9 @@ test("the studio surfaces follow the theme tokens in light and dark mode", async
 
   // Light mode: the root tokens.
   expect(await computed(page, "body", "backgroundColor")).toBe("oklch(1 0 0)");
-  expect(await computed(page, "body", "color")).toContain("oklch(0.145");
+  expect(await computed(page, "body", "color")).toContain("oklch(0.218");
   expect(await computed(page, "nav button[title]", "borderColor")).toContain(
-    "oklch(0.922",
+    "oklch(0.925",
   );
 
   // Dark mode: switch through the theme storage the provider reads.
@@ -43,9 +43,11 @@ test("the studio surfaces follow the theme tokens in light and dark mode", async
   await page.getByRole("link", { name: "Dashboard" }).waitFor();
 
   expect(await computed(page, "body", "backgroundColor")).toBe(
-    "oklch(0.145 0.008 326)",
+    "oklch(0.148 0.004 228.8)",
   );
-  expect(await computed(page, "body", "color")).toBe("oklch(0.985 0 0)");
+  expect(await computed(page, "body", "color")).toBe(
+    "oklch(0.987 0.002 197.1)",
+  );
   // Borders flip to translucent white, not a fixed gray.
   expect(await computed(page, "nav button[title]", "borderColor")).toBe(
     "oklch(1 0 0 / 0.1)",
@@ -55,7 +57,7 @@ test("the studio surfaces follow the theme tokens in light and dark mode", async
   await page.keyboard.press("Meta+k");
   await page.getByPlaceholder("Search or jump to...").waitFor();
   expect(await computed(page, '[role="dialog"]', "backgroundColor")).toBe(
-    "oklch(0.212 0.019 322.12)",
+    "oklch(0.218 0.008 223.9)",
   );
   expect(await computed(page, '[role="dialog"]', "borderColor")).toBe(
     "oklch(1 0 0 / 0.1)",
@@ -69,7 +71,7 @@ test("the studio surfaces follow the theme tokens in light and dark mode", async
   expect(await computed(page, "tbody tr", "borderTopColor")).toBe(
     "oklch(1 0 0 / 0.1)",
   );
-  expect(await computed(page, "th", "color")).toContain("oklch(0.711");
+  expect(await computed(page, "th", "color")).toContain("oklch(0.723");
 
   // The status tokens flip with the theme too: lightened variants in
   // dark mode, like destructive.

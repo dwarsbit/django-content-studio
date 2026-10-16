@@ -13,7 +13,9 @@ test("the HTMLField model renders the rich text widget", async ({ page }) => {
   const body = `Rich text body ${Date.now()}`;
 
   await page.goto("/admin/content/demo_blog.landingpage");
-  await page.getByRole("link", { name: "Create" }).click();
+  // The empty list renders a second Create link in its empty state;
+  // the header's is the first.
+  await page.getByRole("link", { name: "Create" }).first().click();
   await expect(page).toHaveURL(/\/content\/demo_blog\.landingpage\/new$/);
 
   await fieldByLabel(page, "title").fill(title);

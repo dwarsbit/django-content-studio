@@ -20,13 +20,11 @@ test("the article list offers both views and toggles between them", async ({
   // the meta badge from the demo's custom get_status_display. Parallel
   // tests add more published articles, so scope to the first badge —
   // the seeded article leads the pk-ordered list.
-  await expect(page).toHaveURL(/view=list/);
   const row = page.getByText("Hello, Content Studio");
   await expect(row).toBeVisible();
   await expect(
     page.getByText("Published", { exact: true }).first(),
   ).toBeVisible();
-  await expect(page).toHaveURL(/view=list/);
 
   // A row opens the editor as its own route.
   await row.click();
@@ -37,7 +35,7 @@ test("the article list offers both views and toggles between them", async ({
   await page.getByRole("button", { name: "Back to the list" }).click();
   await expect(page).toHaveURL(/\/content\/demo_blog\.article$/);
 
-  // Reload keeps the chosen view; the choice lives in the URL.
+  // Reload keeps the chosen view; the choice is remembered per model.
   await page.getByTitle("List view").click();
   await page.reload();
   await expect(page.getByTitle("List view")).toBeVisible();
