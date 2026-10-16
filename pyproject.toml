@@ -62,16 +62,6 @@ pytest = "8.4.2"
 pytest-cov = "7.1.0"
 pytest-django = "4.12.0"
 
-[tool.poetry.scripts]
-# Testing scripts
-test = "scripts.test_wrapper:main_test"
-test-verbose = "scripts.test_wrapper:main_test_verbose"
-test-cov = "scripts.test_wrapper:main_test_cov"
-
-# Quality gate scripts - run tests before critical operations
-build = "scripts.test_wrapper:main_build"
-publish = "scripts.test_wrapper:main_publish"
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

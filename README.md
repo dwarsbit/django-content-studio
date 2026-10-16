@@ -99,7 +99,7 @@ We welcome contributions! Here's how to get started:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Add tests for your changes (backend: `poetry run test`; frontend: `cd frontend && npm test`)
+4. Add tests for your changes (backend: `poetry run pytest`; frontend: `cd frontend && npm test`)
 5. Run the test suites
 6. Commit your changes (`git commit -m 'Add amazing feature'`)
 7. Push to the branch (`git push origin feature/amazing-feature`)
@@ -116,7 +116,7 @@ cd django-content-studio
 poetry install
 
 # Run backend tests
-poetry run test
+poetry run pytest
 
 # Frontend (React interface)
 cd frontend

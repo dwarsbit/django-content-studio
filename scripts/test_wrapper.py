@@ -98,6 +98,6 @@ if __name__ == "__main__":
             sys.exit(1)
     else:
         print(
-            "Usage: python test_wrapper.py [test|test-verbose|test-cov|build|publish]"
+            "Usage: python scripts/test_wrapper.py [test|test-verbose|test-cov|build|publish]"
         )
         sys.exit(1)

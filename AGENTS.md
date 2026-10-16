@@ -162,17 +162,19 @@ npm run dev
 
 ```bash
 # Testing
-poetry run test          # Run tests
+poetry run python scripts/test_wrapper.py test          # Run tests
 npm test                 # Frontend unit tests (from frontend/)
-poetry run test-verbose  # Run tests with verbose output
-poetry run test-cov      # Run tests with coverage
+poetry run python scripts/test_wrapper.py test-verbose  # Run tests with verbose output
+poetry run python scripts/test_wrapper.py test-cov      # Run tests with coverage
 
 # Build
-poetry run build         # Quality gate + build
-poetry run publish       # Quality gate + publish
+poetry run python scripts/test_wrapper.py build         # Quality gate + build
+poetry run python scripts/test_wrapper.py publish       # Quality gate + publish
 ```
 
-See `scripts/test_wrapper.py` for test configuration.
+See `scripts/test_wrapper.py` for test configuration. These are development
+scripts only: they are not package entry points and are not installed with
+the wheel.
 
 ### Dependencies
 
@@ -332,10 +334,10 @@ class CustomWidget(BaseWidget):
 ### 3. Settings Access
 
 ```python
-from content_studio.settings import api_settings
+from content_studio.settings import cs_settings
 
 # Access a setting
-admin_site_class = api_settings.ADMIN_SITE
+admin_site = cs_settings.ADMIN_SITE
 ```
 
 ### 4. API Viewsets
@@ -359,8 +361,8 @@ class ArticleViewSet(ModelViewSet):
 
 Run tests:
 ```bash
-poetry run test        # Normal run
-poetry run test-cov    # With coverage
+poetry run python scripts/test_wrapper.py test        # Normal run
+poetry run python scripts/test_wrapper.py test-cov    # With coverage
 ```
 
 ---
@@ -382,7 +384,7 @@ poetry run test-cov    # With coverage
 
 ### Customizing the Dashboard
 
-1. Extend `AdminSite` class
+1. Extend the `ContentStudioSite` class
 2. Set custom dashboard component
 3. Configure widgets and layout
 
@@ -401,7 +403,7 @@ poetry run test-cov    # With coverage
 | Task | Command |
 |------|---------|
 | Install package | `pip install django-content-studio` |
-| Run backend tests | `poetry run test` |
+| Run backend tests | `poetry run python scripts/test_wrapper.py test` |
 | Run frontend tests | `cd frontend && npm test` |
 | Run frontend dev | `cd frontend && npm run dev` |
 | Build frontend | `cd frontend && npm run build` |

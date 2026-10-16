@@ -14,6 +14,11 @@
   support and were no longer tested; the requirement is now
   `Django>=5.2,<7`.
 
+- **No more stray console scripts.** Installing the package no longer
+  adds `test`, `test-cov`, `test-verbose`, `build` and `publish`
+  commands to the environment; they pointed at development scripts
+  that were never part of the package.
+
 - **Django Blueprint is merged in and deprecated.** The content fields
   (`HTMLField`, `TagField`, `FlexField`, `MultipleChoiceField`,
   `URLPathField`, `HashTagField`) and base models (`ContentModel`,
