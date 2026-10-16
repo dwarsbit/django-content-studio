@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **No migrations inside the installed package.** The password reset
+  app did not pin its primary key type, so a project with
+  `DEFAULT_AUTO_FIELD = "django.db.models.AutoField"` got a pending
+  migration that `makemigrations` wrote into the installed package. The
+  password reset and media library apps now pin it, and a test checks
+  the shipped migrations against both settings.
+
 - **`Link` components render.** A `Link` on the edit page showed
   nothing; it is now a text link to the URL from `get_url`, next to the
   `ButtonLink` button.
