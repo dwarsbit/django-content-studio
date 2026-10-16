@@ -31,10 +31,10 @@ DEFAULTS = {
     "CREATED_AT_ATTR": "created_at",
     "MEDIA_LIBRARY_MODEL": None,
     "MEDIA_LIBRARY_FOLDER_MODEL": None,
-    # Attribute on the media item model holding the focus point (a
+    # Attribute on the media item model holding the focal point (a
     # JSONField of {"x": <0-100>, "y": <0-100>}); None disables the
-    # focus point editor.
-    "FOCUS_POINT_ATTR": None,
+    # focal point editor.
+    "FOCAL_POINT_ATTR": None,
     "TENANT_MODEL": None,
     "PASSWORD_RESET_EXPIRATION_TIME": 10,
     # Rate limit for login attempts, per IP; None disables throttling.

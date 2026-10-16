@@ -449,15 +449,15 @@ def soft_delete_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
-def focus_point_errors() -> list[tuple[str, str]]:
+def focal_point_errors() -> list[tuple[str, str]]:
     """
-    A misconfigured FOCUS_POINT_ATTR, as (check id, message) pairs.
+    A misconfigured FOCAL_POINT_ATTR, as (check id, message) pairs.
     The attribute must exist on the media item model and be a JSONField:
-    the frontend stores the focus point in it as {"x": 0-100, "y": 0-100}.
+    the frontend stores the focal point in it as {"x": 0-100, "y": 0-100}.
     """
     errors = []
 
-    attr = cs_settings.FOCUS_POINT_ATTR
+    attr = cs_settings.FOCAL_POINT_ATTR
 
     if not attr:
         return errors
@@ -468,8 +468,8 @@ def focus_point_errors() -> list[tuple[str, str]]:
         errors.append(
             (
                 "content_studio.E009",
-                "FOCUS_POINT_ATTR is set but MEDIA_LIBRARY_MODEL is not; "
-                "the focus point attribute needs a media item model.",
+                "FOCAL_POINT_ATTR is set but MEDIA_LIBRARY_MODEL is not; "
+                "the focal point attribute needs a media item model.",
             )
         )
         return errors
@@ -480,7 +480,7 @@ def focus_point_errors() -> list[tuple[str, str]]:
         errors.append(
             (
                 "content_studio.E009",
-                f"FOCUS_POINT_ATTR refers to the unknown field '{attr}' on "
+                f"FOCAL_POINT_ATTR refers to the unknown field '{attr}' on "
                 f"{media_model._meta.label_lower}.",
             )
         )
@@ -490,7 +490,7 @@ def focus_point_errors() -> list[tuple[str, str]]:
         errors.append(
             (
                 "content_studio.E009",
-                f"FOCUS_POINT_ATTR must name a JSONField; '{attr}' on "
+                f"FOCAL_POINT_ATTR must name a JSONField; '{attr}' on "
                 f"{media_model._meta.label_lower} is not.",
             )
         )
@@ -1029,7 +1029,7 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
     for check_id, error in mapping_errors(site):
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
-    for check_id, error in focus_point_errors():
+    for check_id, error in focal_point_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, warning in model_group_warnings(site):

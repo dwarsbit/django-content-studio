@@ -2,17 +2,17 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { FocusPointValue } from "@/types";
+import type { FocalPointValue } from "@/types";
 
-export function FocusPointField({
+export function FocalPointField({
   value,
   onChange,
   image,
   className,
 }: {
-  // The item's focus point; null leaves it unset.
-  value: FocusPointValue | null;
-  onChange?(focusPoint: FocusPointValue | null): void;
+  // The item's focal point; null leaves it unset.
+  value: FocalPointValue | null;
+  onChange?(focalPoint: FocalPointValue | null): void;
   image: string;
   className?: string;
 }) {
@@ -40,7 +40,7 @@ export function FocusPointField({
         />
         <button
           type="button"
-          aria-label={t("media_library.focus_point.set")}
+          aria-label={t("media_library.focal_point.set")}
           className="absolute inset-0 cursor-crosshair rounded"
           onClick={handleClick}
         />
@@ -59,7 +59,7 @@ export function FocusPointField({
           className="mt-2"
           onClick={() => onChange?.(null)}
         >
-          {t("media_library.focus_point.remove")}
+          {t("media_library.focal_point.remove")}
         </Button>
       )}
     </div>

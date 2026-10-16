@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { CropField } from "@/components/media-library/crop-field";
-import { FocusPointField } from "@/components/media-library/focus-point-field";
+import { FocalPointField } from "@/components/media-library/focus-point-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import {
@@ -26,7 +26,7 @@ import { useDiscover } from "@/hooks/use-discover";
 import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
 import { useUpdateMedia } from "@/hooks/use-update-media";
 import { getErrorMessage } from "@/lib/utils";
-import type { CropValue, FocusPointValue, MediaItem } from "@/types";
+import type { CropValue, FocalPointValue, MediaItem } from "@/types";
 
 export function ItemEdit({
   itemId,
@@ -72,22 +72,22 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
 
   const mediaLibrary = discover?.media_library;
 
-  // Crop and focus point only apply to images.
+  // Crop and focal point only apply to images.
   const isImage = data.type === "image";
   const cropEnabled = isImage && (mediaLibrary?.crop ?? false);
-  const focusPointAttr = isImage ? (mediaLibrary?.focus_point ?? null) : null;
-  const focusPointValue = focusPointAttr
-    ? ((data as unknown as Record<string, FocusPointValue | null>)[
-        focusPointAttr
+  const focalPointAttr = isImage ? (mediaLibrary?.focal_point ?? null) : null;
+  const focalPointValue = focalPointAttr
+    ? ((data as unknown as Record<string, FocalPointValue | null>)[
+        focalPointAttr
       ] ?? null)
     : null;
 
   const [tab, setTab] = useState<"crop" | "focus">("crop");
   // A crop selection is not stored on the item: undefined means no crop
-  // is sent. The focus point lives on the item's focus point attribute.
+  // is sent. The focal point lives on the item's focal point attribute.
   const [crop, setCrop] = useState<CropValue | undefined>(undefined);
-  const [focusPoint, setFocusPoint] = useState<FocusPointValue | null>(
-    focusPointValue,
+  const [focalPoint, setFocalPoint] = useState<FocalPointValue | null>(
+    focalPointValue,
   );
 
   const formSchema = z.looseObject({
@@ -109,10 +109,10 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
 
   const onSubmit = async (values: MediaItem) => {
     try {
-      // The focus point is a dynamic attribute on the item; merge the
+      // The focal point is a dynamic attribute on the item; merge the
       // editor's value into the payload under its configured name.
-      const payload: MediaItem = focusPointAttr
-        ? { ...values, [focusPointAttr]: focusPoint }
+      const payload: MediaItem = focalPointAttr
+        ? { ...values, [focalPointAttr]: focalPoint }
         : values;
 
       await mutateAsync(payload);
@@ -140,7 +140,7 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
       <div className="flex">
         {isImage && (
           <div className="w-96 p-6 bg-muted rounded-l-lg flex items-center">
-            {cropEnabled && focusPointAttr ? (
+            {cropEnabled && focalPointAttr ? (
               <Tabs
                 value={tab}
                 onValueChange={(value) => setTab(value as "crop" | "focus")}
@@ -151,7 +151,7 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
                     {t("media_library.crop")}
                   </TabsTrigger>
                   <TabsTrigger value="focus">
-                    {t("media_library.focus_point.title")}
+                    {t("media_library.focal_point.title")}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="crop">
@@ -163,9 +163,9 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
                   />
                 </TabsContent>
                 <TabsContent value="focus">
-                  <FocusPointField
-                    value={focusPoint}
-                    onChange={setFocusPoint}
+                  <FocalPointField
+                    value={focalPoint}
+                    onChange={setFocalPoint}
                     image={data.thumbnail}
                   />
                 </TabsContent>
@@ -177,10 +177,10 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
                 image={data.thumbnail}
                 className="w-full"
               />
-            ) : focusPointAttr ? (
-              <FocusPointField
-                value={focusPoint}
-                onChange={setFocusPoint}
+            ) : focalPointAttr ? (
+              <FocalPointField
+                value={focalPoint}
+                onChange={setFocalPoint}
                 image={data.thumbnail}
               />
             ) : (

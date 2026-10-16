@@ -12,8 +12,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from . import __version__
-from .exceptions import NotConfigured
 from .admin import AdminSerializer, ModelStudio, ModelGroup
+from .exceptions import NotConfigured
 from .models import ModelSerializer
 from .serializers import get_session_user_serializer
 from .settings import cs_settings
@@ -123,9 +123,9 @@ class AdminApiViewSet(ViewSet):
             # Cropping is offered when the site defines the
             # crop_image(obj, crop_info) hook.
             "crop": callable(getattr(self.admin_site, "crop_image", None)),
-            # The media item attribute holding the focus point; None
-            # disables the focus point editor.
-            "focus_point": cs_settings.FOCUS_POINT_ATTR,
+            # The media item attribute holding the focal point; None
+            # disables the focal point editor.
+            "focal_point": cs_settings.FOCAL_POINT_ATTR,
             "models": {
                 "media_model": (media_model._meta.label_lower if media_model else None),
                 "folder_model": (

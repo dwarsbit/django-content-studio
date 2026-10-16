@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useHttp } from "@/hooks/use-http";
 import type { Dashboard, Extension, Model, ModelGroup } from "@/types";
+
 export function useDiscover() {
   const http = useHttp();
 
@@ -25,9 +26,9 @@ export function useDiscover() {
           folders: boolean;
           // Offered when the admin site defines crop_image.
           crop: boolean;
-          // The media item attribute holding the focus point; null
-          // disables the focus point editor.
-          focus_point: string | null;
+          // The media item attribute holding the focal point; null
+          // disables the focal point editor.
+          focal_point: string | null;
           models: {
             media_model: string | null;
             folder_model: string | null;

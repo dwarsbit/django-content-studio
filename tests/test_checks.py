@@ -138,8 +138,6 @@ def test_components_do_not_count_as_edit_fields():
 
 
 def test_unknown_bulk_action_name_surfaces_as_system_error():
-    from content_studio.actions import bulk_action
-
     class Broken(ArticleAdmin):
         actions = ["publish", "nope"]
 
@@ -233,9 +231,9 @@ def test_clean_bulk_actions_produce_no_errors():
 
 
 @pytest.mark.django_db
-def test_focus_point_attr_without_media_model_is_an_error():
-    """FOCUS_POINT_ATTR needs a media item model to point at."""
-    with override_settings(CONTENT_STUDIO={"FOCUS_POINT_ATTR": "focus_point"}):
+def test_focal_point_attr_without_media_model_is_an_error():
+    """FOCAL_POINT_ATTR needs a media item model to point at."""
+    with override_settings(CONTENT_STUDIO={"FOCAL_POINT_ATTR": "focal_point"}):
         messages = check_content_studio()
 
     error = next(m for m in messages if m.id == "content_studio.E009")
@@ -244,26 +242,26 @@ def test_focus_point_attr_without_media_model_is_an_error():
 
 
 @pytest.mark.django_db
-def test_focus_point_attr_must_exist_on_the_media_model():
+def test_focal_point_attr_must_exist_on_the_media_model():
     with override_settings(
         CONTENT_STUDIO={
             "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
-            "FOCUS_POINT_ATTR": "focus_point",
+            "FOCAL_POINT_ATTR": "focal_point",
         }
     ):
         messages = check_content_studio()
 
     error = next(m for m in messages if m.id == "content_studio.E009")
 
-    assert "unknown field 'focus_point'" in str(error)
+    assert "unknown field 'focal_point'" in str(error)
 
 
 @pytest.mark.django_db
-def test_focus_point_attr_must_be_a_json_field():
+def test_focal_point_attr_must_be_a_json_field():
     with override_settings(
         CONTENT_STUDIO={
             "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
-            "FOCUS_POINT_ATTR": "name",
+            "FOCAL_POINT_ATTR": "name",
         }
     ):
         messages = check_content_studio()
@@ -274,11 +272,11 @@ def test_focus_point_attr_must_be_a_json_field():
 
 
 @pytest.mark.django_db
-def test_focus_point_attr_on_a_json_field_produces_no_error():
+def test_focal_point_attr_on_a_json_field_produces_no_error():
     with override_settings(
         CONTENT_STUDIO={
             "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
-            "FOCUS_POINT_ATTR": "tags",
+            "FOCAL_POINT_ATTR": "tags",
         }
     ):
         messages = check_content_studio()
@@ -286,7 +284,7 @@ def test_focus_point_attr_on_a_json_field_produces_no_error():
     assert not [m for m in messages if m.id == "content_studio.E009"]
 
 
-def test_focus_point_attr_unset_produces_no_error():
+def test_focal_point_attr_unset_produces_no_error():
     assert not [m for m in check_content_studio() if m.id == "content_studio.E009"]
 
 

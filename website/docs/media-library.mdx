@@ -36,9 +36,9 @@ media model needs:
 - optionally `tags`, searched alongside the name — a list-typed field
   (a `JSONField` of strings, an `ArrayField`, or Blueprint's
   `TagField`); the tags input in the item editor works on the list
-- optionally a `JSONField` for the focus point — set
-  [`FOCUS_POINT_ATTR`](/docs/settings#focus_point_attr) to its name and the
-  item editor offers a click-to-set focus point, stored as
+- optionally a `JSONField` for the focal point — set
+  [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) to its name and the
+  item editor offers a click-to-set focal point, stored as
   `{"x": 0-100, "y": 0-100}` (percentages of the image's dimensions)
 
 Folder models need a self-referencing `parent` field; the rest (name,
@@ -52,7 +52,7 @@ appear in the interface. Missing contract fields are reported by the
 The library is fully managed in the interface: upload files (with tags in the
 same go when the model has a `tags` field), move them between folders and edit
 their details — all against the models you configure. Image items can carry a
-crop selection (see [cropping](#cropping)) and a focus point, applied on save.
+crop selection (see [cropping](#cropping)) and a focal point, applied on save.
 
 Three views are offered through a toggle: the **grid** (thumbnails), a
 **list** of rich rows and a **table** with sortable columns (name, type and
@@ -109,13 +109,13 @@ class CustomAdminSite(AdminSite):
         ...
 ```
 
-## Cropping and focus points
+## Cropping and focal points
 
 A crop does not live on the media item: selecting one in the item editor sends
 it to the site's `crop_image(obj, crop_info)` hook (see
 [Hooks](#hooks)), which returns control to the editor with the updated item.
 Without the hook, no crop UI appears.
 
-The focus point, by contrast, is stored on the item: name its `JSONField` with
-[`FOCUS_POINT_ATTR`](/docs/settings#focus_point_attr) and the editor offers a
-click-to-set focus point saved with the rest of the item's details.
+The focal point, by contrast, is stored on the item: name its `JSONField` with
+[`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) and the editor offers a
+click-to-set focal point saved with the rest of the item's details.

@@ -132,7 +132,7 @@
       "tags": "Tags"
     },
     "crop": "Bijsnijden",
-    "focus_point": {
+    "focal_point": {
       "title": "Focuspunt",
       "set": "Focuspunt instellen",
       "remove": "Focuspunt verwijderen"

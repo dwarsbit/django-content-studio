@@ -7,48 +7,15 @@ from django.db.models import Model
 from django.utils.translation import gettext_lazy as _
 from rest_framework.request import HttpRequest
 
-from . import widgets, formats
+from . import widgets, formats, fields
 from .actions import get_bulk_actions
 from .exceptions import AlreadyRegistered, NotRegistered
 from .form import FormSet, FormSetGroup, Field, Component, TableColumn
 from .login_backends import LoginBackendManager
+from .media_library import fields as ml_fields
 from .settings import cs_settings
 from .token_backends import TokenBackendManager
 from .utils import get_related_field_name, flatten
-
-# Django Blueprint is an optional integration: when it is installed, its
-# fields get their dedicated widgets and formats. Without it, Content
-# Studio works with plain Django fields only.
-try:
-    from blueprint import fields as bp_fields
-    from blueprint.media_library.fields import MediaField, ManyMediaField
-
-    blueprint_available = True
-
-    _blueprint_widget_mapping = {
-        bp_fields.HTMLField: widgets.RichTextWidget,
-        bp_fields.TagField: widgets.TagWidget,
-        bp_fields.FlexField: widgets.JSONSchemaWidget,
-        bp_fields.MultipleChoiceField: widgets.MultiSelectWidget,
-        bp_fields.URLPathField: widgets.URLPathWidget,
-        MediaField: widgets.MediaWidget,
-        ManyMediaField: widgets.ManyMediaWidget,
-    }
-
-    _blueprint_format_mapping = {
-        bp_fields.HTMLField: formats.HtmlFormat,
-        bp_fields.TagField: formats.TagFormat,
-        bp_fields.FlexField: formats.JSONFormat,
-        bp_fields.MultipleChoiceField: formats.TextFormat,
-        bp_fields.URLPathField: formats.TextFormat,
-        MediaField: formats.MediaFormat,
-        ManyMediaField: formats.ManyMediaFormat,
-    }
-except ImportError:
-    blueprint_available = False
-
-    _blueprint_widget_mapping = {}
-    _blueprint_format_mapping = {}
 
 
 class ModelGroup:
@@ -363,6 +330,7 @@ class ContentStudioSite:
     default_widget_mapping: dict[
         Union[Type[models.Field], str], Type[widgets.BaseWidget]
     ] = {
+        # Django fields
         models.CharField: widgets.InputWidget,
         models.IntegerField: widgets.InputWidget,
         models.SmallIntegerField: widgets.InputWidget,
@@ -383,10 +351,16 @@ class ContentStudioSite:
         models.DateTimeField: widgets.DateTimeWidget,
         models.TimeField: widgets.TimeWidget,
         models.JSONField: widgets.JSONWidget,
+        # Content Studio fields
+        fields.HTMLField: widgets.RichTextWidget,
+        fields.TagField: widgets.TagWidget,
+        fields.FlexField: widgets.JSONSchemaWidget,
+        fields.MultipleChoiceField: widgets.MultiSelectWidget,
+        fields.URLPathField: widgets.URLPathWidget,
+        ml_fields.MediaField: widgets.MediaWidget,
+        ml_fields.ManyMediaField: widgets.ManyMediaWidget,
         # Common third-party fields
         "AutoSlugField": widgets.SlugWidget,
-        # Blueprint fields (only when django-blueprint is installed)
-        **_blueprint_widget_mapping,
     }
 
     default_format_mapping: dict[Type[models.Field], Type[formats.BaseFormat]] = {
@@ -409,8 +383,16 @@ class ContentStudioSite:
         models.ForeignKey: formats.ForeignKeyFormat,
         models.OneToOneField: formats.ForeignKeyFormat,
         models.JSONField: formats.JSONFormat,
-        # Blueprint fields (only when django-blueprint is installed)
-        **_blueprint_format_mapping,
+        # Content Studio fields
+        fields.HTMLField: formats.HtmlFormat,
+        fields.TagField: formats.TagFormat,
+        fields.FlexField: formats.JSONFormat,
+        fields.MultipleChoiceField: formats.TextFormat,
+        fields.URLPathField: formats.TextFormat,
+        ml_fields.MediaField: formats.MediaFormat,
+        ml_fields.ManyMediaField: formats.ManyMediaFormat,
+        # Common third-party fields
+        "AutoSlugField": formats.TextFormat,
     }
 
     def __init__(self, name: str = "content_studio"):

@@ -133,10 +133,10 @@
       "tags": "Tags"
     },
     "crop": "Crop",
-    "focus_point": {
+    "focal_point": {
       "title": "Focus point",
-      "set": "Set focus point",
-      "remove": "Remove focus point"
+      "set": "Set focal point",
+      "remove": "Remove focal point"
     }
   },
   "widgets": {

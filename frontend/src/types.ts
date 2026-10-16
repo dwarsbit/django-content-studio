@@ -281,8 +281,8 @@ export interface CropValue {
   unit: "%";
 }
 
-// The focus point on an image, as percentages of its dimensions.
-export interface FocusPointValue {
+// The focal point on an image, as percentages of its dimensions.
+export interface FocalPointValue {
   x: number;
   y: number;
 }

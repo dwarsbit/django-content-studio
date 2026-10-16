@@ -59,7 +59,7 @@ const DISCOVER_FIXTURE = {
     enabled: true,
     folders: false,
     crop: false,
-    focus_point: null,
+    focal_point: null,
     models: { media_model: "media.image", folder_model: null },
   },
 };

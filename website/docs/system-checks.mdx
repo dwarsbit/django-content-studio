@@ -23,7 +23,7 @@ startup; the exit code of `manage.py check` differs.
 | `content_studio.E006` | `table_display` entries that are neither field names nor `TableColumn` objects, duplicate columns, columns that resolve to neither a model field, `__str__` nor a studio method, and formats that are not `content_studio.formats` classes. Inlines are validated too. |
 | `content_studio.E007` | Bulk actions: an `actions` list naming unknown or duplicate actions, a `@bulk_action` shadowing the built-in delete, and unknown permissions. |
 | `content_studio.E008` | `soft_delete` naming an unknown field, or a field that is not a nullable date or datetime. |
-| `content_studio.E009` | [`FOCUS_POINT_ATTR`](/docs/settings#focus_point_attr) without a `MEDIA_LIBRARY_MODEL`, or naming a field that does not exist or is not a `JSONField`. |
+| `content_studio.E009` | [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) without a `MEDIA_LIBRARY_MODEL`, or naming a field that does not exist or is not a `JSONField`. |
 | `content_studio.E010` | Edit form fields naming anything but a model field — they would render as empty read-only boxes — and `Field(widget=...)` overrides that are not `content_studio.widgets` classes. |
 | `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that do not resolve to a field, and `list_display` values that are neither a field nor a model method. Inlines are validated too. |
 | `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key to the parent model. |

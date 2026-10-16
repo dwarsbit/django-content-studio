@@ -45,7 +45,7 @@ function makeMediaItem(overrides: Partial<MediaItem> = {}): MediaItem {
 }
 
 function discoverWith(
-  mediaLibrary: { crop: boolean; focus_point: string | null },
+  mediaLibrary: { crop: boolean; focal_point: string | null },
   item: MediaItem,
 ) {
   useDiscoverMock.mockReturnValue({
@@ -84,21 +84,21 @@ beforeEach(() => {
 });
 
 describe("ItemEdit", () => {
-  it("shows a plain preview without crop or focus point", async () => {
-    discoverWith({ crop: false, focus_point: null }, makeMediaItem());
+  it("shows a plain preview without crop or focal point", async () => {
+    discoverWith({ crop: false, focal_point: null }, makeMediaItem());
     renderEdit();
 
     await waitFor(() => expect(screen.getByRole("img")).toBeInTheDocument());
 
-    // The crop and focus point editors are not offered.
+    // The crop and focal point editors are not offered.
     expect(screen.queryByText("media_library.crop")).not.toBeInTheDocument();
     expect(
-      screen.queryByLabelText("media_library.focus_point.set"),
+      screen.queryByLabelText("media_library.focal_point.set"),
     ).not.toBeInTheDocument();
   });
 
-  it("offers crop and focus point tabs when both are enabled", async () => {
-    discoverWith({ crop: true, focus_point: "focus_point" }, makeMediaItem());
+  it("offers crop and focal point tabs when both are enabled", async () => {
+    discoverWith({ crop: true, focal_point: "focal_point" }, makeMediaItem());
     renderEdit();
 
     await waitFor(() =>
@@ -108,16 +108,16 @@ describe("ItemEdit", () => {
     );
 
     expect(
-      screen.getByRole("tab", { name: "media_library.focus_point.title" }),
+      screen.getByRole("tab", { name: "media_library.focal_point.title" }),
     ).toBeInTheDocument();
   });
 
-  it("saves the focus point under its attribute name", async () => {
-    discoverWith({ crop: false, focus_point: "focus_point" }, makeMediaItem());
+  it("saves the focal point under its attribute name", async () => {
+    discoverWith({ crop: false, focal_point: "focal_point" }, makeMediaItem());
     renderEdit();
 
     const overlay = await screen.findByLabelText(
-      "media_library.focus_point.set",
+      "media_library.focal_point.set",
     );
 
     // A click at the quarter point of a 200x100 area sets the focus
@@ -132,20 +132,20 @@ describe("ItemEdit", () => {
     await waitFor(() => expect(httpMock.patch).toHaveBeenCalled());
 
     const payload = httpMock.patch.mock.calls[0][1];
-    expect(payload.focus_point).toEqual({ x: 25, y: 50 });
+    expect(payload.focal_point).toEqual({ x: 25, y: 50 });
   });
 
-  it("clears a focus point on remove and saves null", async () => {
+  it("clears a focal point on remove and saves null", async () => {
     const item = {
       ...makeMediaItem(),
-      focus_point: { x: 10, y: 20 },
+      focal_point: { x: 10, y: 20 },
     } as unknown as MediaItem;
-    discoverWith({ crop: false, focus_point: "focus_point" }, item);
+    discoverWith({ crop: false, focal_point: "focal_point" }, item);
     renderEdit();
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "media_library.focus_point.remove",
+        name: "media_library.focal_point.remove",
       }),
     );
 
@@ -154,11 +154,11 @@ describe("ItemEdit", () => {
     await waitFor(() => expect(httpMock.patch).toHaveBeenCalled());
 
     const payload = httpMock.patch.mock.calls[0][1];
-    expect(payload.focus_point).toBeNull();
+    expect(payload.focal_point).toBeNull();
   });
 
   it("does not call the crop endpoint without a crop selection", async () => {
-    discoverWith({ crop: true, focus_point: null }, makeMediaItem());
+    discoverWith({ crop: true, focal_point: null }, makeMediaItem());
     renderEdit();
 
     fireEvent.click(await screen.findByRole("button", { name: "common.save" }));
