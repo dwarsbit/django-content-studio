@@ -327,3 +327,81 @@ class TokenBackendManagerTests(TestCase):
         ):
             with pytest.raises(ImproperlyConfigured):
                 TokenBackendManager().active_backend
+
+
+class StaffOnlyTests(TestCase):
+    """Like the Django admin, only active staff users get (and keep) access."""
+
+    def setUp(self):
+        from django.contrib.auth import models as auth_models
+
+        self.User = auth_models.User
+        self.staff = auth_models.User.objects.create_user(
+            username="editor", password="secret", is_staff=True
+        )
+
+    def login(self, username, password="secret"):
+        return APIClient().post(
+            LOGIN_URL, {"username": username, "password": password}, format="json"
+        )
+
+    def me_with(self, token):
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        return client.get(ME_URL)
+
+    def test_non_staff_users_cannot_sign_in(self):
+        self.User.objects.create_user(username="customer", password="secret")
+
+        response = self.login("customer")
+
+        assert response.status_code == 403
+        # Answers exactly like a wrong password.
+        assert response.json() == self.login("editor", "wrong").json()
+
+    def test_login_updates_only_last_login(self):
+        assert self.login("editor").status_code == 200
+
+        self.staff.refresh_from_db()
+        assert self.staff.last_login is not None
+
+    def test_revoking_staff_status_ends_access(self):
+        token = create_access_token(self.staff)
+        assert self.me_with(token).status_code == 200
+
+        self.User.objects.filter(pk=self.staff.pk).update(is_staff=False)
+
+        assert self.me_with(token).status_code == 401
+
+    def test_password_change_invalidates_access_and_refresh_tokens(self):
+        access = create_access_token(self.staff)
+        refresh = create_refresh_token(self.staff)
+
+        self.staff.set_password("changed-password")
+        self.staff.save()
+
+        assert self.me_with(access).status_code == 401
+
+        client = APIClient()
+        client.cookies[REFRESH_COOKIE_NAME] = refresh
+        assert client.post(REFRESH_URL).status_code == 401
+
+    def test_tokens_without_password_fingerprint_are_rejected(self):
+        import datetime
+
+        from django.conf import settings
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        legacy = pyjwt.encode(
+            {
+                "token_type": "access",
+                "user_id": str(self.staff.pk),
+                "iat": now,
+                "exp": now + datetime.timedelta(hours=1),
+                "jti": "legacy",
+            },
+            settings.SECRET_KEY,
+            algorithm="HS256",
+        )
+
+        assert self.me_with(legacy).status_code == 401

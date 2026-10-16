@@ -30,17 +30,15 @@ class UsernamePasswordViewSet(ViewSet):
             password=serializer.validated_data["password"],
         )
 
-        if user is None:
+        # Like the Django admin, only active staff users sign in; any
+        # other outcome answers like a wrong password.
+        if user is None or not (user.is_active and user.is_staff):
             raise PermissionDenied(detail="Invalid username or password.")
-
-        if not user.is_active:
-            raise PermissionDenied(detail="User account is disabled.")
 
         from ..admin import admin_site
 
         user.last_login = timezone.now()
-
-        user.save()
+        user.save(update_fields=["last_login"])
 
         return admin_site.token_backend.active_backend.get_response_for_user(
             user, request

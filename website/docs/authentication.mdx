@@ -27,6 +27,12 @@ cookie server-side. Refreshing rotates the refresh token; the previous one
 simply expires. Server-side reuse detection (a shared blacklist) is a
 deliberate non-goal for now.
 
+Like the Django admin, only active staff users get in: signing in requires
+`is_staff`, and every request checks it again, so deactivating a user or
+revoking their staff status ends their access immediately. Tokens are also
+bound to the user's password: changing or resetting it invalidates every
+token issued before, signing the user out everywhere.
+
 ## Login backends
 
 The login backend decides how users sign in. The built-in

@@ -57,7 +57,7 @@ def test_unconfigured_media_model_returns_501():
     from content_studio.token_backends.jwt import create_access_token
 
     user = auth_models.User.objects.create_user(
-        username="staff", email="s@example.com", password="x"
+        username="staff", email="s@example.com", password="x", is_staff=True
     )
     token = create_access_token(user)
 

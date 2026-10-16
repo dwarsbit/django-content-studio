@@ -18,6 +18,7 @@ from datetime import timedelta
 
 import jwt as pyjwt
 from django.conf import settings
+from django.utils.crypto import constant_time_compare, salted_hmac
 from django.contrib.auth import get_user_model
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
@@ -57,10 +58,23 @@ def _decode(token):
             token,
             _signing_key(),
             algorithms=[cs_settings.TOKEN_ALGORITHM],
-            options={"require": ["exp", "iat", "token_type", "user_id", "jti"]},
+            options={
+                "require": ["exp", "iat", "token_type", "user_id", "jti", "pwd"]
+            },
         )
     except pyjwt.InvalidTokenError as e:
         raise AuthenticationFailed("Invalid or expired token.") from e
+
+
+def _password_fingerprint(user):
+    """
+    A short HMAC of the user's password hash. Tokens carry it, so changing
+    or resetting the password invalidates every token issued before —
+    like Django's session auth hash does for sessions.
+    """
+    return salted_hmac(
+        "content_studio.token_backends.jwt", user.password, algorithm="sha256"
+    ).hexdigest()[:32]
 
 
 def _create_token(user, token_type, lifetime):
@@ -72,6 +86,7 @@ def _create_token(user, token_type, lifetime):
             "iat": now,
             "exp": now + lifetime,
             "jti": uuid.uuid4().hex,
+            "pwd": _password_fingerprint(user),
         }
     )
 
@@ -96,8 +111,13 @@ def _get_user(payload):
     except (get_user_model().DoesNotExist, ValueError, TypeError):
         raise AuthenticationFailed("User not found.")
 
-    if not user.is_active:
+    # The Django admin's gate: tokens only work for active staff users,
+    # so revoking staff status or deactivating a user ends their access.
+    if not (user.is_active and user.is_staff):
         raise AuthenticationFailed("User account is disabled.")
+
+    if not constant_time_compare(payload["pwd"], _password_fingerprint(user)):
+        raise AuthenticationFailed("Invalid or expired token.")
 
     return user
 
