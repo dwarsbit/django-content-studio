@@ -1,0 +1,206 @@
+---
+sidebar_position: 15
+---
+
+# 📜 Public API
+
+Content Studio follows [semantic versioning](https://semver.org/) for its
+public API: from version 1.0, the names listed on this page change only in
+a major release, after a deprecation period with a warning.
+
+The public API consists of:
+
+- the names below, imported from the module they are listed under;
+- the documented attributes and methods of `ModelStudio`,
+  `InlineModelStudio` and `ContentStudioSite` — the configuration options
+  and hooks such as the `has_*_permission` methods, `get_fields`,
+  `get_list_item_display`, `get_relation_display`, `get_tenants`,
+  `get_thumbnail`, `get_media_serializer_fields` and `crop_image`;
+- every [setting](/docs/settings) in the `CONTENT_STUDIO` namespace;
+- the [system check](/docs/system-checks) IDs (their message texts may
+  change);
+- the URLs included with `include("content_studio.urls")` and the
+  `content_studio.contrib.password_reset` app, as installable units.
+
+Everything else is internal and may change in any release: the generated
+REST backend and its wire format, the serializers, view sets, router,
+permissions, filters and search, the login and token backends' internals
+(select them by dotted path in the settings), and any name not listed
+here — even when it can be imported.
+
+## `content_studio`
+
+The registration decorator and the package version.
+
+- `VERSION`
+- `register`
+
+## `content_studio.admin`
+
+Studios, the site and their configuration objects. `admin_site` is the default site.
+
+- `ContentStudioSite`
+- `InlineModelStudio`
+- `ListItemDisplay`
+- `ModelGroup`
+- `ModelStudio`
+- `RelationDisplay`
+- `admin_site`
+- `register`
+
+## `content_studio.form`
+
+Edit form layout and table columns.
+
+- `ActivityLog`
+- `ButtonLink`
+- `Component`
+- `Field`
+- `FieldLayout`
+- `FormSet`
+- `FormSetGroup`
+- `Link`
+- `TableColumn`
+
+## `content_studio.actions`
+
+Custom bulk actions.
+
+- `bulk_action`
+
+## `content_studio.dashboard`
+
+The dashboard and its layout widget. `DashboardWidget` is the base type of the built-in widgets.
+
+- `Dashboard`
+- `DashboardWidget`
+- `SpacingWidget`
+
+## `content_studio.dashboard.*`
+
+The built-in dashboard widgets, each from its own module.
+
+- `content_studio.dashboard.statistic.StatisticWidget`
+- `content_studio.dashboard.content_list.ContentListWidget`
+- `content_studio.dashboard.activity_log.ActivityLogWidget`
+- `content_studio.dashboard.scheduled_tasks.ScheduledTasksWidget`
+
+## `content_studio.extensions`
+
+Menu links and embedded pages.
+
+- `IFramePage`
+- `MainMenuLink`
+
+## `content_studio.widgets`
+
+The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_mapping`. `BaseWidget` is their base type; custom widgets are not supported yet.
+
+- `BaseWidget`
+- `CheckboxWidget`
+- `DateTimeWidget`
+- `DateWidget`
+- `ForeignKeyWidget`
+- `InputWidget`
+- `JSONSchemaWidget`
+- `JSONWidget`
+- `ManyMediaWidget`
+- `ManyToManyWidget`
+- `MediaWidget`
+- `MultiSelectWidget`
+- `RadioButtonWidget`
+- `RichTextWidget`
+- `SelectWidget`
+- `SlugWidget`
+- `SwitchWidget`
+- `TagWidget`
+- `TextAreaWidget`
+- `TimeWidget`
+- `ToggleGroupWidget`
+- `URLPathWidget`
+
+## `content_studio.formats`
+
+The built-in display formats, to use in `TableColumn(format=...)` and `default_format_mapping`. `BaseFormat` is their base type; custom formats are not supported yet.
+
+- `BaseFormat`
+- `BooleanFormat`
+- `DateFormat`
+- `DateTimeFormat`
+- `FileSizeFormat`
+- `ForeignKeyFormat`
+- `HtmlFormat`
+- `JSONFormat`
+- `ManyMediaFormat`
+- `MediaFormat`
+- `NumberFormat`
+- `TagFormat`
+- `TextFormat`
+- `TimeFormat`
+
+## `content_studio.fields`
+
+Optional content fields.
+
+- `FlexField`
+- `HTMLField`
+- `HashTagField`
+- `MultipleChoiceField`
+- `TagField`
+- `URLPathField`
+
+## `content_studio.models`
+
+Optional abstract base models.
+
+- `ContentModel`
+- `EditorModel`
+- `ManualOrderModel`
+- `SingletonModel`
+- `SoftDeletableContentModel`
+- `SoftDeletableModel`
+- `TimeStampedModel`
+- `UUIDModel`
+
+## `content_studio.managers`
+
+Managers of the base models.
+
+- `SingletonManager`
+- `SoftDeletableManager`
+- `SoftDeletableQuerySet`
+
+## `content_studio.validators`
+
+Validators used by the content fields, usable on any field.
+
+- `ChoiceOptionsValidator`
+- `JSONSchemaValidator`
+
+## `content_studio.sanitizers`
+
+The built-in HTML sanitizer, the default `HTML_SANITIZER`.
+
+- `sanitize_html`
+
+## `content_studio.exceptions`
+
+Raised by registration.
+
+- `AlreadyRegistered`
+- `NotRegistered`
+
+## `content_studio.media_library.fields`
+
+Media picker fields of the optional media library app.
+
+- `CropField`
+- `ManyMediaField`
+- `MediaField`
+
+## `content_studio.media_library.models`
+
+The media library app's concrete models.
+
+- `Folder`
+- `Media`

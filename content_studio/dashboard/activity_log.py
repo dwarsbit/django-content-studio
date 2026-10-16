@@ -4,6 +4,10 @@ from rest_framework import serializers
 from content_studio.serializers import ContentSerializer
 from ..dashboard import DashboardWidget
 
+__all__ = [
+    "ActivityLogWidget",
+]
+
 
 class LogEntrySerializer(ContentSerializer):
     object_model = serializers.SerializerMethodField()

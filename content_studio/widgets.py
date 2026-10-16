@@ -1,3 +1,27 @@
+__all__ = [
+    "BaseWidget",
+    "CheckboxWidget",
+    "DateTimeWidget",
+    "DateWidget",
+    "ForeignKeyWidget",
+    "InputWidget",
+    "JSONSchemaWidget",
+    "JSONWidget",
+    "ManyMediaWidget",
+    "ManyToManyWidget",
+    "MediaWidget",
+    "MultiSelectWidget",
+    "RadioButtonWidget",
+    "RichTextWidget",
+    "SelectWidget",
+    "SlugWidget",
+    "SwitchWidget",
+    "TagWidget",
+    "TextAreaWidget",
+    "TimeWidget",
+    "ToggleGroupWidget",
+    "URLPathWidget",
+]
 ###
 # Widgets determine what input field is used for a certain
 # model field. Each Django model field has a default widget,

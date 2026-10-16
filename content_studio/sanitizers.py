@@ -2,6 +2,10 @@ import nh3
 
 from .settings import cs_settings
 
+__all__ = [
+    "sanitize_html",
+]
+
 DEFAULT_TAGS = {
     "a",
     "abbr",

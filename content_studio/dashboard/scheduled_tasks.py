@@ -3,6 +3,10 @@ from rest_framework import serializers
 
 from ..dashboard import DashboardWidget
 
+__all__ = [
+    "ScheduledTasksWidget",
+]
+
 
 class ScheduledTaskSerializer(serializers.Serializer):
     title = serializers.CharField()

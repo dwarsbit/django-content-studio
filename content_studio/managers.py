@@ -1,6 +1,12 @@
 from django.db import models
 from django.utils import timezone
 
+__all__ = [
+    "SingletonManager",
+    "SoftDeletableManager",
+    "SoftDeletableQuerySet",
+]
+
 
 class SingletonManager(models.Manager):
     def get(self, *args, **kwargs):

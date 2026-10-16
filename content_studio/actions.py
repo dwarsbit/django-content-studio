@@ -19,6 +19,10 @@ from django.utils import timezone
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 
+__all__ = [
+    "bulk_action",
+]
+
 # The id of the built-in delete action.
 DELETE_ACTION_ID = "delete"
 

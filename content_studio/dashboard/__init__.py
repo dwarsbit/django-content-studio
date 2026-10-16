@@ -11,6 +11,12 @@ from rest_framework.viewsets import ViewSet
 from content_studio.settings import cs_settings
 from content_studio.utils import derive_uuid
 
+__all__ = [
+    "Dashboard",
+    "DashboardWidget",
+    "SpacingWidget",
+]
+
 
 class Dashboard:
     """

@@ -2,6 +2,10 @@ from rest_framework import serializers
 
 from ..dashboard import DashboardWidget
 
+__all__ = [
+    "StatisticWidget",
+]
+
 
 class StatisticWidgetSerializer(serializers.Serializer):
     value = serializers.IntegerField()

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **A defined public API.** The public modules declare `__all__`, and
+  the new Public API docs page lists every public name, the studio and
+  site hooks, the settings and the system check IDs — the surface that
+  semantic versioning covers from 1.0. Everything else is internal.
+  Custom widgets, formats, login backends and token backends are
+  documented as not supported in v1.
+
 - **The dashboard widget base class is `DashboardWidget`.**
   `content_studio.dashboard.BaseWidget` is renamed, so it no longer
   shares its name with the form widgets' `content_studio.widgets.BaseWidget`.

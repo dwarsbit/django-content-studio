@@ -1,5 +1,10 @@
 from rest_framework.exceptions import APIException
 
+__all__ = [
+    "AlreadyRegistered",
+    "NotRegistered",
+]
+
 
 class NotConfigured(APIException):
     """

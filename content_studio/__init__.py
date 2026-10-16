@@ -9,7 +9,7 @@ VERSION = __version__
 # The documented entry point (`from content_studio import register`) is
 # resolved lazily: importing the admin module eagerly would require the
 # app registry to be ready.
-__all__ = ["register"]
+__all__ = ["VERSION", "register"]
 
 
 def __getattr__(name):

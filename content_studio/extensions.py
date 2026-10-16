@@ -2,6 +2,11 @@ import uuid
 
 from .utils import derive_uuid
 
+__all__ = [
+    "IFramePage",
+    "MainMenuLink",
+]
+
 
 class BaseExtension:
     extension_type: str

@@ -8,6 +8,11 @@ from .fields import CropField
 from ..fields import TagField
 from ..models import ContentModel
 
+__all__ = [
+    "Folder",
+    "Media",
+]
+
 
 def generate_uuid(instance, filename):
     return str(uuid.uuid4())

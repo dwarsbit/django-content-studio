@@ -189,6 +189,20 @@ verifies the compiled assets and translations on a fresh install.
 
 ---
 
+## Public API
+
+The public API is listed in `website/docs/public-api.mdx` and mirrored by
+`__all__` in each public module; `tests/test_public_api.py` keeps the two
+in sync. Adding, renaming or removing a public name means updating both
+(and, from v1, a deprecation period for removals and renames). Everything
+not listed is internal: the REST backend (serializers, viewsets, views,
+router, permissions, filters, search), `utils`, `checks` (only the check
+IDs are public), the login/token backend internals and the helpers in
+`admin.py`. Custom widgets, formats, login backends and token backends are
+not supported in v1.
+
+---
+
 ## Code Organization
 
 ### Model Registration
@@ -236,7 +250,7 @@ Forms are defined using `FormSet`, `FormSetGroup`, `Field` and `Component` class
 
 ### Extensions
 
-Content Studio supports extensions for adding custom functionality. See `extensions.py` for the base `Extension` class.
+Content Studio supports extensions for adding custom functionality: `MainMenuLink` and `IFramePage` in `extensions.py` (base class `BaseExtension`, internal).
 
 ### Deterministic IDs
 
@@ -321,15 +335,17 @@ class ArticleStudio(ModelStudio):
     list_item_display = {"title": "title", "description": "short_content"}
 ```
 
-### 2. Custom Widgets
+### 2. Widget Overrides
 
 ```python
-from content_studio.widgets import BaseWidget
+from content_studio import widgets
+from content_studio.form import Field, FormSet
 
-class CustomWidget(BaseWidget):
-    name = 'custom'
-    # ... implementation
+edit_main = [FormSet(fields=[Field("summary", widget=widgets.TextAreaWidget)])]
 ```
+
+Only the built-in widgets and formats are supported in v1: the compiled
+frontend has no renderer for custom `BaseWidget` / `BaseFormat` subclasses.
 
 ### 3. Settings Access
 
@@ -338,16 +354,6 @@ from content_studio.settings import cs_settings
 
 # Access a setting
 admin_site = cs_settings.ADMIN_SITE
-```
-
-### 4. API Viewsets
-
-```python
-from content_studio.viewsets import ModelViewSet
-
-class ArticleViewSet(ModelViewSet):
-    # Custom behavior
-    pass
 ```
 
 ---

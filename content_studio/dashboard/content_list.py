@@ -2,6 +2,10 @@ from rest_framework import serializers
 
 from ..dashboard import DashboardWidget
 
+__all__ = [
+    "ContentListWidget",
+]
+
 
 class ContentSerializer(serializers.Serializer):
     model = serializers.CharField(allow_blank=False, required=True)
