@@ -10,7 +10,7 @@ export function AuthLayout() {
       <div
         className="bg-repeat size-full absolute top-0 bottom-0 left-0 right-0 z-0 pointer-events-none"
         style={{
-          backgroundImage: `url(${(window as any).DCS_STATIC_PREFIX}img/bg-dots.svg)`,
+          backgroundImage: `url(${window.DCS_STATIC_PREFIX ?? ""}img/bg-dots.svg)`,
         }}
       />
     </div>

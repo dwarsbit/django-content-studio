@@ -30,11 +30,7 @@ export function ListView({
   return (
     <div className="w-full flex-1 border rounded-lg overflow-hidden">
       {items.length === 0 && (
-        <EmptyState
-          model={model}
-          filtered={!!filtered}
-          onClear={onClear}
-        />
+        <EmptyState model={model} filtered={!!filtered} onClear={onClear} />
       )}
       {items.map((item) => {
         const display = item.list_display;
