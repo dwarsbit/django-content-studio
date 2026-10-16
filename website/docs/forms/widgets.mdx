@@ -66,10 +66,12 @@ formatting their value through the format mapping.
 
 ## Custom widgets
 
-Widgets are markers: subclass `BaseWidget`, add it to a site's
-`default_widget_mapping`, and render it in the frontend's widget registry.
-A widget is identified by its class name, so the backend mapping and the
-frontend registry agree by convention.
+The widget classes are markers: the interface ships a renderer for each
+built-in widget, and a widget is identified by its class name. Version 1
+supports the built-in widgets and formats only — map fields to any of
+them, but subclassing `BaseWidget` or `BaseFormat` has no renderer to pair
+with. Custom widgets and formats are planned for a later release, together
+with a way to extend the interface.
 
 ## Formats
 

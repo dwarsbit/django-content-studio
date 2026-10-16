@@ -28,6 +28,9 @@ Import path strings of login backends. Default:
 ["content_studio.login_backends.UsernamePasswordBackend"]
 ```
 
+Version 1 supports the built-in backend only
+([authentication](/docs/authentication#login-backends)).
+
 ## LOGIN_THROTTLE_RATE {#login_throttle_rate}
 
 Rate limit for login attempts, per IP, as a DRF rate string — default
@@ -39,6 +42,7 @@ every worker counts separately; configure a shared cache for the full limit.
 Import path string of the token backend class that authenticates the admin
 API — default `"content_studio.token_backends.JsonWebTokenBackend"`, the
 bundled JSON Web Token backend ([authentication](/docs/authentication)).
+Version 1 supports the built-in backend only.
 
 ## TOKEN_LIFETIME {#token_lifetime}
 

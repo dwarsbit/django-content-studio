@@ -29,48 +29,30 @@ deliberate non-goal for now.
 
 ## Login backends
 
-A login backend is a small class with a name, a DRF view set and the login
-logic. The default username/password backend logs staff users in with their
-username and password, exactly like the Django admin, and returns the
-access token the interface works with. Configure additional backends — SSO,
-magic links, LDAP — with the `LOGIN_BACKENDS` setting; the interface renders
-a form per backend automatically. Login attempts are throttled per IP
-([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate)).
+The login backend decides how users sign in. The built-in
+`UsernamePasswordBackend` logs staff users in with their username and
+password, exactly like the Django admin. Login attempts are throttled per
+IP ([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate)).
 
 ```python
 CONTENT_STUDIO = {
     "LOGIN_BACKENDS": [
         "content_studio.login_backends.UsernamePasswordBackend",
-        "myapp.login.MagicLinkBackend",
     ],
 }
 ```
 
-The backend interface:
-
-```python
-class MagicLinkBackend:
-    name = "Magic link"
-    view_set = MagicLinkViewSet  # a DRF ViewSet handling the submit
-
-    @classmethod
-    def get_info(cls):
-        # Sent to the frontend so it can render the right form.
-        return {"type": cls.__name__, "config": {}}
-
-    @classmethod
-    def get_response_for_user(cls, user, request):
-        # Build the authentication response — the JSON Web Token
-        # backend returns {"access": ...} and sets the refresh cookie.
-        ...
-```
+:::note
+Version 1 supports the built-in login backend only. The backend interface
+(and the login form the interface renders for it) is internal for now;
+custom backends such as SSO or magic links are planned for a later release.
+:::
 
 ## Token backend
 
-Tokens come from the token backend (`JsonWebTokenBackend` by default —
-select another with the [`TOKEN_BACKEND`](/docs/settings#token_backend)
-setting), which provides the authentication class and the token response
-format. Custom token backends follow the same small interface.
+Tokens come from the token backend, `JsonWebTokenBackend` by default, set
+through the [`TOKEN_BACKEND`](/docs/settings#token_backend) setting. Version
+1 supports the built-in backend only; its interface is internal.
 
 ## Password reset
 
