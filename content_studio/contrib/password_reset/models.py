@@ -6,8 +6,12 @@ from django.utils import timezone
 
 from content_studio.settings import cs_settings
 
-# Number of failed validation attempts before a code is invalidated.
+# Number of failed validation attempts before an email is locked out.
 MAX_ATTEMPTS = 5
+
+# Minutes an email stays locked out after MAX_ATTEMPTS failed attempts:
+# no new codes are issued and no code validates.
+LOCKOUT_TIME = 60
 
 
 def generate_code():
@@ -42,16 +46,31 @@ class PasswordResetCode(models.Model):
             < timezone.now()
         )
 
+    @property
+    def locked(self):
+        """
+        Whether the email is locked out: the attempt limit was reached
+        less than LOCKOUT_TIME minutes after the record was (re)issued.
+        """
+        return (
+            self.attempts >= MAX_ATTEMPTS
+            and self.created_at + datetime.timedelta(minutes=LOCKOUT_TIME)
+            >= timezone.now()
+        )
+
     def register_failed_attempt(self):
         """
-        Count a failed validation attempt; the code is deleted once the
-        attempt limit is reached, so short numeric codes cannot be
-        brute-forced within their expiry window.
+        Count a failed validation attempt. The count belongs to the email,
+        not the code: requesting a new code keeps it, and reaching the
+        limit locks the email out, so short numeric codes cannot be
+        brute-forced by requesting fresh ones.
         """
         self.attempts += 1
 
         if self.attempts >= MAX_ATTEMPTS:
-            self.delete()
+            # No code validates while locked out.
+            self.code = ""
+            self.save(update_fields=["attempts", "code"])
             return
 
         self.save(update_fields=["attempts"])

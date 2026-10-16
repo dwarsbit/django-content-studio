@@ -78,11 +78,17 @@ urlpatterns = [
 ```
 
 Users request a code for their email, validate it, and set a new password.
-Codes are six digits, generated with `secrets`, valid for 10 minutes (the
+Only active staff users can reset their password, matched on their email
+(case-insensitive); an email shared by several users gets no code. Codes are
+six digits, generated with `secrets` and valid for 10 minutes (the
 [`PASSWORD_RESET_EXPIRATION_TIME`](/docs/settings#password_reset_expiration_time)
-setting) and invalidated after five failed attempts. Validation is bound to
-the email: unknown emails and wrong codes answer identically, so the
-flow does not reveal which addresses exist.
+setting). Failed attempts count per email, also across newly requested
+codes: after five, the email is locked out for an hour. The endpoints are
+rate limited per IP
+([`PASSWORD_RESET_THROTTLE_RATE`](/docs/settings#password_reset_throttle_rate)),
+and the new password goes through the project's `AUTH_PASSWORD_VALIDATORS`.
+Unknown emails and wrong codes answer identically, so the flow does not
+reveal which addresses exist. A reset signs the user out everywhere.
 
 Configure `EMAIL_*` settings — Content Studio sends the code email with
 `send_mail`.

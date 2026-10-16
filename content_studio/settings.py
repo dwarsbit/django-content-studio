@@ -40,6 +40,9 @@ DEFAULTS = {
     "FOCAL_POINT_ATTR": None,
     "TENANT_MODEL": None,
     "PASSWORD_RESET_EXPIRATION_TIME": 10,
+    # Rate limit for the password reset endpoints, per IP; None disables
+    # throttling.
+    "PASSWORD_RESET_THROTTLE_RATE": "10/hour",
     # Rate limit for login attempts, per IP; None disables throttling.
     "LOGIN_THROTTLE_RATE": "10/min",
     # Token backend used to authenticate the admin API.

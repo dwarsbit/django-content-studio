@@ -107,3 +107,10 @@ Import path string of the tenant model for
 ## PASSWORD_RESET_EXPIRATION_TIME {#password_reset_expiration_time}
 
 Minutes a password reset code stays valid. Default `10`.
+
+## PASSWORD_RESET_THROTTLE_RATE {#password_reset_throttle_rate}
+
+Rate limit for the password reset endpoints, per IP, as a DRF rate string —
+default `"10/hour"`. `None` disables throttling. Like the login throttle, the
+count lives in the cache; configure a shared cache when running multiple
+workers.

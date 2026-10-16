@@ -58,9 +58,7 @@ def _decode(token):
             token,
             _signing_key(),
             algorithms=[cs_settings.TOKEN_ALGORITHM],
-            options={
-                "require": ["exp", "iat", "token_type", "user_id", "jti", "pwd"]
-            },
+            options={"require": ["exp", "iat", "token_type", "user_id", "jti", "pwd"]},
         )
     except pyjwt.InvalidTokenError as e:
         raise AuthenticationFailed("Invalid or expired token.") from e

@@ -128,6 +128,7 @@ CONTENT_STUDIO = {
     'HTML_SANITIZER': None,
     'TENANT_MODEL': None,
     'PASSWORD_RESET_EXPIRATION_TIME': 10,
+    'PASSWORD_RESET_THROTTLE_RATE': '10/hour',  # per IP; None disables it
     'LOGIN_THROTTLE_RATE': '10/min',  # per IP; None disables login throttling
 }
 ```

@@ -1,15 +1,22 @@
 import logging
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.mail import send_mail
+from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
-from .models import PasswordResetCode
+from content_studio.settings import cs_settings
+
+from .models import MAX_ATTEMPTS, PasswordResetCode, generate_code
 from .serializers import (
     PasswordResetRequestSerializer,
     CodeValidationSerializer,
@@ -17,6 +24,44 @@ from .serializers import (
 )
 
 logger = logging.getLogger("content_studio.password_reset")
+
+
+class PasswordResetRateThrottle(AnonRateThrottle):
+    """
+    Rate limit for the password reset endpoints, per IP, from the
+    CONTENT_STUDIO["PASSWORD_RESET_THROTTLE_RATE"] setting. Like the
+    login throttle, the count lives in the cache: configure a shared
+    cache when running multiple workers.
+    """
+
+    scope = "content_studio_password_reset"
+
+    def get_rate(self):
+        return cs_settings.PASSWORD_RESET_THROTTLE_RATE
+
+    def allow_request(self, request, view):
+        if not self.rate:
+            return True
+
+        return super().allow_request(request, view)
+
+
+def get_reset_user(email):
+    """
+    The user a reset for the email applies to: the one active staff user
+    with that email (case-insensitive). Anyone else cannot sign in, and an
+    email shared by several users is ambiguous, so neither gets a reset.
+    """
+    users = list(
+        get_user_model().objects.filter(
+            email__iexact=email, is_active=True, is_staff=True
+        )[:2]
+    )
+
+    if len(users) != 1:
+        return None
+
+    return users[0]
 
 
 def get_valid_code(email, code):
@@ -29,10 +74,15 @@ def get_valid_code(email, code):
     codes both raise the same error, so the endpoint does not reveal
     whether a code exists for an email.
     """
-    existing = PasswordResetCode.objects.filter(email=email).first()
+    existing = PasswordResetCode.objects.filter(email__iexact=email).first()
 
-    if not existing or existing.code != code:
-        if existing:
+    if (
+        not existing
+        or existing.locked
+        or not existing.code
+        or not constant_time_compare(existing.code, code)
+    ):
+        if existing and not existing.locked:
             existing.register_failed_attempt()
         raise ValidationError("Invalid code.")
 
@@ -45,25 +95,38 @@ def get_valid_code(email, code):
 
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetRateThrottle]
 
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
 
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"]
+        user = get_reset_user(serializer.validated_data["email"])
 
-        user_model = get_user_model()
-
-        try:
-            user_model.objects.get(email=email)
-        except user_model.DoesNotExist:
+        # 202 whatever happens: the endpoint does not reveal which
+        # emails belong to an account.
+        if user is None:
             return Response(status=status.HTTP_202_ACCEPTED)
 
-        # Delete any existing codes for this email.
-        PasswordResetCode.objects.filter(email=email).delete()
+        email = user.email
+        existing = PasswordResetCode.objects.filter(email__iexact=email).first()
 
-        reset = PasswordResetCode.objects.create(email=email)
+        if existing and existing.locked:
+            return Response(status=status.HTTP_202_ACCEPTED)
+
+        if existing and existing.attempts < MAX_ATTEMPTS:
+            # A fresh code, but the failed attempts carry over.
+            existing.code = generate_code()
+            existing.save(update_fields=["code"])
+            PasswordResetCode.objects.filter(pk=existing.pk).update(
+                created_at=timezone.now()
+            )
+            reset = existing
+        else:
+            # No code yet, or a lockout that has run out.
+            PasswordResetCode.objects.filter(email__iexact=email).delete()
+            reset = PasswordResetCode.objects.create(email=email)
 
         try:
             self.send_email(reset)
@@ -84,6 +147,7 @@ class PasswordResetRequestView(APIView):
 
 class CodeValidationView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetRateThrottle]
 
     def post(self, request):
         serializer = CodeValidationSerializer(data=request.data)
@@ -99,6 +163,7 @@ class CodeValidationView(APIView):
 
 class PasswordResetSubmissionView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetRateThrottle]
 
     def post(self, request):
         serializer = PasswordResetSubmissionSerializer(data=request.data)
@@ -110,11 +175,15 @@ class PasswordResetSubmissionView(APIView):
 
         existing = get_valid_code(email, serializer.validated_data["code"])
 
-        user_model = get_user_model()
-        user = user_model.objects.filter(email=email).first()
+        user = get_reset_user(email)
 
         if not user:
             raise ValidationError("Invalid code.")
+
+        try:
+            validate_password(password, user)
+        except DjangoValidationError as e:
+            raise ValidationError({"password": list(e.messages)})
 
         user.set_password(password)
 
