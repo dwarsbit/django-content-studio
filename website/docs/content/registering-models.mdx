@@ -1,11 +1,15 @@
 # 📋 Registering models
 
-Models are registered with the `@register` decorator on a `ModelStudio`
-subclass:
+A model appears in the admin once you register it with a studio: a
+`ModelStudio` subclass that configures its list page and edit page. Put the
+registrations in your app's `admin.py`, where Content Studio looks for them.
 
 ```python
+# blog/admin.py
 from content_studio import register
 from content_studio.admin import ModelStudio
+
+from .models import Article
 
 
 @register(Article)
@@ -13,79 +17,73 @@ class ArticleStudio(ModelStudio):
     table_display = ["title", "status", "published_at"]
 ```
 
-`@register` accepts multiple models, and registrations go to the Content
-Studio site configured in `CONTENT_STUDIO["ADMIN_SITE"]`:
+`@register` also takes several models at once, which then share the studio:
+`@register(Category, LandingPage)`.
 
-```python
-@register(Article, Category)
-class SharedStudio(ModelStudio):
-    pass
-```
+Registrations go to the site set in the
+[`ADMIN_SITE`](/docs/settings#admin_site) setting. Content Studio keeps its
+own registry: models registered only with the classic Django admin do not
+appear in the admin. The user model is the exception. It is registered with
+a default studio, so editors can manage users from the start; register your
+own studio for it to change how it looks.
 
-:::note
-`register` is exposed lazily: `from content_studio import register` works
-anywhere in your code, without importing the studio machinery before
-Django is ready.
-:::
-
-## Content Studio owns its registry
-
-Content Studio keeps its own registry — it does not read the Django
-admin's global registry. Models registered only with the classic Django
-admin do not appear in the studio; register each model you want to
-manage with `@register`.
-
-The one exception is the user model: it is registered automatically with
-a default studio, so user management works out of the box. Register your
-own studio for it to customize it.
-
-## ModelStudio options
+## Studio options
 
 | Option | Effect |
 |--------|--------|
-| `table_display` | Columns of the table view |
-| `list_filter` | Filterable fields in the list view's filter panel |
-| `search_fields` | Fields searched by the search box |
-| `sortable_by` | Columns the user may sort on |
-| `list_per_page` | Page size (default 20) |
-| `list_description` | Description below the model name on list pages |
-| `ordering` | Default ordering of list views (falls back to `pk` for stable pagination) |
-| `soft_delete` | Opt-in trash: the model's nullable timestamp field marking trashed objects |
-| `icon` | Icon shown in the main menu |
+| `table_display` | The columns of the table view |
+| `list_filter` | The fields editors can filter on |
+| `search_fields` | The fields the search box searches |
+| `sortable_by` | The columns editors can sort on |
+| `ordering` | The default sort order of the list page |
+| `list_per_page` | The number of objects per page (default `20`) |
+| `list_description` | A description below the model's name on the list page |
+| `soft_delete` | The field that marks objects as trashed (see [below](#soft-delete-and-the-trash)) |
+| `icon` | The model's icon in the main menu |
+
+When `ordering` is not set, objects are sorted by primary key, so pages stay
+stable.
 
 ## Singletons
 
-Settings-style models with a single row declare `is_singleton` on the
-studio:
+For a model with exactly one object, such as site settings, set
+`is_singleton` on the studio:
 
 ```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import SiteSettings
+
+
 @register(SiteSettings)
 class SiteSettingsStudio(ModelStudio):
     is_singleton = True
     edit_main = ["site_name", "tagline"]
 ```
 
-Singletons skip the list view: the single object opens directly in the
-editor, creating is only allowed while no object exists, and deletion is
-not offered.
-
-:::note
-As a fallback for models that carry a model-level `is_singleton` marker (for
-example the built-in `SingletonModel`), that marker is honored too — a
-concrete *field* named `is_singleton` is ignored.
-:::
+A singleton has no list page: the menu opens its edit page directly. Editors
+can create the object only while none exists, and cannot delete it. Models
+built on the built-in `SingletonModel` are treated as singletons without the
+option.
 
 ## Inlines
 
-Related child models edit inside their parent's edit view. Declare them
-with the inline class:
+Inlines edit related objects on the parent's edit page, such as the reviews
+of an article. Declare an inline studio and add it to the parent's studio:
 
 ```python
+# blog/admin.py
+from content_studio import register
 from content_studio.admin import InlineModelStudio, ModelStudio
+
+from .models import Article, Review
 
 
 class ReviewInline(InlineModelStudio):
     model = Review
+    table_display = ["text", "stars"]
 
 
 @register(Article)
@@ -93,66 +91,89 @@ class ArticleStudio(ModelStudio):
     inlines = [ReviewInline]
 ```
 
-An inline declares its `model` and — when more than one foreign key
-points at the parent — the `fk_name` of the relation. Inline rows show
-the columns configured in the inline's `table_display`.
+When the inline model has more than one foreign key to the parent, name the
+one to use with `fk_name`. The inline's `table_display` sets its columns.
+Inline objects only exist within their parent: editors can only add them to
+parents they may view.
 
-Inlines live inside their parent's edit view and stay there: inline lists are
-always shown in the context of a parent, and inline objects cannot be attached
-to a parent the user cannot see.
+## How related objects appear
 
-## Relation display
-
-Wherever a related object appears — relation pickers, list views and
-selected-value badges — its display is controlled by the **related model's
-studio** through `get_relation_display`. The default shows the object's
-string representation:
+Wherever an object shows up as a related object (in a picker, in a column or
+as a selected value) the related model's studio decides how it looks, with
+`get_relation_display`. By default it shows the object's string
+representation.
 
 ```python
+# blog/admin.py
+from content_studio import register
 from content_studio.admin import ModelStudio, RelationDisplay
 
+from .models import Category
 
-@register(models.Category)
+
+@register(Category)
 class CategoryStudio(ModelStudio):
     def get_relation_display(self, obj, request):
         return RelationDisplay(
             title=obj.name,
-            description=f"{obj.article_set.count()} article(s)",
+            description=f"{obj.article_set.count()} articles",
             icon="ph-bold ph-tag",
         )
 ```
 
-`RelationDisplay` takes a `title` (required), a `description`, an `icon`
-(a CSS class, like the `ModelStudio.icon`), `initials` (shown as one character on
-a colored circle — the color is derived from the full initials value) and an
-`avatar` (an image URL). Everything but the title is optional and omitted
-from the interface when empty. When several glyphs are set, one is shown with
-the priority: avatar, then initials, then icon. Models without a registered
-studio always fall back to the string representation.
+`RelationDisplay` takes a `title` and, optionally:
 
-## List views
+- `description`: a second line of text;
+- `icon`: a CSS icon class, like the studio's `icon`;
+- `initials`: a character on a colored circle, the color derived from the
+  initials;
+- `avatar`: an image URL.
 
-The list page can render as a **table** (the default) or as a **list** of
-readable rows. Which views a model offers is declared with `list_views`;
-more than one shows a toggle, and the choice is remembered per content
-type in the browser's local storage:
+When several are set, the admin shows the avatar first, then the initials,
+then the icon. Models without a studio always show their string
+representation.
+
+## The list page
+
+The list page shows objects as a **table**, the default, or as a **list** of
+readable items. Set the views to offer with `list_views`; with more than one,
+editors switch with a toggle and the admin remembers their choice per model.
 
 ```python
-@register(models.Article)
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
+
+
+@register(Article)
 class ArticleStudio(ModelStudio):
     table_display = ["title", "status", "published_at"]
     list_views = ["table", "list"]
+    list_item_display = {
+        "title": "title",
+        "description": "body",
+        "meta": "get_status_display",
+    }
 ```
 
-The table's columns come from `table_display`. A column is a field name,
-or a `TableColumn` for a custom header, an explicit format or a computed
-value:
+### Table columns
+
+`table_display` lists the table's columns: field names, or `TableColumn`
+objects for a custom header, a format or a computed value.
 
 ```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
 from content_studio.form import TableColumn
+from content_studio.formats import NumberFormat
+
+from .models import Article
 
 
-@register(models.Article)
+@register(Article)
 class ArticleStudio(ModelStudio):
     table_display = [
         "title",
@@ -164,53 +185,63 @@ class ArticleStudio(ModelStudio):
         return len(obj.body.split())
 ```
 
-`TableColumn(field=...)` references a model field or a method on the
-studio. Methods take `(obj, request)` and return a JSON-safe value the
-format understands: strings for text-like formats, numbers for
-`NumberFormat`, ISO strings for the date and time formats. A method
-column without a format renders through `TextFormat`; a field column
-without one keeps its field type's default format.
+A column's `field` is a model field or a method on the studio. A method
+takes `(obj, request)` and returns a value its format can show: text for text
+formats, a number for `NumberFormat`, an ISO 8601 string for the date and
+time formats. Without a `format`, a method column shows text and a field
+column uses its field type's format.
 
-Column headers fall back to the field's verbose name; method columns
-without a `header` have no label. Method columns cannot be sorted —
-ordering is restricted to real model fields.
+A column without a `header` uses the field's verbose name; a method column
+without one has no header. Editors can only sort on columns backed by a model
+field.
 
-`list_display`, the Django admin's name for the table columns, works as
-an alias of `table_display`, so a studio ported from the classic admin
-keeps its columns. The `content_studio.W010` system check asks you to
-rename it; when both are set, `table_display` wins.
+`list_display`, the classic Django admin's name for the table columns, also
+works, so a studio ported from the classic Django admin keeps its columns.
+System check `content_studio.W010` asks you to rename it to `table_display`;
+when both are set, `table_display` applies.
 
-The list view's items are configured separately through
-`list_item_display` — a mapping of roles to field or model method names:
+### List items
 
-```python
-list_item_display = {"title": "title", "description": "body", "meta": "get_status_display"}
-```
-
-Items render a prominent `title`, a muted `description` and a `meta` badge.
-For fully computed items, override `get_list_item_display`:
+`list_item_display` maps the parts of a list item to field or method names:
+a prominent `title`, a muted `description` and a `meta` label on the right.
+For items computed in code, override `get_list_item_display` instead:
 
 ```python
-from content_studio.admin import ListItemDisplay
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ListItemDisplay, ModelStudio
+
+from .models import Article
 
 
-def get_list_item_display(self, obj, request):
-    return ListItemDisplay(title=obj.title.upper(), description=obj.subtitle, meta=obj.status)
+@register(Article)
+class ArticleStudio(ModelStudio):
+    list_views = ["table", "list"]
+
+    def get_list_item_display(self, obj, request):
+        return ListItemDisplay(
+            title=obj.title, description=obj.author.get_full_name(), meta=obj.status
+        )
 ```
 
 ## Bulk actions
 
-The table view offers bulk actions: select rows (all on the page through
-the header checkbox) and pick an action from the bar that appears.
-Selection is per page — paging, filtering or sorting clears it.
+In the table view, editors select objects (the header checkbox selects the
+whole page) and run an action from the bar that appears. A selection belongs
+to one page: paging, filtering or sorting clears it.
 
-The built-in delete action is offered by default, to users with delete
-permission. Custom actions are declared on the studio with the
-`@bulk_action` decorator; like the classic admin, they receive the
-request and a queryset of the selected rows:
+The built-in delete action is available to editors with delete permission.
+Add your own actions to the studio with `@bulk_action`; like the actions of
+the classic Django admin, they receive the request and the selected objects
+as a queryset:
 
 ```python
+# blog/admin.py
+from content_studio import register
 from content_studio.actions import bulk_action
+from content_studio.admin import ModelStudio
+
+from .models import Article
 
 
 @register(Article)
@@ -222,109 +253,112 @@ class ArticleStudio(ModelStudio):
         allowed_permissions=["change"],
     )
     def publish(self, request, queryset):
-        queryset.update(status=Article.Status.PUBLISHED)
-        return f"Published {queryset.count()} articles."
+        count = queryset.update(status=Article.Status.PUBLISHED)
+        return f"Published {count} articles."
 ```
 
-`label` defaults to the prettified method name, `icon` is a Phosphor
-class (like the model icon), `confirm` is shown before the action runs,
-and `allowed_permissions` gates the action on the model-level
-permissions it lists (any of them; everyone who can see the list when
-empty). The return value shapes the success message: an int reports a
-count, a string is shown as-is.
+- `label`: the action's name; by default, the method name.
+- `icon`: an icon class, like the studio's `icon`.
+- `confirm`: a question to confirm before the action runs.
+- `allowed_permissions`: the model permissions that allow the action; any one
+  of them is enough. Without it, everyone who can see the list can run the
+  action.
 
-The `actions` attribute selects what is offered: `None` (the default)
-is the built-in delete plus every declared action, an empty list
-disables bulk actions entirely, and an explicit list offers exactly
-those names in that order — with `"delete"` naming the built-in:
+The return value is the message editors see: a number reports how many
+objects changed, a string is shown as it is.
+
+The studio's `actions` attribute chooses which actions are offered:
 
 ```python
-actions = None                  # delete + every @bulk_action method
-actions = []                    # no bulk actions
-actions = ["publish", "delete"] # exactly these, in this order
+actions = None                   # the default: delete and every @bulk_action
+actions = []                     # no bulk actions
+actions = ["publish", "delete"]  # exactly these, in this order
 ```
 
-Misconfigurations (unknown names, duplicates, shadowing the built-in
-delete) are reported by the `content_studio.E007` system check.
+System check `content_studio.E007` reports unknown or duplicate names and
+an action that would replace the built-in delete.
 
 ## Soft delete and the trash
 
-Deleting is a hard delete by default. A model studio can opt into a
-trash instead: set `soft_delete` to the name of the model's nullable
-timestamp field that marks an object as trashed. Django Content Studio
-never assumes a field — with the option set:
-
-- deleting an object stamps the field instead of removing the row, and
-  the object disappears from the lists,
-- the list view links to the model's trash (`/content/<model>/trash`),
-  where trashed objects can be restored (needs change permission) or
-  permanently deleted (needs delete permission),
-- restoring is recorded in the object's history.
+By default, deleting an object removes it from the database. To move
+objects to a trash instead, set `soft_delete` to a nullable date or date and
+time field on the model that marks an object as trashed:
 
 ```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
+
+
 @register(Article)
 class ArticleStudio(ModelStudio):
-    # The built-in SoftDeletableModel uses "removed_at".
     soft_delete = "removed_at"
 ```
 
-The field must exist and be a nullable date or datetime field, or the
-`content_studio.E008` system check reports the misconfiguration. The
-option works with any model carrying such a field — the built-in
-`SoftDeletableModel`'s `removed_at` fits as-is.
+With the option set:
+
+- deleting fills in the field instead of removing the object, and the object
+  disappears from the list page;
+- the list page links to the model's trash, where editors restore objects
+  (with change permission) or delete them for good (with delete permission);
+- restoring an object is recorded in its history.
+
+Any model with such a field works; the built-in `SoftDeletableModel` has one
+called `removed_at`. System check `content_studio.E008` reports a field that
+is missing or of the wrong type.
 
 ## Object history
 
-The activity log recorded for an object — every addition, change and
-deletion, most recent first — is available in the edit view through
-the `ActivityLog` form component. It is opt-in: place it in the
-sidebar (or any form set) with an optional title:
+The `ActivityLog` component shows an object's history on its edit page: every
+addition, change and deletion, newest first. Add it to the sidebar or to any
+form set:
 
 ```python
-from content_studio.form import ActivityLog
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import ActivityLog, FormSet
+
+from .models import Article
+
 
 @register(Article)
 class ArticleStudio(ModelStudio):
-    edit_sidebar = ["published_at", "author", ActivityLog(title="History")]
+    edit_sidebar = [
+        FormSet(fields=["published_at", "author"]),
+        FormSet(fields=[ActivityLog(title="History")]),
+    ]
 ```
 
-The title defaults to "Activity" and is translated. The component
-renders only for saved objects; a create has no history. It is gated
-by view permission on the object, and works with plain Django models
-and the built-in base models alike.
+The title is "Activity" unless you pass one. The history appears on the edit
+page of saved objects only, for editors who may view the object. Each
+`FormSet` in the sidebar is its own card, so the history above gets a card of
+its own.
 
-Inline placement renders the log inside its form set's section. For
-its own section instead, declare the sidebar as form sets — each
-renders as its own card:
+## Use your own site
 
-```python
-from content_studio.form import ActivityLog, FormSet
-
-edit_sidebar = [
-    FormSet(fields=["published_at", "author"]),
-    FormSet(fields=[ActivityLog()]),
-]
-```
-
-## Configuring the site
-
-The studio site is configured through the `CONTENT_STUDIO["ADMIN_SITE"]`
-setting, which points at a `ContentStudioSite` instance. The default site
-(`content_studio.admin.admin_site`) is enough for most projects; subclass
-`ContentStudioSite` to add a dashboard, model groups or extensions. Put the
-site instance in its own module (or above the registrations) so the
-`@register` decorator can import it while your `admin.py` runs:
+The default site, `content_studio.admin.admin_site`, is enough for many
+projects. To add a dashboard, model groups or extensions, subclass
+`ContentStudioSite` in a module of its own, so your `admin.py` modules can
+import it:
 
 ```python
-# apps/blog/studio.py
+# mysite/studio.py
 from content_studio.admin import ContentStudioSite
 
-admin_site = ContentStudioSite()
+
+class BlogStudioSite(ContentStudioSite):
+    pass
+
+
+admin_site = BlogStudioSite()
 ```
 
 ```python
-# settings.py
+# mysite/settings.py
 CONTENT_STUDIO = {
-    "ADMIN_SITE": "apps.blog.studio.admin_site",
+    "ADMIN_SITE": "mysite.studio.admin_site",
 }
 ```

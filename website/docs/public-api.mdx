@@ -5,28 +5,24 @@ sidebar_position: 15
 # 📜 Public API
 
 Content Studio follows [semantic versioning](https://semver.org/) for its
-public API: from version 1.0, the names listed on this page change only in
-a major release, after a deprecation period with a warning.
+public API: from version 1.0, the names on this page only change in a major
+release, after a deprecation period with a warning.
 
 The public API consists of:
 
 - the names below, imported from the module they are listed under;
 - the documented attributes and methods of `ModelStudio`,
-  `InlineModelStudio` and `ContentStudioSite` — the configuration options
-  and hooks such as the `has_*_permission` methods, `get_fields`,
+  `InlineModelStudio` and `ContentStudioSite`: the configuration options and
+  the hooks, such as the `has_*_permission` methods, `get_fields`,
   `get_list_item_display`, `get_relation_display`, `get_tenants`,
   `get_thumbnail`, `get_media_serializer_fields` and `crop_image`;
-- every [setting](/docs/settings) in the `CONTENT_STUDIO` namespace;
-- the [system check](/docs/system-checks) IDs (their message texts may
-  change);
-- the URLs included with `include("content_studio.urls")` and the
-  `content_studio.contrib.password_reset` app, as installable units.
+- every [setting](/docs/settings) in `CONTENT_STUDIO`;
+- the [system check](/docs/system-checks) IDs, but not their messages;
+- `content_studio.urls` and the `content_studio.contrib.password_reset` app,
+  as a whole.
 
-Everything else is internal and may change in any release: the generated
-REST backend and its wire format, the serializers, view sets, router,
-permissions, filters and search, the login and token backends' internals
-(select them by dotted path in the settings), and any name not listed
-here — even when it can be imported.
+Everything else may change in any release, including any name that is not
+on this page, even when you can import it.
 
 ## `content_studio`
 
@@ -50,7 +46,7 @@ Studios, the site and their configuration objects. `admin_site` is the default s
 
 ## `content_studio.form`
 
-Edit form layout and table columns.
+Edit page layouts, components and table columns. `Component` and `Link` are base types: only `ButtonLink` and `ActivityLog` appear on the edit page.
 
 - `ActivityLog`
 - `ButtonLink`
@@ -94,7 +90,7 @@ Menu links and embedded pages.
 
 ## `content_studio.widgets`
 
-The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_mapping`. `BaseWidget` is their base type; custom widgets are not supported yet.
+The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_mapping`. `BaseWidget` is their base type; custom widgets are not supported.
 
 - `BaseWidget`
 - `CheckboxWidget`
@@ -121,7 +117,7 @@ The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_
 
 ## `content_studio.formats`
 
-The built-in display formats, to use in `TableColumn(format=...)` and `default_format_mapping`. `BaseFormat` is their base type; custom formats are not supported yet.
+The built-in display formats, to use in `TableColumn(format=...)` and `default_format_mapping`. `BaseFormat` is their base type; custom formats are not supported.
 
 - `BaseFormat`
 - `BooleanFormat`

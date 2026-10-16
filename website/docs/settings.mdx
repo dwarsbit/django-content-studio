@@ -4,138 +4,150 @@ sidebar_position: 11
 
 # ⚙️ Settings reference
 
-All settings live in a single `CONTENT_STUDIO` namespace in your Django
-settings. Every option is optional.
+All settings live in one `CONTENT_STUDIO` dictionary in your Django settings.
+Every setting is optional; leave out the ones you do not change.
 
 ```python
+# mysite/settings.py
 CONTENT_STUDIO = {
-    "ADMIN_SITE": "content_studio.admin.admin_site",
+    "ADMIN_SITE": "mysite.studio.admin_site",
+    "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Media",
 }
 ```
 
-## ADMIN_SITE {#admin_site}
+## Site
 
-The admin site instance to use — import path string. The default site works
-out of the box; subclass `ContentStudioSite` to customize the dashboard, extensions,
-tenants, thumbnails or media serializer fields and point this setting at your
-instance.
+### ADMIN_SITE {#admin_site}
 
-## LOGIN_BACKENDS {#login_backends}
+The site the admin runs on, as an import path string. Default:
+`"content_studio.admin.admin_site"`, a site without customizations. To add
+a dashboard, extensions, tenants or media library hooks, subclass
+`ContentStudioSite` and point this setting at your instance.
 
-Import path strings of login backends. Default:
+## Login and sessions
 
-```python
-["content_studio.login_backends.UsernamePasswordBackend"]
-```
+### LOGIN_BACKENDS {#login_backends}
 
-Version 1 supports the built-in backend only
-([authentication](/docs/authentication#login-backends)).
+The login backends, as import path strings. Default:
+`["content_studio.login_backends.UsernamePasswordBackend"]`, the only
+supported backend ([authentication](/docs/authentication#login-backends)).
 
-## LOGIN_THROTTLE_RATE {#login_throttle_rate}
+### LOGIN_THROTTLE_RATE {#login_throttle_rate}
 
-Rate limit for login attempts, per IP, as a DRF rate string — default
-`"10/min"`. `None` disables throttling. With the default per-process cache
-every worker counts separately; configure a shared cache for the full limit.
+The maximum number of login attempts per IP address, as a
+[Django REST Framework rate string](https://www.django-rest-framework.org/api-guide/throttling/#setting-the-throttling-policy)
+such as `"10/min"`. Default: `"10/min"`. `None` removes the limit. Attempts
+are counted in the cache: with the default per-process cache, every worker
+counts separately, so configure a shared cache.
 
-## TOKEN_BACKEND {#token_backend}
+### TOKEN_BACKEND {#token_backend}
 
-Import path string of the token backend class that authenticates the admin
-API — default `"content_studio.token_backends.JsonWebTokenBackend"`, the
-bundled JSON Web Token backend ([authentication](/docs/authentication)).
-Version 1 supports the built-in backend only.
+The token backend that manages sessions, as an import path string. Default:
+`"content_studio.token_backends.JsonWebTokenBackend"`, the only supported
+backend.
 
-## TOKEN_LIFETIME {#token_lifetime}
+### TOKEN_LIFETIME {#token_lifetime}
 
-Lifetime of the access token in seconds — default `3600` (one hour). The
-browser keeps the access token in memory; a 401 triggers a silent refresh,
-so short lifetimes do not log users out.
+How long a session stays active between renewals, in seconds. Default:
+`3600` (one hour). Sessions renew themselves while the editor works, so a
+short lifetime does not log anyone out.
 
-## REFRESH_TOKEN_LIFETIME {#refresh_token_lifetime}
+### REFRESH_TOKEN_LIFETIME {#refresh_token_lifetime}
 
-Lifetime of the refresh token in seconds — default `604800` (seven days).
-The refresh token lives in an httpOnly cookie and never reaches JavaScript;
-it rotates on every refresh.
+How long a session can go unused before the editor has to log in again, in
+seconds. Default: `604800` (seven days).
 
-## TOKEN_SIGNING_KEY {#token_signing_key}
+### TOKEN_SIGNING_KEY {#token_signing_key}
 
-Signing key for the tokens. Default `None` — falls back to the Django
-`SECRET_KEY`. Set a dedicated key if you rotate `SECRET_KEY` independently
+The key that signs the sessions. Default: `None`, which uses Django's
+`SECRET_KEY`. Set a separate key if you rotate `SECRET_KEY` independently
 of admin sessions.
 
-## TOKEN_ALGORITHM {#token_algorithm}
+### TOKEN_ALGORITHM {#token_algorithm}
 
-Algorithm used to sign the tokens (any algorithm PyJWT supports) — default
-`"HS256"`.
+The algorithm that signs the sessions: `"HS256"`, `"HS384"` or `"HS512"`.
+Default: `"HS256"`.
 
-## REFRESH_COOKIE_SECURE {#refresh_cookie_secure}
+### REFRESH_COOKIE_SECURE {#refresh_cookie_secure}
 
-Whether the refresh token cookie is marked `Secure`, so browsers only send it
-over HTTPS. Default `None`: secure for HTTPS requests and whenever `DEBUG` is
-off — also behind a TLS-terminating proxy that does not set
-`SECURE_PROXY_SSL_HEADER`. Set `True` or `False` to force it; a production
-site served over plain HTTP needs `False` to sign in at all (and should move
-to HTTPS).
+Whether the session cookie is marked `Secure`, so browsers only send it over
+HTTPS. Default: `None`, which marks it secure on HTTPS requests and whenever
+`DEBUG` is off, also behind a proxy that does not set
+`SECURE_PROXY_SSL_HEADER`. Set `True` or `False` to force either value. A
+production site served over plain HTTP needs `False` to log in at all, and
+should move to HTTPS.
 
-## EDITED_BY_ATTR / EDITED_AT_ATTR / CREATED_BY_ATTR / CREATED_AT_ATTR {#audit-attrs}
+## Audit stamps
 
-Field names for the audit stamps. Defaults: `"edited_by"`, `"edited_at"`,
-`"created_by"`, `"created_at"`. The interface stamps `created_by` on create
-and `edited_by` / `edited_at` on update — on models that define those fields
-(other models are untouched).
+### EDITED_BY_ATTR, EDITED_AT_ATTR, CREATED_BY_ATTR, CREATED_AT_ATTR {#audit-attrs}
 
-## HTML_SANITIZER {#html_sanitizer}
+The field names of the audit stamps. Defaults: `"edited_by"`,
+`"edited_at"`, `"created_by"` and `"created_at"`. When an editor creates an
+object, the admin fills in `created_by`; when they save it, `edited_by` and
+`edited_at`. Models without these fields are left as they are.
 
-Sanitizer applied to [`HTMLField`](/docs/forms/widgets) content on save: a
-callable or a dotted import path. Default `None` — the built-in allowlist
-sanitizer, which keeps a CMS-friendly set of tags, attributes and URL
-schemes and strips everything else. Override it per field by passing
-`sanitizer` to `HTMLField` itself; a field-level sanitizer always wins over
-this setting.
+## Content
 
-## MEDIA_LIBRARY_MODEL / MEDIA_LIBRARY_FOLDER_MODEL {#media_models}
+### HTML_SANITIZER {#html_sanitizer}
 
-Import path strings of the media and folder models for the
-[media library](/docs/media-library). Both default to `None` — the library is
-disabled.
+The sanitizer that cleans [`HTMLField`](/docs/content/registering-models)
+values on save: a callable or an import path string. Default: `None`, the
+built-in sanitizer, which keeps a common set of tags, attributes and link
+types and removes everything else. A `sanitizer` passed to an `HTMLField`
+takes precedence over this setting.
 
-## MEDIA_LIBRARY_ALLOWED_EXTENSIONS {#media_library_allowed_extensions}
+## Media library
 
-The file extensions the [media library](/docs/media-library) accepts,
-lowercase and without the dot. The default allows common images (`avif`,
-`gif`, `jpeg`, `jpg`, `png`, `webp`), video and audio (`m4a`, `mov`, `mp3`,
-`mp4`, `ogg`, `wav`, `webm`) and documents (`csv`, `doc`, `docx`, `odp`,
-`ods`, `odt`, `pdf`, `ppt`, `pptx`, `txt`, `xls`, `xlsx`). SVG is left out on
-purpose: it can carry scripts. `None` accepts every extension. Whatever the
-extension, files whose content is markup (HTML, SVG, XML) are rejected.
+### MEDIA_LIBRARY_MODEL, MEDIA_LIBRARY_FOLDER_MODEL {#media_models}
 
-## MEDIA_LIBRARY_MAX_UPLOAD_SIZE {#media_library_max_upload_size}
+The media item and folder models of the [media library](/docs/media-library),
+as import path strings. Default: `None`, which turns the media library off.
 
-The maximum size of a media library upload in bytes — default `52428800`
-(50 MB). `None` sets no limit. Your web server's own request size limit
-applies on top.
+### MEDIA_LIBRARY_ALLOWED_EXTENSIONS {#media_library_allowed_extensions}
 
-## FOCAL_POINT_ATTR {#focal_point_attr}
+The file extensions the media library accepts, in lowercase and without the
+dot. By default:
 
-Field name on the media item model holding the focal point, for the
-[media library](/docs/media-library)'s focal point editor. The field must be a
-`JSONField`; the editor stores `{"x": 0-100, "y": 0-100}` — percentages of the
-image's dimensions. Default `None` — the editor is disabled. Setting it without
-`MEDIA_LIBRARY_MODEL`, pointing it at a missing field, or at a non-JSON field
-is reported by the `content_studio.E009` system check (see
-[System checks](/docs/system-checks)).
+- images: `avif`, `gif`, `jpeg`, `jpg`, `png`, `webp`;
+- video and audio: `m4a`, `mov`, `mp3`, `mp4`, `ogg`, `wav`, `webm`;
+- documents: `csv`, `doc`, `docx`, `odp`, `ods`, `odt`, `pdf`, `ppt`,
+  `pptx`, `txt`, `xls`, `xlsx`.
 
-## TENANT_MODEL {#tenant_model}
+SVG is left out because it can contain scripts. `None` accepts every
+extension. Files whose content is markup (HTML, SVG, XML) are rejected
+whatever their extension.
 
-Import path string of the tenant model for
-[multi-tenancy](/docs/multi-tenancy). Default `None` — tenancy is disabled.
+### MEDIA_LIBRARY_MAX_UPLOAD_SIZE {#media_library_max_upload_size}
 
-## PASSWORD_RESET_EXPIRATION_TIME {#password_reset_expiration_time}
+The maximum size of an upload, in bytes. Default: `52428800` (50 MB). `None`
+removes the limit; your web server's own request size limit still applies.
 
-Minutes a password reset code stays valid. Default `10`.
+### FOCAL_POINT_ATTR {#focal_point_attr}
 
-## PASSWORD_RESET_THROTTLE_RATE {#password_reset_throttle_rate}
+The field on the media item model that stores the focal point, which turns
+on the focal point editor of the [media library](/docs/media-library). The
+field must be a `JSONField`; the editor stores `{"x": 0-100, "y": 0-100}`,
+percentages of the image's width and height. Default: `None`, which turns
+the editor off. System check `content_studio.E009` reports a focal point
+field without a media library model, or one that is missing or not a
+`JSONField`.
 
-Rate limit for the password reset endpoints, per IP, as a DRF rate string —
-default `"10/hour"`. `None` disables throttling. Like the login throttle, the
-count lives in the cache; configure a shared cache when running multiple
-workers.
+## Multi-tenancy
+
+### TENANT_MODEL {#tenant_model}
+
+The tenant model for [multi-tenancy](/docs/multi-tenancy), as an import path
+string. Default: `None`, which turns multi-tenancy off.
+
+## Password reset
+
+### PASSWORD_RESET_EXPIRATION_TIME {#password_reset_expiration_time}
+
+How long a password reset code stays valid, in minutes. Default: `10`.
+
+### PASSWORD_RESET_THROTTLE_RATE {#password_reset_throttle_rate}
+
+The maximum number of password reset requests per IP address, as a
+[Django REST Framework rate string](https://www.django-rest-framework.org/api-guide/throttling/#setting-the-throttling-policy).
+Default: `"10/hour"`. `None` removes the limit. Like the login limit, it is
+counted in the cache.

@@ -1,11 +1,16 @@
 # 🧱 Form sets and layouts
 
-Edit views are laid out with a small composition API in `content_studio.form`.
-Leave `edit_main` unset and the editor renders the model's fields in
-declaration order; set it and you control the layout.
+By default, the edit page shows the model's fields in the order they are
+declared. Set `edit_main` and `edit_sidebar` on the studio to choose the
+fields and lay them out, with the building blocks in `content_studio.form`.
 
 ```python
-from content_studio.form import Field, FieldLayout, FormSet
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import Field, FormSet
+
+from .models import Article
 
 
 @register(Article)
@@ -21,57 +26,58 @@ class ArticleStudio(ModelStudio):
             ],
         ),
     ]
-    edit_sidebar = ["published_at", "rating"]
+    edit_sidebar = ["published_at", "featured"]
 ```
 
 ## Building blocks
 
-- **`Field(name, col_span=1, label=None, readonly=False, widget=None)`** — one
-  model field. Strings are shorthand for `Field(name)`.
-- **`FieldLayout(fields=[...], columns=1)`** — a field group rendered in `columns`
-  columns.
-- **`FormSet(title, description, fields)`** — a titled block of fields; the
-  primary grouping in the main area.
-- **`FormSetGroup(label, formsets=[...])`** — groups form sets; a list of form
-  sets is wrapped automatically.
+- **`Field(name, col_span=1, label=None, readonly=False, widget=None)`**: one
+  model field. A string is short for `Field(name)`.
+- **`FieldLayout(fields=[...], columns=1)`**: a group of fields shown in
+  `columns` columns.
+- **`FormSet(title, description, fields)`**: a titled block of fields, the
+  main way to group the edit page.
+- **`FormSetGroup(label, formsets=[...])`**: a group of form sets.
 
-A list of plain fields is wrapped in a form set automatically, and a list of
-form sets in a group — so simple layouts stay simple.
+You do not have to wrap everything: a list of fields becomes a form set,
+and a list of form sets becomes a group.
 
 :::caution
-Every required model field must appear in `edit_main` or `edit_sidebar` —
-the editor only submits the fields it shows, so a required field left out
-(including through `exclude`) fails validation on save. Missing fields are
-reported by the `content_studio.W001` system check (`manage.py check`,
-see [System checks](/docs/system-checks)).
-Fields with a default, nullable fields and blank fields are never required,
-and neither are the fields Content Studio fills itself (the created/edited
-stamps and the tenant relation).
+Every required model field must be in `edit_main` or `edit_sidebar`. The
+edit page only saves the fields it shows, so a required field that is left
+out, also through `exclude`, makes saving fail. System check
+`content_studio.W001` reports these fields. Fields with a default, nullable
+or blank fields, and the fields Content Studio fills in itself (the audit
+stamps and the tenant), are never required.
 :::
 
 ## Sidebar
 
-`edit_sidebar` works the same way and renders in the narrower sidebar
-column. Fields set as `readonly` display their value without an input.
+`edit_sidebar` works the same way and shows its fields in the narrow column
+next to the main area. A field with `readonly=True` shows its value without
+an input.
 
-A field's editing widget can be overridden per field by passing a widget
-class: `Field("summary", widget=widgets.TextAreaWidget)`. See
-[Widgets](/docs/forms/widgets) for the available widgets.
+To edit one field with another widget, pass the widget class:
+`Field("body", widget=widgets.TextAreaWidget)`. See
+[Widgets](/docs/forms/widgets) for the widgets you can use.
 
 ## Components
 
-Edit views can carry components — interactive ones like links and
-buttons, and display ones like the activity log.
+Besides fields, the edit page can show components: a button that links
+somewhere, and the object's activity log.
 
 ```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
 from content_studio.form import ActivityLog, ButtonLink
 
+from .models import Article
 
-class ViewSiteLink(ButtonLink):
-    component_type = "LinkButton"
+
+class ViewOnSiteButton(ButtonLink):
     label = "View on site"
     icon = "external-link"
-    copy = False
 
     def get_url(self, obj, request):
         return obj.get_absolute_url()
@@ -79,16 +85,17 @@ class ViewSiteLink(ButtonLink):
 
 @register(Article)
 class ArticleStudio(ModelStudio):
-    edit_sidebar = ["published_at", "author", ViewSiteLink(), ActivityLog()]
+    edit_sidebar = ["published_at", "author", ViewOnSiteButton(), ActivityLog()]
 ```
 
-The shipped `ActivityLog` component renders the object's recorded
-history under an optional, translated title (defaulting to
-"Activity"); it needs no request handling — the entries come from
-the generated API's activity endpoint.
+- **`ButtonLink`**: a button that opens the URL `get_url(obj, request)`
+  returns. Set `copy = True` to add a button that copies the URL.
+- **`ActivityLog`**: the changes made to the object, newest first, under the
+  title "Activity" or the `title` you pass.
 
-Subclass `Component` for fully custom behavior: implement `handle_request(obj,
-request)` and the component gets its own endpoint. Components are looked
-up by ID, and IDs derive deterministically from the class and its
-`get_id_parts()` — pass an explicit `component_id` (a UUID) when two
-components of the same class share a label.
+Only these components are supported; other component types are not.
+
+Each component gets an ID from its class and its label, so every worker of a
+deployment agrees on it. Two components of the same class with the same
+label need an explicit `component_id` (a UUID); `manage.py check` reports
+duplicates.

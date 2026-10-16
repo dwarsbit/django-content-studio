@@ -4,43 +4,41 @@ sidebar_position: 8
 
 # 🔐 Authentication
 
-Content Studio ships with its own JSON Web Token authentication — signed
-with [PyJWT](https://pyjwt.readthedocs.io/) and configured entirely through
-the `CONTENT_STUDIO` namespace — plus a pluggable login backend system.
-Projects that run their own JWT stack (for example
-`djangorestframework-simplejwt` for their public API) never conflict with
-Content Studio: no global JWT settings are touched.
+Editors log in to the admin with their username and password, like in the
+classic Django admin. Content Studio handles the sessions itself and is
+configured entirely through the `CONTENT_STUDIO` setting, so it never
+interferes with the authentication your project uses elsewhere.
 
-## How sessions work
+## Who can log in
 
-The access token authenticates every request through the
-`Authorization: Bearer <token>` header and is short-lived (one hour by
-default, [`TOKEN_LIFETIME`](/docs/settings#token_lifetime)). The browser
-keeps it in memory only. The matching refresh token lives in an httpOnly,
-`SameSite=Lax` cookie scoped to the token endpoints — it never reaches
-JavaScript, so a compromised page cannot steal it.
+Only active staff users can log in, and every request checks this again:
+deactivating a user or revoking their staff status ends their access
+immediately. What an editor may see and do is decided by the
+[permission hooks](/docs/permissions).
 
-Login returns the access token; the refresh cookie is set alongside it.
-Sessions restore silently on page reload, a 401 triggers a single shared
-refresh and the failed request is retried, and logging out clears the
-cookie server-side. Refreshing rotates the refresh token; the previous one
-simply expires. Server-side reuse detection (a shared blacklist) is a
-deliberate non-goal for now.
+## Sessions
 
-Like the Django admin, only active staff users get in: signing in requires
-`is_staff`, and every request checks it again, so deactivating a user or
-revoking their staff status ends their access immediately. Tokens are also
-bound to the user's password: changing or resetting it invalidates every
-token issued before, signing the user out everywhere.
+- **Short-lived.** A session stays active for an hour at a time
+  ([`TOKEN_LIFETIME`](/docs/settings#token_lifetime)) and renews itself
+  while the editor works. After a week without using the admin, the editor
+  logs in again ([`REFRESH_TOKEN_LIFETIME`](/docs/settings#refresh_token_lifetime)).
+- **Survives a reload.** Reloading the page keeps the editor logged in.
+- **Ends everywhere on a password change.** Changing or resetting a
+  password logs the user out on every device.
+- **Logging out** ends the session in that browser.
+
+Sessions are signed with your `SECRET_KEY`, or with
+[`TOKEN_SIGNING_KEY`](/docs/settings#token_signing_key) when you set one.
 
 ## Login backends
 
-The login backend decides how users sign in. The built-in
-`UsernamePasswordBackend` logs staff users in with their username and
-password, exactly like the Django admin. Login attempts are throttled per
-IP ([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate)).
+The login backend decides how editors log in. The built-in
+`UsernamePasswordBackend` checks the username and password, like the classic
+Django admin. Login attempts are limited per IP address
+([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate)).
 
 ```python
+# mysite/settings.py
 CONTENT_STUDIO = {
     "LOGIN_BACKENDS": [
         "content_studio.login_backends.UsernamePasswordBackend",
@@ -49,53 +47,62 @@ CONTENT_STUDIO = {
 ```
 
 :::note
-Version 1 supports the built-in login backend only. The backend interface
-(and the login form the interface renders for it) is internal for now;
-custom backends such as SSO or magic links are planned for a later release.
+Only the built-in login backend and token backend
+([`TOKEN_BACKEND`](/docs/settings#token_backend)) are supported. Custom
+backends, such as single sign-on, are not supported.
 :::
-
-## Token backend
-
-Tokens come from the token backend, `JsonWebTokenBackend` by default, set
-through the [`TOKEN_BACKEND`](/docs/settings#token_backend) setting. Version
-1 supports the built-in backend only; its interface is internal.
 
 ## Password reset
 
-The `content_studio.contrib.password_reset` app adds the classic email code
-flow:
+The `content_studio.contrib.password_reset` app lets editors reset a
+forgotten password with a code sent by email.
 
-```python
-INSTALLED_APPS = [
-    # ...
-    "content_studio.contrib.password_reset",
-]
+1. Add the app to `INSTALLED_APPS`:
 
-urlpatterns = [
-    path("admin/", include("content_studio.contrib.password_reset.urls")),
-    # ...
-]
-```
+   ```python
+   # mysite/settings.py
+   INSTALLED_APPS = [
+       # ...
+       "content_studio",
+       "content_studio.contrib.password_reset",
+   ]
+   ```
 
-Users request a code for their email, validate it, and set a new password.
-Only active staff users can reset their password, matched on their email
-(case-insensitive); an email shared by several users gets no code. Codes are
-six digits, generated with `secrets` and valid for 10 minutes (the
-[`PASSWORD_RESET_EXPIRATION_TIME`](/docs/settings#password_reset_expiration_time)
-setting). Failed attempts count per email, also across newly requested
-codes: after five, the email is locked out for an hour. The endpoints are
-rate limited per IP
-([`PASSWORD_RESET_THROTTLE_RATE`](/docs/settings#password_reset_throttle_rate)),
-and the new password goes through the project's `AUTH_PASSWORD_VALIDATORS`.
-Unknown emails and wrong codes answer identically, so the flow does not
-reveal which addresses exist. A reset signs the user out everywhere.
+2. Include its URLs under the admin's prefix:
 
-Configure `EMAIL_*` settings — Content Studio sends the code email with
-`send_mail`, as a [Django task](https://docs.djangoproject.com/en/stable/topics/tasks/).
-Without a configured task backend, Django runs the task right away, during
-the request. Configure a backend that runs tasks in a worker (`TASKS`) and the
-request only enqueues the mail: it then answers as fast for an unknown email
-as for a known one, so its response time does not reveal which addresses
-exist either. On Django 5.2, which has no tasks framework, the
-[`django-tasks`](https://pypi.org/project/django-tasks/) backport is used when
-installed; otherwise the mail is sent during the request.
+   ```python
+   # mysite/urls.py
+   from django.urls import include, path
+
+   urlpatterns = [
+       path("admin/", include("content_studio.contrib.password_reset.urls")),
+       path("admin/", include("content_studio.urls")),
+   ]
+   ```
+
+3. Configure Django's `EMAIL_*` settings, so the code emails can be sent.
+
+An editor requests a code for their email address, enters it, and sets a
+new password. How the flow protects itself:
+
+- Only active staff users can reset their password. The email address
+  matches regardless of case; an address shared by several users gets no
+  code.
+- Codes have six digits and are valid for 10 minutes
+  ([`PASSWORD_RESET_EXPIRATION_TIME`](/docs/settings#password_reset_expiration_time)).
+- Five wrong codes lock the email address out for an hour, also when new
+  codes are requested in between.
+- Requests are limited per IP address
+  ([`PASSWORD_RESET_THROTTLE_RATE`](/docs/settings#password_reset_throttle_rate)).
+- The new password must pass your project's `AUTH_PASSWORD_VALIDATORS`.
+- Unknown addresses and wrong codes get the same answer, so the flow does
+  not reveal which addresses have an account.
+
+The emails are sent as a [Django task](https://docs.djangoproject.com/en/stable/topics/tasks/).
+Without a task backend, Django runs the task during the request. Configure
+a backend that runs tasks in a worker (the `TASKS` setting) and the request
+only queues the email: it then takes as long for an unknown address as for a
+known one, so its duration does not reveal which addresses exist either.
+On Django 5.2, which has no tasks framework, the
+[`django-tasks`](https://pypi.org/project/django-tasks/) package is used when
+installed; otherwise the email is sent during the request.

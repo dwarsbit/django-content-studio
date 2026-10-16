@@ -186,7 +186,8 @@ admonitions or the README.
     `SiteSettings` (a singleton) and `LandingPage` (rich text);
   - studios `ArticleStudio`, `CategoryStudio`, `ReviewInline`;
   - the site: `class BlogStudioSite(ContentStudioSite)` in
-    `mysite/studio.py`, with the instance `studio_site = BlogStudioSite()`.
+    `mysite/studio.py`, with the instance `admin_site = BlogStudioSite()` (the name
+    `init_content_studio` generates).
 - **Plain Django first.** Show plain Django models and fields first; the
   built-in fields and models (`HTMLField`, `ContentModel`, …) come second,
   as an option. Never present them as the only way.

@@ -2,71 +2,81 @@
 sidebar_position: 4
 ---
 
-# 🛡️ Access control
+# 🔑 Access control
 
-Content Studio reuses the Django admin's permission system. A user needs
-Django's model permissions to see and change content in the studio, and the
-familiar `ModelStudio` hooks can restrict access further — per object.
+Content Studio uses the permission system of the classic Django admin. Only
+active staff users can log in, editors need Django's model permissions to
+see and change content, and the permission hooks on a studio can restrict
+access further, down to single objects.
 
 ## Model-level permissions
 
-Access is checked against the model studio's permission methods, which
-default to Django's model permissions:
+Each studio checks access through four permission methods. By default they
+check Django's model permissions:
 
-| Method | Default behavior |
-|--------|------------------|
+| Method | Default |
+|--------|---------|
 | `has_view_permission(request, obj=None)` | Django's `view` permission |
 | `has_add_permission(request, obj=None)` | Django's `add` permission |
 | `has_change_permission(request, obj=None)` | Django's `change` permission |
 | `has_delete_permission(request, obj=None)` | Django's `delete` permission |
 
-A staff user needs the matching Django permission on the model — superusers
-have them all. Grant them like anywhere else in Django, through groups or
+An editor needs the matching permission on the model; superusers have them
+all. Grant permissions as you would anywhere in Django, through groups or
 user permissions.
 
 ## Object-level permissions
 
-The per-object variants are honored throughout the interface — a user only
-sees and edits the objects you allow:
+The methods also receive the object, so a studio can decide per object. The
+admin respects the answer everywhere: an editor only sees and edits the
+objects you allow.
 
 ```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
+
+
 @register(Article)
 class ArticleStudio(ModelStudio):
     def has_view_permission(self, request, obj=None):
         if obj is None:
             return super().has_view_permission(request)
-        # Editors only see their own articles:
+        # Editors only see their own articles.
         return obj.author_id == request.user.id or request.user.is_superuser
 ```
 
-By default the object-level variants fall back to the model-level check, so
-behavior out of the box matches the classic admin. The same hooks protect
-everything around the objects too: related model options are only offered
-when the user may view the related model, and inline objects can only be
-attached to parents the user can see.
+Without an override, the object-level check falls back to the model-level
+check, as in the classic Django admin. The same methods also guard what
+surrounds an object: a related model's options only appear when the editor
+may view that model, and inline objects can only be added to parents the
+editor can see.
 
 ## Login throttling
 
-Login attempts are rate limited per IP; the default is 10 per minute. Change
-or disable it with the `LOGIN_THROTTLE_RATE` setting:
+Login attempts are limited per IP address, to 10 per minute by default.
+Change or disable the limit with the
+[`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate) setting:
 
 ```python
+# mysite/settings.py
 CONTENT_STUDIO = {
-    "LOGIN_THROTTLE_RATE": "5/min",  # or None to disable
+    "LOGIN_THROTTLE_RATE": "5/min",  # None disables the limit
 }
 ```
 
 :::note
-The limit is enforced through the cache. With the default per-process cache
-every worker counts separately — configure a shared cache (Redis, Memcached)
-for the full limit in multi-worker deployments.
+The limit is counted in the cache. With the default per-process cache, every
+worker counts separately; configure a shared cache such as Redis or
+Memcached when you run more than one worker.
 :::
 
-## What is deliberately not included
+## Field-level permissions
 
-- **Session invalidation after a password reset.** JWT access tokens remain
-  valid until they expire. Token blacklisting is planned for the auth
-  hardening release.
-- **Field-level permissions.** The editor exposes the model's fields;
-  restrict with a custom serializer or keep sensitive data out of admin
-  models.
+Content Studio has no per-field permissions: an editor who may change an
+object sees all fields the studio shows. To hide a field from every editor,
+leave it out of the edit page with `exclude` or `edit_main`. To protect
+sensitive data from some editors only, keep it in a separate model with its
+own permissions.

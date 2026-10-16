@@ -4,64 +4,105 @@ sidebar_position: 6
 
 # 📊 Dashboard
 
-The admin site's dashboard is composed in Python. Assign a `Dashboard` to the
-admin site and declare widgets:
+The dashboard is the admin's start page. You compose it in Python from
+widgets: statistics, lists of content, recent activity and scheduled tasks.
+
+## Compose a dashboard
+
+Most widgets get their data from a `get_data(request)` method you write.
+Subclass the built-in widget and implement it:
 
 ```python
-# settings.py
-from content_studio.dashboard import Dashboard
+# blog/dashboard.py
+from content_studio.dashboard.content_list import ContentListWidget
 from content_studio.dashboard.statistic import StatisticWidget
 
-from myproject.dashboard import ArticlesWidget, RecentContentWidget
+from .models import Article
 
 
-CONTENT_STUDIO = {
-    "ADMIN_SITE": "myproject.admin.content_studio_site",
-    ...
-}
+class PublishedArticlesWidget(StatisticWidget):
+    def get_data(self, request):
+        return {
+            "title": "Published articles",
+            "value": Article.objects.filter(status="published").count(),
+        }
+
+
+class LatestArticlesWidget(ContentListWidget):
+    def get_data(self, request):
+        articles = Article.objects.order_by("-published_at")[:5]
+        return {
+            "title": "Latest articles",
+            "content": [
+                {"model": "blog.article", "id": str(article.pk), "title": article.title}
+                for article in articles
+            ],
+        }
 ```
 
+Then give the site a `Dashboard` with the widgets, in the order they
+appear:
+
 ```python
-# myproject/admin.py
+# mysite/studio.py
 from content_studio.admin import ContentStudioSite
 from content_studio.dashboard import Dashboard
 from content_studio.dashboard.activity_log import ActivityLogWidget
-from content_studio.dashboard.content_list import ContentListWidget
+
+from blog.dashboard import LatestArticlesWidget, PublishedArticlesWidget
 
 
-class CustomStudioSite(ContentStudioSite):
+class BlogStudioSite(ContentStudioSite):
     dashboard = Dashboard(
         widgets=[
-            ArticlesWidget(),
-            RecentContentWidget(),
+            PublishedArticlesWidget(),
+            LatestArticlesWidget(),
             ActivityLogWidget(),
-            ContentListWidget(),
         ]
     )
 
 
-content_studio_site = CustomStudioSite()
+admin_site = BlogStudioSite()
 ```
 
-Every widget implements `get_data(request)` and returns plain data or a DRF
-serializer instance. `col_span` controls the widget's width in the grid.
+Point the [`ADMIN_SITE`](/docs/settings#admin_site) setting at the site:
+
+```python
+# mysite/settings.py
+CONTENT_STUDIO = {
+    "ADMIN_SITE": "mysite.studio.admin_site",
+}
+```
+
+`get_data` returns a dictionary with the widget's data, or a
+[Django REST Framework](https://www.django-rest-framework.org/api-guide/serializers/)
+serializer that validates it. A widget's `col_span` sets how many grid
+columns it spans.
 
 ## Built-in widgets
 
-- **`StatisticWidget`** — one number with a title, prefix/suffix and a trend
-  indicator. Implement `get_data` to compute the value.
-- **`ContentListWidget`** — a titled list of content links; return title,
-  description and content items (model, id, title).
-- **`ActivityLogWidget`** — the latest five `LogEntry` records (the audit
-  trail written by the CRUD API), ready to use without configuration. Only
-  entries on models the user may view are shown.
-- **`ScheduledTasksWidget`** — status of scheduled tasks (title, next run,
-  duration, status); implement `get_data` with your task runner.
-- **`SpacingWidget(col_span)`** — a spacer for grid tuning.
+- **`StatisticWidget`**: one number with a title. `get_data` returns
+  `value` and, optionally, `title`, `prefix`, `suffix`, a `trend` (a
+  percentage) and a `trend_sentiment` (`"positive"`, `"negative"` or
+  `"default"`).
+- **`ContentListWidget`**: a list of links to content. `get_data` returns a
+  `title`, an optional `description` and `content`: items with the `model`
+  label, the object's `id`, a `title` and an optional `description`.
+- **`ActivityLogWidget`**: the five latest changes made in the admin. It
+  needs no configuration and only shows changes to models the editor may
+  view.
+- **`ScheduledTasksWidget`**: the status of scheduled tasks, from your task
+  runner. `get_data` returns `tasks`: items with a `title`, `last_run_at`,
+  `next_run_at`, `duration` and a `status` (`"RUNNING"`,
+  `"SCHEDULED"`, `"SUCCESS"` or `"FAILURE"`).
+- **`SpacingWidget(col_span)`**: empty space, to align the grid.
+
+Keep the `name` of a built-in widget when you subclass it: the admin uses it
+to choose how to show the widget.
 
 ## Widget identity
 
-Widget data is fetched per widget, so IDs derive deterministically from the
-widget's class and name — every worker in a deployment agrees on them. Widgets of the same class and name need an explicit
-`widget_id` to disambiguate; duplicates are rejected at startup with a clear
-error.
+Each widget gets an ID from its class and name, so every worker of a
+deployment agrees on it. Two widgets of the same class need an explicit
+`widget_id` (a UUID) to tell them apart; `manage.py check` reports
+duplicates.

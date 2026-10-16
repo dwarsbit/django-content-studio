@@ -4,6 +4,10 @@ sidebar_position: 2
 
 # 🚀 Getting started
 
+This page takes you from installation to your first model in the admin. The
+examples use a blog project: the project package `mysite` and an app called
+`blog`.
+
 ## Install the package
 
 ```bash
@@ -12,73 +16,71 @@ pip install django-content-studio
 
 ## Configure Django
 
-Add Content Studio and Django REST Framework to `INSTALLED_APPS`. Keep
-`django.contrib.admin` installed: Content Studio records its activity log in
-the admin's `LogEntry` model. The order of the apps does not matter.
+1. Add Content Studio and [Django REST Framework](https://www.django-rest-framework.org/)
+   to `INSTALLED_APPS`. Keep `django.contrib.admin` installed: Content Studio
+   records its activity log with it. The order of the apps does not matter.
 
-```python
-# settings.py
-INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "rest_framework",
-    "content_studio",
-    # ... your apps
-]
-```
+   ```python
+   # mysite/settings.py
+   INSTALLED_APPS = [
+       "django.contrib.admin",
+       "django.contrib.auth",
+       "django.contrib.contenttypes",
+       "django.contrib.sessions",
+       "django.contrib.messages",
+       "django.contrib.staticfiles",
+       "rest_framework",
+       "content_studio",
+       "blog",
+   ]
+   ```
 
-Mount the interface at any prefix — `admin/` is the conventional choice:
+2. Mount the admin at a URL prefix. `admin/` is the usual choice; the admin
+   needs no other URL configuration.
 
-```python
-# urls.py
-from django.urls import include, path
+   ```python
+   # mysite/urls.py
+   from django.urls import include, path
 
-urlpatterns = [
-    path("admin/", include("content_studio.urls")),
-    # ... your urls
-]
-```
-
-The interface (and everything it needs) is served under this prefix — no
-further URL configuration required.
+   urlpatterns = [
+       path("admin/", include("content_studio.urls")),
+   ]
+   ```
 
 ## Initialize Content Studio
 
-The `init_content_studio` command sets up the pieces above and beyond:
+The `init_content_studio` command sets up the site and the settings:
 
 ```bash
 python manage.py init_content_studio
 ```
 
-It asks which model to use for the media library (item and folder — none
-by default), whether to use a tenant model, and which login backend to
-enable (today: `UsernamePasswordBackend`). The prompts are arrow-key
-selections; **ESC** asks for confirmation to abort the command. It then:
+It asks which models to use for the media library (an item and a folder
+model, none by default), whether to use a tenant model, and which login
+backend to enable. Choose with the arrow keys; **Esc** asks to cancel. The
+command then:
 
-- creates a `studio.py` next to your settings with a `ContentStudioSite`
-  instance, with the customization hooks commented in;
-- adds the `CONTENT_STUDIO` block to your settings, pointing
-  `ADMIN_SITE` at the new site — reported and skipped when a
-  `CONTENT_STUDIO` block already exists, so nothing you configured by
-  hand gets rewritten.
+- creates `studio.py` next to your settings, with the site (a
+  `ContentStudioSite` instance called `admin_site`) and its customization
+  hooks as comments;
+- adds a `CONTENT_STUDIO` block to your settings with `ADMIN_SITE` pointing
+  at the new site. If the block already exists, the command reports it and
+  leaves your settings as they are.
 
-Every choice can also be passed as a flag, so the command runs unattended:
-`--media-item`, `--media-folder`, `--tenant` (each as `app_label.Model`)
-and `--login-backend`, plus `--no-input` to accept the defaults for
-everything unset. The command validates its choices through
-[System checks](/docs/system-checks) — run `manage.py check` afterwards.
+To run the command without prompts, pass every choice as a flag:
+`--media-item`, `--media-folder` and `--tenant` (each as
+`app_label.Model`), `--login-backend`, and `--no-input` for the defaults of
+everything else. Run `manage.py check` afterwards: the
+[system checks](/docs/system-checks) report any problem with the
+configuration.
 
 ## Register a model
 
+Take a plain Django model:
+
 ```python
-# apps/blog/admin.py
+# blog/models.py
 from django.db import models
-from content_studio import register
-from content_studio.admin import ModelStudio
 
 
 class Article(models.Model):
@@ -94,6 +96,17 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
+```
+
+Register it with a studio in the app's `admin.py`, where Content Studio
+looks for registrations:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
 
 
 @register(Article)
@@ -103,22 +116,18 @@ class ArticleStudio(ModelStudio):
     search_fields = ["title"]
 ```
 
-That's it. 🎉 Start the development server and open `/admin/`: the article
-appears in the menu, with a list view (searchable, filterable) and an edit
-view rendered from the model's fields.
-
 ## Log in
 
-Content Studio authenticates through JSON Web Tokens. By default the
-`UsernamePasswordBackend` is enabled: log in with the username and password of
-any staff user, exactly like the Django admin. Custom login backends and
-throttling are covered under [authentication](/docs/authentication).
+Start the development server and open `/admin/`. Log in with the username
+and password of a staff user, as in the classic Django admin. Articles
+appear in the menu, with a list page you can search and filter, and an edit
+page built from the model's fields.
 
-## Where to go next
+## Next steps
 
-- [Registering models](/docs/content/registering-models) — every `ModelStudio`
+- [Registering models](/docs/content/registering-models): every studio
   option, singletons and inlines.
-- [Access control](/docs/permissions) — model and object permissions.
-- [Widgets and forms](/docs/forms/widgets) — dedicated field editors and
-  custom layouts.
-- [Settings reference](/docs/settings) — every `CONTENT_STUDIO` option.
+- [Access control](/docs/permissions): model and object permissions.
+- [Widgets](/docs/forms/widgets) and [form sets](/docs/forms/form-sets):
+  field editors and edit page layouts.
+- [Settings](/docs/settings): every `CONTENT_STUDIO` setting.

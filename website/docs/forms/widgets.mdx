@@ -1,53 +1,47 @@
 # 🧩 Widgets
 
-Every field renders with a widget. Widgets are chosen by field type through
-the studio site's `default_widget_mapping`:
+Every field on the edit page is edited with a widget. Content Studio picks
+the widget from the field's type, so most models need no configuration.
 
-```python
-from content_studio.admin import ContentStudioSite
-from content_studio import widgets
-
-
-class MyStudioSite(ContentStudioSite):
-    default_widget_mapping = {
-        **ContentStudioSite.default_widget_mapping,
-        models.EmailField: widgets.InputWidget,
-    }
-```
-
-## Default mapping
+## Default widgets
 
 | Field type | Widget |
 |-----------|--------|
-| `CharField` and numeric fields | `InputWidget` |
+| `CharField` and number fields | `InputWidget` |
 | `SlugField` | `SlugWidget` |
 | `TextField` | `TextAreaWidget` |
 | `BooleanField` | `CheckboxWidget` |
-| `ForeignKey` / `OneToOneField` | `ForeignKeyWidget` |
+| `ForeignKey`, `OneToOneField` | `ForeignKeyWidget` |
 | `ManyToManyField` | `ManyToManyWidget` |
-| `DateField` / `DateTimeField` / `TimeField` | Dedicated date/time widgets |
+| `DateField`, `DateTimeField`, `TimeField` | `DateWidget`, `DateTimeWidget`, `TimeWidget` |
 | `JSONField` | `JSONWidget` |
 | `HTMLField` (built-in) | `RichTextWidget` |
-| `TagField`, `FlexField`, `MultipleChoiceField`, `URLPathField` (built-in) | Dedicated widgets |
-| `MediaField` / `ManyMediaField` (built-in) | Media picker widgets |
-| `"AutoSlugField"` (string key) | `SlugWidget` |
+| `TagField` (built-in) | `TagWidget` |
+| `FlexField` (built-in) | `JSONSchemaWidget` |
+| `MultipleChoiceField` (built-in) | `MultiSelectWidget` |
+| `URLPathField` (built-in) | `URLPathWidget` |
+| `MediaField`, `ManyMediaField` (built-in) | `MediaWidget`, `ManyMediaWidget` |
+| `AutoSlugField` (django-extensions) | `SlugWidget` |
 
-Unknown field types fall back to a plain input; unknown widget names fall
-back to a read-only display. Choice fields render as selects automatically.
-Two widgets outside the default mapping are available for overrides:
-a `SwitchWidget` for `BooleanField`s better presented as a toggle, and a
-`ToggleGroupWidget` for choice fields better presented as a group of
-toggles — exactly one active at a time, and a required field cannot be
-left without one.
+Fields with choices get a select. Fields of other types get a plain input.
 
-## Per-field override
+Two widgets are not used by default but are there to choose:
 
-The mapping is a default, not a verdict: pass a widget class to a `Field` in
-`edit_main` or `edit_sidebar` to render that one field differently.
+- **`SwitchWidget`**: a toggle switch, for a `BooleanField`.
+- **`ToggleGroupWidget`**: a row of buttons for a field with choices, of
+  which exactly one is active.
+
+## Use another widget for one field
+
+Pass a widget class to a `Field` in `edit_main` or `edit_sidebar`:
 
 ```python
+# blog/admin.py
+from content_studio import register, widgets
+from content_studio.admin import ModelStudio
 from content_studio.form import Field, FormSet
-from content_studio import widgets
+
+from .models import Article
 
 
 @register(Article)
@@ -55,27 +49,47 @@ class ArticleStudio(ModelStudio):
     edit_main = [
         FormSet(
             fields=[
-                Field("summary", widget=widgets.TextAreaWidget),
+                "title",
+                Field("featured", widget=widgets.SwitchWidget),
             ],
         ),
     ]
 ```
 
-The override applies to the editing widget only; read-only fields keep
-formatting their value through the format mapping.
+The widget only changes how the field is edited. Read-only fields keep
+showing their value through its format.
 
-## Custom widgets
+## Change the default for a field type
 
-The widget classes are markers: the interface ships a renderer for each
-built-in widget, and a widget is identified by its class name. Version 1
-supports the built-in widgets and formats only — map fields to any of
-them, but subclassing `BaseWidget` or `BaseFormat` has no renderer to pair
-with. Custom widgets and formats are planned for a later release, together
-with a way to extend the interface.
+To change the widget for every field of a type, extend the site's
+`default_widget_mapping`:
+
+```python
+# mysite/studio.py
+from django.db import models
+
+from content_studio import widgets
+from content_studio.admin import ContentStudioSite
+
+
+class BlogStudioSite(ContentStudioSite):
+    default_widget_mapping = {
+        **ContentStudioSite.default_widget_mapping,
+        models.EmailField: widgets.InputWidget,
+    }
+
+
+admin_site = BlogStudioSite()
+```
 
 ## Formats
 
-List values are formatted through the site's parallel
-`default_format_mapping`: dates, times, booleans, numbers, tags, HTML and
-media references each have a formatter, and the mapping is customized on
-the `ContentStudioSite` in the same way as widgets.
+Values on the list page and in read-only fields are shown through formats:
+dates, times, booleans, numbers, tags, rich text and media each have one.
+The site's `default_format_mapping` maps field types to formats, and you
+change it the same way as `default_widget_mapping`.
+
+## Custom widgets and formats
+
+Only the built-in widgets and formats are supported. The admin has no way
+to show a widget or format class of your own.

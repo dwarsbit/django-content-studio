@@ -4,41 +4,45 @@ sidebar_position: 10
 
 # 🔌 Extensions
 
-Extensions add external things to the interface without building frontend
-code: menu links and full pages rendered in an iframe.
+Extensions add links and pages to the admin's menu: a link to an external
+tool, or another web application shown inside the admin.
 
 ```python
+# mysite/studio.py
 from content_studio.admin import ContentStudioSite
 from content_studio.extensions import IFramePage, MainMenuLink
 
 
-class CustomStudioSite(ContentStudioSite):
+class BlogStudioSite(ContentStudioSite):
     extensions = [
         MainMenuLink(
-            url="https://plausible.io/myproject",
+            url="https://plausible.io/example.com",
             label="Analytics",
             icon="pi-chart-line",
         ),
         IFramePage(
             path="reports/",
-            iframe_url="https://metabase.myproject.com/dashboard/1",
+            iframe_url="https://metabase.example.com/dashboard/1",
         ),
     ]
+
+
+admin_site = BlogStudioSite()
 ```
 
 ## MainMenuLink
 
-A link in the studio's main menu — `url`, `label`, an `icon`, an optional
-`color` and a `weight` for ordering.
+A link in the admin's main menu. It takes a `url`, a `label` and an `icon`,
+and optionally a `color` and a `weight` that orders the links.
 
 ## IFramePage
 
-A studio route that renders any web page in an iframe: `path` is the route
-under the studio prefix, `iframe_url` the page.
+A page in the admin that shows another web page in an iframe. `path` is the
+page's address under the admin's URL prefix, `iframe_url` the page it shows.
 
 ## Identity
 
-Extensions are identified by an ID derived from their class and defining
-properties (`get_id_parts()`), so every worker agrees on them. Pass an
-explicit `extension_id` (a UUID) when two extensions share their parts —
-duplicates are rejected at startup with a clear error.
+Each extension gets an ID from its class and its settings, so every worker
+of a deployment agrees on it. Two extensions with the same settings need an
+explicit `extension_id` (a UUID) to tell them apart; `manage.py check`
+reports duplicates.

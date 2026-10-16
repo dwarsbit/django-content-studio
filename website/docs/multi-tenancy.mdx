@@ -4,49 +4,56 @@ sidebar_position: 9
 
 # 🧭 Multi-tenancy
 
-Multi-tenant projects have one tenant model, one foreign key per tenant-scoped
-model, and one authorization hook. Configure the tenant model:
+With multi-tenancy, one admin serves several tenants, such as the
+organizations of a platform. Editors pick a tenant and only see and change
+that tenant's content.
 
-```python
-CONTENT_STUDIO = {
-    "TENANT_MODEL": "organizations.models.Organization",
-}
-```
+## Set it up
 
-Content Studio finds the tenant field on each registered model automatically:
-the single foreign key pointing at the tenant model. Models without one are
-global and unaffected.
+1. Point the [`TENANT_MODEL`](/docs/settings#tenant_model) setting at your
+   tenant model:
+
+   ```python
+   # mysite/settings.py
+   CONTENT_STUDIO = {
+       "TENANT_MODEL": "organizations.models.Organization",
+   }
+   ```
+
+2. Give each model that belongs to a tenant a foreign key to the tenant
+   model. Content Studio finds it on its own: the one foreign key that points
+   at the tenant model. Models without one are shared by all tenants.
 
 ## How content is scoped
 
-The selected tenant travels with every request the interface makes. The
-backend:
+Editors choose a tenant in the admin, and everything they do happens within
+it:
 
-- **fails closed** — a tenant-scoped model without a selected tenant returns
-  no rows
-- rejects tenants the user may not access
-- scopes every query to the tenant, and stamps it on creates
+- Lists and searches only show the selected tenant's objects.
+- New objects are assigned to the selected tenant.
+- Without a selected tenant, tenant models show no objects at all.
+- A tenant the editor may not access is refused.
 
-## Authorization: `get_tenants`
+## Decide who works in which tenant
 
-Which tenants a user may see is decided in one place — the admin site's
-`get_tenants` hook. The default returns all tenants:
+The site's `get_tenants` method decides which tenants an editor may work in.
+It feeds the tenant selector and guards every page, so this one method is
+all the authorization multi-tenancy needs. By default it returns all
+tenants:
 
 ```python
-class CustomStudioSite(ContentStudioSite):
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+
+
+class BlogStudioSite(ContentStudioSite):
     def get_tenants(self, tenant_model, **kwargs):
-        # The single authorization hook: the tenant selector and every
-        # data query both go through it.
-        user = kwargs.get("request").user
+        user = kwargs["request"].user
         return tenant_model.objects.filter(members=user)
+
+
+admin_site = BlogStudioSite()
 ```
 
-The hook feeds the tenant selector in the interface, so users can only choose
-tenants they may work in — and the same list authorizes the API.
-
-## Admin sites
-
-The admin site itself is customizable: subclass `ContentStudioSite`, override its
-hooks (tenants, thumbnails, media serializer fields, dashboard, extensions)
-and point the [`ADMIN_SITE` setting](/docs/settings#admin_site) at your
-instance.
+Point the [`ADMIN_SITE`](/docs/settings#admin_site) setting at the site to
+use it.

@@ -4,44 +4,44 @@ sidebar_position: 14
 
 # 🔎 System checks
 
-Content Studio validates its configuration through Django's check
-framework (`manage.py check`, runserver startup, `makemigrations`, CI).
-Errors mean a configuration is broken at runtime — a typo that would
-otherwise fail silently or crash a request. Warnings mean the
-configuration runs, but with an unintended consequence. Nothing blocks
-startup; the exit code of `manage.py check` differs.
+Content Studio checks its configuration with Django's system check
+framework: on `manage.py check`, when the development server starts, on
+`makemigrations` and in your CI. An error means the configuration is broken
+and would fail at runtime, often silently. A warning means it works, but
+probably not as you intended. Neither stops the server from starting, but
+`manage.py check` exits with an error code.
 
 ## Errors
 
-| ID | Catches |
+| ID | Reports |
 |----|---------|
-| `content_studio.E001` | `list_display` set to a mapping — the list view's role mapping is `list_item_display`; `list_display` configures the table columns. |
-| `content_studio.E002` | `list_views` containing unknown view names. |
-| `content_studio.E003` | Duplicate extension IDs — pass `extension_id` to disambiguate. |
-| `content_studio.E004` | Duplicate dashboard widget IDs — pass `widget_id` to disambiguate. |
-| `content_studio.E005` | Duplicate component IDs — pass `component_id` to disambiguate. |
-| `content_studio.E006` | `table_display` entries that are neither field names nor `TableColumn` objects, duplicate columns, columns that resolve to neither a model field, `__str__` nor a studio method, and formats that are not `content_studio.formats` classes. Inlines are validated too. |
-| `content_studio.E007` | Bulk actions: an `actions` list naming unknown or duplicate actions, a `@bulk_action` shadowing the built-in delete, and unknown permissions. |
-| `content_studio.E008` | `soft_delete` naming an unknown field, or a field that is not a nullable date or datetime. |
-| `content_studio.E009` | [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) without a `MEDIA_LIBRARY_MODEL`, or naming a field that does not exist or is not a `JSONField`. |
-| `content_studio.E010` | Edit form fields naming anything but a model field — they would render as empty read-only boxes — and `Field(widget=...)` overrides that are not `content_studio.widgets` classes. |
-| `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that do not resolve to a field, and `list_item_display` values that are neither a field nor a model method. Inlines are validated too. |
+| `content_studio.E001` | `list_display` set to a mapping. The list view's mapping belongs in `list_item_display`; `list_display` sets the table columns. |
+| `content_studio.E002` | `list_views` with an unknown view name. |
+| `content_studio.E003` | Two extensions with the same ID. Pass an `extension_id` to tell them apart. |
+| `content_studio.E004` | Two dashboard widgets with the same ID. Pass a `widget_id` to tell them apart. |
+| `content_studio.E005` | Two components with the same ID. Pass a `component_id` to tell them apart. |
+| `content_studio.E006` | `table_display` entries that are not field names or `TableColumn` objects, duplicate columns, columns that are not a model field, `__str__` or a studio method, and formats that are not `content_studio.formats` classes. Inlines are checked too. |
+| `content_studio.E007` | Bulk actions: an `actions` list with unknown or duplicate names, a `@bulk_action` that replaces the built-in delete, or an unknown permission. |
+| `content_studio.E008` | `soft_delete` naming an unknown field, or a field that is not a nullable date or date and time. |
+| `content_studio.E009` | [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) without a `MEDIA_LIBRARY_MODEL`, or naming a field that is missing or not a `JSONField`. |
+| `content_studio.E010` | Edit page fields that are not model fields, which would show as empty read-only boxes, and `Field(widget=...)` values that are not `content_studio.widgets` classes. |
+| `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that are not a field, and `list_item_display` values that are not a field or a model method. Inlines are checked too. |
 | `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key to the parent model. |
-| `content_studio.E013` | Site-level `default_widget_mapping` / `default_format_mapping` values that are not widget or format classes. |
-| `content_studio.E014` | A malformed `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` (not a list of extensions without the leading dot) or `MEDIA_LIBRARY_MAX_UPLOAD_SIZE` (not a positive number of bytes). |
+| `content_studio.E013` | Values in the site's `default_widget_mapping` or `default_format_mapping` that are not widget or format classes. |
+| `content_studio.E014` | A `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` that is not a list of extensions without the dot, or a `MEDIA_LIBRARY_MAX_UPLOAD_SIZE` that is not a positive number of bytes. |
 
 ## Warnings
 
-| ID | Catches |
+| ID | Reports |
 |----|---------|
-| `content_studio.W001` | A required model field missing from `edit_main` and `edit_sidebar` — saving fails validation. Fields with a default, nullable fields and blank fields never count, and neither do the fields Content Studio fills itself. |
-| `content_studio.W002` | A required model field configured `readonly=True` in the edit form — the value can never be provided, so saving fails validation. |
-| `content_studio.W003` | A choice-driven widget (`SelectWidget`, `MultiSelectWidget`, `ToggleGroupWidget`, `RadioButtonWidget`) on a field without choices — it would render empty. |
-| `content_studio.W004` | `sortable_by` names that are not `table_display` columns — the sort UI only attaches to table columns. |
-| `content_studio.W005` | Non-string `list_filter` entries (filter classes, tuples) — only field-name strings are filterable, the rest is ignored. |
-| `content_studio.W006` | A model group listing a model that is not registered with the site — a dead menu entry. |
-| `content_studio.W007` | A media library model missing the documented contract fields (`file`, `name`, `type`), or a folder model missing `name` / `parent`. |
-| `content_studio.W008` | A `crop_image` hook on the admin site without a configured `MEDIA_LIBRARY_MODEL` — the hook is never called. |
-| `content_studio.W009` | An empty `LOGIN_BACKENDS` setting — nobody can sign in. |
-| `content_studio.W010` | `list_display` used for the table columns — it works as an alias, but rename it to `table_display`. Also reported when both are set, as `list_display` is then ignored. Inlines are checked too. |
-| `content_studio.W011` | A studio overriding `get_list_display` — it is never called; the list view's hook is `get_list_item_display`. |
+| `content_studio.W001` | A required model field missing from `edit_main` and `edit_sidebar`, so saving fails. Fields with a default, nullable or blank fields, and fields Content Studio fills in itself do not count. |
+| `content_studio.W002` | A required model field set to `readonly=True` on the edit page, so it can never be filled in and saving fails. |
+| `content_studio.W003` | A choice widget (`SelectWidget`, `MultiSelectWidget`, `ToggleGroupWidget`, `RadioButtonWidget`) on a field without choices, which would show empty. |
+| `content_studio.W004` | `sortable_by` names that are not `table_display` columns. Sorting only applies to table columns. |
+| `content_studio.W005` | `list_filter` entries that are not field names, such as filter classes or tuples. They are ignored. |
+| `content_studio.W006` | A model group with a model that is not registered with the site, which leaves an empty menu entry. |
+| `content_studio.W007` | A media item model without `file`, `name` or `type`, or a folder model without `name` or `parent`. |
+| `content_studio.W008` | A `crop_image` method on the site without a `MEDIA_LIBRARY_MODEL`, so it is never called. |
+| `content_studio.W009` | An empty `LOGIN_BACKENDS` setting, so nobody can log in. |
+| `content_studio.W010` | `list_display` used for the table columns. It works, but rename it to `table_display`. When both are set, `list_display` is ignored. Inlines are checked too. |
+| `content_studio.W011` | A studio that overrides `get_list_display`, which is never called. The list view uses `get_list_item_display`. |

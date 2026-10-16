@@ -4,24 +4,50 @@ sidebar_position: 7
 
 # 🖼️ Media library
 
-The media library manages uploads in folders and lets fields reference them.
-Point it at your own media and folder models:
+The media library is where editors upload and organize files: images,
+video, audio and documents, in folders. Fields such as `MediaField` then
+pick files from it. The library works with your own media models, or with
+the ready-made models Content Studio ships.
+
+## Set it up with your own models
+
+Point the settings at a media item model and, optionally, a folder model:
 
 ```python
+# mysite/settings.py
 CONTENT_STUDIO = {
-    "MEDIA_LIBRARY_MODEL": "myapp.models.MediaItem",
-    "MEDIA_LIBRARY_FOLDER_MODEL": "myapp.models.MediaFolder",
+    "MEDIA_LIBRARY_MODEL": "blog.models.MediaItem",
+    "MEDIA_LIBRARY_FOLDER_MODEL": "blog.models.MediaFolder",
 }
 ```
 
-Content Studio also ships a ready-made media library app — models for
-media items and folders that follow the contract below, migrations
-included. Enable it by adding the app and pointing the settings at its
-models:
+A media item model needs these fields:
+
+- `file`: the upload, a `FileField` or `ImageField`.
+- `name`: shown on the item and used by the search.
+- `type`: one of `"image"`, `"video"`, `"audio"` or `"file"`; it decides
+  the preview.
+- `tags` (optional): a list of strings, such as a `JSONField`, an
+  `ArrayField` or the built-in `TagField`. Searched together with the name.
+- A focal point field (optional): a `JSONField`, named in
+  [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr).
+
+A folder model needs a `name` and a `parent` foreign key to itself. System
+check `content_studio.W007` reports missing fields. Without the
+`MEDIA_LIBRARY_MODEL` setting, the media library does not appear in the
+admin.
+
+## Or use the built-in models
+
+The `content_studio.media_library` app ships media item and folder models
+that follow these rules, with migrations. Add the app and point the
+settings at its models:
 
 ```python
+# mysite/settings.py
 INSTALLED_APPS = [
     # ...
+    "content_studio",
     "content_studio.media_library",
 ]
 
@@ -31,87 +57,51 @@ CONTENT_STUDIO = {
 }
 ```
 
-## Model contract
+## Working in the media library
 
-The interface works with any model, but it expects a handful of fields. Your
-media model needs:
+Editors upload files with the upload button or by dragging them onto the
+library, and add tags in the same step when the model has a `tags` field.
+They move files between folders, edit their details, and copy or download a
+file from its menu.
 
-- a `file` field (the upload)
-- a `name` — used by the library's search
-- a `type` — `"image"`, `"video"`, `"audio"` or `"file"` drive the grid
-  previews and thumbnails
-- optionally `tags`, searched alongside the name — a list-typed field
-  (a `JSONField` of strings, an `ArrayField`, or the built-in
-  `TagField`); the tags input in the item editor works on the list
-- optionally a `JSONField` for the focal point — set
-  [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) to its name and the
-  item editor offers a click-to-set focal point, stored as
-  `{"x": 0-100, "y": 0-100}` (percentages of the image's dimensions)
-
-Folder models need a self-referencing `parent` field; the rest (name,
-children) follows from it. An unconfigured media library simply does not
-appear in the interface. Missing contract fields are reported by the
-`content_studio.W007` system check (see
-[System checks](/docs/system-checks)).
-
-## Managing media
-
-The library is fully managed in the interface: upload files (with tags in the
-same go when the model has a `tags` field), move them between folders and edit
-their details — all against the models you configure. Image items can carry a
-crop selection (see [cropping](#cropping-and-focal-points)) and a focal point, applied on save.
-
-Three views are offered through a toggle: the **grid** (thumbnails), a
-**list** of rich rows and a **table** with sortable columns (name, type and
-size — whatever the configured model carries). The view, the filters and
-the ordering are remembered per media model, while the search and the
-current folder live in the URL — so filtered views survive reloads and
+The library has three views: a **grid** of thumbnails, a **list** and a
+**table** with sortable columns for name, type and size. The admin remembers
+the view, the filters and the sort order per media model. The search and the
+current folder are part of the URL, so a filtered view survives a reload and
 the back button.
 
-The search box matches the name and the tags. Two filters narrow the items:
+The search matches names and tags. Two filters narrow the items further:
 
-- the **type** — any of image, video, audio and file
-- the **tags** — a searchable multi-select of the tags currently on
-  the library's items, matching any of the selected tags
+- **Type**: image, video, audio or file.
+- **Tags**: any of the selected tags.
 
-When folders are configured, the search either stays in the current folder
-or searches across the whole library, through the toggle next to the
-search box. Folders carry their item counts, and the header shows the
-total.
+With folders, the search covers the current folder or the whole library, set
+with the toggle next to the search box. Each folder shows how many items it
+holds.
 
-Select items (a checkbox on every card, row or table line) to run bulk
-actions: **delete** — with confirmation — and **move to folder**. The
-actions run through one endpoint, permission-checked per action (delete
-needs the model's delete permission, moving its change permission).
+Select items to delete them or move them to another folder. Deleting needs
+the model's delete permission, moving its change permission.
 
-Files can also be uploaded by dragging them onto the library, with
-per-file progress, and each item's context menu offers **Copy URL** and
-**Download**.
+## Uploads
 
-Uploads are checked against an allowlist of file extensions and a maximum
-size ([`MEDIA_LIBRARY_ALLOWED_EXTENSIONS`](/docs/settings#media_library_allowed_extensions)
-and [`MEDIA_LIBRARY_MAX_UPLOAD_SIZE`](/docs/settings#media_library_max_upload_size)),
-and files whose content is markup are rejected — an HTML or SVG file served
-from your own domain could run scripts in your users' sessions.
+The media library accepts the file types in
+[`MEDIA_LIBRARY_ALLOWED_EXTENSIONS`](/docs/settings#media_library_allowed_extensions),
+up to [`MEDIA_LIBRARY_MAX_UPLOAD_SIZE`](/docs/settings#media_library_max_upload_size)
+(50 MB by default). It rejects files whose content is markup, such as HTML or
+SVG: served from your own domain, such a file could run scripts in your
+editors' sessions.
 
-## Hooks
+## Customize with site hooks
 
-- **`ContentStudioSite.get_thumbnail(obj)`** — returns the thumbnail URL for an image
-  item. The default returns `obj.file.url`; override to point at a
-  pre-generated variant.
-- **`ContentStudioSite.get_media_serializer_fields(media_model)`** — controls which
-  fields the serializer exposes. The default is `__all__`; override to keep
-  sensitive custom fields out of the API.
-- **`ContentStudioSite.crop_image(obj, crop_info)`** — enables cropping. The base
-  `ContentStudioSite` does not define it; add the method to your site subclass and the
-  item editor offers a crop selection for images. The crop info — the
-  selection as percentages, `{"x": "10.00", "y": "20.00", "width": "50.00",
-  "height": "40.00", "unit": "%"}` — is passed through verbatim when the item
-  is saved; what cropping means (a derivative, an in-place resize, a stored
-  preset) is up to the implementation.
+Three methods on the site change how the media library behaves. Add them to
+your site subclass:
 
 ```python
-class CustomStudioSite(ContentStudioSite):
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+
+
+class BlogStudioSite(ContentStudioSite):
     def get_thumbnail(self, obj):
         return obj.thumbnail.url if obj.thumbnail else obj.file.url
 
@@ -119,17 +109,34 @@ class CustomStudioSite(ContentStudioSite):
         return ["id", "name", "type", "tags", "file", "folder"]
 
     def crop_image(self, obj, crop_info):
-        # Apply the crop to obj's file however your project sees fit.
+        # Crop obj's file the way your project needs.
         ...
+
+
+admin_site = BlogStudioSite()
 ```
+
+- **`get_thumbnail(obj)`** returns the thumbnail URL of an image. By
+  default, the file's own URL.
+- **`get_media_serializer_fields(media_model)`** returns the fields of a
+  media item the admin works with. By default, all fields; leave out fields
+  editors should not see.
+- **`crop_image(obj, crop_info)`** turns on cropping (see below).
 
 ## Cropping and focal points
 
-A crop does not live on the media item: selecting one in the item editor sends
-it to the site's `crop_image(obj, crop_info)` hook (see
-[Hooks](#hooks)), which returns control to the editor with the updated item.
-Without the hook, no crop UI appears.
+Cropping appears once the site defines `crop_image`. When an editor saves a
+crop selection, the admin passes it to the method as percentages of the
+image:
 
-The focal point, by contrast, is stored on the item: name its `JSONField` with
-[`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) and the editor offers a
-click-to-set focal point saved with the rest of the item's details.
+```python
+{"x": "10.00", "y": "20.00", "width": "50.00", "height": "40.00", "unit": "%"}
+```
+
+What a crop does is up to your method: create a derivative, resize the file
+in place or store the selection. The edit page then shows the updated item.
+
+A focal point is stored on the item itself. Name its `JSONField` in
+[`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) and editors can click
+the image to set it; it is saved as `{"x": 0-100, "y": 0-100}`, percentages
+of the image's width and height.

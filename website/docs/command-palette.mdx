@@ -4,39 +4,43 @@ sidebar_position: 13
 
 # ⌨️ Command palette
 
-The command palette is the fast way around the studio: press
-**⌘K** (macOS) or **Ctrl K** (Windows/Linux), or click the search
-button at the top of the main menu, and jump anywhere.
+The command palette is the quickest way around the admin. Press **⌘K** on
+macOS or **Ctrl K** on Windows and Linux, or click the search button at the
+top of the main menu, and type where you want to go.
 
 ## What it offers
 
-- **Navigate** — the dashboard, the media library and every registered
-  model you may view.
-- **Create** — a `new <model>` entry for every model you may add.
-- **Trash** — the trash page of every model with
-  [soft delete](/docs/content/registering-models#soft-delete-and-the-trash)
-  configured.
-- **Theme** — switch between light, dark and system.
+- **Navigate** to the dashboard, the media library and every registered
+  model the editor may view.
+- **Create** a new object of every model the editor may add.
+- **Trash**: the trash page of every model with
+  [soft delete](/docs/content/registering-models#soft-delete-and-the-trash).
+- **Theme**: light, dark or the system setting.
 - **Log out**.
 
-Entries filter as you type.
+The entries filter as you type.
 
-## Global search
+## Search
 
-Type two characters or more and the palette also searches the
-objects themselves: every registered model with `search_fields` is
-searched with the same match its own list view uses, and matches
-appear grouped under *Search results*. Picking one opens the object
-in the editor.
+After two or more characters, the palette also searches the objects
+themselves: every registered model with `search_fields`, matched the same way
+as on its list page. Results appear grouped by model; picking one opens its
+edit page.
 
 ```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
+
+
 @register(Article)
 class ArticleStudio(ModelStudio):
-    search_fields = ["title"]  # searchable from the palette
+    search_fields = ["title"]  # also searched from the palette
 ```
 
-The search respects your permissions (only models you may view are
-searched), multi-tenancy (only the current tenant's rows) and soft
-delete (trashed objects stay hidden). Results are capped at five per
-model so one chatty table cannot drown out the rest — the list view's
-own search remains the tool for exhaustive queries.
+The search only covers models the editor may view, only the selected
+tenant's objects, and leaves out objects in the trash. It shows at most five
+results per model, so one large model cannot crowd out the others; the list
+page's own search finds everything.
