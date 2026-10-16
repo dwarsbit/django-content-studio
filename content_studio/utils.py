@@ -5,6 +5,7 @@ from typing import Optional
 from urllib.error import URLError
 from urllib.request import urlopen
 
+from packaging.version import InvalidVersion, Version
 from rich.console import Console
 
 from content_studio.settings import cs_settings
@@ -195,15 +196,48 @@ def normalize_version(version: str) -> str:
     return version
 
 
-def get_latest_version() -> Optional[str]:
-    """Fetch the latest version of django-content-studio from PyPI"""
+def get_latest_version(include_prereleases: bool = False) -> Optional[str]:
+    """
+    The newest release of django-content-studio on PyPI, or None when PyPI
+    cannot be reached. Yanked releases are skipped, and so are
+    pre-releases unless include_prereleases is set (an installed
+    pre-release should hear about newer pre-releases too).
+    """
     try:
-        # Fetch the PyPI JSON API for django-content-studio
         with urlopen(
             "https://pypi.org/pypi/django-content-studio/json", timeout=5
         ) as response:
             data = json.loads(response.read().decode("utf-8"))
-            return data.get("info", {}).get("version")
-    except (URLError, json.JSONDecodeError, KeyError):
-        # If there's any error (network, JSON parsing, etc.), return None
+    except (URLError, OSError, ValueError):
         return None
+
+    return newest_release(data.get("releases", {}), include_prereleases)
+
+
+def newest_release(releases: dict, include_prereleases: bool) -> Optional[str]:
+    """The newest version among PyPI's releases mapping (version -> files)."""
+    candidates = []
+
+    for version, files in releases.items():
+        if files and all(file.get("yanked") for file in files):
+            continue
+
+        try:
+            parsed = Version(version)
+        except InvalidVersion:
+            continue
+
+        if parsed.is_prerelease and not include_prereleases:
+            continue
+
+        candidates.append((parsed, version))
+
+    return max(candidates)[1] if candidates else None
+
+
+def is_newer_version(latest: str, current: str) -> bool:
+    """Whether latest is a newer version than current (PEP 440 ordering)."""
+    try:
+        return Version(latest) > Version(current)
+    except InvalidVersion:
+        return False

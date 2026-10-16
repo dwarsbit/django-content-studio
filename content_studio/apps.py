@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 from django.contrib.auth import get_user_model
+from packaging.version import Version
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -9,6 +10,7 @@ from .settings import cs_settings
 from .utils import (
     is_runserver,
     get_latest_version,
+    is_newer_version,
     get_tenant_scoped_queryset,
     normalize_version,
 )
@@ -49,20 +51,20 @@ class DjangoContentStudioConfig(AppConfig):
         log("[bold magenta]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold magenta]")
         log("[bold cyan]Django Content Studio[/bold cyan]")
 
-        # Check for a newer version
-        latest_version = get_latest_version()
-        if latest_version:
-            latest_version = normalize_version(latest_version)
-            current_version = normalize_version(VERSION)
-            if latest_version != current_version:
-                log("[yellow]⚠️  New version available[/yellow]")
-                log(
-                    f"Current: [bold]{current_version}[/bold] → Latest: {latest_version}"
-                )
-            else:
-                log(f"[bold]Version {current_version}[/bold]")
+        # Check for a newer release; an installed pre-release also hears
+        # about newer pre-releases.
+        current_version = normalize_version(VERSION)
+        latest_version = get_latest_version(
+            include_prereleases=Version(VERSION).is_prerelease
+        )
+        if latest_version and is_newer_version(latest_version, VERSION):
+            log("[yellow]⚠️  New version available[/yellow]")
+            log(
+                f"Current: [bold]{current_version}[/bold] → Latest: "
+                f"{normalize_version(latest_version)}"
+            )
         else:
-            log(f"[bold]Version {VERSION}[/bold]")
+            log(f"[bold]Version {current_version}[/bold]")
         log("[bold magenta]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold magenta]")
 
         log(":mag:", "Discovering admin models...")

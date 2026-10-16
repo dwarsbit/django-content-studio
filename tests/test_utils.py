@@ -86,3 +86,47 @@ class PaginatorTests(TestCase):
         # Check that it has a page_size attribute (default might be 20)
         self.assertTrue(hasattr(paginator, "page_size"))
         self.assertIsInstance(paginator.page_size, int)
+
+
+# --- Release check ----------------------------------------------------------
+
+
+def test_newest_release_skips_prereleases_and_yanked_releases():
+    from content_studio.utils import newest_release
+
+    releases = {
+        "1.0.0b28": [{"yanked": False}],
+        "1.0.0rc1": [{"yanked": False}],
+        "1.0.0": [{"yanked": False}],
+        "1.0.1": [{"yanked": True}],
+        "1.1.0rc1": [{"yanked": False}],
+        "not-a-version": [{"yanked": False}],
+    }
+
+    assert newest_release(releases, include_prereleases=False) == "1.0.0"
+    assert newest_release(releases, include_prereleases=True) == "1.1.0rc1"
+    assert newest_release({}, include_prereleases=True) is None
+
+
+def test_is_newer_version_orders_prereleases():
+    from content_studio.utils import is_newer_version
+
+    # The bug this guards against: any other version counted as newer.
+    assert not is_newer_version("1.0.0b28", "1.0.0-rc.1")
+    assert not is_newer_version("1.0.0rc1", "1.0.0-rc.1")
+    assert is_newer_version("1.0.0rc2", "1.0.0-rc.1")
+    assert is_newer_version("1.0.0", "1.0.0-rc.1")
+    assert not is_newer_version("garbage", "1.0.0")
+
+
+def test_get_latest_version_returns_none_offline(monkeypatch):
+    from urllib.error import URLError
+
+    from content_studio import utils
+
+    def offline(*args, **kwargs):
+        raise URLError("offline")
+
+    monkeypatch.setattr(utils, "urlopen", offline)
+
+    assert utils.get_latest_version() is None
