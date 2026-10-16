@@ -170,9 +170,9 @@ export interface WidgetProps<T> {
 export interface Resource {
   id: Id;
   __str__: string;
-  // The resolved list display, present on list rows when the admin
+  // The resolved list item display, present on list rows when the admin
   // offers the list view.
-  list_display?: {
+  list_item_display?: {
     title: string;
     description?: string;
     meta?: string;

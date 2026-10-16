@@ -33,7 +33,7 @@ export function ListView({
         <EmptyState model={model} filtered={!!filtered} onClear={onClear} />
       )}
       {items.map((item) => {
-        const display = item.list_display;
+        const display = item.list_item_display;
 
         return (
           <div

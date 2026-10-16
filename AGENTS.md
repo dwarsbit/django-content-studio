@@ -42,7 +42,7 @@ content_studio/
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E013, W001-W009)
+├── checks.py            # System checks (content_studio.E001-E013, W001-W011)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── extensions.py        # Extension base classes
@@ -318,7 +318,7 @@ from content_studio.admin import ModelStudio
 @register(Article)
 class ArticleStudio(ModelStudio):
     table_display = ["title"]
-    list_display = {"title": "title", "description": "short_content"}
+    list_item_display = {"title": "title", "description": "short_content"}
 ```
 
 ### 2. Custom Widgets
@@ -380,7 +380,7 @@ poetry run python scripts/test_wrapper.py test-cov    # With coverage
 
 1. Define the model in your app
 2. Register with `@register` decorator
-3. Optionally configure the list view with `list_display`
+3. Optionally configure the table with `table_display` and the list view with `list_item_display`
 
 ### Customizing the Dashboard
 

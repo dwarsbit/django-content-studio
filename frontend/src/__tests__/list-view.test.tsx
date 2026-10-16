@@ -874,7 +874,7 @@ const listArticles: Resource[] = [
     __str__: "First Article",
     title: "First Article",
     status: "draft",
-    list_display: {
+    list_item_display: {
       title: "First Article",
       description: "The first body",
       meta: "Draft",
@@ -885,7 +885,7 @@ const listArticles: Resource[] = [
     __str__: "Second Article",
     title: "Second Article",
     status: "published",
-    list_display: {
+    list_item_display: {
       title: "Second Article",
       description: "The second body",
       meta: "Published",

@@ -18,9 +18,11 @@ from .actions import (
 )
 from .admin import (
     AdminSerializer,
+    declares,
     get_table_display_columns,
     is_computed_column,
     iter_components,
+    resolve_table_display,
 )
 from .form import Field, TableColumn
 from .settings import cs_settings
@@ -72,7 +74,7 @@ def table_column_errors(studio) -> list[tuple[str, str]]:
         model_field_names = {field.name for field in model._meta.get_fields()}
         seen = set()
 
-        for entry in getattr(owner, "table_display", []):
+        for entry in resolve_table_display(owner):
             if isinstance(entry, str):
                 column = TableColumn(field=entry)
             elif isinstance(entry, TableColumn):
@@ -323,21 +325,21 @@ def bulk_action_errors(studio) -> list[tuple[str, str]]:
 
 def list_config_errors(studio) -> list[tuple[str, str]]:
     """
-    Misconfigured list pages, as (check id, message) pairs. Content
-    Studio repurposes list_display for the list view, so an old-style
-    list/tuple (the classic admin's table columns) must be pointed at
-    table_display rather than silently ignored.
+    Misconfigured list pages, as (check id, message) pairs. list_display
+    is the Django admin's name for the table columns; a mapping there is
+    the list view's role mapping, which lives in list_item_display, and
+    must not be silently ignored.
     """
     errors = []
 
-    if isinstance(studio.list_display, (list, tuple)):
+    if isinstance(studio.list_display, dict):
         errors.append(
             (
                 "content_studio.E001",
-                f"{studio.__class__.__name__}.list_display configures the "
-                "list view and takes a mapping like "
-                "{'title': 'name', 'description': 'subtitle'}. For table "
-                "columns, use table_display.",
+                f"{studio.__class__.__name__}.list_display is a mapping. "
+                "The list view's role mapping is configured with "
+                "list_item_display; list_display, like table_display, "
+                "configures the table columns.",
             )
         )
 
@@ -591,8 +593,8 @@ def list_query_errors(studio) -> list[tuple[str, str]]:
     pairs. search_fields and ordering entries that do not start at a
     model field fail the list endpoint with a database FieldError;
     list_filter entries fail every filter with a ParseError; and
-    list_display values that resolve to neither a field nor a model
-    method fail every list-view row with an AttributeError.
+    list_item_display values that resolve to neither a field nor a model
+    method fail every list-view item with an AttributeError.
     """
     errors = []
 
@@ -638,17 +640,16 @@ def list_query_errors(studio) -> list[tuple[str, str]]:
                 )
 
         field_names = model_field_names(model)
-        display = getattr(owner, "list_display", None) or {}
+        display = getattr(owner, "list_item_display", None) or {}
 
-        # E001 reports old-style list_display separately; a list here
-        # is never a mapping to validate.
+        # A non-mapping here is never a role mapping to validate.
         if isinstance(display, dict):
             for role, value in display.items():
                 if value not in field_names and not hasattr(model, value):
                     errors.append(
                         (
                             "content_studio.E011",
-                            f"{config_name(owner)}.list_display maps "
+                            f"{config_name(owner)}.list_item_display maps "
                             f"{role!r} to {value!r}, which is neither a field "
                             f"nor a method on {model._meta.label_lower}.",
                         )
@@ -868,6 +869,43 @@ def list_filter_entry_warnings(studio) -> list[tuple[str, str]]:
     return warnings
 
 
+def list_display_warnings(studio) -> list[tuple[str, str]]:
+    """
+    Django admin naming on a studio, as (check id, message) pairs.
+    list_display works as an alias of table_display but should be
+    renamed; get_list_display is no longer called since the list view
+    hook is get_list_item_display.
+    """
+    warnings = []
+
+    for owner in [studio, *(getattr(studio, "inlines", None) or [])]:
+        if isinstance(getattr(owner, "list_display", None), (list, tuple)):
+            if declares(owner, "table_display"):
+                message = (
+                    f"{config_name(owner)}.list_display is ignored because "
+                    "table_display is set; remove list_display."
+                )
+            else:
+                message = (
+                    f"{config_name(owner)}.list_display is the Django "
+                    "admin's name for the table columns; rename it to "
+                    "table_display."
+                )
+
+            warnings.append(("content_studio.W010", message))
+
+    if declares(studio, "get_list_display"):
+        warnings.append(
+            (
+                "content_studio.W011",
+                f"{studio.__class__.__name__}.get_list_display is not "
+                "called; the list view's hook is get_list_item_display.",
+            )
+        )
+
+    return warnings
+
+
 def model_group_warnings(site) -> list[tuple[str, str]]:
     """
     Model groups listing unregistered models, as (check id, message)
@@ -1021,6 +1059,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in list_filter_entry_warnings(studio):
+            messages.append(checks.Warning(warning, obj=obj, id=check_id))
+
+        for check_id, warning in list_display_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
     for check_id, error in duplicate_id_errors(site):

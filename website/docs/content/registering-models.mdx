@@ -175,29 +175,28 @@ Column headers fall back to the field's verbose name; method columns
 without a `header` have no label. Method columns cannot be sorted —
 ordering is restricted to real model fields.
 
-The list view's rows are
-configured separately through `list_display` — a mapping of roles to field
-or model method names:
+`list_display`, the Django admin's name for the table columns, works as
+an alias of `table_display`, so a studio ported from the classic admin
+keeps its columns. The `content_studio.W010` system check asks you to
+rename it; when both are set, `table_display` wins.
+
+The list view's items are configured separately through
+`list_item_display` — a mapping of roles to field or model method names:
 
 ```python
-list_display = {"title": "title", "description": "body", "meta": "get_status_display"}
+list_item_display = {"title": "title", "description": "body", "meta": "get_status_display"}
 ```
 
-Rows render a prominent `title`, a muted `description` and a `meta` badge.
-The API ships every row's resolved display, so fully computed rows are
-possible by overriding `get_list_display`:
+Items render a prominent `title`, a muted `description` and a `meta` badge.
+For fully computed items, override `get_list_item_display`:
 
 ```python
-def get_list_display(self, obj, request):
-    return ListDisplay(title=obj.title.upper(), description=obj.subtitle, meta=obj.status)
-```
+from content_studio.admin import ListItemDisplay
 
-:::caution
-Unlike the classic Django admin, `list_display` configures the list view —
-not the table columns. Passing an old-style list is reported by the
-`content_studio.E001` system check (`manage.py check`); use `table_display`
-for the columns.
-:::
+
+def get_list_item_display(self, obj, request):
+    return ListItemDisplay(title=obj.title.upper(), description=obj.subtitle, meta=obj.status)
+```
 
 ## Bulk actions
 

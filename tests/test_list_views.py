@@ -1,18 +1,21 @@
 """
 Tests for the list page's views: the table view's columns (table_display)
-and the list view's row anatomy (list_display / get_list_display), plus
-the setup validation that keeps the two apart.
+and the list view's item anatomy (list_item_display /
+get_list_item_display), plus the setup validation that keeps the two apart
+and the list_display alias of table_display.
 """
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 
 from content_studio.admin import (
-    ListDisplay,
+    InlineModelStudio,
+    ListItemDisplay,
     ModelStudio,
     admin_site,
+    get_table_display_columns,
 )
-from content_studio.checks import list_config_errors
+from content_studio.checks import list_config_errors, list_display_warnings
 from tests.test_e2e_crud import AuthenticatedTestCase
 from tests.testapp.models import Article
 
@@ -22,16 +25,72 @@ def _validate_with(model_studio):
     return list_config_errors(model_studio(Article, admin_site))
 
 
-def test_old_style_list_display_is_rejected():
-    """The classic admin's list_display no longer configures the table."""
+def test_mapping_list_display_is_rejected():
+    """A role mapping in list_display belongs in list_item_display."""
 
     class OldStyle(ModelStudio):
-        list_display = ["title"]  # type: ignore[assignment]
+        list_display = {"title": "title"}  # type: ignore[assignment]
 
     errors = _validate_with(OldStyle)
     assert len(errors) == 1
     assert errors[0][0] == "content_studio.E001"
-    assert "table_display" in errors[0][1]
+    assert "list_item_display" in errors[0][1]
+
+
+def test_list_display_is_an_alias_of_table_display():
+    class DjangoStyle(ModelStudio):
+        list_display = ["title", "status"]
+
+    studio = DjangoStyle(Article, admin_site)
+    columns = [column.field for column in get_table_display_columns(studio)]
+
+    assert columns == ["title", "status"]
+    assert _validate_with(DjangoStyle) == []
+
+    warnings = list_display_warnings(studio)
+    assert [check_id for check_id, _ in warnings] == ["content_studio.W010"]
+    assert "rename it to table_display" in warnings[0][1]
+
+
+def test_table_display_wins_over_list_display():
+    class Both(ModelStudio):
+        table_display = ["title"]
+        list_display = ["status"]
+
+    studio = Both(Article, admin_site)
+    columns = [column.field for column in get_table_display_columns(studio)]
+
+    assert columns == ["title"]
+    warnings = list_display_warnings(studio)
+    assert "is ignored because table_display is set" in warnings[0][1]
+
+
+def test_list_display_alias_works_on_inlines():
+    from tests.testapp.models import Review
+
+    class ReviewInline(InlineModelStudio):
+        model = Review
+        list_display = ["__str__", "id"]
+
+    class WithInline(ModelStudio):
+        inlines = [ReviewInline]
+
+    columns = [column.field for column in get_table_display_columns(ReviewInline)]
+
+    assert columns == ["__str__", "id"]
+    warnings = list_display_warnings(WithInline(Article, admin_site))
+    assert "ReviewInline.list_display" in warnings[0][1]
+
+
+def test_overriding_get_list_display_warns():
+    class OldHook(ModelStudio):
+        def get_list_display(self, obj, request):
+            return ListItemDisplay(title="never called")
+
+    warnings = list_display_warnings(OldHook(Article, admin_site))
+
+    assert [check_id for check_id, _ in warnings] == ["content_studio.W011"]
+    assert "get_list_item_display" in warnings[0][1]
 
 
 def test_unknown_list_view_is_rejected():
@@ -46,17 +105,17 @@ def test_unknown_list_view_is_rejected():
 def test_declarative_and_override_configs_validate():
     class Fine(ModelStudio):
         list_views = ["table", "list"]
-        list_display = {"title": "title", "description": "body"}
+        list_item_display = {"title": "title", "description": "body"}
 
     assert _validate_with(Fine) == []
 
 
-def test_get_list_display_resolves_the_mapping():
+def test_get_list_item_display_resolves_the_mapping():
     admin = admin_site._registry[Article]
     article = Article(title="Hello", body="Body text")
     article.status = Article.Status.PUBLISHED
 
-    display = admin.get_list_display(article, None)
+    display = admin.get_list_item_display(article, None)
 
     assert display.title == "Hello"
     assert display.description == "Body text"
@@ -64,27 +123,27 @@ def test_get_list_display_resolves_the_mapping():
     assert display.meta == "Published"
 
 
-def test_get_list_display_falls_back_to_str_without_mapping():
+def test_get_list_item_display_falls_back_to_str_without_mapping():
     class Bare(ModelStudio):
         pass
 
     admin = Bare(Article, admin_site)
-    display = admin.get_list_display(Article(title="Fallback"), None)
+    display = admin.get_list_item_display(Article(title="Fallback"), None)
 
     assert display.title == "Fallback"
     assert display.description == ""
     assert display.meta == ""
 
 
-def test_get_list_display_can_be_overridden():
+def test_get_list_item_display_can_be_overridden():
     class Computed(ModelStudio):
-        def get_list_display(self, obj, request):
-            return ListDisplay(
+        def get_list_item_display(self, obj, request):
+            return ListItemDisplay(
                 title=f"computed {obj.title}", description="fixed", meta="M"
             )
 
     admin = Computed(Article, admin_site)
-    display = admin.get_list_display(Article(title="Hello"), None)
+    display = admin.get_list_item_display(Article(title="Hello"), None)
 
     assert display.title == "computed Hello"
     assert display.description == "fixed"
@@ -110,7 +169,7 @@ class ListDisplaySerializationTests(AuthenticatedTestCase):
         response = client.get("/api/content/testapp.article")
 
         first = response.json()["results"][0]
-        assert first["list_display"] == {
+        assert first["list_item_display"] == {
             "title": "Hello",
             "description": "Body text",
             "meta": "Published",

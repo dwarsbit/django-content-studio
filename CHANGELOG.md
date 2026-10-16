@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **`list_display` means what it means in the Django admin.** The
+  list view's role mapping moves to `list_item_display` (and its hook
+  to `get_list_item_display`, returning a `ListItemDisplay`).
+  `list_display` is now an alias of `table_display` — a studio ported
+  from the classic admin keeps its columns — and system check
+  `content_studio.W010` asks to rename it. A mapping in `list_display`
+  is reported by `content_studio.E001`, an overridden
+  `get_list_display` (no longer called) by `content_studio.W011`.
+  The quickstart examples, which configured the table through
+  `list_display`, now use `table_display`.
+
 - **Docs, branding and package metadata.** The documentation site
   adopts the mist grayscale and the Content Studio logo; code samples
   use `ContentStudioSite` and `ModelStudio` (the `AdminSite` and

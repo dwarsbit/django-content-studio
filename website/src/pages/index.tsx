@@ -14,7 +14,7 @@ from .models import Article
 
 @register(Article)
 class ArticleStudio(ModelStudio):
-    list_display = ["title", "status", "published_at"]
+    table_display = ["title", "status", "published_at"]
     list_filter = ["status"]
     search_fields = ["title"]`;
 

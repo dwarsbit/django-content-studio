@@ -15,7 +15,7 @@ startup; the exit code of `manage.py check` differs.
 
 | ID | Catches |
 |----|---------|
-| `content_studio.E001` | `list_display` set to a list or tuple — it configures the list view and takes a mapping; for table columns use `table_display`. |
+| `content_studio.E001` | `list_display` set to a mapping — the list view's role mapping is `list_item_display`; `list_display` configures the table columns. |
 | `content_studio.E002` | `list_views` containing unknown view names. |
 | `content_studio.E003` | Duplicate extension IDs — pass `extension_id` to disambiguate. |
 | `content_studio.E004` | Duplicate dashboard widget IDs — pass `widget_id` to disambiguate. |
@@ -25,7 +25,7 @@ startup; the exit code of `manage.py check` differs.
 | `content_studio.E008` | `soft_delete` naming an unknown field, or a field that is not a nullable date or datetime. |
 | `content_studio.E009` | [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) without a `MEDIA_LIBRARY_MODEL`, or naming a field that does not exist or is not a `JSONField`. |
 | `content_studio.E010` | Edit form fields naming anything but a model field — they would render as empty read-only boxes — and `Field(widget=...)` overrides that are not `content_studio.widgets` classes. |
-| `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that do not resolve to a field, and `list_display` values that are neither a field nor a model method. Inlines are validated too. |
+| `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that do not resolve to a field, and `list_item_display` values that are neither a field nor a model method. Inlines are validated too. |
 | `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key to the parent model. |
 | `content_studio.E013` | Site-level `default_widget_mapping` / `default_format_mapping` values that are not widget or format classes. |
 
@@ -42,3 +42,5 @@ startup; the exit code of `manage.py check` differs.
 | `content_studio.W007` | A media library model missing the documented contract fields (`file`, `name`, `type`), or a folder model missing `name` / `parent`. |
 | `content_studio.W008` | A `crop_image` hook on the admin site without a configured `MEDIA_LIBRARY_MODEL` — the hook is never called. |
 | `content_studio.W009` | An empty `LOGIN_BACKENDS` setting — nobody can sign in. |
+| `content_studio.W010` | `list_display` used for the table columns — it works as an alias, but rename it to `table_display`. Also reported when both are set, as `list_display` is then ignored. Inlines are checked too. |
+| `content_studio.W011` | A studio overriding `get_list_display` — it is never called; the list view's hook is `get_list_item_display`. |

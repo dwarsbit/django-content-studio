@@ -56,7 +56,7 @@ class ListFlowTests(AuthenticatedTestCase):
         assert data["pagination"]["current"] == 1
         assert len(data["results"]) == 2
 
-    def test_list_limits_fields_to_list_display(self):
+    def test_list_limits_fields_to_table_display(self):
         Article.objects.create(title="secret-body", body="should not leak")
 
         client = self.client_for(self.superuser)
@@ -75,7 +75,7 @@ class ListFlowTests(AuthenticatedTestCase):
         response = client.get("/api/content/testapp.article")
 
         first = response.json()["results"][0]
-        # list_display drives the list fields; the model property is
+        # table_display drives the list fields; the model property is
         # available whenever it is listed.
         assert first["__str__"] == "words"
 
@@ -287,7 +287,7 @@ class InlineTests(AuthenticatedTestCase):
         )
 
         assert response.status_code == 200, response.content
-        # Inline lists serialize id and __str__ by default (list_display).
+        # Inline lists serialize id and __str__ by default (table_display).
         strs = [item["__str__"] for item in response.json()["results"]]
         assert strs == ["for one"]
 

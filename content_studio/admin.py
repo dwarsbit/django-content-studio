@@ -68,9 +68,9 @@ class RelationDisplay:
         self.avatar = avatar
 
 
-class ListDisplay:
+class ListItemDisplay:
     """
-    The anatomy of a row in the list view: a prominent title, a muted
+    The anatomy of an item in the list view: a prominent title, a muted
     description and a meta value rendered as a badge on the right.
     """
 
@@ -98,6 +98,10 @@ class BaseStudio(Generic[T]):
 
     # Fields to leave out of the default edit form.
     exclude: Optional[list[str]] = None
+
+    # The Django admin's name for the table columns, accepted as an
+    # alias of table_display (system check W010 asks for table_display).
+    list_display: Optional[list[Union[str, "TableColumn"]]] = None
 
     def __init__(self, model: Type[T], admin_site: "ContentStudioSite"):
         self.model = model
@@ -164,9 +168,9 @@ class ModelStudio(BaseStudio[T]):
     # or both mixed.
     table_display: list[Union[str, "TableColumn"]] = ["__str__"]
 
-    # The anatomy of a list view row: roles mapped to field or model
+    # The anatomy of a list view item: roles mapped to field or model
     # method names, e.g. {"title": "name", "description": "subtitle"}.
-    list_display: Optional[dict[str, str]] = None
+    list_item_display: Optional[dict[str, str]] = None
 
     # The views offered by the list page: "table" and/or "list". More than
     # one enables a toggle in the interface.
@@ -222,15 +226,15 @@ class ModelStudio(BaseStudio[T]):
         """
         return RelationDisplay(title=str(obj))
 
-    def get_list_display(
+    def get_list_item_display(
         self, obj: models.Model, request: HttpRequest
-    ) -> "ListDisplay":
+    ) -> "ListItemDisplay":
         """
-        The anatomy of a row in the list view. The base implementation
-        resolves the declarative list_display mapping (roles to field or
-        model method names); override for fully computed rows.
+        The anatomy of an item in the list view. The base implementation
+        resolves the declarative list_item_display mapping (roles to field
+        or model method names); override for fully computed items.
         """
-        display = self.list_display or {}
+        display = self.list_item_display or {}
 
         def resolve(role: str) -> str:
             field = display.get(role)
@@ -242,7 +246,7 @@ class ModelStudio(BaseStudio[T]):
 
             return str(value() if callable(value) else value)
 
-        return ListDisplay(
+        return ListItemDisplay(
             title=resolve("title") or str(obj),
             description=resolve("description"),
             meta=resolve("meta"),
@@ -573,6 +577,34 @@ def iter_components(admin_class):
             yield field
 
 
+def declares(owner, name: str) -> bool:
+    """
+    Whether a studio (class or instance) sets an attribute itself rather
+    than inheriting Content Studio's default.
+    """
+    cls = owner if isinstance(owner, type) else type(owner)
+
+    return any(
+        name in vars(klass)
+        for klass in cls.__mro__
+        if klass not in (ModelStudio, InlineModelStudio, BaseStudio, Generic, object)
+    )
+
+
+def resolve_table_display(owner) -> list:
+    """
+    A studio's table_display entries. list_display, the Django admin's
+    name for the table columns, stands in for table_display unless the
+    studio sets table_display itself.
+    """
+    list_display = getattr(owner, "list_display", None)
+
+    if isinstance(list_display, (list, tuple)) and not declares(owner, "table_display"):
+        return list(list_display)
+
+    return list(getattr(owner, "table_display", []))
+
+
 def get_table_display_columns(admin_class) -> list[TableColumn]:
     """
     Normalize a model studio's table_display entries into TableColumn
@@ -580,7 +612,7 @@ def get_table_display_columns(admin_class) -> list[TableColumn]:
     """
     return [
         entry if isinstance(entry, TableColumn) else TableColumn(field=entry)
-        for entry in admin_class.table_display
+        for entry in resolve_table_display(admin_class)
     ]
 
 

@@ -153,10 +153,10 @@ class DjangoContentStudioConfig(AppConfig):
                     # Trash rows also carry the removal timestamp.
                     if self.action == "trash" and self._admin_model.soft_delete:
                         available_fields.append(self._admin_model.soft_delete)
-                    # Rows carry their resolved list display when the
-                    # list view is enabled.
+                    # Rows carry their resolved list item display when
+                    # the list view is enabled.
                     if "list" in self._admin_model.list_views:
-                        available_fields.append("list_display")
+                        available_fields.append("list_item_display")
                 # For the user model we exclude the password and the username field.
                 elif model is user_model:
                     available_fields = None
@@ -205,7 +205,7 @@ class DjangoContentStudioConfig(AppConfig):
                         Serializer = type(str("Serializer"), (Serializer,), attrs)
 
                 # When the list view is enabled, every row carries its
-                # resolved list display so the frontend renders fully
+                # resolved list item display so the frontend renders fully
                 # computed rows (declarative mapping or override).
                 if (
                     self.action in ("list", "trash")
@@ -215,10 +215,10 @@ class DjangoContentStudioConfig(AppConfig):
                     admin_model = self._admin_model
 
                     class ListSerializer(Serializer):
-                        list_display = serializers.SerializerMethodField()
+                        list_item_display = serializers.SerializerMethodField()
 
-                        def get_list_display(self, obj):
-                            display = admin_model.get_list_display(
+                        def get_list_item_display(self, obj):
+                            display = admin_model.get_list_item_display(
                                 obj, self.context.get("request")
                             )
 

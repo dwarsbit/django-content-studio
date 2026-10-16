@@ -29,7 +29,7 @@ def test_clean_project_produces_no_messages():
 
 def test_misconfigured_list_display_surfaces_as_system_error():
     class OldStyle(ModelStudio):
-        list_display = ["title"]  # type: ignore[assignment]
+        list_display = {"title": "title"}  # type: ignore[assignment]
 
     original = admin_site._registry.pop(Article)
     admin_site._registry[Article] = OldStyle(Article, admin_site)
@@ -42,7 +42,7 @@ def test_misconfigured_list_display_surfaces_as_system_error():
 
     error = next(m for m in messages if m.id == "content_studio.E001")
 
-    assert "table_display" in str(error)
+    assert "list_item_display" in str(error)
     assert "testapp.article" in error.obj
 
 
@@ -348,7 +348,7 @@ def test_unresolvable_list_configuration_surfaces_as_system_errors():
         search_fields = ["titel"]
         ordering = ["-titel"]
         list_filter = ["titel"]
-        list_display = {"title": "titel"}
+        list_item_display = {"title": "titel"}
 
     with swapped_article_studio(Broken):
         messages = check_content_studio()
@@ -367,7 +367,7 @@ def test_resolvable_list_configuration_produces_no_error():
         search_fields = ["title", "author__username"]
         ordering = ["title", "-pk", "?"]
         list_filter = ["status", "published_at"]
-        list_display = {"title": "title", "meta": "get_status_display"}
+        list_item_display = {"title": "title", "meta": "get_status_display"}
 
     with swapped_article_studio(Fine):
         messages = check_content_studio()

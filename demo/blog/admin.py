@@ -52,7 +52,7 @@ class ArticleAdmin(ModelStudio):
     table_display = ["title", "status", "featured", "views", "author", "published_at"]
     # The list view's rows; both views are offered, with a toggle.
     list_views = ["table", "list"]
-    list_display = {
+    list_item_display = {
         "title": "title",
         "description": "body",
         "meta": "get_status_display",

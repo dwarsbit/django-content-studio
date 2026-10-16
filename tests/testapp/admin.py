@@ -27,7 +27,7 @@ class ArticleAdmin(ModelStudio):
         TableColumn(field="get_body_preview", header="Preview"),
     ]
     list_views = ["table", "list"]
-    list_display = {
+    list_item_display = {
         "title": "title",
         "description": "body",
         "meta": "get_status_display",
