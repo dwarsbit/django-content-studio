@@ -5,9 +5,19 @@ description = "A modern Django admin alternative, batteries included"
 authors = [
     {name = "Leon van der Grient", email = "leon@dwarsbit.nl"}
 ]
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.2,<7",
+    "djangorestframework>=3.16,<4",
+    "nh3>=0.3.0,<1.0.0",
+    "jsonschema>=4.26.0,<5.0.0",
+    "rich>=14.3.3,<15",
+    "pyjwt>=2,<3",
+    "pick>=2.5,<3",
+]
 keywords = [
     "django",
     "django-admin",
@@ -23,7 +33,6 @@ classifiers = [
     "Framework :: Django :: 5.2",
     "Framework :: Django :: 6.0",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -40,16 +49,6 @@ Documentation = "https://dwarsbit.github.io/django-content-studio/docs/intro"
 Repository = "https://github.com/dwarsbit/django-content-studio"
 Issues = "https://github.com/dwarsbit/django-content-studio/issues"
 Changelog = "https://github.com/dwarsbit/django-content-studio/blob/main/CHANGELOG.md"
-
-[tool.poetry.dependencies]
-Django = ">=5.2,<7"
-djangorestframework = ">=3.16,<4"
-nh3 = ">=0.3.0,<1.0.0"
-jsonschema = ">=4.26.0,<5.0.0"
-rich = "^14.3.3"
-pyjwt = ">=2,<3"
-pick = ">=2.5,<3"
-
 
 [tool.poetry]
 packages = [{include = "content_studio"}]
