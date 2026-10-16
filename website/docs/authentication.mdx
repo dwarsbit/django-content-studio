@@ -91,4 +91,11 @@ Unknown emails and wrong codes answer identically, so the flow does not
 reveal which addresses exist. A reset signs the user out everywhere.
 
 Configure `EMAIL_*` settings — Content Studio sends the code email with
-`send_mail`.
+`send_mail`, as a [Django task](https://docs.djangoproject.com/en/stable/topics/tasks/).
+Without a configured task backend, Django runs the task right away, during
+the request. Configure a backend that runs tasks in a worker (`TASKS`) and the
+request only enqueues the mail: it then answers as fast for an unknown email
+as for a known one, so its response time does not reveal which addresses
+exist either. On Django 5.2, which has no tasks framework, the
+[`django-tasks`](https://pypi.org/project/django-tasks/) backport is used when
+installed; otherwise the mail is sent during the request.

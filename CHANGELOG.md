@@ -40,6 +40,11 @@ betas. Upgrading is strongly recommended.
 - **The refresh cookie could travel over HTTP** behind a
   TLS-terminating proxy. It is now `Secure` whenever `DEBUG` is off
   (`REFRESH_COOKIE_SECURE` forces either value).
+- **Password reset mails are Django tasks.** Configure a task backend
+  that runs them in a worker and the request only enqueues the mail, so
+  its response time no longer reveals which emails belong to an account.
+  Without one (or on Django 5.2 without the `django-tasks` backport) the
+  mail is sent during the request, as before.
 - Signing out clears the interface's cached data, so the next user in
   the same browser does not see the previous user's.
 

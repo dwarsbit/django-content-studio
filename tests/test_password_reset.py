@@ -8,6 +8,7 @@ invalidated after too many failed attempts.
 import pytest
 from django.contrib.auth import models as auth_models
 from django.core import mail
+from django.test import TestCase, override_settings
 from rest_framework.test import APIRequestFactory
 
 from content_studio.contrib.password_reset.models import (
@@ -22,7 +23,9 @@ from content_studio.contrib.password_reset.views import (
 
 
 def post(view, data):
-    return view.as_view()(APIRequestFactory().post("/", data, format="json"))
+    # Mails are enqueued on commit; run the callbacks like a real commit.
+    with TestCase.captureOnCommitCallbacks(execute=True):
+        return view.as_view()(APIRequestFactory().post("/", data, format="json"))
 
 
 @pytest.fixture
@@ -247,3 +250,80 @@ def test_endpoints_are_throttled_per_ip(user, settings):
     ]
 
     assert statuses == [202, 202, 429]
+
+
+# --- Mails as tasks ----------------------------------------------------------
+
+DEFERRED_TASKS = {"default": {"BACKEND": "django.tasks.backends.dummy.DummyBackend"}}
+
+
+@pytest.fixture
+def deferred_tasks():
+    pytest.importorskip("django.tasks")
+    from django.tasks import default_task_backend
+
+    with override_settings(TASKS=DEFERRED_TASKS):
+        default_task_backend.clear()
+        yield default_task_backend
+        default_task_backend.clear()
+
+
+@pytest.mark.django_db
+def test_reset_mail_is_enqueued_not_sent_in_the_request(user, deferred_tasks):
+    response = post(PasswordResetRequestView, {"email": "a@example.com"})
+
+    assert response.status_code == 202
+    # Nothing sent while answering: the response time does not depend on
+    # whether the email belongs to an account.
+    assert len(mail.outbox) == 0
+    [result] = deferred_tasks.results
+    assert result.task.name == "send_reset_code"
+
+    # The worker sends the code that is current when it runs.
+    result.task.call(*result.args, **result.kwargs)
+    assert len(mail.outbox) == 1
+    assert PasswordResetCode.objects.get().code in mail.outbox[0].body
+
+
+@pytest.mark.django_db
+def test_unknown_emails_enqueue_nothing(deferred_tasks):
+    post(PasswordResetRequestView, {"email": "nobody@example.com"})
+
+    assert deferred_tasks.results == []
+
+
+@pytest.mark.django_db
+def test_a_replaced_code_is_not_sent(user):
+    from content_studio.contrib.password_reset.tasks import send_reset_code
+
+    reset = PasswordResetCode.objects.create(email="a@example.com")
+    reset.delete()
+
+    send_reset_code.call(reset.pk)
+
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_a_failing_mail_deletes_the_code(user, monkeypatch):
+    from content_studio.contrib.password_reset import tasks
+
+    def fail(**kwargs):
+        raise ConnectionError("SMTP down")
+
+    monkeypatch.setattr(tasks, "send_mail", fail)
+    reset = PasswordResetCode.objects.create(email="a@example.com")
+
+    tasks.send_reset_code.call(reset.pk)
+
+    assert not PasswordResetCode.objects.exists()
+
+
+@pytest.mark.django_db
+def test_mails_use_the_language_of_the_request(user):
+    from django.utils import translation
+
+    with translation.override("nl"):
+        post(PasswordResetRequestView, {"email": "a@example.com"})
+
+    assert mail.outbox[0].subject != "Your password reset code"

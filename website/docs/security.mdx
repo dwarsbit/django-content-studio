@@ -45,6 +45,10 @@ deployment has to take care of.
 - **Serve user uploads from a separate domain** when you can (a CDN or an
   object storage bucket). Even with the upload allowlist, files from your own
   domain run with your site's privileges if a browser decides to render them.
+- **Configure a task backend** that runs Django tasks in a worker. Password
+  reset mails are then sent outside the request, so its response time does not
+  reveal whether an email belongs to an account
+  ([password reset](/docs/authentication#password-reset)).
 - **Keep `DEBUG` off** in production, and keep Django, Django REST Framework
   and Content Studio up to date.
 - **Use Django's security middleware and settings**: `SecurityMiddleware`

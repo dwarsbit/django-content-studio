@@ -1,12 +1,10 @@
-import logging
-
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.mail import send_mail
+from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import get_language
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -17,13 +15,12 @@ from rest_framework.views import APIView
 from content_studio.settings import cs_settings
 
 from .models import MAX_ATTEMPTS, PasswordResetCode, generate_code
+from .tasks import send_reset_code, send_reset_confirmation
 from .serializers import (
     PasswordResetRequestSerializer,
     CodeValidationSerializer,
     PasswordResetSubmissionSerializer,
 )
-
-logger = logging.getLogger("content_studio.password_reset")
 
 
 class PasswordResetRateThrottle(AnonRateThrottle):
@@ -128,21 +125,13 @@ class PasswordResetRequestView(APIView):
             PasswordResetCode.objects.filter(email__iexact=email).delete()
             reset = PasswordResetCode.objects.create(email=email)
 
-        try:
-            self.send_email(reset)
-        except Exception:
-            logger.exception("Could not send password reset email to %s", email)
-            reset.delete()
+        # Enqueued, not sent: the response takes as long whether or not
+        # the email belongs to an account (see tasks.py). After the commit,
+        # so a worker never looks for a code that is not saved yet.
+        language = get_language()
+        transaction.on_commit(lambda: send_reset_code.enqueue(reset.pk, language))
 
         return Response(status=status.HTTP_202_ACCEPTED)
-
-    def send_email(self, reset: PasswordResetCode):
-        send_mail(
-            from_email=None,
-            subject=_("Your password reset code"),
-            message=_("Your password reset code is: ") + reset.code,
-            recipient_list=[reset.email],
-        )
 
 
 class CodeValidationView(APIView):
@@ -191,19 +180,9 @@ class PasswordResetSubmissionView(APIView):
 
         existing.delete()
 
-        try:
-            self.send_email(email)
-        except Exception:
-            logger.exception("Could not send password reset confirmation to %s", email)
+        language = get_language()
+        transaction.on_commit(
+            lambda: send_reset_confirmation.enqueue(user.email, language)
+        )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def send_email(self, email):
-        send_mail(
-            from_email=None,
-            subject=_("Your password has been reset"),
-            message=_(
-                "Your password has been reset. If you did not do this, please contact your administrator."
-            ),
-            recipient_list=[email],
-        )
