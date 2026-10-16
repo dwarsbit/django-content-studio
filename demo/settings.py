@@ -3,10 +3,9 @@ Django settings for the Content Studio demo project.
 
 The demo mirrors the documented install: `django.contrib.admin` before
 `content_studio`, the interface mounted under `admin/`, and models registered
-with `@register`. It is intentionally plain Django — django-blueprint is *not*
-required. When blueprint happens to be installed, one extra Blueprint-integrated
-model registers itself (see `demo/blog/models.py`) to cover the optional
-integration.
+with `@register`. It is intentionally plain Django — no third-party packages
+are installed. One model is built on the built-in `HTMLField`
+(see `demo/blog/models.py`), covering the rich text widget.
 """
 
 from pathlib import Path

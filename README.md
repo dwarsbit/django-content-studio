@@ -18,7 +18,7 @@ Django Content Studio is a modern, flexible alternative to the Django admin: a R
 - **📊 A composable dashboard**: statistics, content lists, activity logs and scheduled tasks as widgets you declare in Python
 - **🖼️ Media library**: folders, uploads and image crops against whichever media model you configure
 - **🧭 Multi-tenancy**: one header scopes every query, one hook decides which tenants a user may see
-- **🤝 Plays nice**: pairs with [Django Blueprint](https://github.com/dwarsbit/django-blueprint) when installed — its fields get dedicated widgets — but Blueprint is never a requirement
+- **🧩 Batteries included**: optional content fields — `HTMLField` with sanitization, `TagField`, `FlexField`, media pickers — and base models like `ContentModel` and `SingletonModel` ship built-in, and plain Django models and fields work just as well
 
 ## 🚀 Quick Start
 
@@ -87,7 +87,6 @@ All usage and configuration is documented at [dwarsbit.github.io/django-content-
 - [Multi-tenancy](https://dwarsbit.github.io/django-content-studio/docs/multi-tenancy) — the tenant model, header scoping and the `get_tenants` hook
 - [Extensions](https://dwarsbit.github.io/django-content-studio/docs/extensions) — menu links and iframe pages
 - [Settings reference](https://dwarsbit.github.io/django-content-studio/docs/settings) — every `CONTENT_STUDIO` option
-- [Blueprint integration](https://dwarsbit.github.io/django-content-studio/docs/blueprint-integration) — the optional pairing, end to end
 
 ## 🤝 Contributing
 

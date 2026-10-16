@@ -6,9 +6,7 @@ test.beforeEach(async ({ page }) => {
   await login(page);
 });
 
-test("the Blueprint-integrated model renders the rich text widget", async ({
-  page,
-}) => {
+test("the HTMLField model renders the rich text widget", async ({ page }) => {
   const title = `Landing page ${uniqueSuffix()}`;
   // Digit-only suffix: TipTap's typography extension rewrites "x" between
   // digits into a multiplication sign, which would break text matching.

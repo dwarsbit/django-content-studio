@@ -45,9 +45,9 @@ const features = [
     text: "Statistics, content lists, activity logs and scheduled tasks as widgets you declare in Python — plus extensions like menu links and iframe pages.",
   },
   {
-    emoji: "🤝",
-    title: "Blueprint-aware, never required",
-    text: "Django Blueprint fields get their dedicated widgets when it is installed, and everything works without it. The pairing is optional, end to end.",
+    emoji: "🧩",
+    title: "Rich fields built in",
+    text: "HTML with sanitization, tags, JSON with a schema, URL paths and media pickers ship first-class, next to base models like ContentModel and SingletonModel.",
   },
 ];
 

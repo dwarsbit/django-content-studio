@@ -191,7 +191,7 @@ class ModelStudio(BaseStudio[T]):
     ordering: list[str] = []
 
     # Soft delete, as an opt-in: the name of the model's nullable
-    # timestamp field that marks an object as trashed (Blueprint's
+    # timestamp field that marks an object as trashed (the built-in
     # SoftDeletableModel uses "removed_at"). Empty — the default —
     # keeps the classic hard delete. When set, the delete action moves
     # the object to the model's trash instead, where it can be restored
@@ -601,8 +601,8 @@ def get_is_singleton(admin_class) -> bool:
     Return the effective singleton state of a model studio.
 
     The studio's is_singleton attribute is the canonical declaration.
-    A model-level marker (e.g. a class property like Blueprint's
-    SingletonModel.is_singleton) is honored as a fallback for backward
+    A model-level marker (e.g. a class property like the built-in
+    SingletonModel's is_singleton) is honored as a fallback for backward
     compatibility; concrete fields named is_singleton are ignored, since
     a field descriptor is truthy off the model class.
     """

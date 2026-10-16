@@ -70,6 +70,15 @@ Field names for the audit stamps. Defaults: `"edited_by"`, `"edited_at"`,
 and `edited_by` / `edited_at` on update — on models that define those fields
 (other models are untouched).
 
+## HTML_SANITIZER {#html_sanitizer}
+
+Sanitizer applied to [`HTMLField`](/docs/forms/widgets) content on save: a
+callable or a dotted import path. Default `None` — the built-in allowlist
+sanitizer, which keeps a CMS-friendly set of tags, attributes and URL
+schemes and strips everything else. Override it per field by passing
+`sanitizer` to `HTMLField` itself; a field-level sanitizer always wins over
+this setting.
+
 ## MEDIA_LIBRARY_MODEL / MEDIA_LIBRARY_FOLDER_MODEL {#media_models}
 
 Import path strings of the media and folder models for the

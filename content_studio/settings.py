@@ -31,6 +31,9 @@ DEFAULTS = {
     "CREATED_AT_ATTR": "created_at",
     "MEDIA_LIBRARY_MODEL": None,
     "MEDIA_LIBRARY_FOLDER_MODEL": None,
+    # Sanitizer applied to HTMLField content on save: a callable or a
+    # dotted import path; None uses the built-in allowlist sanitizer.
+    "HTML_SANITIZER": None,
     # Attribute on the media item model holding the focal point (a
     # JSONField of {"x": <0-100>, "y": <0-100>}); None disables the
     # focal point editor.
@@ -58,6 +61,7 @@ IMPORT_STRINGS = [
     "LOGIN_BACKENDS",
     "MEDIA_LIBRARY_MODEL",
     "MEDIA_LIBRARY_FOLDER_MODEL",
+    "HTML_SANITIZER",
     "TENANT_MODEL",
     "TOKEN_BACKEND",
 ]

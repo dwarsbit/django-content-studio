@@ -16,7 +16,7 @@ class HTMLField(models.TextField):
         `sanitizer` is a callable (str -> str) or a dotted import path to
         one, and replaces the default sanitizer for this field. Use a
         module-level function so migrations can serialize it. `None`
-        resolves lazily: the BLUEPRINT["HTML_SANITIZER"] setting first,
+        resolves lazily: the CONTENT_STUDIO["HTML_SANITIZER"] setting first,
         then the built-in allowlist sanitizer.
         """
         self.sanitizer = sanitizer

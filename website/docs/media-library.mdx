@@ -14,13 +14,20 @@ CONTENT_STUDIO = {
 }
 ```
 
-With [Django Blueprint](/docs/blueprint-integration) installed, its media
-library models plug in directly:
+Content Studio also ships a ready-made media library app — models for
+media items and folders that follow the contract below, migrations
+included. Enable it by adding the app and pointing the settings at its
+models:
 
 ```python
+INSTALLED_APPS = [
+    # ...
+    "content_studio.media_library",
+]
+
 CONTENT_STUDIO = {
-    "MEDIA_LIBRARY_MODEL": "blueprint.media_library.models.Media",
-    "MEDIA_LIBRARY_FOLDER_MODEL": "blueprint.media_library.models.Folder",
+    "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Media",
+    "MEDIA_LIBRARY_FOLDER_MODEL": "content_studio.media_library.models.Folder",
 }
 ```
 
@@ -34,7 +41,7 @@ media model needs:
 - a `type` — `"image"`, `"video"`, `"audio"` or `"file"` drive the grid
   previews and thumbnails
 - optionally `tags`, searched alongside the name — a list-typed field
-  (a `JSONField` of strings, an `ArrayField`, or Blueprint's
+  (a `JSONField` of strings, an `ArrayField`, or the built-in
   `TagField`); the tags input in the item editor works on the list
 - optionally a `JSONField` for the focal point — set
   [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) to its name and the

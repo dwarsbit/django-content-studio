@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "content_studio",
     "content_studio.contrib.password_reset",
+    "content_studio.media_library",
     "tests.testapp",
 ]
 

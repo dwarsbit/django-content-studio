@@ -102,8 +102,6 @@ class SiteSettingsAdmin(ModelStudio):
     edit_main = ["site_name", "tagline"]
 
 
-if models.blueprint_available:
-
-    @register(models.LandingPage)
-    class LandingPageAdmin(ModelStudio):
-        edit_main = ["title", "body"]
+@register(models.LandingPage)
+class LandingPageAdmin(ModelStudio):
+    edit_main = ["title", "body"]

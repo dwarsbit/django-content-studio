@@ -15,7 +15,7 @@ def generate_uuid(instance, filename):
 
 class Media(ContentModel):
     class Meta(ContentModel.Meta):
-        db_table = "dbp_media"
+        db_table = "content_studio_media"
         verbose_name = _("Media")
         verbose_name_plural = _("Media")
 
@@ -86,7 +86,7 @@ class Media(ContentModel):
 
 class Folder(ContentModel):
     class Meta(ContentModel.Meta):
-        db_table = "dbp_folder"
+        db_table = "content_studio_folder"
         verbose_name = _("Folder")
         verbose_name_plural = _("Folders")
         unique_together = ("name", "parent")

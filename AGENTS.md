@@ -12,8 +12,8 @@
 
 ### Design Principles
 
-- **Not a CMS**: Content Studio brings no models of its own. Like the classic Django admin, it works with any plain Django model — register it and it is manageable. Django Blueprint is **not** a requirement.
-- **Blueprint-aware, never Blueprint-dependent**: Content Studio may detect Blueprint objects and adapt its behavior (for example, Blueprint's `HTMLField` renders the Rich Text widget), but every capability must also be achievable with plain Django models and fields. Never make Blueprint the only path to a feature.
+- **Not a CMS**: Content Studio manages the models you already have. Like the classic Django admin, it works with any plain Django model — register it and it is manageable.
+- **Batteries included, never imposed**: Content Studio ships optional content fields (`content_studio.fields`: `HTMLField`, `TagField`, `FlexField`, ...) and base models (`content_studio.models`: `ContentModel`, `SingletonModel`, `SoftDeletableModel`, ...), formerly provided by the now-merged and deprecated django-blueprint. Every capability must also be achievable with plain Django models and fields; never make a built-in field or model the only path to a feature.
 - **The internal API stays internal**: the generated Django REST Framework backend is plumbing for the React app, not a public feature. Users who need an API for their own clients should use django-headless. Never document or expose API internals (endpoints, wire formats, the tenant header) in user-facing documentation.
 
 ---
@@ -28,7 +28,7 @@ content_studio/
 ├── admin.py             # ModelStudio, InlineModelStudio, ContentStudioSite, registry
 ├── apps.py              # App configuration and registry
 ├── settings.py          # Content Studio specific settings (CONTENT_STUDIO namespace)
-├── models.py            # Base models (ActivityLog)
+├── models.py            # ActivityLog and the optional base models (ContentModel, SingletonModel, ...)
 ├── serializers.py       # DRF serializers
 ├── viewsets.py          # DRF viewsets for API endpoints
 ├── views.py             # Traditional Django views
@@ -36,9 +36,13 @@ content_studio/
 ├── router.py            # Custom DRF router
 ├── paginators.py        # Custom pagination classes
 ├── form.py              # Form and field definitions
+├── fields.py            # Optional content fields (HTMLField, TagField, FlexField, ...)
+├── managers.py          # Managers for the base models (SingletonManager, SoftDeletableManager)
+├── sanitizers.py        # HTML sanitizer (allowlist based on nh3)
+├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E007, W001)
+├── checks.py            # System checks (content_studio.E001-E013, W001-W009)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── extensions.py        # Extension base classes
@@ -49,7 +53,7 @@ content_studio/
 │   ├── statistic.py     # Dashboard statistic component
 │   ├── activity_log.py  # Activity logging for dashboard
 │   └── scheduled_tasks.py
-├── media_library/
+├── media_library/       # Optional built-in media library app (models, migrations)
 │   └── viewsets.py      # Media library API endpoints
 ├── login_backends/
 │   └── ...              # Authentication backends
@@ -121,6 +125,7 @@ CONTENT_STUDIO = {
     'CREATED_AT_ATTR': 'created_at',
     'MEDIA_LIBRARY_MODEL': None,
     'MEDIA_LIBRARY_FOLDER_MODEL': None,
+    'HTML_SANITIZER': None,
     'TENANT_MODEL': None,
     'PASSWORD_RESET_EXPIRATION_TIME': 10,
     'LOGIN_THROTTLE_RATE': '10/min',  # per IP; None disables login throttling
@@ -178,7 +183,7 @@ See `scripts/test_wrapper.py` for test configuration.
 CI runs on GitHub Actions (`.github/workflows/ci.yml`): a backend matrix
 (Python 3.12–3.14 x Django 5.2/6.0) with pytest + black, a frontend job with
 typecheck + Vitest + build, and a packaging job that builds the wheel and
-verifies the compiled assets, translations and a blueprint-less install.
+verifies the compiled assets and translations on a fresh install.
 
 ---
 
@@ -214,10 +219,12 @@ Content Studio uses a widget system to render fields. Default mappings are defin
 - `DateTimeField` → `DateTimeWidget`
 - `TimeField` → `TimeWidget`
 - `JSONField` → `JSONWidget`
-- Blueprint `HTMLField` → `RichTextWidget` (only when django-blueprint is installed)
-- Blueprint `TagField` → `TagWidget` (only when django-blueprint is installed)
+- `HTMLField` → `RichTextWidget` (built into Content Studio)
+- `TagField` → `TagWidget` (built into Content Studio)
+- `FlexField` → `JSONSchemaWidget`, `MultipleChoiceField` → `MultiSelectWidget`, `URLPathField` → `URLPathWidget` (built into Content Studio)
+- `MediaField` / `ManyMediaField` → media picker widgets (built into the optional `content_studio.media_library` app)
 
-Blueprint widgets are registered via a guarded import: Content Studio imports and works fully without django-blueprint. Never import blueprint at module top level without a guard.
+The content fields and base models formerly provided by django-blueprint are merged into Content Studio itself (`content_studio.fields`, `content_studio.models`); django-blueprint is deprecated. Never import the external `blueprint` package.
 
 The mappings live on the `ContentStudioSite` (`default_widget_mapping`, `default_format_mapping`); there are no per-model overrides.
 

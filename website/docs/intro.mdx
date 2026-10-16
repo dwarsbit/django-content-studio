@@ -12,15 +12,17 @@ inlines, a dashboard and a media library.
 ## What you get
 
 - **Any plain Django model works.** Like the classic Django admin, Content
-  Studio brings no models of its own. It is an admin, not a CMS — there is
-  nothing to buy into.
+  Studio manages the models you already have. It is an admin, not a CMS —
+  there is nothing to buy into.
 - **A complete editing interface** for every registered model: list views with
   search, filtering and ordering, a widget-based editor with validation,
   inlines and audit stamps — secured by the same permission hooks the Django
   admin calls, including per-object checks.
 - **A widget-based editor.** Fields render with dedicated widgets for dates,
   rich text, tags, media, JSON with a schema and more, and edit views are
-  laid out with form sets and field layouts.
+  laid out with form sets and field layouts. The fields that need a richer
+  editor — `HTMLField`, `TagField`, `FlexField` and friends — ship built-in,
+  next to base models like `ContentModel` and `SingletonModel`.
 - **A composable dashboard** with statistics, content lists, an activity log
   and scheduled task widgets you declare in Python.
 - **A media library** — folders, uploads and crops — pointed at whichever
@@ -30,10 +32,11 @@ inlines, a dashboard and a media library.
 
 ## What it is not
 
-Content Studio does not bring content models, and it does not render your
-site. It manages the models you already have. [Django Blueprint](https://dwarsbit.github.io/django-blueprint/) pairs well with it — its fields
-get dedicated widgets and its media library plugs straight in — but Blueprint
-is an optional integration, never a requirement.
+Content Studio does not render your site, and it does not force content
+models on you: registering your own models is all it takes. The optional
+base models and fields it ships (in `content_studio.fields` and
+`content_studio.models`) are there for the taking — plain Django models
+and fields work just as well.
 
 ## Requirements
 
@@ -48,9 +51,6 @@ is an optional integration, never a requirement.
   own clients and frontends. Content Studio is a different tool: it ships an
   interface, not an API. Its generated backend is internal plumbing for the
   React app — for a public API of your own, use Django Headless.
-- **[Django Blueprint](https://dwarsbit.github.io/django-blueprint/)** provides common content
-  models and fields. Content Studio recognizes Blueprint fields when
-  installed — see [Blueprint integration](/docs/blueprint-integration).
 
 ## Next steps
 

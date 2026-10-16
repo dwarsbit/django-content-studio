@@ -1,17 +1,19 @@
 """
 Models for the Content Studio demo project.
 
-Everything here is plain Django — no Blueprint required. The media library
-models follow the documented model contract (``name``, ``tags``, ``type``,
-``file``, ``folder``), so the demo exercises the media library with a custom
-model instead of a framework-provided one.
+Everything here is plain Django — no third-party packages required. The
+media library models follow the documented model contract (``name``,
+``tags``, ``type``, ``file``, ``folder``), so the demo exercises the media
+library with a custom model instead of a framework-provided one.
 
-When django-blueprint is installed, one extra model registers itself at the
-bottom of this module to cover the optional integration.
+At the bottom of this module a model built on the built-in ``HTMLField``
+registers itself, so the rich text widget and formats are exercised too.
 """
 
 from django.conf import settings
 from django.db import models
+
+from content_studio.fields import HTMLField
 
 
 class Category(models.Model):
@@ -45,7 +47,7 @@ class MediaFolder(models.Model):
 
 class MediaItem(models.Model):
     name = models.CharField(max_length=200)
-    # A list of strings, like Blueprint's TagField — the interface's
+    # A list of strings, like the built-in TagField — the interface's
     # tags input and search expect a list-typed field.
     tags = models.JSONField(default=list, blank=True)
     type = models.CharField(max_length=10, default="file")
@@ -152,26 +154,13 @@ class SiteSettings(models.Model):
         return self.site_name
 
 
-# Blueprint is an optional integration: the demo works fully without it. When
-# it is installed, a Blueprint-integrated model joins the demo so the rich
-# text widget and formats are exercised too.
-try:
-    from blueprint import fields as bp_fields
+class LandingPage(models.Model):
+    title = models.CharField(max_length=200)
+    body = HTMLField(blank=True)
 
-    blueprint_available = True
-except ImportError:
-    bp_fields = None
-    blueprint_available = False
+    class Meta:
+        verbose_name = "landing page"
+        verbose_name_plural = "landing pages"
 
-if bp_fields is not None:
-
-    class LandingPage(models.Model):
-        title = models.CharField(max_length=200)
-        body = bp_fields.HTMLField(blank=True)
-
-        class Meta:
-            verbose_name = "landing page"
-            verbose_name_plural = "landing pages"
-
-        def __str__(self):
-            return self.title
+    def __str__(self):
+        return self.title

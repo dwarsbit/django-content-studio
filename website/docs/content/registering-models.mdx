@@ -71,9 +71,8 @@ not offered.
 
 :::note
 As a fallback for models that carry a model-level `is_singleton` marker (for
-example [Django Blueprint](/docs/blueprint-integration)'s `SingletonModel`),
-that marker is honored too — a concrete *field* named `is_singleton` is
-ignored.
+example the built-in `SingletonModel`), that marker is honored too — a
+concrete *field* named `is_singleton` is ignored.
 :::
 
 ## Inlines
@@ -266,14 +265,14 @@ never assumes a field — with the option set:
 ```python
 @register(Article)
 class ArticleStudio(ModelStudio):
-    # Blueprint's SoftDeletableModel uses "removed_at".
+    # The built-in SoftDeletableModel uses "removed_at".
     soft_delete = "removed_at"
 ```
 
 The field must exist and be a nullable date or datetime field, or the
 `content_studio.E008` system check reports the misconfiguration. The
-option is compatible with (but never requires) django-blueprint's
-`SoftDeletableModel`, whose `removed_at` field fits as-is.
+option works with any model carrying such a field — the built-in
+`SoftDeletableModel`'s `removed_at` fits as-is.
 
 ## Object history
 
@@ -293,7 +292,7 @@ class ArticleStudio(ModelStudio):
 The title defaults to "Activity" and is translated. The component
 renders only for saved objects; a create has no history. It is gated
 by view permission on the object, and works with plain Django models
-and Blueprint models alike.
+and the built-in base models alike.
 
 Inline placement renders the log inside its form set's section. For
 its own section instead, declare the sidebar as form sets — each

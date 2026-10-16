@@ -88,9 +88,6 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Install django-blueprint (optional integration)
-        run: poetry run pip install django-blueprint
-
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
@@ -140,9 +137,8 @@ jobs:
       - name: Verify the wheel contents
         run: python scripts/check_wheel.py
 
-      - name: Fresh install imports without django-blueprint
+      - name: Fresh install imports cleanly
         run: |
           python -m venv /tmp/cs-venv
           /tmp/cs-venv/bin/pip install dist/*.whl
           /tmp/cs-venv/bin/python -c "import content_studio; print(content_studio.__version__)"
-          ! /tmp/cs-venv/bin/pip list | grep -qi blueprint

@@ -1,6 +1,6 @@
 import nh3
-from django.conf import settings
-from django.utils.module_loading import import_string
+
+from .settings import cs_settings
 
 DEFAULT_TAGS = {
     "a",
@@ -89,17 +89,13 @@ def sanitize_html(value: str) -> str:
 def get_default_sanitizer():
     """
     Resolves the project-wide default sanitizer: the HTML_SANITIZER key of
-    the BLUEPRINT setting (a callable or dotted import path), falling
+    the CONTENT_STUDIO setting (a callable or dotted import path), falling
     back to the built-in sanitize_html. Resolved lazily on every save so
     settings overrides (and tests) take effect immediately.
     """
-    config = getattr(settings, "BLUEPRINT", None) or {}
-    sanitizer = config.get("HTML_SANITIZER")
+    sanitizer = cs_settings.HTML_SANITIZER
 
     if sanitizer is None:
         return sanitize_html
 
-    if callable(sanitizer):
-        return sanitizer
-
-    return import_string(sanitizer)
+    return sanitizer

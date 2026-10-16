@@ -2,7 +2,7 @@
 Tests for singleton model admin semantics.
 
 The admin's is_singleton attribute is canonical; a model-level marker
-(e.g. Blueprint's SingletonModel.is_singleton property) is honored as a
+(e.g. the built-in SingletonModel's is_singleton property) is honored as a
 fallback, but concrete fields named is_singleton are ignored.
 """
 

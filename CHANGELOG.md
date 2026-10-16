@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+- **Django Blueprint is merged in and deprecated.** The content fields
+  (`HTMLField`, `TagField`, `FlexField`, `MultipleChoiceField`,
+  `URLPathField`, `HashTagField`) and base models (`ContentModel`,
+  `SingletonModel`, `SoftDeletableModel` and the other base classes)
+  formerly provided by the optional django-blueprint integration now
+  ship first-class in Content Studio — `content_studio.fields`,
+  `content_studio.models`, `content_studio.managers`,
+  `content_studio.sanitizers` and `content_studio.validators` — and are
+  always mapped to their dedicated widgets and formats.
+
+- **A built-in media library app.** `content_studio.media_library`
+  ships `Media` and `Folder` models with migrations: add the app to
+  `INSTALLED_APPS` and point `MEDIA_LIBRARY_MODEL` /
+  `MEDIA_LIBRARY_FOLDER_MODEL` at its models. Custom media models keep
+  working as before.
+
+- **The HTML sanitizer setting moves to the `CONTENT_STUDIO`
+  namespace.** `CONTENT_STUDIO["HTML_SANITIZER"]` (a callable or dotted
+  import path) replaces the old `BLUEPRINT["HTML_SANITIZER"]` setting;
+  unset, the built-in allowlist sanitizer applies.
+
+- The media library focal point setting is renamed
+  `FOCAL_POINT_ATTR` (formerly `FOCUS_POINT_ATTR`), and the built-in
+  media library models use the `content_studio_media` and
+  `content_studio_folder` tables.
+
 ## v1.0.0-rc.1
 
 - 🎉 **The beta era closes.** Twenty-eight pre-releases (beta.1 →

@@ -82,10 +82,6 @@ const config: Config = {
           title: "Related",
           items: [
             {
-              label: "Django Blueprint",
-              href: "https://dwarsbit.github.io/django-blueprint/",
-            },
-            {
               label: "Django Headless",
               href: "https://djangoheadless.org",
             },

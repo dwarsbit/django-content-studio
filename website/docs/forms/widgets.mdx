@@ -27,9 +27,9 @@ class MyStudioSite(ContentStudioSite):
 | `ManyToManyField` | `ManyToManyWidget` |
 | `DateField` / `DateTimeField` / `TimeField` | Dedicated date/time widgets |
 | `JSONField` | `JSONWidget` |
-| Blueprint `HTMLField` | `RichTextWidget` *(Blueprint only)* |
-| Blueprint `TagField`, `FlexField`, `MultipleChoiceField`, `URLPathField` | Dedicated widgets *(Blueprint only)* |
-| Blueprint `MediaField` / `ManyMediaField` | Media picker widgets *(Blueprint only)* |
+| `HTMLField` (built-in) | `RichTextWidget` |
+| `TagField`, `FlexField`, `MultipleChoiceField`, `URLPathField` (built-in) | Dedicated widgets |
+| `MediaField` / `ManyMediaField` (built-in) | Media picker widgets |
 | `"AutoSlugField"` (string key) | `SlugWidget` |
 
 Unknown field types fall back to a plain input; unknown widget names fall
