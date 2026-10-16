@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..dashboard import BaseWidget
+from ..dashboard import DashboardWidget
 
 
 class StatisticWidgetSerializer(serializers.Serializer):
@@ -16,7 +16,7 @@ class StatisticWidgetSerializer(serializers.Serializer):
     )
 
 
-class StatisticWidget(BaseWidget):
+class StatisticWidget(DashboardWidget):
     """
     Widget for showing some statistic.
     """

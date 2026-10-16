@@ -79,7 +79,7 @@ class DashboardViewSet(ViewSet):
         return Response(data=data)
 
 
-class BaseWidget:
+class DashboardWidget:
     # Display name of the widget; every widget should set one.
     name = None
     col_span = 1
@@ -118,7 +118,7 @@ class BaseWidget:
         return (self.name,)
 
 
-class SpacingWidget(BaseWidget):
+class SpacingWidget(DashboardWidget):
     name = "SpacingWidget"
 
     def __init__(self, col_span=1, widget_id=None):

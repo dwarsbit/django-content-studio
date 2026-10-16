@@ -4,7 +4,7 @@ Tests for the model serializer (the field metadata sent to the frontend).
 
 from django.contrib.auth import models as auth_models
 
-from content_studio.models import ModelSerializer
+from content_studio.serializers import ModelSerializer
 
 
 def test_required_follows_blank_semantics():

@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from ..dashboard import BaseWidget
+from ..dashboard import DashboardWidget
 
 
 class ScheduledTaskSerializer(serializers.Serializer):
@@ -30,7 +30,7 @@ class ScheduledTasksWidgetSerializer(serializers.Serializer):
     tasks = serializers.ListField(child=ScheduledTaskSerializer())
 
 
-class ScheduledTasksWidget(BaseWidget):
+class ScheduledTasksWidget(DashboardWidget):
     """
     Widget for showing a list of scheduled tasks.
     """

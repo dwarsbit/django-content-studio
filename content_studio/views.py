@@ -14,8 +14,7 @@ from rest_framework.viewsets import ViewSet
 from . import __version__
 from .admin import AdminSerializer, ModelStudio, ModelGroup
 from .exceptions import NotConfigured
-from .models import ModelSerializer
-from .serializers import get_session_user_serializer
+from .serializers import ModelSerializer, get_session_user_serializer
 from .settings import cs_settings
 
 

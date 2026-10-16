@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **The dashboard widget base class is `DashboardWidget`.**
+  `content_studio.dashboard.BaseWidget` is renamed, so it no longer
+  shares its name with the form widgets' `content_studio.widgets.BaseWidget`.
+  Derived widget IDs are unchanged.
+
 - **`list_display` means what it means in the Django admin.** The
   list view's role mapping moves to `list_item_display` (and its hook
   to `get_list_item_display`, returning a `ListItemDisplay`).

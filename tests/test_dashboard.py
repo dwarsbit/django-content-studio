@@ -13,7 +13,7 @@ from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 
 from content_studio.dashboard import (
-    BaseWidget,
+    DashboardWidget,
     Dashboard,
     DashboardViewSet,
     SpacingWidget,

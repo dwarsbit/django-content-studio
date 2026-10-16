@@ -16,7 +16,7 @@ from django.contrib import admin as django_admin
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 
-from content_studio.dashboard import BaseWidget, Dashboard, SpacingWidget
+from content_studio.dashboard import DashboardWidget, Dashboard, SpacingWidget
 from content_studio.extensions import IFramePage, MainMenuLink
 from content_studio.form import ButtonLink, Component
 from content_studio.utils import derive_uuid
@@ -31,7 +31,7 @@ class MyLink(ButtonLink):
     label = "View site"
 
 
-class MyWidget(BaseWidget):
+class MyWidget(DashboardWidget):
     name = "MyWidget"
 
 
@@ -84,7 +84,7 @@ def test_explicit_widget_id_takes_precedence():
 def test_widget_id_class_attribute_still_takes_precedence():
     fixed = uuid.uuid4()
 
-    class FixedWidget(BaseWidget):
+    class FixedWidget(DashboardWidget):
         name = "FixedWidget"
         widget_id = fixed
 

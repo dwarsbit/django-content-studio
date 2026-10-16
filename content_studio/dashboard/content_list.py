@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..dashboard import BaseWidget
+from ..dashboard import DashboardWidget
 
 
 class ContentSerializer(serializers.Serializer):
@@ -24,7 +24,7 @@ class ContentListWidgetSerializer(serializers.Serializer):
     content = serializers.ListField(child=ContentSerializer())
 
 
-class ContentListWidget(BaseWidget):
+class ContentListWidget(DashboardWidget):
     """
     Widget for showing a list of content.
     """
