@@ -2,6 +2,7 @@ import React from "react";
 import { useFormContext } from "react-hook-form";
 
 import { ActivityLog } from "@/components/form-components/activity-log";
+import { Link } from "@/components/form-components/link";
 import { LinkButton } from "@/components/form-components/link-button";
 import { FormatRenderer } from "@/components/formats/renderer";
 import {
@@ -25,6 +26,7 @@ const COMPONENTS: Partial<
     }>
   >
 > = {
+  Link,
   LinkButton,
   ActivityLog,
 };

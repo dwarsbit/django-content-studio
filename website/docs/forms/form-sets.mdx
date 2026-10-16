@@ -63,8 +63,8 @@ To edit one field with another widget, pass the widget class:
 
 ## Components
 
-Besides fields, the edit page can show components: a button that links
-somewhere, and the object's activity log.
+Besides fields, the edit page can show components: links, and the object's
+activity log.
 
 ```python
 # blog/admin.py
@@ -88,12 +88,15 @@ class ArticleStudio(ModelStudio):
     edit_sidebar = ["published_at", "author", ViewOnSiteButton(), ActivityLog()]
 ```
 
-- **`ButtonLink`**: a button that opens the URL `get_url(obj, request)`
-  returns. Set `copy = True` to add a button that copies the URL.
+- **`Link`**: a text link that opens the URL `get_url(obj, request)`
+  returns.
+- **`ButtonLink`**: the same as a button, with an optional `icon`. Set
+  `copy = True` to add a button that copies the URL.
 - **`ActivityLog`**: the changes made to the object, newest first, under the
   title "Activity" or the `title` you pass.
 
-Only these components are supported; other component types are not.
+Only these components are supported; other component types are not. Links
+appear once the object is saved.
 
 Each component gets an ID from its class and its label, so every worker of a
 deployment agrees on it. Two components of the same class with the same

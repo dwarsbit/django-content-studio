@@ -428,6 +428,70 @@ describe("FormField", () => {
   });
 });
 
+describe("Link component", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders a Link as a text link that opens its URL", async () => {
+    httpMock.get.mockResolvedValue({
+      data: { url: "https://example.com/articles/abc-123" },
+    });
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    render(
+      <FormHarness
+        defaultValues={{
+          id: "abc-123",
+          title: "",
+          status: "draft",
+          is_published: false,
+        }}
+      >
+        <FormField
+          formField={makeFormField("title", {
+            type: "component",
+            component_type: "Link",
+            component_id: "1a2b3c4d",
+            label: "Preview",
+          })}
+          model={makeModel()}
+        />
+      </FormHarness>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Preview" }));
+
+    expect(httpMock.get).toHaveBeenCalledWith(
+      "/content/testapp.article/abc-123/components/1a2b3c4d",
+    );
+    expect(openSpy).toHaveBeenCalledWith(
+      "https://example.com/articles/abc-123",
+      "_blank",
+      "noopener",
+    );
+  });
+
+  it("renders nothing for an unsaved object", () => {
+    render(
+      <FormHarness
+        defaultValues={{ title: "", status: "draft", is_published: false }}
+      >
+        <FormField
+          formField={makeFormField("title", {
+            type: "component",
+            component_type: "Link",
+            label: "Preview",
+          })}
+          model={makeModel()}
+        />
+      </FormHarness>,
+    );
+
+    expect(screen.queryByText("Preview")).not.toBeInTheDocument();
+  });
+});
+
 describe("FormSet", () => {
   beforeEach(() => {
     vi.resetAllMocks();
