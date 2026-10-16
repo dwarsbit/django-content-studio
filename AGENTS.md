@@ -209,6 +209,19 @@ not supported in v1.
 
 ---
 
+## Writing Documentation
+
+All user-facing text (the docs website, the README, and the changelog's
+voice and terminology) follows the writing style guide in
+`website/STYLE.md`: read it before writing or editing documentation. In
+short: address the reader as "you", never "we"; Content Studio's interface
+is "the admin", the classic one "the classic Django admin"; no stack beyond
+Django, no internal API, no roadmap promises, no version history in prose,
+no django-blueprint; complete, runnable examples in the shared blog example
+project.
+
+---
+
 ## Code Organization
 
 ### Model Registration
@@ -303,6 +316,7 @@ urlpatterns = [
 | TypeScript config | `/frontend/tsconfig.json` |
 | Vite config | `/frontend/vite.config.ts` |
 | Docs website | `/website` (Docusaurus, `npm run build`; deployed by the Website workflow) |
+| Writing style guide | `/website/STYLE.md` |
 
 ---
 

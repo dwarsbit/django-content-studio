@@ -15,6 +15,10 @@ npm run serve    # serve the production build locally
 npm run typecheck
 ```
 
+## Writing
+
+Follow the [writing style guide](STYLE.md) for every page.
+
 ## Deployment
 
 Deploys are automatic: pushes to `main` that touch `website/**` trigger the
