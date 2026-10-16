@@ -2,6 +2,54 @@
 
 ## Unreleased
 
+### Security
+
+A security review fixed the following issues in 1.0.0-rc.1 and the
+betas. Upgrading is strongly recommended.
+
+- **Dashboard data was readable without signing in.** The dashboard
+  widget endpoint set no permission classes and fell back to Django
+  REST Framework's default (`AllowAny`, unless the project configured
+  `DEFAULT_PERMISSION_CLASSES`): statistics, content lists and the
+  activity log were public. It now requires an active staff user, and
+  the activity log widget only shows entries on models the user may
+  view.
+- **Non-staff users could sign in.** Login and token authentication
+  only checked `is_active`, so any active account with a password got
+  working tokens (what it could see then depended on its model
+  permissions). Both now require an active staff user, like the Django
+  admin.
+- **Tokens outlived a password change.** Access and refresh tokens are
+  now bound to the user's password: changing or resetting it signs the
+  user out everywhere.
+- **Password reset codes could be brute-forced.** Requesting a new code
+  reset the failed-attempt count. Attempts now count per email across
+  codes, with a one-hour lockout; the endpoints are throttled per IP
+  (`PASSWORD_RESET_THROTTLE_RATE`); only active staff users can reset;
+  new passwords go through `AUTH_PASSWORD_VALIDATORS`; and an email
+  shared by several users no longer causes a server error.
+- **Uploads were not checked.** The media library stored any file, so
+  an HTML or SVG upload served from the site's domain was stored XSS.
+  Uploads are now checked against `MEDIA_LIBRARY_ALLOWED_EXTENSIONS`
+  and `MEDIA_LIBRARY_MAX_UPLOAD_SIZE`, and markup is rejected whatever
+  its extension.
+- **The model schema was public.** The interface's discovery data
+  (models, fields, extensions) answered anonymous requests; it now
+  requires signing in, and the public sign-in information no longer
+  includes the exact version.
+- **The refresh cookie could travel over HTTP** behind a
+  TLS-terminating proxy. It is now `Secure` whenever `DEBUG` is off
+  (`REFRESH_COOKIE_SECURE` forces either value).
+- Signing out clears the interface's cached data, so the next user in
+  the same browser does not see the previous user's.
+
+**Upgrade notes:** only active staff users can sign in from now on;
+everyone is signed out once after upgrading (existing tokens carry no
+password binding); SVG and other file types outside the allowlist can no
+longer be uploaded — extend `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` if you
+need them; and run your deployment through the new Security page's
+checklist.
+
 - **A defined public API.** The public modules declare `__all__`, and
   the new Public API docs page lists every public name, the studio and
   site hooks, the settings and the system check IDs — the surface that
