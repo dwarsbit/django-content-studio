@@ -10,140 +10,111 @@
 [![CI](https://github.com/dwarsbit/django-content-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/dwarsbit/django-content-studio/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Django Content Studio is a modern, flexible alternative to the Django admin — with batteries included: a React interface for the models you already have, plus optional content fields, base models and a media library for content-driven projects.
+Django Content Studio is a modern alternative to the classic Django admin,
+with batteries included. Register the models you already have and manage
+them in a fast, modern admin, with optional fields and models for
+content-driven projects.
 
-📖 **Read the full documentation at [dwarsbit.github.io/django-content-studio](https://dwarsbit.github.io/django-content-studio/)**
+**Documentation: [dwarsbit.github.io/django-content-studio](https://dwarsbit.github.io/django-content-studio/)**
 
-## ✨ Features
+## Features
 
-- **🎯 Works with any model**: register a plain Django model — like the classic admin — and it is manageable. Nothing to migrate to and nothing to buy into: the built-in fields and models are optional
-- **⚡ A complete editing interface**: list views with search, filtering and ordering, a widget-based editor with validation, inlines and audit stamps — secured by the same permission hooks the Django admin calls, including per-object checks
-- **🧩 Widget-based editing**: dedicated editors for dates, rich text, tags, media and JSON, with edit views laid out through form sets, field layouts and components
-- **📊 A composable dashboard**: statistics, content lists, activity logs and scheduled tasks as widgets you declare in Python
-- **🖼️ Media library**: folders, uploads and image crops against whichever media model you configure
-- **🧭 Multi-tenancy**: one header scopes every query, one hook decides which tenants a user may see
-- **🧩 Batteries included**: optional content fields — `HTMLField` with sanitization, `TagField`, `FlexField`, media pickers — and base models like `ContentModel` and `SingletonModel` ship built-in, and plain Django models and fields work just as well
+- **Your models, as they are.** Register a plain Django model, as in the
+  classic Django admin, and it is manageable. Nothing to migrate to.
+- **A complete admin.** List pages with search, filters and sorting, and
+  edit pages with validation, inlines and audit stamps. Access follows the
+  permission hooks of the classic Django admin, down to single objects.
+- **Dedicated widgets** for dates, rich text, tags, media and structured
+  JSON, with edit pages laid out in Python.
+- **A dashboard** with statistics, content lists and recent activity.
+- **A media library** with folders, uploads and image crops.
+- **Multi-tenancy**: one method decides which tenants an editor may work in.
+- **Batteries included**: optional fields such as `HTMLField` and
+  `TagField`, and base models such as `ContentModel` and `SingletonModel`.
 
-## 🚀 Quick Start
+## Quick start
 
-Install the package:
+1. Install the package:
 
-```bash
-pip install django-content-studio
-```
+   ```bash
+   pip install django-content-studio
+   ```
 
-Add `rest_framework` and `content_studio` to `INSTALLED_APPS` (`django.contrib.admin` stays installed: Content Studio records its activity log in the admin's `LogEntry` model):
+2. Add the apps to your settings:
 
-```python
-# settings.py
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rest_framework',
-    'content_studio',  # Add this
-    # ... your apps
-]
-```
+   ```python
+   # mysite/settings.py
+   INSTALLED_APPS = [
+       "django.contrib.admin",
+       "django.contrib.auth",
+       "django.contrib.contenttypes",
+       "django.contrib.sessions",
+       "django.contrib.messages",
+       "django.contrib.staticfiles",
+       "rest_framework",
+       "content_studio",
+       "blog",
+   ]
+   ```
 
-Include the URLs:
+3. Mount the admin:
 
-```python
-# urls.py
-urlpatterns = [
-    path('admin/', include('content_studio.urls')),
-    # ... your urls
-]
-```
+   ```python
+   # mysite/urls.py
+   from django.urls import include, path
 
-Register a model:
+   urlpatterns = [
+       path("admin/", include("content_studio.urls")),
+   ]
+   ```
 
-```python
-# apps/blog/admin.py
-from content_studio import register
-from content_studio.admin import ModelStudio
+4. Register a model in your app's `admin.py`:
+
+   ```python
+   # blog/admin.py
+   from content_studio import register
+   from content_studio.admin import ModelStudio
+
+   from .models import Article
 
 
-@register(Article)
-class ArticleStudio(ModelStudio):
-    table_display = ['title', 'status', 'published_at']
-    list_filter = ['status']
-    search_fields = ['title']
-```
+   @register(Article)
+   class ArticleStudio(ModelStudio):
+       table_display = ["title", "status", "published_at"]
+       list_filter = ["status"]
+       search_fields = ["title"]
+   ```
 
-That's it! 🎉 Open `/admin/`, log in with a staff account, and manage your content in a modern interface. (Building an API of your own? Use [Django Headless](https://github.com/dwarsbit/django-headless) — Content Studio's backend is internal plumbing for its interface, not a public API.)
+5. Start the development server, open `/admin/` and log in with a staff
+   account.
 
-## 📚 Documentation
+Continue with [Getting started](https://dwarsbit.github.io/django-content-studio/docs/getting-started)
+in the documentation.
 
-All usage and configuration is documented at [dwarsbit.github.io/django-content-studio](https://dwarsbit.github.io/django-content-studio/):
+## Documentation
 
-- [Introduction](https://dwarsbit.github.io/django-content-studio/docs/intro) — what Content Studio is (and is not)
-- [Getting started](https://dwarsbit.github.io/django-content-studio/docs/getting-started) — requirements, setup and your first model
-- [Registering models](https://dwarsbit.github.io/django-content-studio/docs/content/registering-models) — every `ModelStudio` option, singletons and inlines
-- [Access control](https://dwarsbit.github.io/django-content-studio/docs/permissions) — model-level and per-object permission hooks, login throttling
-- [Widgets and forms](https://dwarsbit.github.io/django-content-studio/docs/forms/widgets) — the widget registry and custom form layouts
-- [Dashboard](https://dwarsbit.github.io/django-content-studio/docs/dashboard) — composing the dashboard with widgets
-- [Media library](https://dwarsbit.github.io/django-content-studio/docs/media-library) — configuration, uploads and thumbnails
-- [Authentication](https://dwarsbit.github.io/django-content-studio/docs/authentication) — JWT, login backends, throttling and password reset
-- [Multi-tenancy](https://dwarsbit.github.io/django-content-studio/docs/multi-tenancy) — the tenant model, header scoping and the `get_tenants` hook
-- [Extensions](https://dwarsbit.github.io/django-content-studio/docs/extensions) — menu links and iframe pages
-- [Settings reference](https://dwarsbit.github.io/django-content-studio/docs/settings) — every `CONTENT_STUDIO` option
+- [Introduction](https://dwarsbit.github.io/django-content-studio/docs/intro): what Content Studio is, and what it is not
+- [How it compares](https://dwarsbit.github.io/django-content-studio/docs/comparison): Content Studio next to admin themes and content management systems
+- [Getting started](https://dwarsbit.github.io/django-content-studio/docs/getting-started): installation and your first model
+- [Registering models](https://dwarsbit.github.io/django-content-studio/docs/content/registering-models): studio options, singletons and inlines
+- [Access control](https://dwarsbit.github.io/django-content-studio/docs/permissions): model and object permissions
+- [Widgets](https://dwarsbit.github.io/django-content-studio/docs/forms/widgets) and [form sets](https://dwarsbit.github.io/django-content-studio/docs/forms/form-sets): field editors and edit page layouts
+- [Dashboard](https://dwarsbit.github.io/django-content-studio/docs/dashboard): composing the start page
+- [Media library](https://dwarsbit.github.io/django-content-studio/docs/media-library): models, uploads and cropping
+- [Authentication](https://dwarsbit.github.io/django-content-studio/docs/authentication): logging in, sessions and password reset
+- [Multi-tenancy](https://dwarsbit.github.io/django-content-studio/docs/multi-tenancy): tenants and who may work in them
+- [Security](https://dwarsbit.github.io/django-content-studio/docs/security): what is protected, and a deployment checklist
+- [Settings](https://dwarsbit.github.io/django-content-studio/docs/settings): every `CONTENT_STUDIO` setting
 
-## 🤝 Contributing
+See also [Django Headless](https://djangoheadless.org), if you need an API
+for your own clients.
 
-We welcome contributions! Here's how to get started:
+## Contributing and support
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Add tests for your changes (backend: `poetry run pytest`; frontend: `cd frontend && npm test`)
-5. Run the test suites
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) to set up the project and propose a change.
+- Report bugs in [GitHub Issues](https://github.com/dwarsbit/django-content-studio/issues) and ask questions in [GitHub Discussions](https://github.com/dwarsbit/django-content-studio/discussions).
+- Report security problems privately; see [SECURITY.md](SECURITY.md).
 
-### Development Setup
+## License
 
-```bash
-# Clone the repository
-git clone https://github.com/dwarsbit/django-content-studio.git
-cd django-content-studio
-
-# Install dependencies (Poetry creates the virtual environment)
-poetry install
-
-# Run backend tests
-poetry run pytest
-
-# Frontend (React interface)
-cd frontend
-npm install
-npm run dev
-npm test
-```
-
-## 🐛 Issues & Support
-
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/dwarsbit/django-content-studio/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/dwarsbit/django-content-studio/discussions)
-- 📧 **Email**: leon@dwarsbit.nl
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built on the shoulders of [Django](https://www.djangoproject.com/) and [Django REST Framework](https://www.django-rest-framework.org/)
-- Interface built with React and Tailwind CSS
-- Thanks to all contributors and the Django community
-
-## 🔗 Links
-
-- [Documentation](https://dwarsbit.github.io/django-content-studio/)
-- [PyPI Package](https://pypi.org/project/django-content-studio/)
-- [GitHub Repository](https://github.com/dwarsbit/django-content-studio)
-- [Changelog](CHANGELOG.md)
+MIT; see [LICENSE](LICENSE). Changes are listed in the [changelog](CHANGELOG.md).

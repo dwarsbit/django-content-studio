@@ -1,0 +1,53 @@
+---
+sidebar_position: 1.5
+---
+
+# ⚖️ How it compares
+
+Several projects improve on or replace the classic Django admin. They solve
+different problems, so the right choice depends on what you build. This page
+describes how Content Studio differs from the most common ones.
+
+## At a glance
+
+| | Approach | Manages | Renders your website |
+|---|---|---|---|
+| Content Studio | A separate admin, configured with studios | Your Django models | No |
+| Classic Django admin | Django's built-in admin, configured with `ModelAdmin` | Your Django models | No |
+| Django Unfold | A theme and extensions for the classic Django admin | Your Django models | No |
+| Jazzmin, Grappelli | Themes for the classic Django admin | Your Django models | No |
+| Wagtail | A CMS with its own admin | Pages in a page tree, plus snippets and other models | Yes |
+| django CMS | A CMS with editing on the page itself | Pages, placeholders and plugins | Yes |
+
+## Admin themes: Django Unfold, Jazzmin and Grappelli
+
+These projects keep the classic Django admin and change how it looks, and in
+Unfold's case add features such as dashboards and extra filters. You keep
+configuring `ModelAdmin` classes, and everything that works with the classic
+Django admin keeps working.
+
+Content Studio is not a theme: it is an admin of its own. You configure it
+with studios, which follow the conventions of `ModelAdmin` where they can
+(permission hooks, `search_fields`, `list_filter`, `ordering`, inlines) and
+differ where the admin needs more (widgets, layouts, list views, a media
+library). It runs next to the classic Django admin, so you can move over one
+model at a time.
+
+## Content management systems: Wagtail and django CMS
+
+Wagtail and django CMS are content management systems. Content is organized
+as pages in a tree, and the CMS renders those pages on your website; django
+CMS also lets editors change content on the page itself. You model content
+the way the CMS expects, as page types or plugins.
+
+Content Studio does not render your website and does not ask you to model
+content in a particular way. It manages the Django models you already have,
+and your own views and templates, or an API, deliver the content. The
+built-in fields and models are optional.
+
+## When to use Content Studio
+
+Content Studio fits when you want a modern admin for an existing or new
+Django project, keep full control over your models and how content reaches
+your users, and need content features such as rich text, a media library,
+a dashboard or multi-tenancy without adopting a CMS.

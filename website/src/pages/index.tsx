@@ -6,7 +6,8 @@ import Link from "@docusaurus/Link";
 
 import "../css/custom.css";
 
-const heroCode = `from content_studio import register
+const heroCode = `# blog/admin.py
+from content_studio import register
 from content_studio.admin import ModelStudio
 
 from .models import Article
@@ -20,34 +21,28 @@ class ArticleStudio(ModelStudio):
 
 const features = [
   {
-    emoji: "🎯",
-    title: "Works with any model",
-    text: "Like the classic Django admin: register a plain Django model and it is manageable. No content models forced on you — the built-in ones are optional.",
+    title: "Your models, as they are",
+    text: "Register a plain Django model, as in the classic Django admin, and it is manageable. Nothing to migrate to, no content model to adopt.",
   },
   {
-    emoji: "⚡",
-    title: "A complete editing interface",
-    text: "List views with search, filtering and ordering, an editor with validation, inlines and audit stamps — generated from your model studio, no frontend code to write.",
+    title: "A complete admin",
+    text: "List pages with search, filters and sorting, and edit pages with validation, inlines and audit stamps, configured in Python.",
   },
   {
-    emoji: "🧩",
-    title: "Widgets and form sets",
-    text: "Fields render with dedicated widgets — dates, rich text, tags, media, JSON with a schema — and edit views are laid out with form sets and field layouts.",
+    title: "Dedicated widgets",
+    text: "Dates, rich text, tags, media and structured JSON each get their own widget, and edit pages are laid out with form sets.",
   },
   {
-    emoji: "🛡️",
-    title: "Admin permission hooks",
-    text: "Model-level and per-object permission checks use the same hooks the Django admin calls. Multi-tenancy, throttled logins and audit stamps included.",
+    title: "Familiar permissions",
+    text: "The permission hooks of the classic Django admin, down to single objects, with multi-tenancy and limited login attempts.",
   },
   {
-    emoji: "📊",
     title: "A dashboard you compose",
-    text: "Statistics, content lists, activity logs and scheduled tasks as widgets you declare in Python — plus extensions like menu links and iframe pages.",
+    text: "Statistics, content lists, recent activity and scheduled tasks, declared in Python, plus links and pages of your own in the menu.",
   },
   {
-    emoji: "🧩",
-    title: "Rich fields built in",
-    text: "HTML with sanitization, tags, JSON with a schema, URL paths and media pickers ship first-class, next to base models like ContentModel and SingletonModel.",
+    title: "Batteries included",
+    text: "Optional fields for rich text, tags, structured JSON, URL paths and media, and base models such as ContentModel and SingletonModel.",
   },
 ];
 
@@ -57,7 +52,7 @@ export default function Home(): React.JSX.Element {
   return (
     <Layout
       title={`${siteConfig.title} — ${siteConfig.tagline}`}
-      description="A modern, flexible alternative to the Django admin, with batteries included."
+      description="A modern alternative to the classic Django admin, with batteries included."
     >
       <main>
         <section className="hero-dbp">
@@ -65,10 +60,10 @@ export default function Home(): React.JSX.Element {
             <div>
               <h1>Django Content Studio</h1>
               <p className="tagline">
-                A modern, flexible alternative to the Django admin, with
-                batteries included. Register your models and get a polished
-                editing interface — with the permission hooks and conventions
-                you already know.
+                A modern alternative to the classic Django admin, with batteries
+                included. Register your models and manage them in a modern
+                admin, with the permission hooks and conventions you already
+                know.
               </p>
               <div className="buttons">
                 <Link className="button button--primary" to="/docs/intro">
@@ -91,7 +86,6 @@ export default function Home(): React.JSX.Element {
             <div className="features-grid">
               {features.map((feature) => (
                 <div className="feature-card" key={feature.title}>
-                  <span className="emoji">{feature.emoji}</span>
                   <h3>{feature.title}</h3>
                   <p>{feature.text}</p>
                 </div>
