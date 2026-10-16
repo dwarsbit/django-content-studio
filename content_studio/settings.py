@@ -38,6 +38,41 @@ DEFAULTS = {
     # JSONField of {"x": <0-100>, "y": <0-100>}); None disables the
     # focal point editor.
     "FOCAL_POINT_ATTR": None,
+    # File extensions the media library accepts (lowercase, without the
+    # dot); None accepts every extension.
+    "MEDIA_LIBRARY_ALLOWED_EXTENSIONS": [
+        # Images (SVG is left out: it can carry scripts).
+        "avif",
+        "gif",
+        "jpeg",
+        "jpg",
+        "png",
+        "webp",
+        # Video and audio.
+        "m4a",
+        "mov",
+        "mp3",
+        "mp4",
+        "ogg",
+        "wav",
+        "webm",
+        # Documents.
+        "csv",
+        "doc",
+        "docx",
+        "odp",
+        "ods",
+        "odt",
+        "pdf",
+        "ppt",
+        "pptx",
+        "txt",
+        "xls",
+        "xlsx",
+    ],
+    # Maximum upload size of a media library file in bytes; None for no
+    # limit.
+    "MEDIA_LIBRARY_MAX_UPLOAD_SIZE": 50 * 1024 * 1024,
     "TENANT_MODEL": None,
     "PASSWORD_RESET_EXPIRATION_TIME": 10,
     # Rate limit for the password reset endpoints, per IP; None disables

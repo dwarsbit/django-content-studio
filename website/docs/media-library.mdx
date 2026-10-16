@@ -88,6 +88,12 @@ Files can also be uploaded by dragging them onto the library, with
 per-file progress, and each item's context menu offers **Copy URL** and
 **Download**.
 
+Uploads are checked against an allowlist of file extensions and a maximum
+size ([`MEDIA_LIBRARY_ALLOWED_EXTENSIONS`](/docs/settings#media_library_allowed_extensions)
+and [`MEDIA_LIBRARY_MAX_UPLOAD_SIZE`](/docs/settings#media_library_max_upload_size)),
+and files whose content is markup are rejected — an HTML or SVG file served
+from your own domain could run scripts in your users' sessions.
+
 ## Hooks
 
 - **`ContentStudioSite.get_thumbnail(obj)`** — returns the thumbnail URL for an image

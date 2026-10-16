@@ -615,3 +615,28 @@ def test_empty_login_backends_surfaces_as_warning():
     warning = next(m for m in messages if m.id == "content_studio.W009")
 
     assert "LOGIN_BACKENDS" in str(warning)
+
+
+# --- E014: media library upload settings -------------------------------------
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"MEDIA_LIBRARY_ALLOWED_EXTENSIONS": "jpg"},
+        {"MEDIA_LIBRARY_ALLOWED_EXTENSIONS": [".jpg"]},
+        {"MEDIA_LIBRARY_MAX_UPLOAD_SIZE": 0},
+        {"MEDIA_LIBRARY_MAX_UPLOAD_SIZE": "10MB"},
+    ],
+)
+def test_malformed_upload_settings_surface_as_system_error(overrides):
+    from django.test import override_settings
+
+    with override_settings(
+        CONTENT_STUDIO={"ADMIN_SITE": "content_studio.admin.admin_site", **overrides}
+    ):
+        messages = check_content_studio()
+
+    assert [m.id for m in messages if m.id == "content_studio.E014"] == [
+        "content_studio.E014"
+    ]

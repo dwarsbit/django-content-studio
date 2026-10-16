@@ -89,6 +89,22 @@ Import path strings of the media and folder models for the
 [media library](/docs/media-library). Both default to `None` — the library is
 disabled.
 
+## MEDIA_LIBRARY_ALLOWED_EXTENSIONS {#media_library_allowed_extensions}
+
+The file extensions the [media library](/docs/media-library) accepts,
+lowercase and without the dot. The default allows common images (`avif`,
+`gif`, `jpeg`, `jpg`, `png`, `webp`), video and audio (`m4a`, `mov`, `mp3`,
+`mp4`, `ogg`, `wav`, `webm`) and documents (`csv`, `doc`, `docx`, `odp`,
+`ods`, `odt`, `pdf`, `ppt`, `pptx`, `txt`, `xls`, `xlsx`). SVG is left out on
+purpose: it can carry scripts. `None` accepts every extension. Whatever the
+extension, files whose content is markup (HTML, SVG, XML) are rejected.
+
+## MEDIA_LIBRARY_MAX_UPLOAD_SIZE {#media_library_max_upload_size}
+
+The maximum size of a media library upload in bytes — default `52428800`
+(50 MB). `None` sets no limit. Your web server's own request size limit
+applies on top.
+
 ## FOCAL_POINT_ATTR {#focal_point_attr}
 
 Field name on the media item model holding the focal point, for the

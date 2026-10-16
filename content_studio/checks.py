@@ -451,6 +451,45 @@ def soft_delete_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def media_upload_errors() -> list[tuple[str, str]]:
+    """
+    Malformed media library upload settings, as (check id, message)
+    pairs: the allowed extensions must be a list of strings without a
+    leading dot, the maximum size a positive number of bytes.
+    """
+    errors = []
+    extensions = cs_settings.MEDIA_LIBRARY_ALLOWED_EXTENSIONS
+    max_size = cs_settings.MEDIA_LIBRARY_MAX_UPLOAD_SIZE
+
+    if extensions is not None and (
+        isinstance(extensions, str)
+        or not isinstance(extensions, (list, tuple, set))
+        or not all(
+            isinstance(e, str) and e and not e.startswith(".") for e in extensions
+        )
+    ):
+        errors.append(
+            (
+                "content_studio.E014",
+                "MEDIA_LIBRARY_ALLOWED_EXTENSIONS must be None or a list of "
+                "file extensions without the leading dot, like ['jpg', 'pdf'].",
+            )
+        )
+
+    if max_size is not None and (
+        isinstance(max_size, bool) or not isinstance(max_size, int) or max_size <= 0
+    ):
+        errors.append(
+            (
+                "content_studio.E014",
+                "MEDIA_LIBRARY_MAX_UPLOAD_SIZE must be None or a positive "
+                "number of bytes.",
+            )
+        )
+
+    return errors
+
+
 def focal_point_errors() -> list[tuple[str, str]]:
     """
     A misconfigured FOCAL_POINT_ATTR, as (check id, message) pairs.
@@ -1071,6 +1110,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in focal_point_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in media_upload_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, warning in model_group_warnings(site):

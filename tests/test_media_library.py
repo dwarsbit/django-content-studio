@@ -514,3 +514,80 @@ def test_crop_requires_change_permission(media_settings):
         assert calls == []
     finally:
         del admin_site.crop_image
+
+
+# --- Upload policy -----------------------------------------------------------
+
+PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
+
+
+def upload(user, name, content, **settings_overrides):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    with override_settings(CONTENT_STUDIO={**MEDIA_SETTINGS, **settings_overrides}):
+        return media_client(user).post(
+            "/api/media-library/items",
+            {
+                "name": name,
+                "type": "image",
+                "file": SimpleUploadedFile(name, content),
+            },
+            format="multipart",
+        )
+
+
+@pytest.fixture
+def media_root(tmp_path):
+    with override_settings(MEDIA_ROOT=str(tmp_path)):
+        yield tmp_path
+
+
+@pytest.mark.django_db
+def test_allowed_uploads_are_stored(media_root):
+    response = upload(make_superuser(), "photo.PNG", PNG_BYTES)
+
+    assert response.status_code == 201, response.content
+    assert ItemModel.objects.count() == 1
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "name, content",
+    [
+        ("drawing.svg", b"<svg xmlns='http://www.w3.org/2000/svg'></svg>"),
+        ("page.html", b"<html><script>alert(1)</script></html>"),
+        ("no-extension", PNG_BYTES),
+        # Markup in disguise: the extension is allowed, the content is not.
+        ("photo.png", b"\xef\xbb\xbf  <script>alert(1)</script>"),
+        ("notes.txt", b"\n<!doctype html><html></html>"),
+    ],
+)
+def test_disallowed_uploads_are_rejected(media_root, name, content):
+    response = upload(make_superuser(), name, content)
+
+    assert response.status_code == 400
+    assert "file" in response.json()
+    assert not ItemModel.objects.exists()
+
+
+@pytest.mark.django_db
+def test_uploads_over_the_size_limit_are_rejected(media_root):
+    response = upload(
+        make_superuser(), "photo.png", PNG_BYTES, MEDIA_LIBRARY_MAX_UPLOAD_SIZE=10
+    )
+
+    assert response.status_code == 400
+    assert "larger than" in response.json()["file"][0]
+
+
+@pytest.mark.django_db
+def test_upload_policy_can_be_opened_up(media_root):
+    response = upload(
+        make_superuser(),
+        "archive.zip",
+        b"PK\x03\x04",
+        MEDIA_LIBRARY_ALLOWED_EXTENSIONS=None,
+        MEDIA_LIBRARY_MAX_UPLOAD_SIZE=None,
+    )
+
+    assert response.status_code == 201

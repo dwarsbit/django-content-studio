@@ -42,7 +42,7 @@ content_studio/
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E013, W001-W011)
+├── checks.py            # System checks (content_studio.E001-E014, W001-W011)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── extensions.py        # Extension base classes
@@ -125,6 +125,8 @@ CONTENT_STUDIO = {
     'CREATED_AT_ATTR': 'created_at',
     'MEDIA_LIBRARY_MODEL': None,
     'MEDIA_LIBRARY_FOLDER_MODEL': None,
+    'MEDIA_LIBRARY_ALLOWED_EXTENSIONS': [...],  # images (no SVG), video, audio, documents
+    'MEDIA_LIBRARY_MAX_UPLOAD_SIZE': 50 * 1024 * 1024,
     'HTML_SANITIZER': None,
     'TENANT_MODEL': None,
     'PASSWORD_RESET_EXPIRATION_TIME': 10,

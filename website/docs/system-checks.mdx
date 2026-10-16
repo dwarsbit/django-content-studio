@@ -28,6 +28,7 @@ startup; the exit code of `manage.py check` differs.
 | `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that do not resolve to a field, and `list_item_display` values that are neither a field nor a model method. Inlines are validated too. |
 | `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key to the parent model. |
 | `content_studio.E013` | Site-level `default_widget_mapping` / `default_format_mapping` values that are not widget or format classes. |
+| `content_studio.E014` | A malformed `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` (not a list of extensions without the leading dot) or `MEDIA_LIBRARY_MAX_UPLOAD_SIZE` (not a positive number of bytes). |
 
 ## Warnings
 
