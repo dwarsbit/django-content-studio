@@ -42,7 +42,7 @@ Issues = "https://github.com/dwarsbit/django-content-studio/issues"
 Changelog = "https://github.com/dwarsbit/django-content-studio/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-Django = ">=5,<7"
+Django = ">=5.2,<7"
 djangorestframework = ">=3.16,<4"
 nh3 = ">=0.3.0,<1.0.0"
 jsonschema = ">=4.26.0,<5.0.0"
@@ -72,11 +72,6 @@ test-cov = "scripts.test_wrapper:main_test_cov"
 # Quality gate scripts - run tests before critical operations
 build = "scripts.test_wrapper:main_build"
 publish = "scripts.test_wrapper:main_publish"
-
-[tool.uv.workspace]
-members = [
-    "demo",
-]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

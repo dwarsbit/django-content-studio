@@ -93,7 +93,7 @@ frontend/
 | Area | Technology | Version |
 |------|------------|---------|
 | Backend | Python | >=3.12 |
-| Framework | Django | >=5.0,<7.0 |
+| Framework | Django | >=5.2,<7.0 |
 | API | Django REST Framework | >=3.16,<4 |
 | Auth | JWT (PyJWT, own backend; refresh token in httpOnly cookie) | >=2,<3 |
 | Frontend | React | 19.2.7 |

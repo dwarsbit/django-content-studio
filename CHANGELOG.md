@@ -10,6 +10,10 @@
   (it stays installed for the activity log's `LogEntry`). The package
   now ships classifiers, keywords and project URLs.
 
+- **Django 5.2 is the minimum.** Django 5.0 and 5.1 are out of
+  support and were no longer tested; the requirement is now
+  `Django>=5.2,<7`.
+
 - **Django Blueprint is merged in and deprecated.** The content fields
   (`HTMLField`, `TagField`, `FlexField`, `MultipleChoiceField`,
   `URLPathField`, `HashTagField`) and base models (`ContentModel`,
