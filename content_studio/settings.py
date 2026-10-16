@@ -86,6 +86,11 @@ DEFAULTS = {
     "TOKEN_LIFETIME": 60 * 60,
     # Refresh token lifetime in seconds; the token lives in an httpOnly cookie.
     "REFRESH_TOKEN_LIFETIME": 7 * 24 * 60 * 60,
+    # Whether the refresh token cookie is Secure (sent over HTTPS only).
+    # None: secure for HTTPS requests and whenever DEBUG is off, so a
+    # deployment behind a TLS-terminating proxy without
+    # SECURE_PROXY_SSL_HEADER still gets a secure cookie.
+    "REFRESH_COOKIE_SECURE": None,
     # Signing key for tokens; None falls back to the Django SECRET_KEY.
     "TOKEN_SIGNING_KEY": None,
     # Algorithm used to sign tokens (see PyJWT for the supported options).

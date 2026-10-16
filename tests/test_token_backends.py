@@ -222,7 +222,26 @@ class LoginAndRefreshFlowTests(TestCase):
         assert cookie["max-age"] == cs_settings.REFRESH_TOKEN_LIFETIME
         # Scoped to the token endpoints, not the whole site.
         assert cookie["path"] == "/api/tokens/jsonwebtoken/"
-        assert not cookie["secure"]
+
+    def test_cookie_is_secure_whenever_debug_is_off(self):
+        with override_settings(DEBUG=False):
+            assert self.login().cookies[REFRESH_COOKIE_NAME]["secure"]
+
+    def test_cookie_is_not_secure_over_http_in_debug(self):
+        with override_settings(DEBUG=True):
+            assert not self.login().cookies[REFRESH_COOKIE_NAME]["secure"]
+
+    def test_cookie_secure_flag_can_be_forced(self):
+        for value in (True, False):
+            with override_settings(
+                DEBUG=not value,
+                CONTENT_STUDIO={
+                    "ADMIN_SITE": "content_studio.admin.admin_site",
+                    "REFRESH_COOKIE_SECURE": value,
+                },
+            ):
+                cookie = self.login().cookies[REFRESH_COOKIE_NAME]
+                assert bool(cookie["secure"]) is value
 
     def test_login_cookie_is_secure_over_https(self):
         client = APIClient()

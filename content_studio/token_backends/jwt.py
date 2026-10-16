@@ -207,6 +207,15 @@ def _cookie_path():
     return refresh_url[: -len(REFRESH_URL_SUFFIX)]
 
 
+def _cookie_secure(request) -> bool:
+    secure = cs_settings.REFRESH_COOKIE_SECURE
+
+    if secure is None:
+        return request.is_secure() or not settings.DEBUG
+
+    return bool(secure)
+
+
 def _set_refresh_cookie(response, token, request):
     response.set_cookie(
         REFRESH_COOKIE_NAME,
@@ -214,7 +223,7 @@ def _set_refresh_cookie(response, token, request):
         max_age=cs_settings.REFRESH_TOKEN_LIFETIME,
         httponly=True,
         samesite="Lax",
-        secure=request.is_secure(),
+        secure=_cookie_secure(request),
         path=_cookie_path(),
     )
 

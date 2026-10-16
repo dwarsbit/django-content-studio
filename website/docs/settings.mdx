@@ -67,6 +67,15 @@ of admin sessions.
 Algorithm used to sign the tokens (any algorithm PyJWT supports) — default
 `"HS256"`.
 
+## REFRESH_COOKIE_SECURE {#refresh_cookie_secure}
+
+Whether the refresh token cookie is marked `Secure`, so browsers only send it
+over HTTPS. Default `None`: secure for HTTPS requests and whenever `DEBUG` is
+off — also behind a TLS-terminating proxy that does not set
+`SECURE_PROXY_SSL_HEADER`. Set `True` or `False` to force it; a production
+site served over plain HTTP needs `False` to sign in at all (and should move
+to HTTPS).
+
 ## EDITED_BY_ATTR / EDITED_AT_ATTR / CREATED_BY_ATTR / CREATED_AT_ATTR {#audit-attrs}
 
 Field names for the audit stamps. Defaults: `"edited_by"`, `"edited_at"`,

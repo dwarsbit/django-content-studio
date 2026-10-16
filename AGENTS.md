@@ -132,6 +132,7 @@ CONTENT_STUDIO = {
     'PASSWORD_RESET_EXPIRATION_TIME': 10,
     'PASSWORD_RESET_THROTTLE_RATE': '10/hour',  # per IP; None disables it
     'LOGIN_THROTTLE_RATE': '10/min',  # per IP; None disables login throttling
+    'REFRESH_COOKIE_SECURE': None,  # None: secure over HTTPS and whenever DEBUG is off
 }
 ```
 
