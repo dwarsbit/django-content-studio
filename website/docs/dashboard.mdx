@@ -53,7 +53,8 @@ serializer instance. `col_span` controls the widget's width in the grid.
 - **`ContentListWidget`** — a titled list of content links; return title,
   description and content items (model, id, title).
 - **`ActivityLogWidget`** — the latest five `LogEntry` records (the audit
-  trail written by the CRUD API), ready to use without configuration.
+  trail written by the CRUD API), ready to use without configuration. Only
+  entries on models the user may view are shown.
 - **`ScheduledTasksWidget`** — status of scheduled tasks (title, next run,
   duration, status); implement `get_data` with your task runner.
 - **`SpacingWidget(col_span)`** — a spacer for grid tuning.

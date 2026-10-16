@@ -1,6 +1,18 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
+class IsActiveStaff(BasePermission):
+    """
+    The Django admin's gate: an authenticated, active staff user. Every
+    Content Studio endpoint that is not part of signing in requires it.
+    """
+
+    def has_permission(self, request, view):
+        user = getattr(request, "user", None)
+
+        return bool(user and user.is_authenticated and user.is_active and user.is_staff)
+
+
 class ModelStudioPermissions(BasePermission):
     """
     Permission class that delegates to the registered model studio.

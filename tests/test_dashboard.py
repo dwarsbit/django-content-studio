@@ -99,19 +99,29 @@ def test_widget_data_endpoint_rejects_unknown_widgets():
         viewset.get(request, widget_id="00000000-0000-0000-0000-000000000000")
 
 
-@pytest.mark.django_db
-def test_activity_log_widget_returns_latest_entries():
-    user = auth_models.User.objects.create_user(username="staff", password="x")
-    LogEntry.objects.create(
+def _log(user, model, repr_):
+    return LogEntry.objects.create(
         user=user,
         action_flag=ADDITION,
-        content_type=ContentType.objects.get_for_model(auth_models.Group),
+        content_type=ContentType.objects.get_for_model(model),
         object_id="1",
-        object_repr="editors",
+        object_repr=repr_,
         change_message="",
     )
 
-    data = ActivityLogWidget().get_data(request=None)
+
+def _request_for(user):
+    request = Request(APIRequestFactory().get("/"), parsers=[JSONParser()])
+    request.user = user
+    return request
+
+
+@pytest.mark.django_db
+def test_activity_log_widget_returns_latest_entries():
+    user = auth_models.User.objects.create_superuser(username="staff", password="x")
+    _log(user, auth_models.Group, "editors")
+
+    data = ActivityLogWidget().get_data(_request_for(user))
 
     # The widget serializes the latest five entries as a list.
     assert len(data) == 1
@@ -149,3 +159,47 @@ def test_content_list_widget_serializer_shape():
     )
 
     assert serializer.is_valid(), serializer.errors
+
+
+@pytest.mark.django_db
+def test_activity_log_widget_hides_models_the_user_cannot_view():
+    from tests.testapp.models import Article
+
+    admin = auth_models.User.objects.create_superuser(username="admin", password="x")
+    _log(admin, auth_models.Group, "editors")
+    _log(admin, Article, "secret article")
+
+    viewer = auth_models.User.objects.create_user(
+        username="viewer", password="x", is_staff=True
+    )
+    viewer.user_permissions.add(
+        auth_models.Permission.objects.get(codename="view_group")
+    )
+    viewer = auth_models.User.objects.get(pk=viewer.pk)
+
+    data = ActivityLogWidget().get_data(_request_for(viewer))
+
+    assert [entry["object_repr"] for entry in data] == ["editors"]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("kind", ["anonymous", "non_staff", "inactive_staff"])
+def test_widget_data_endpoint_requires_active_staff(kind):
+    from rest_framework.test import force_authenticate
+
+    view = DashboardViewSet.as_view({"get": "get"})
+    request = APIRequestFactory().get("/")
+    widget_id = str(TotalArticlesWidget().widget_id)
+
+    if kind != "anonymous":
+        user = auth_models.User.objects.create_user(
+            username=kind,
+            password="x",
+            is_staff=kind == "inactive_staff",
+            is_active=kind != "inactive_staff",
+        )
+        force_authenticate(request, user=user)
+
+    response = view(request, widget_id=widget_id)
+
+    assert response.status_code in (401, 403)
