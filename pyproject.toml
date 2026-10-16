@@ -1,13 +1,45 @@
 [project]
 name = "django-content-studio"
 version = "1.0.0-rc.1"
-description = "Modern & flexible Django admin"
+description = "A modern Django admin alternative, batteries included"
 authors = [
     {name = "Leon van der Grient", email = "leon@dwarsbit.nl"}
 ]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.12"
+keywords = [
+    "django",
+    "django-admin",
+    "admin",
+    "admin-interface",
+    "content-management",
+    "react",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Content Management System",
+    "Topic :: Internet :: WWW/HTTP :: Site Management",
+]
+
+[project.urls]
+Homepage = "https://dwarsbit.github.io/django-content-studio/"
+Documentation = "https://dwarsbit.github.io/django-content-studio/docs/intro"
+Repository = "https://github.com/dwarsbit/django-content-studio"
+Issues = "https://github.com/dwarsbit/django-content-studio/issues"
+Changelog = "https://github.com/dwarsbit/django-content-studio/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 Django = ">=5,<7"

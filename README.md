@@ -1,18 +1,22 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/dwarsbit/django-content-studio/main/website/static/img/logo.svg" alt="Django Content Studio" width="96">
+</p>
+
 # Django Content Studio
 
 [![PyPI version](https://badge.fury.io/py/django-content-studio.svg)](https://badge.fury.io/py/django-content-studio)
 [![Python versions](https://img.shields.io/pypi/pyversions/django-content-studio.svg)](https://pypi.org/project/django-content-studio/)
-[![Django versions](https://img.shields.io/badge/django-5.0%2B-blue.svg)](https://www.djangoproject.com/)
+[![Django versions](https://img.shields.io/pypi/frameworkversions/django/django-content-studio.svg)](https://pypi.org/project/django-content-studio/)
 [![CI](https://github.com/dwarsbit/django-content-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/dwarsbit/django-content-studio/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Django Content Studio is a modern, flexible alternative to the Django admin: a React interface on top of an auto-generated Django REST Framework API.
+Django Content Studio is a modern, flexible alternative to the Django admin — with batteries included: a React interface for the models you already have, plus optional content fields, base models and a media library for content-driven projects.
 
 📖 **Read the full documentation at [dwarsbit.github.io/django-content-studio](https://dwarsbit.github.io/django-content-studio/)**
 
 ## ✨ Features
 
-- **🎯 Works with any model**: register a plain Django model — like the classic admin — and it is manageable. Content Studio brings no models of its own; it is an admin, not a CMS
+- **🎯 Works with any model**: register a plain Django model — like the classic admin — and it is manageable. Nothing to migrate to and nothing to buy into: the built-in fields and models are optional
 - **⚡ A complete editing interface**: list views with search, filtering and ordering, a widget-based editor with validation, inlines and audit stamps — secured by the same permission hooks the Django admin calls, including per-object checks
 - **🧩 Widget-based editing**: dedicated editors for dates, rich text, tags, media and JSON, with edit views laid out through form sets, field layouts and components
 - **📊 A composable dashboard**: statistics, content lists, activity logs and scheduled tasks as widgets you declare in Python
@@ -28,7 +32,7 @@ Install the package:
 pip install django-content-studio
 ```
 
-Add `rest_framework` and `content_studio` to `INSTALLED_APPS` (after `django.contrib.admin`, which provides the model registry):
+Add `rest_framework` and `content_studio` to `INSTALLED_APPS` (`django.contrib.admin` stays installed: Content Studio records its activity log in the admin's `LogEntry` model):
 
 ```python
 # settings.py

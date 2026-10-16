@@ -128,7 +128,7 @@ def get_tenant_field_name(model):
 
 def validate_tenant_access(request, tenant_id):
     """
-    Validate an x-dcs-tenant value against AdminSite.get_tenants: the
+    Validate an x-dcs-tenant value against ContentStudioSite.get_tenants: the
     single authorization hook for tenant access, also used to populate
     the frontend's tenant selector.
 
@@ -155,7 +155,7 @@ def get_tenant_scoped_queryset(request, model, queryset=None):
     - Models without a tenant field are unaffected: all rows.
     - Tenant-scoped models fail closed: without an x-dcs-tenant header
       no rows are returned, and the header's tenant must be in
-      AdminSite.get_tenants.
+      ContentStudioSite.get_tenants.
 
     Ordering is left to the caller.
     """

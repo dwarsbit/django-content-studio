@@ -8,11 +8,11 @@ Extensions add external things to the interface without building frontend
 code: menu links and full pages rendered in an iframe.
 
 ```python
-from content_studio.admin import AdminSite
+from content_studio.admin import ContentStudioSite
 from content_studio.extensions import IFramePage, MainMenuLink
 
 
-class CustomAdminSite(AdminSite):
+class CustomStudioSite(ContentStudioSite):
     extensions = [
         MainMenuLink(
             url="https://plausible.io/myproject",

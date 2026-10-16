@@ -1,30 +1,50 @@
 /**
- * Django Blueprint docs theme
- * Palette: Django greens — deep #0c4b33 as primary, #44b78b as light accent.
- * Shared visual identity with the Django Headless and Django Content Studio
- * documentation sites.
+ * Django Content Studio docs theme
+ * Palette: Tailwind "mist" grayscale — the same neutral family the
+ * Content Studio interface uses (see frontend/src/index.css).
+ *
+ * mist-50  #f9fbfb   mist-500 #67787c
+ * mist-100 #f1f3f3   mist-600 #4b585b
+ * mist-200 #e3e7e8   mist-700 #394447
+ * mist-300 #d0d6d8   mist-800 #22292b
+ * mist-400 #9ca8ab   mist-900 #161b1d   mist-950 #090b0c
  */
 :root {
-  --ifm-color-primary: #0c4b33;
-  --ifm-color-primary-dark: #0b422e;
-  --ifm-color-primary-darker: #0a3a27;
-  --ifm-color-primary-darkest: #082f1f;
-  --ifm-color-primary-light: #16663f;
-  --ifm-color-primary-lighter: #2a7a58;
-  --ifm-color-primary-lightest: #3f8f6e;
+  --ifm-color-primary: #394447;
+  --ifm-color-primary-dark: #333d40;
+  --ifm-color-primary-darker: #2b3436;
+  --ifm-color-primary-darkest: #22292b;
+  --ifm-color-primary-light: #43504f;
+  --ifm-color-primary-lighter: #4b585b;
+  --ifm-color-primary-lightest: #67787c;
   --ifm-font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --ifm-heading-font-family: 'Space Grotesk', 'Inter', sans-serif;
   --ifm-font-family-monospace: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', 'Menlo',
     'Consolas', monospace;
   --ifm-heading-font-weight: 700;
-  --ifm-footer-background-color: #0c4b33;
-  --ifm-footer-color: #e9f5ef;
-  --dbp-hero-bg: #0c4b33;
-  --dbp-hero-accent: #44b78b;
-  --dbp-paper: #fbfbf8;
-  --dbp-ink: #1d2420;
-  --dbp-muted: #5b6862;
-  --dbp-line: #dfe4df;
+  --ifm-footer-background-color: #161b1d;
+  --ifm-footer-color: #e3e7e8;
+  --dbp-hero-bg: #161b1d;
+  --dbp-hero-accent: #d0d6d8;
+  --dbp-paper: #f9fbfb;
+  --dbp-ink: #161b1d;
+  --dbp-muted: #4b585b;
+  --dbp-line: #e3e7e8;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #d0d6d8;
+  --ifm-color-primary-dark: #bcc5c8;
+  --ifm-color-primary-darker: #b2bcbf;
+  --ifm-color-primary-darkest: #9ca8ab;
+  --ifm-color-primary-light: #e3e7e8;
+  --ifm-color-primary-lighter: #eaeded;
+  --ifm-color-primary-lightest: #f1f3f3;
+  --ifm-background-color: #090b0c;
+  --dbp-paper: #090b0c;
+  --dbp-ink: #f1f3f3;
+  --dbp-muted: #9ca8ab;
+  --dbp-line: #22292b;
 }
 
 html {
@@ -34,7 +54,7 @@ html {
 /* Hero */
 .hero-dbp {
   background: var(--dbp-hero-bg);
-  color: #e9f5ef;
+  color: #e3e7e8;
   padding: 4.5rem 0 4rem;
 }
 
@@ -64,7 +84,7 @@ html {
 .hero-dbp .tagline {
   font-size: 1.15rem;
   line-height: 1.6;
-  color: #bfe0cf;
+  color: #d0d6d8;
   margin: 0 0 1.75rem;
   max-width: 34rem;
 }
@@ -75,13 +95,34 @@ html {
   flex-wrap: wrap;
 }
 
+.hero-dbp .button--primary {
+  background: #f1f3f3;
+  border-color: #f1f3f3;
+  color: #161b1d;
+}
+
+.hero-dbp .button--primary:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+.hero-dbp .button:not(.button--primary) {
+  background: transparent;
+  border: 1px solid rgba(241, 243, 243, 0.4);
+  color: #f1f3f3;
+}
+
+.hero-dbp .button:not(.button--primary):hover {
+  border-color: #f1f3f3;
+}
+
 /* Hero code visual */
 .hero-visual {
-  background: #08331f;
-  border: 1px solid rgba(68, 183, 139, 0.35);
+  background: #090b0c;
+  border: 1px solid rgba(208, 214, 216, 0.2);
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 12px 32px rgba(8, 51, 31, 0.35);
+  box-shadow: 0 12px 32px rgba(9, 11, 12, 0.4);
 }
 
 .hero-visual pre {
@@ -92,7 +133,7 @@ html {
 }
 
 .hero-attributes {
-  border-top: 1px solid rgba(68, 183, 139, 0.25);
+  border-top: 1px solid rgba(208, 214, 216, 0.15);
   background: rgba(255, 255, 255, 0.03);
   padding: 0.9rem 1.2rem 1rem;
   display: grid;
@@ -105,7 +146,7 @@ html {
   align-items: baseline;
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.78rem;
-  color: #cdeadd;
+  color: #e3e7e8;
 }
 
 .hero-attribute .name {
@@ -116,7 +157,7 @@ html {
 
 .hero-attribute .auto {
   margin-left: auto;
-  color: #6f9c85;
+  color: #9ca8ab;
   font-size: 0.7rem;
 }
 
@@ -148,7 +189,7 @@ html {
   border: 1px solid var(--dbp-line);
   border-radius: 8px;
   padding: 1.4rem 1.4rem 1.3rem;
-  background: #ffffff;
+  background: var(--ifm-background-surface-color);
   transition: border-color 0.15s ease;
 }
 
@@ -186,14 +227,14 @@ html {
 /* Buttons */
 .button-dbp-primary {
   background: var(--dbp-hero-accent);
-  color: #06281a;
+  color: #161b1d;
   border: none;
   font-weight: 600;
 }
 
 .button-dbp-primary:hover {
-  background: #6ecaa4;
-  color: #06281a;
+  background: #f1f3f3;
+  color: #161b1d;
 }
 
 .button-dbp-secondary {

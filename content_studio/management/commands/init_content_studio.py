@@ -89,8 +89,8 @@ class Command(BaseCommand):
     def handle(self, **options):
         if not apps.is_installed("content_studio"):
             raise CommandError(
-                "content_studio is not in INSTALLED_APPS. Add it — after "
-                "django.contrib.admin — and run this command again."
+                "content_studio is not in INSTALLED_APPS. Add it and run this "
+                "command again."
             )
 
         module_name, settings_path, project_package = self._locate()

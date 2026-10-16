@@ -33,7 +33,7 @@ Which tenants a user may see is decided in one place — the admin site's
 `get_tenants` hook. The default returns all tenants:
 
 ```python
-class CustomAdminSite(AdminSite):
+class CustomStudioSite(ContentStudioSite):
     def get_tenants(self, tenant_model, **kwargs):
         # The single authorization hook: the tenant selector and every
         # data query both go through it.
@@ -46,7 +46,7 @@ tenants they may work in — and the same list authorizes the API.
 
 ## Admin sites
 
-The admin site itself is customizable: subclass `AdminSite`, override its
+The admin site itself is customizable: subclass `ContentStudioSite`, override its
 hooks (tenants, thumbnails, media serializer fields, dashboard, extensions)
 and point the [`ADMIN_SITE` setting](/docs/settings#admin_site) at your
 instance.

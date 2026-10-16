@@ -59,7 +59,7 @@ appear in the interface. Missing contract fields are reported by the
 The library is fully managed in the interface: upload files (with tags in the
 same go when the model has a `tags` field), move them between folders and edit
 their details — all against the models you configure. Image items can carry a
-crop selection (see [cropping](#cropping)) and a focal point, applied on save.
+crop selection (see [cropping](#cropping-and-focal-points)) and a focal point, applied on save.
 
 Three views are offered through a toggle: the **grid** (thumbnails), a
 **list** of rich rows and a **table** with sortable columns (name, type and
@@ -90,14 +90,14 @@ per-file progress, and each item's context menu offers **Copy URL** and
 
 ## Hooks
 
-- **`AdminSite.get_thumbnail(obj)`** — returns the thumbnail URL for an image
+- **`ContentStudioSite.get_thumbnail(obj)`** — returns the thumbnail URL for an image
   item. The default returns `obj.file.url`; override to point at a
   pre-generated variant.
-- **`AdminSite.get_media_serializer_fields(media_model)`** — controls which
+- **`ContentStudioSite.get_media_serializer_fields(media_model)`** — controls which
   fields the serializer exposes. The default is `__all__`; override to keep
   sensitive custom fields out of the API.
-- **`AdminSite.crop_image(obj, crop_info)`** — enables cropping. The base
-  `AdminSite` does not define it; add the method to your site subclass and the
+- **`ContentStudioSite.crop_image(obj, crop_info)`** — enables cropping. The base
+  `ContentStudioSite` does not define it; add the method to your site subclass and the
   item editor offers a crop selection for images. The crop info — the
   selection as percentages, `{"x": "10.00", "y": "20.00", "width": "50.00",
   "height": "40.00", "unit": "%"}` — is passed through verbatim when the item
@@ -105,7 +105,7 @@ per-file progress, and each item's context menu offers **Copy URL** and
   preset) is up to the implementation.
 
 ```python
-class CustomAdminSite(AdminSite):
+class CustomStudioSite(ContentStudioSite):
     def get_thumbnail(self, obj):
         return obj.thumbnail.url if obj.thumbnail else obj.file.url
 

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Docs, branding and package metadata.** The documentation site
+  adopts the mist grayscale and the Content Studio logo; code samples
+  use `ContentStudioSite` and `ModelStudio` (the `AdminSite` and
+  `ModelAdmin` names they showed do not exist); the setup guide no
+  longer claims `django.contrib.admin` must precede `content_studio`
+  (it stays installed for the activity log's `LogEntry`). The package
+  now ships classifiers, keywords and project URLs.
+
 - **Django Blueprint is merged in and deprecated.** The content fields
   (`HTMLField`, `TagField`, `FlexField`, `MultipleChoiceField`,
   `URLPathField`, `HashTagField`) and base models (`ContentModel`,

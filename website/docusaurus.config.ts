@@ -3,7 +3,7 @@ import type * as Preset from "@docusaurus/preset-classic";
 
 const config: Config = {
   title: "Django Content Studio",
-  tagline: "A modern, flexible alternative to the Django admin",
+  tagline: "A modern Django admin alternative, batteries included",
   favicon: "img/favicon.svg",
   url: "https://dwarsbit.github.io",
   baseUrl: "/django-content-studio/",

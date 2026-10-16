@@ -12,9 +12,9 @@ pip install django-content-studio
 
 ## Configure Django
 
-Add Content Studio and Django REST Framework to `INSTALLED_APPS`. Content
-Studio builds its API from models registered with the Django admin, so
-`django.contrib.admin` must come **before** `content_studio`:
+Add Content Studio and Django REST Framework to `INSTALLED_APPS`. Keep
+`django.contrib.admin` installed: Content Studio records its activity log in
+the admin's `LogEntry` model. The order of the apps does not matter.
 
 ```python
 # settings.py

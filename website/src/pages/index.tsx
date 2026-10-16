@@ -6,14 +6,14 @@ import Link from "@docusaurus/Link";
 
 import "../css/custom.css";
 
-const heroCode = `from django.db import models
+const heroCode = `from content_studio import register
+from content_studio.admin import ModelStudio
 
-from content_studio import register
-from content_studio.admin import ModelAdmin
+from .models import Article
 
 
 @register(Article)
-class ArticleAdmin(ModelAdmin):
+class ArticleStudio(ModelStudio):
     list_display = ["title", "status", "published_at"]
     list_filter = ["status"]
     search_fields = ["title"]`;
@@ -22,12 +22,12 @@ const features = [
   {
     emoji: "🎯",
     title: "Works with any model",
-    text: "Like the classic Django admin: register a plain Django model and it is manageable. Content Studio brings no models of its own — it is an admin, not a CMS.",
+    text: "Like the classic Django admin: register a plain Django model and it is manageable. No content models forced on you — the built-in ones are optional.",
   },
   {
     emoji: "⚡",
     title: "A complete editing interface",
-    text: "List views with search, filtering and ordering, an editor with validation, inlines and audit stamps — generated from your model admin, no frontend code to write.",
+    text: "List views with search, filtering and ordering, an editor with validation, inlines and audit stamps — generated from your model studio, no frontend code to write.",
   },
   {
     emoji: "🧩",
@@ -57,7 +57,7 @@ export default function Home(): React.JSX.Element {
   return (
     <Layout
       title={`${siteConfig.title} — ${siteConfig.tagline}`}
-      description="A modern, flexible alternative to the Django admin: a React frontend on an auto-generated Django REST Framework API."
+      description="A modern, flexible alternative to the Django admin, with batteries included."
     >
       <main>
         <section className="hero-dbp">
@@ -65,10 +65,10 @@ export default function Home(): React.JSX.Element {
             <div>
               <h1>Django Content Studio</h1>
               <p className="tagline">
-                A modern, flexible alternative to the Django admin. Register
-                your models, get a React interface on an auto-generated API —
-                with the same permission hooks and conventions you already
-                know.
+                A modern, flexible alternative to the Django admin, with
+                batteries included. Register your models and get a polished
+                editing interface — with the permission hooks and conventions
+                you already know.
               </p>
               <div className="buttons">
                 <Link className="button button--primary" to="/docs/intro">

@@ -23,13 +23,13 @@ CONTENT_STUDIO = {
 
 ```python
 # myproject/admin.py
-from content_studio.admin import AdminSite
+from content_studio.admin import ContentStudioSite
 from content_studio.dashboard import Dashboard
 from content_studio.dashboard.activity_log import ActivityLogWidget
 from content_studio.dashboard.content_list import ContentListWidget
 
 
-class CustomAdminSite(AdminSite):
+class CustomStudioSite(ContentStudioSite):
     dashboard = Dashboard(
         widgets=[
             ArticlesWidget(),
@@ -40,7 +40,7 @@ class CustomAdminSite(AdminSite):
     )
 
 
-content_studio_site = CustomAdminSite()
+content_studio_site = CustomStudioSite()
 ```
 
 Every widget implements `get_data(request)` and returns plain data or a DRF

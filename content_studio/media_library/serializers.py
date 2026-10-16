@@ -8,7 +8,7 @@ def build_media_item_serializer(media_model):
     Build a serializer for the given media model at call time, so the
     configured MEDIA_LIBRARY_MODEL is always current (the setting
     cannot be captured at import time). The exposed fields are
-    controlled by AdminSite.get_media_serializer_fields.
+    controlled by ContentStudioSite.get_media_serializer_fields.
     """
     admin_site = cs_settings.ADMIN_SITE
 
