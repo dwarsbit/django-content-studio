@@ -945,6 +945,38 @@ def list_display_warnings(studio) -> list[tuple[str, str]]:
     return warnings
 
 
+BUILT_IN_WIDGET_TYPES = {
+    "ActivityLogWidget",
+    "ContentListWidget",
+    "ScheduledTasksWidget",
+    "SpacingWidget",
+    "StatisticWidget",
+}
+
+
+def dashboard_widget_warnings(site) -> list[tuple[str, str]]:
+    """
+    Dashboard widgets the admin cannot show, as (check id, message)
+    pairs: only the built-in widget types have a display, so a widget
+    that does not subclass one of them shows nothing.
+    """
+    dashboard = getattr(site, "dashboard", None)
+    warnings = []
+
+    for widget in getattr(dashboard, "widgets", None) or []:
+        if getattr(widget, "widget_type", None) not in BUILT_IN_WIDGET_TYPES:
+            warnings.append(
+                (
+                    "content_studio.W012",
+                    f"The dashboard widget {widget.__class__.__name__} is not "
+                    "a built-in widget type and is not shown; subclass one of "
+                    "the built-in widgets, such as StatisticWidget.",
+                )
+            )
+
+    return warnings
+
+
 def model_group_warnings(site) -> list[tuple[str, str]]:
     """
     Model groups listing unregistered models, as (check id, message)
@@ -1114,6 +1146,11 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
 
     for check_id, error in media_upload_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, warning in dashboard_widget_warnings(site):
+        messages.append(
+            checks.Warning(warning, obj=site.__class__.__name__, id=check_id)
+        )
 
     for check_id, warning in model_group_warnings(site):
         messages.append(

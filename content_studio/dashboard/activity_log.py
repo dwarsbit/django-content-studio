@@ -35,6 +35,7 @@ class ActivityLogWidget(DashboardWidget):
     Widget for showing activity logs.
     """
 
+    widget_type = "ActivityLogWidget"
     name = "ActivityLogWidget"
 
     col_span = 2

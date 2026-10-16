@@ -37,14 +37,16 @@ export function DashboardPage() {
         </div>
         <div className="bg-background flex-1 p-5 flex flex-col md:grid md:items-start md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 overflow-y-auto scrollbar">
           {discover.dashboard.widgets.map((widget) => {
-            const Comp = WIDGET_COMPONENTS[widget.name];
+            const Comp = widget.widget_type
+              ? WIDGET_COMPONENTS[widget.widget_type]
+              : undefined;
 
             return Comp ? (
               <div
                 key={widget.widget_id}
                 className={cn({
                   "border bg-card rounded-lg":
-                    widget.name !== DashboardWidgetType.SpacingWidget,
+                    widget.widget_type !== DashboardWidgetType.SpacingWidget,
                 })}
                 style={{
                   gridColumn: `span ${widget.col_span} / span ${widget.col_span}`,

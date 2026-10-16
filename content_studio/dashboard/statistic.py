@@ -25,6 +25,7 @@ class StatisticWidget(DashboardWidget):
     Widget for showing some statistic.
     """
 
+    widget_type = "StatisticWidget"
     name = "StatisticWidget"
 
     def get_data(self, request):

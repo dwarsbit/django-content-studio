@@ -45,3 +45,4 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.W009` | An empty `LOGIN_BACKENDS` setting, so nobody can log in. |
 | `content_studio.W010` | `list_display` used for the table columns. It works, but rename it to `table_display`. When both are set, `list_display` is ignored. Inlines are checked too. |
 | `content_studio.W011` | A studio that overrides `get_list_display`, which is never called. The list view uses `get_list_item_display`. |
+| `content_studio.W012` | A dashboard widget that does not subclass a built-in widget, which the admin cannot show. |

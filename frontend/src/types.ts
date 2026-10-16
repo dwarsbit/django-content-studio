@@ -312,7 +312,9 @@ export interface Dashboard {
 }
 
 export interface DashboardWidget {
-  name: DashboardWidgetType;
+  name: string;
+  // How the widget is shown; independent of its name.
+  widget_type: DashboardWidgetType | null;
   widget_id: string;
   col_span: number;
 }

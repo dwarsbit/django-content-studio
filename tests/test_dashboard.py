@@ -61,11 +61,13 @@ def test_dashboard_serializes_widgets():
         "widgets": [
             {
                 "name": "TotalArticles",
+                "widget_type": "StatisticWidget",
                 "widget_id": TotalArticlesWidget().widget_id,
                 "col_span": 1,
             },
             {
                 "name": "SpacingWidget",
+                "widget_type": "SpacingWidget",
                 "widget_id": SpacingWidget().widget_id,
                 "col_span": 2,
             },
@@ -203,3 +205,28 @@ def test_widget_data_endpoint_requires_active_staff(kind):
     response = view(request, widget_id=widget_id)
 
     assert response.status_code in (401, 403)
+
+
+def test_renamed_subclasses_keep_their_widget_type():
+    """The name feeds the ID; the widget type decides the display, so a
+    subclass with its own name still shows as a statistic."""
+    widget = TotalArticlesWidget()
+
+    assert widget.name == "TotalArticles"
+    assert widget.widget_type == "StatisticWidget"
+    assert widget.widget_id != StatisticWidget().widget_id
+
+
+def test_widgets_without_a_built_in_type_are_reported():
+    from content_studio.checks import dashboard_widget_warnings
+
+    class CustomWidget(DashboardWidget):
+        name = "Custom"
+
+    class Site:
+        dashboard = Dashboard(widgets=[TotalArticlesWidget(), CustomWidget()])
+
+    warnings = dashboard_widget_warnings(Site())
+
+    assert [check_id for check_id, _ in warnings] == ["content_studio.W012"]
+    assert "CustomWidget" in warnings[0][1]

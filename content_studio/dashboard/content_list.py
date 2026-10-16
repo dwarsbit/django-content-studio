@@ -33,6 +33,7 @@ class ContentListWidget(DashboardWidget):
     Widget for showing a list of content.
     """
 
+    widget_type = "ContentListWidget"
     name = "ContentListWidget"
 
     col_span = 2

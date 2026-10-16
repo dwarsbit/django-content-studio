@@ -39,6 +39,7 @@ class ScheduledTasksWidget(DashboardWidget):
     Widget for showing a list of scheduled tasks.
     """
 
+    widget_type = "ScheduledTasksWidget"
     name = "ScheduledTasksWidget"
 
     col_span = 2

@@ -44,6 +44,7 @@ class Dashboard:
             "widgets": [
                 {
                     "name": w.name,
+                    "widget_type": w.widget_type,
                     "widget_id": w.widget_id,
                     "col_span": w.col_span,
                 }
@@ -90,7 +91,10 @@ class DashboardViewSet(ViewSet):
 
 
 class DashboardWidget:
-    # Display name of the widget; every widget should set one.
+    # How the admin shows the widget: one of the built-in widget types.
+    # Set by the built-in widgets; subclasses inherit it.
+    widget_type = None
+    # The widget's name, part of its derived ID; subclasses may change it.
     name = None
     col_span = 1
     widget_id = None
@@ -129,6 +133,7 @@ class DashboardWidget:
 
 
 class SpacingWidget(DashboardWidget):
+    widget_type = "SpacingWidget"
     name = "SpacingWidget"
 
     def __init__(self, col_span=1, widget_id=None):

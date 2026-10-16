@@ -97,12 +97,13 @@ columns it spans.
   `"SCHEDULED"`, `"SUCCESS"` or `"FAILURE"`).
 - **`SpacingWidget(col_span)`**: empty space, to align the grid.
 
-Keep the `name` of a built-in widget when you subclass it: the admin uses it
-to choose how to show the widget.
+Your own widgets subclass one of these: the admin can only show the built-in
+widget types. System check `content_studio.W012` reports a widget that does
+not.
 
 ## Widget identity
 
-Each widget gets an ID from its class and name, so every worker of a
+Each widget gets an ID from its class and its `name`, so every worker of a
 deployment agrees on it. Two widgets of the same class need an explicit
 `widget_id` (a UUID) to tell them apart; `manage.py check` reports
 duplicates.
