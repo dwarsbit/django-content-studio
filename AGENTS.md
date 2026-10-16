@@ -187,9 +187,11 @@ the wheel.
 - **Dev Tools**: black, pytest, pytest-django, vitest + testing-library, eslint, prettier, typescript
 
 CI runs on GitHub Actions (`.github/workflows/ci.yml`): a backend matrix
-(Python 3.12–3.14 x Django 5.2/6.0) with pytest + black, a frontend job with
-typecheck + Vitest + build, and a packaging job that builds the wheel and
-verifies the compiled assets and translations on a fresh install.
+(Python 3.12–3.14 x Django 5.2/6.0/6.1) with pytest + black, a frontend job
+with typecheck + Vitest + build, a dependency audit job (pip-audit on the
+locked Python dependencies, `npm audit --omit=dev` on the frontend runtime
+dependencies), and a packaging job that builds the wheel and verifies the
+compiled assets and translations on a fresh install.
 
 ---
 

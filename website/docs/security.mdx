@@ -1,0 +1,62 @@
+---
+sidebar_position: 13.5
+---
+
+# 🛡️ Security
+
+Content Studio is an admin: everyone who signs in can change your content.
+This page describes what it protects out of the box and what your
+deployment has to take care of.
+
+## What Content Studio does
+
+- **Staff only.** Like the Django admin, only active staff users sign in,
+  and every request checks it again — deactivating a user or revoking their
+  staff status ends their access immediately. What a user may see and do is
+  decided by the [permission hooks](/docs/permissions).
+- **Short-lived tokens.** The access token lives in memory only; the refresh
+  token sits in an httpOnly cookie scoped to the token endpoints. Changing or
+  resetting a password invalidates every token issued before
+  ([authentication](/docs/authentication)).
+- **Throttled sign-in and password reset**, per IP
+  ([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate),
+  [`PASSWORD_RESET_THROTTLE_RATE`](/docs/settings#password_reset_throttle_rate)).
+  Password reset codes lock an email out after five wrong attempts, and new
+  passwords go through `AUTH_PASSWORD_VALIDATORS`.
+- **Sanitized rich text.** `HTMLField` cleans its value on save with an
+  allowlist sanitizer ([`HTML_SANITIZER`](/docs/settings#html_sanitizer)).
+- **Checked uploads.** The media library accepts an allowlist of file types
+  up to a maximum size, and rejects markup such as HTML and SVG
+  ([`MEDIA_LIBRARY_ALLOWED_EXTENSIONS`](/docs/settings#media_library_allowed_extensions)).
+- **Nothing public but the sign-in pages.** Without signing in, the interface
+  only learns what it needs to show the sign-in form.
+
+## Deployment checklist
+
+- **Serve the admin over HTTPS.** The refresh cookie is marked `Secure`
+  whenever `DEBUG` is off ([`REFRESH_COOKIE_SECURE`](/docs/settings#refresh_cookie_secure)).
+  Behind a TLS-terminating proxy, also set Django's `SECURE_PROXY_SSL_HEADER`.
+- **Configure a shared cache** (Redis, Memcached or the database cache). The
+  sign-in and password reset throttles count in the cache; with the default
+  per-process cache, every worker counts separately.
+- **Set the client IP correctly.** The throttles key on the client's IP. Behind
+  a proxy, make sure DRF sees the real address (the `NUM_PROXIES` setting of
+  Django REST Framework).
+- **Serve user uploads from a separate domain** when you can (a CDN or an
+  object storage bucket). Even with the upload allowlist, files from your own
+  domain run with your site's privileges if a browser decides to render them.
+- **Keep `DEBUG` off** in production, and keep Django, Django REST Framework
+  and Content Studio up to date.
+- **Use Django's security middleware and settings**: `SecurityMiddleware`
+  with HSTS, `XFrameOptionsMiddleware`, and `SESSION_COOKIE_SECURE` /
+  `CSRF_COOKIE_SECURE` for the rest of your site. `manage.py check --deploy`
+  lists what is missing.
+- **Use a strong, secret `SECRET_KEY`** (or a separate
+  [`TOKEN_SIGNING_KEY`](/docs/settings#token_signing_key)): it signs the
+  tokens.
+
+## Reporting a vulnerability
+
+Please report security problems privately, through GitHub's private
+vulnerability reporting or by email — see
+[SECURITY.md](https://github.com/dwarsbit/django-content-studio/blob/main/SECURITY.md).
