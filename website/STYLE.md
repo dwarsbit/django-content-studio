@@ -129,7 +129,7 @@ admonitions or the README.
 | media library | media manager, asset library |
 | setting (`CONTENT_STUDIO["…"]`) | config option, parameter |
 | system check | validation, lint |
-| sign in / sign out | log in / log out, login (as a verb) |
+| log in / log out (verb), login (noun, adjective) | sign in / sign out, login (as a verb) |
 | built-in fields, built-in models | blueprint fields, CMS fields |
 
 ## 5. What to mention, and what not
@@ -139,14 +139,23 @@ admonitions or the README.
 - **Implementation details.** Describe what Content Studio does for the
   reader, not how it is built.
 - **The stack beyond Django.** No React, TypeScript, Vite, Tailwind, shadcn,
-  Radix, TanStack, Django REST Framework or other libraries. The only
-  exception: installation steps list the apps to add to `INSTALLED_APPS`,
-  `rest_framework` included, without explaining it.
+  Radix, TanStack, PyJWT or other libraries. Django REST Framework only where
+  the public API or a required setting exposes it:
+  - installation steps list `rest_framework` in `INSTALLED_APPS`;
+  - dashboard widgets return DRF serializers from `get_data`;
+  - the throttle settings take DRF rate strings;
+  - behind a proxy, DRF's `NUM_PROXIES` setting is needed for the right
+    client IP.
+
+  Name DRF there and link to its documentation; explain nothing else about
+  it.
 - **The internal API.** No endpoints, URLs under `api/`, wire formats,
   request headers (such as the tenant header) or the generated REST backend.
   It is plumbing for the admin, not a feature.
-- **Unsupported extension points.** Custom widgets, formats, login backends
-  and token backends: say they are not supported yet, never how to build one.
+- **Unsupported extension points.** Custom widgets, formats, login backends,
+  token backends and custom component types (anything beyond `Link`,
+  `ButtonLink` and `ActivityLog`): say they are not supported, never how to
+  build one.
 - **Roadmap promises.** No "coming soon", "planned for", dates or versions
   for features that do not ship. Describe what exists.
 - **Version history in prose.** No "formerly", "used to", "since 1.1",
@@ -176,7 +185,8 @@ admonitions or the README.
   - models `Article`, `Category`, `Review` (an inline of `Article`),
     `SiteSettings` (a singleton) and `LandingPage` (rich text);
   - studios `ArticleStudio`, `CategoryStudio`, `ReviewInline`;
-  - the site in `mysite/studio.py`.
+  - the site: `class BlogStudioSite(ContentStudioSite)` in
+    `mysite/studio.py`, with the instance `studio_site = BlogStudioSite()`.
 - **Plain Django first.** Show plain Django models and fields first; the
   built-in fields and models (`HTMLField`, `ContentModel`, …) come second,
   as an option. Never present them as the only way.
