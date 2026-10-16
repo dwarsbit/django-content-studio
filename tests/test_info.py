@@ -17,7 +17,8 @@ class InfoEndpointTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         data = response.json()
-        self.assertIn("version", data)
+        # Public: nothing that maps the project, like the exact version.
+        self.assertNotIn("version", data)
         self.assertIn("CharField", data["formats"])
         self.assertIn("AutoSlugField", data["formats"])
         self.assertIn("AutoSlugField", data["widgets"])

@@ -21,12 +21,11 @@ class RouteRegistrationTests(TestCase):
         # Not 404: the route exists, authentication is required.
         self.assertNotEqual(response.status_code, 404)
 
-    def test_discover_is_public(self):
-        """The frontend needs discover before authentication."""
-        response = self.client.get("/api/discover")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["extensions"], [])
+    def test_discover_requires_authentication(self):
+        """The model schema is only for signed-in staff; the sign-in
+        pages work from the public info endpoint."""
+        self.assertIn(self.client.get("/api/discover").status_code, (401, 403))
+        self.assertEqual(self.client.get("/api/info").status_code, 200)
 
     def test_me_requires_authentication(self):
         response = self.client.get("/api/me")

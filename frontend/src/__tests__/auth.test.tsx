@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import {
   AxiosError,
@@ -72,7 +73,10 @@ function TestApp({ onLogout }: { onLogout?: boolean }) {
   );
 }
 
-function renderApp({ onLogout = false } = {}) {
+function renderApp({
+  onLogout = false,
+  queryClient = new QueryClient(),
+}: { onLogout?: boolean; queryClient?: QueryClient } = {}) {
   const router = createMemoryRouter(
     [
       {
@@ -85,9 +89,11 @@ function renderApp({ onLogout = false } = {}) {
   );
 
   return render(
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>,
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -205,7 +211,10 @@ describe("AuthProvider", () => {
         ? { data: { access: "boot-token" }, status: 200 }
         : { data: {} };
 
-    renderApp({ onLogout: true });
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(["model-groups"], { models: ["secret"] });
+
+    renderApp({ onLogout: true, queryClient });
     await screen.findByText("token:boot-token");
 
     await waitFor(() => screen.getByText("log out").click());
@@ -215,5 +224,7 @@ describe("AuthProvider", () => {
     );
     expect(callsTo(LOGOUT_URL)).toBe(1);
     expect(http.defaults.headers.common["Authorization"]).toBeUndefined();
+    // The signed-out user's cached data is gone.
+    expect(queryClient.getQueryData(["model-groups"])).toBeUndefined();
   });
 });

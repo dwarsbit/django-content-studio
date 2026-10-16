@@ -6,7 +6,7 @@ from django.views.decorators.cache import never_cache
 from django.views.generic import TemplateView
 from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework.permissions import AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
@@ -14,6 +14,7 @@ from rest_framework.viewsets import ViewSet
 from . import __version__
 from .admin import AdminSerializer, ModelStudio, ModelGroup
 from .exceptions import NotConfigured
+from .permissions import IsActiveStaff
 from .serializers import ModelSerializer, get_session_user_serializer
 from .settings import cs_settings
 
@@ -40,7 +41,7 @@ class AdminApiViewSet(ViewSet):
     View set for content studio admin endpoints.
     """
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsActiveStaff]
     renderer_classes = [JSONRenderer]
     admin_site = cs_settings.ADMIN_SITE
 
@@ -61,11 +62,12 @@ class AdminApiViewSet(ViewSet):
     )
     def info(self, request):
         """
-        Returns public information about the Content Studio admin.
+        Returns public information about the Content Studio admin: what
+        the sign-in pages need, and nothing that maps the project (the
+        version and the models are in discover, behind sign-in).
         """
 
         data = {
-            "version": __version__,
             "site_header": self.admin_site.site_header,
             "site_title": self.admin_site.site_title,
             "index_title": self.admin_site.index_title,
@@ -99,9 +101,6 @@ class AdminApiViewSet(ViewSet):
         methods=["get"],
         detail=False,
         url_path="discover",
-        # The frontend (tenant selection, menus) needs this endpoint
-        # before authentication; registered model metadata is public.
-        permission_classes=[AllowAny],
     )
     def discover(
         self,
@@ -111,6 +110,7 @@ class AdminApiViewSet(ViewSet):
         Returns information about the Django app (models, admin models, admin site, settings, etc.).
         """
         data = {
+            "version": __version__,
             "models": get_models(request),
             "model_groups": get_model_groups(),
             "user_model": settings.AUTH_USER_MODEL,

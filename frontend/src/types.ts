@@ -31,7 +31,6 @@ export interface AdminInfo {
   index_title: string;
   site_url: string;
   health_check: null;
-  version: string;
   login_backends: LoginBackend[];
   token_backend: TokenBackend;
   formats: Record<FieldType, { name: FieldFormat }>;

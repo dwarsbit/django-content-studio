@@ -5,13 +5,33 @@ Tests for the discover endpoint.
 from django.contrib.auth import models as auth_models
 from django.test import TestCase, override_settings
 
+from content_studio import VERSION
+from content_studio.token_backends.jwt import create_access_token
+
 
 class DiscoverEndpointTests(TestCase):
     def setUp(self):
         self.user = auth_models.User.objects.create_superuser(
             username="admin", email="a@example.com", password="x"
         )
-        self.client.force_login(self.user)
+        self.client.defaults["HTTP_AUTHORIZATION"] = (
+            f"Bearer {create_access_token(self.user)}"
+        )
+
+    def test_discover_requires_active_staff(self):
+        anonymous = self.client_class()
+        self.assertEqual(anonymous.get("/api/discover").status_code, 401)
+
+        customer = auth_models.User.objects.create_user(
+            username="customer", password="x"
+        )
+        other = self.client_class(
+            HTTP_AUTHORIZATION=f"Bearer {create_access_token(customer)}"
+        )
+        self.assertEqual(other.get("/api/discover").status_code, 401)
+
+    def test_discover_carries_the_version(self):
+        self.assertEqual(self.client.get("/api/discover").json()["version"], VERSION)
 
     def test_discover_with_default_configuration(self):
         """Discover works with no extensions, media library, dashboard or tenancy."""

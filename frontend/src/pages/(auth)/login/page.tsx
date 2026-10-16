@@ -26,7 +26,6 @@ export function LoginPage() {
           <div className="text-sm font-medium text-gray-50 ">
             Django Content Studio
           </div>
-          <div className="text-xs text-gray-400">{`v${adminInfo.version}`}</div>
         </div>
         {adminInfo.health_check && (
           <div

@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import * as R from "ramda";
 import React, {
@@ -25,10 +26,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // `Authorization: Bearer <access token>`.
   const [token, setTokenState] = useState<string | null>(null);
   const refreshInFlight = useRef<Promise<string | null> | null>(null);
+  const queryClient = useQueryClient();
   const retriedRequests = useRef(new WeakSet<object>());
 
   // The Authorization header is set the moment the token changes, not in an
-  // effect: child mount effects (e.g. the discover query, which is public and
+  // effect: child mount effects (e.g. the discover query, which is
   // cached forever) dispatch requests before a parent effect would run, and
   // would otherwise send them unauthenticated.
   const setToken = useCallback((token: string | null) => {
@@ -69,7 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // local session either way.
     }
     setToken(null);
-  }, [setToken]);
+    // Cached responses (discover, content) belong to the signed-out user;
+    // the next user starts without them.
+    queryClient.clear();
+  }, [setToken, queryClient]);
 
   // Silent session restore on boot, gated so no child request can fire
   // before the Authorization header is in place.

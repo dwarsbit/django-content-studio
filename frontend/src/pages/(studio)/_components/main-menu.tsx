@@ -377,6 +377,7 @@ function UserMenu() {
   const { logout } = useAuth();
   const { data: me } = useMe();
   const { data: adminInfo } = useAdminInfo();
+  const { data: discover } = useDiscover();
   const { theme, setTheme } = useTheme();
   const menuCollapsed = useContext(CollapsedContext);
 
@@ -443,7 +444,9 @@ function UserMenu() {
                 <div className="text-xs font-medium text-foreground text-center">
                   {adminInfo.site_title}
                 </div>
-                <div className="text-xs font-medium text-muted-foreground text-center">{`v${adminInfo.version}`}</div>
+                {discover?.version && (
+                  <div className="text-xs font-medium text-muted-foreground text-center">{`v${discover.version}`}</div>
+                )}
               </div>
             )}
           </DropdownMenuContent>

@@ -65,7 +65,6 @@ function makeAdminInfo(overrides: Partial<AdminInfo> = {}): AdminInfo {
     index_title: "Dashboard",
     site_url: "/",
     health_check: null,
-    version: "1.0.0-rc.1",
     login_backends: [],
     token_backend: {
       type: TokenBackendType.JsonWebToken,

@@ -12,6 +12,7 @@ export function useDiscover() {
     queryKey: ["model-groups"],
     async queryFn() {
       const { data } = await http.get<{
+        version: string;
         dashboard: Dashboard;
         extensions: Extension[];
         model_groups: ModelGroup[];
