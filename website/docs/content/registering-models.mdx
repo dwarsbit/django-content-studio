@@ -39,10 +39,14 @@ own studio for it to change how it looks.
 | `list_per_page` | The number of objects per page (default `20`) |
 | `list_description` | A description below the model's name on the list page |
 | `soft_delete` | The field that marks objects as trashed (see [below](#soft-delete-and-the-trash)) |
-| `icon` | The model's icon in the main menu |
+| `icon` | The model's icon in the main menu, such as `"ph-bold ph-article"` |
 
 When `ordering` is not set, objects are sorted by primary key, so pages stay
 stable.
+
+Icons come from the bold weight of [Phosphor](https://phosphoricons.com):
+write `ph-bold ph-` followed by the icon's name. The same goes for every
+`icon` option in Content Studio.
 
 ## Singletons
 

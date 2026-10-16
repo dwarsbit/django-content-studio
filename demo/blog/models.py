@@ -103,7 +103,7 @@ class Article(models.Model):
     )
     featured = models.BooleanField(default=False)
     views = models.PositiveIntegerField(default=0)
-    # The soft-delete timestamp; see ArticleAdmin.soft_delete.
+    # The soft-delete timestamp; see ArticleStudio.soft_delete.
     removed_at = models.DateTimeField(null=True, blank=True, editable=False)
     published_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(

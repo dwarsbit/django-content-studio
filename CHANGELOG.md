@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **`Link` components render.** A `Link` on the edit page showed
+  nothing; it is now a text link to the URL from `get_url`, next to the
+  `ButtonLink` button.
+- **Dashboard widgets keep their display when renamed.** The admin chose
+  a widget's display by its `name`, so a subclass with its own name
+  disappeared. Built-in widgets now carry a `widget_type` for that, and
+  system check `content_studio.W012` reports widgets that are not a
+  built-in type.
+- **The startup banner only announces newer releases.** It compared
+  versions as text and announced older pre-releases as new; releases are
+  now compared by version order (`packaging` is a new dependency).
+
 ### Security
 
 A security review fixed the following issues in 1.0.0-rc.1 and the

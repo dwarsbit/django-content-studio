@@ -77,7 +77,7 @@ from .models import Article
 
 class ViewOnSiteButton(ButtonLink):
     label = "View on site"
-    icon = "external-link"
+    icon = "ph-bold ph-arrow-square-out"
 
     def get_url(self, obj, request):
         return obj.get_absolute_url()

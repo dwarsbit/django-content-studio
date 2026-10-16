@@ -17,7 +17,7 @@ class ReviewInline(InlineModelStudio):
 
 
 @register(models.Category)
-class CategoryAdmin(ModelStudio):
+class CategoryStudio(ModelStudio):
     table_display = ["name"]
     search_fields = ["name"]
 
@@ -30,7 +30,7 @@ class CategoryAdmin(ModelStudio):
 
 
 @register(models.MediaItem)
-class MediaItemAdmin(ModelStudio):
+class MediaItemStudio(ModelStudio):
     table_display = ["name", "type"]
 
     def get_relation_display(self, obj, request):
@@ -43,12 +43,12 @@ class MediaItemAdmin(ModelStudio):
 
 
 @register(models.MediaFolder)
-class MediaFolderAdmin(ModelStudio):
+class MediaFolderStudio(ModelStudio):
     table_display = ["name"]
 
 
 @register(models.Article)
-class ArticleAdmin(ModelStudio):
+class ArticleStudio(ModelStudio):
     table_display = ["title", "status", "featured", "views", "author", "published_at"]
     # The list view's rows; both views are offered, with a toggle.
     list_views = ["table", "list"]
@@ -97,11 +97,11 @@ class ArticleAdmin(ModelStudio):
 
 
 @register(models.SiteSettings)
-class SiteSettingsAdmin(ModelStudio):
+class SiteSettingsStudio(ModelStudio):
     is_singleton = True
     edit_main = ["site_name", "tagline"]
 
 
 @register(models.LandingPage)
-class LandingPageAdmin(ModelStudio):
+class LandingPageStudio(ModelStudio):
     edit_main = ["title", "body"]
