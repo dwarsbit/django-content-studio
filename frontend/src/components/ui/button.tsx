@@ -1,7 +1,8 @@
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "cn";
 import { Slot } from "radix-ui";
 import * as React from "react";
+
+import { cn } from "@/lib/utils";
 
 import { Spinner } from "./spinner";
 
