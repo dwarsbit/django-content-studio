@@ -1,0 +1,21 @@
+<!-- @dsCard group="Overlays" height=220 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Popover preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.col{display:flex;flex-direction:column;gap:12px;max-width:360px}
+label{display:flex;align-items:center;gap:8px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(h(C.Popover, { open: true },
+  h(C.PopoverTrigger, { className: C.buttonVariants({ variant: "outline" }) }, "Word count"),
+  h(C.PopoverContent, { align: "start" },
+    h("div", { style: { display: "grid", gap: 8 } },
+      h("strong", null, "Filter by word count"),
+      h("div", { className: "row" }, h(C.Input, { placeholder: "From", style: { width: 100 } }), h(C.Input, { placeholder: "To", style: { width: 100 } })),
+      h(C.Button, { size: "sm" }, "Apply")))));
+</script>
+</body>
+</html>

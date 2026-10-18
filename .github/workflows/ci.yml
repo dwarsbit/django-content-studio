@@ -94,6 +94,11 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Design system
+        run: |
+          npm run build:design-system -- --check
+          npm run build:design-system
+
       - name: Build
         run: npm run build
 

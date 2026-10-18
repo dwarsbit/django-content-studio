@@ -222,6 +222,25 @@ project.
 
 ---
 
+## Design System
+
+`/design-system` is the admin's visual design system: the brand book
+(`README.md`), the tokens (`tokens.json`) and one folder per component in
+`frontend/src/components/ui` with guidelines and a live preview. It is
+generated from the admin, never edited by hand where the admin is the source:
+
+- Color values in `tokens.json` follow `frontend/src/index.css`; the usage
+  notes are written by hand.
+- `npm run build:design-system` (in `frontend/`) syncs the colors and
+  builds `components/bundle.js` and `bundle.css` (git-ignored).
+- A new UI component needs an export in `frontend/design-system/entry.tsx`,
+  an entry in `COMPONENTS` in `frontend/design-system/build.mjs`, and a
+  `design-system/components/<Name>/` folder with `README.md` and
+  `preview.html`. CI runs `npm run build:design-system -- --check`, which
+  fails on a missing piece or a color that drifted from `index.css`.
+
+---
+
 ## Code Organization
 
 ### Model Registration
@@ -317,6 +336,7 @@ urlpatterns = [
 | Vite config | `/frontend/vite.config.ts` |
 | Docs website | `/website` (Docusaurus, `npm run build`; deployed by the Website workflow) |
 | Writing style guide | `/website/STYLE.md` |
+| Design system | `/design-system` (tokens, component guidelines and previews; built by `frontend/design-system/build.mjs`) |
 
 ---
 
@@ -438,3 +458,4 @@ poetry run python scripts/test_wrapper.py test-cov    # With coverage
 | Format frontend | `cd frontend && prettier --write .` |
 | Run docs site | `cd website && npm start` |
 | Build docs site | `cd website && npm run build` |
+| Build design system | `cd frontend && npm run build:design-system` |

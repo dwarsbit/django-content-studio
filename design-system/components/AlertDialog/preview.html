@@ -1,0 +1,22 @@
+<!-- @dsCard group="Overlays" height=300 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>AlertDialog preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.col{display:flex;flex-direction:column;gap:12px;max-width:360px}
+label{display:flex;align-items:center;gap:8px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(h(C.AlertDialog, { open: true },
+  h(C.AlertDialogContent, null,
+    h(C.AlertDialogHeader, null,
+      h(C.AlertDialogTitle, null, "Delete 3 articles?"),
+      h(C.AlertDialogDescription, null, "The articles and their reviews are deleted for good. This cannot be undone.")),
+    h(C.AlertDialogFooter, null,
+      h(C.AlertDialogCancel, null, "Cancel"),
+      h(C.AlertDialogAction, { className: "bg-destructive text-white hover:bg-destructive/90" }, "Delete")))));
+</script>
+</body>
+</html>

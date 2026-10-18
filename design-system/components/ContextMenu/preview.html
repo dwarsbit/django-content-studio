@@ -1,0 +1,30 @@
+<!-- @dsCard group="Overlays" height=240 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>ContextMenu preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.col{display:flex;flex-direction:column;gap:12px;max-width:360px}
+label{display:flex;align-items:center;gap:8px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+function Demo() {
+  var ref = React.useRef(null);
+  React.useEffect(function () {
+    var r = ref.current.getBoundingClientRect();
+    ref.current.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, clientX: r.left + 150, clientY: r.top + 20 }));
+  }, []);
+  return h(C.ContextMenu, { modal: false },
+    h(C.ContextMenuTrigger, null, h("div", { ref: ref, className: "rounded-md border", style: { width: 140, height: 100, textAlign: "center", padding: 8, display: "grid", placeItems: "center", color: "var(--muted-foreground)" } }, "Press and hold or right-click")),
+    h(C.ContextMenuContent, { className: "w-48" },
+      h(C.ContextMenuLabel, null, "Photos"),
+      h(C.ContextMenuItem, null, "Open"),
+      h(C.ContextMenuItem, null, "Rename", h(C.ContextMenuShortcut, null, "F2")),
+      h(C.ContextMenuSeparator),
+      h(C.ContextMenuItem, { variant: "destructive" }, "Delete folder")));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(h(Demo));
+</script>
+</body>
+</html>

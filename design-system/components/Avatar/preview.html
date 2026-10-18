@@ -1,0 +1,19 @@
+<!-- @dsCard group="Display" height=64 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Avatar preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.col{display:flex;flex-direction:column;gap:12px;max-width:360px}
+label{display:flex;align-items:center;gap:8px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(h("div", { className: "row" },
+  h(C.Avatar, null, h(C.AvatarImage, { src: "../../assets/Logos/content-studio-icon.png", alt: "Content Studio" }), h(C.AvatarFallback, null, "CS")),
+  h(C.Avatar, null, h(C.AvatarFallback, null, "LG")),
+  h(C.Avatar, null, h(C.AvatarFallback, null, "MB")),
+  h(C.Avatar, { className: "size-10" }, h(C.AvatarFallback, null, "AK"))));
+</script>
+</body>
+</html>

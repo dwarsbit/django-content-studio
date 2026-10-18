@@ -1,0 +1,21 @@
+<!-- @dsCard group="Forms" height=64 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>DebouncedInput preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.col{display:flex;flex-direction:column;gap:12px;max-width:360px}
+label{display:flex;align-items:center;gap:8px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+function Demo() {
+  var s = React.useState(""), q = s[0], setQ = s[1];
+  return h("div", { className: "col" },
+    h(C.DebouncedInput, { value: "", placeholder: "Search media", onChange: setQ }),
+    h("span", { style: { color: "var(--muted-foreground)" } }, q ? "Searching for \u201c" + q + "\u201d" : "Type to search"));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(h(Demo));
+</script>
+</body>
+</html>

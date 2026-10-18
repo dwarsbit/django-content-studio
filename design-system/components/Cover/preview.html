@@ -1,0 +1,48 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Cover</title>
+<style>
+  html, body { margin: 0; background: var(--background); }
+  .cover { position: relative; width: 960px; height: 288px; overflow: hidden; font-family: var(--font-sans); }
+  .band { position: absolute; left: 0; top: 0; width: 960px; height: 112px; }
+  .ink { fill: var(--primary); }
+  .on-ink { fill: var(--primary-foreground); }
+  .slate { fill: var(--color-gray-600); }
+  .haze { fill: var(--color-gray-300); }
+  .quiet { fill: var(--secondary); }
+  .text { position: absolute; left: 40px; bottom: 24px; }
+  .name { margin: 0; font-size: 64px; line-height: 0.95; font-weight: 600; letter-spacing: -0.02em; color: var(--foreground); white-space: nowrap; }
+  .tagline { margin: 16px 0 0; max-width: 440px; font-size: 14px; line-height: 1.5; color: var(--secondary-foreground); }
+</style></head>
+<body>
+<div class="cover">
+  <svg class="band" viewBox="0 0 960 112" aria-hidden="true">
+    <!--
+      blocks: primary 440x112 (flush left), color-gray-600 200x112, color-gray-300 136x112, secondary 184x112 (bleeds right)
+      arrangement: a strip of unequal bands, the way the admin stacks its rows; the top band skeleton because the name is too wide for the 440px zone
+      pattern: rounded text lines, the motif of the app icon's letter D ("a letter D formed from rounded horizontal lines"); pills cut by the fully round radius
+      steps and radii: pill height space-4 (16px), row gap space-2 (8px), inset space-6 (24px), rx = 8 (half the pill), block edges on 8px multiples
+    -->
+    <rect class="ink" x="0" y="0" width="440" height="112"/>
+    <rect class="slate" x="440" y="0" width="200" height="112"/>
+    <rect class="haze" x="640" y="0" width="136" height="112"/>
+    <rect class="quiet" x="776" y="0" width="184" height="112"/>
+    <!-- text lines on the ink block: the D's silhouette, short-long-long-short -->
+    <rect class="on-ink" x="24" y="16" width="200" height="16" rx="8"/>
+    <rect class="on-ink" x="24" y="40" width="272" height="16" rx="8"/>
+    <rect class="on-ink" x="24" y="64" width="296" height="16" rx="8"/>
+    <rect class="on-ink" x="24" y="88" width="224" height="16" rx="8"/>
+    <!-- lines continuing across the strip, fading into the lighter bands -->
+    <rect class="haze" x="464" y="40" width="152" height="16" rx="8"/>
+    <rect class="haze" x="464" y="64" width="112" height="16" rx="8"/>
+    <rect class="slate" x="664" y="64" width="88" height="16" rx="8"/>
+    <rect class="slate" x="800" y="88" width="120" height="16" rx="8"/>
+  </svg>
+  <div class="text">
+    <h1 class="name">Django Content Studio</h1>
+    <p class="tagline">A modern alternative to the classic Django admin, with batteries included.</p>
+  </div>
+</div>
+</body>
+</html>

@@ -33,3 +33,10 @@ skills-lock.json
 node_modules/
 website/build/
 .docusaurus/
+
+# Design system build output (npm run build:design-system)
+/design-system/components/bundle.js
+/design-system/components/bundle.css
+/design-system/fonts/
+/design-system/assets/Logos/*.svg
+/design-system/assets/Logos/*.png

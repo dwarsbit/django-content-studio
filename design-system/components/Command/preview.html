@@ -1,0 +1,26 @@
+<!-- @dsCard group="Navigation" height=300 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Command preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.col{display:flex;flex-direction:column;gap:12px;max-width:360px}
+label{display:flex;align-items:center;gap:8px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(h(C.Command, { className: "rounded-lg border shadow-md", style: { maxWidth: 420 } },
+  h(C.CommandInput, { placeholder: "Search models and pages" }),
+  h(C.CommandList, null,
+    h(C.CommandEmpty, null, "No results. Try another word."),
+    h(C.CommandGroup, { heading: "Content" },
+      h(C.CommandItem, null, "Articles"),
+      h(C.CommandItem, null, "Categories"),
+      h(C.CommandItem, null, "Landing pages")),
+    h(C.CommandSeparator),
+    h(C.CommandGroup, { heading: "Settings" },
+      h(C.CommandItem, null, "Site settings", h(C.CommandShortcut, null, "\u2318S")),
+      h(C.CommandItem, null, "Media library")))));
+</script>
+</body>
+</html>

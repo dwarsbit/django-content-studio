@@ -1,0 +1,20 @@
+<!-- @dsCard group="Forms" height=150 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Input preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.col{display:flex;flex-direction:column;gap:12px;max-width:360px}
+label{display:flex;align-items:center;gap:8px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(h("div", { className: "col" },
+  h(C.Input, { placeholder: "Search articles" }),
+  h(C.Input, { value: "Spring launch announcement", onChange: function () {} }),
+  h(C.Input, { size: "sm", placeholder: "Small" }),
+  h(C.Input, { "aria-invalid": true, value: "not-a-slug!", onChange: function () {} }),
+  h(C.Input, { disabled: true, value: "Read only", onChange: function () {} })));
+</script>
+</body>
+</html>
