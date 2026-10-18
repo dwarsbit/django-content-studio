@@ -30,5 +30,5 @@ export function LoadingBar() {
   }, [showLoader]);
 
   // The theme's primary color, so the bar follows light and dark mode.
-  return <RootLoadingBar ref={ref} color="var(--primary)" shadow={false} />;
+  return <RootLoadingBar ref={ref} color="var(--primary)" shadow-sm={false} />;
 }

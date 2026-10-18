@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Readable text and visible focus in the admin.** In the light theme,
+  supporting text (`muted-foreground`), text on hover fills
+  (`accent-foreground`) and the `success` and `warning` colors now meet
+  4.5:1 contrast; focus rings are solid and meet 3:1 in both themes. The
+  dark theme's active menu item uses the mist palette instead of a stray
+  blue.
+- **Shadows that were missing now render.** Controls using `shadow-xs`
+  (buttons, checkboxes, switches, toggles) and the few that used the bare
+  `shadow` or `shadow-2xl` had no shadow at all; the theme now defines
+  `shadow-xs` and those controls use the defined scale.
+
 - **No migrations inside the installed package.** The password reset
   app did not pin its primary key type, so a project with
   `DEFAULT_AUTO_FIELD = "django.db.models.AutoField"` got a pending

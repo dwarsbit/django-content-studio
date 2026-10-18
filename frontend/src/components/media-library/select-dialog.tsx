@@ -145,7 +145,7 @@ function SelectDialogContent({
               >
                 {isSelected && (
                   <div className="absolute left-0 top-0 right-0 bottom-0 bg-foreground/40 z-10">
-                    <div className="size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center absolute z-10 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 shadow">
+                    <div className="size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center absolute z-10 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 shadow-sm">
                       <PiCheckBold className="size-2.5" />
                     </div>
                   </div>

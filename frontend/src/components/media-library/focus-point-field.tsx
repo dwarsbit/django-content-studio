@@ -46,7 +46,7 @@ export function FocalPointField({
         />
         {value && (
           <span
-            className="pointer-events-none absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow ring-2 ring-black/60"
+            className="pointer-events-none absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-sm ring-2 ring-black/60"
             style={{ left: `${value.x}%`, top: `${value.y}%` }}
           />
         )}
