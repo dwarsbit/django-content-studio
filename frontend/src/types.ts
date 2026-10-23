@@ -111,9 +111,13 @@ export interface Model {
     edit: {
       main: FormSetGroup[];
       sidebar: FormSet[];
+      // The create form's read-only fields (get_readonly_fields without
+      // an object); saved objects carry their own __readonly_fields__.
+      readonly_fields?: string[];
       inlines: {
         model: string;
         fk_name: string;
+        readonly_fields?: string[];
         table_display: {
           name: string;
           header: string | null;
@@ -181,6 +185,9 @@ export interface Resource {
   icon?: string | null;
   initials?: string | null;
   avatar?: string | null;
+  // The fields read-only for this object (get_readonly_fields), on
+  // detail responses.
+  __readonly_fields__?: string[];
   [key: string]: unknown;
 }
 

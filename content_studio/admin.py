@@ -114,6 +114,10 @@ class BaseStudio(Generic[T]):
     # alias of table_display (system check W010 asks for table_display).
     list_display: Optional[list[Union[str, "TableColumn"]]] = None
 
+    # Model fields shown on the edit page but never written through it,
+    # like the classic admin's readonly_fields.
+    readonly_fields: list[str] = []
+
     def __init__(self, model: Type[T], admin_site: "ContentStudioSite"):
         self.model = model
         self.admin_site = admin_site
@@ -131,6 +135,16 @@ class BaseStudio(Generic[T]):
             for field in self.model._meta.get_fields()
             if field.editable and not field.auto_created and field.name not in exclude
         ]
+
+    def get_readonly_fields(
+        self, request: HttpRequest, obj: Optional[T] = None
+    ) -> list[str]:
+        """
+        The fields that are read-only on the edit page; obj is None on
+        the create form. Override to decide per request or per object,
+        e.g. a slug that is fixed once the object exists.
+        """
+        return list(self.readonly_fields)
 
     def _has_model_perm(self, request: HttpRequest, action: str) -> bool:
         opts = self.model._meta
@@ -639,6 +653,30 @@ def is_computed_column(admin_class, column: TableColumn) -> bool:
     return callable(getattr(admin_class, column.field, None))
 
 
+def get_readonly_field_names(
+    studio, request: HttpRequest, obj: Optional[models.Model] = None
+) -> set[str]:
+    """
+    Every field the API must not write for this studio: the studio's
+    get_readonly_fields plus the edit page's Field(readonly=True)
+    entries, so neither is enforced by the interface alone.
+    """
+    names = set(studio.get_readonly_fields(request, obj))
+
+    all_fields = list(getattr(studio, "edit_main", None) or []) + list(
+        getattr(studio, "edit_sidebar", None) or []
+    )
+    flat_fields = flatten(
+        [f.get_fields() if hasattr(f, "get_fields") else [f] for f in all_fields]
+    )
+
+    for field in flat_fields:
+        if isinstance(field, Field) and field.readonly:
+            names.add(field.name)
+
+    return names
+
+
 def get_is_singleton(admin_class) -> bool:
     """
     Return the effective singleton state of a model studio.
@@ -693,10 +731,18 @@ class AdminSerializer:
             "edit": {
                 "main": self.serialize_edit_main(request),
                 "sidebar": self.serialize_edit_sidebar(request),
+                # The create form's read-only fields; saved objects
+                # carry their own.
+                "readonly_fields": list(admin_class.get_readonly_fields(request)),
                 "inlines": [
                     {
                         "model": inline.model._meta.label_lower,
                         "fk_name": get_related_field_name(inline, admin_class.model),
+                        "readonly_fields": list(
+                            inline(
+                                admin_class.model, admin_class.admin_site
+                            ).get_readonly_fields(request)
+                        ),
                         "table_display": [
                             column.serialize()
                             for column in get_table_display_columns(inline)

@@ -750,6 +750,39 @@ def inline_fk_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def readonly_fields_errors(studio) -> list[tuple[str, str]]:
+    """
+    readonly_fields entries that are not model fields, as (check id,
+    message) pairs. They would be silently ignored. Inlines are
+    checked too.
+    """
+    errors = []
+
+    def validate(owner, model):
+        if model is None:
+            return
+
+        field_names = model_field_names(model)
+
+        for name in getattr(owner, "readonly_fields", None) or []:
+            if not isinstance(name, str) or name not in field_names:
+                errors.append(
+                    (
+                        "content_studio.E015",
+                        f"{config_name(owner)}.readonly_fields entry "
+                        f"{name!r} is not a field of "
+                        f"{model._meta.label_lower}.",
+                    )
+                )
+
+    validate(studio, getattr(studio, "model", None))
+
+    for inline in getattr(studio, "inlines", None) or []:
+        validate(inline, getattr(inline, "model", None))
+
+    return errors
+
+
 def mapping_errors(site) -> list[tuple[str, str]]:
     """
     Widget and format mapping values that are not widget or format
@@ -802,6 +835,20 @@ def readonly_required_warnings(studio) -> list[tuple[str, str]]:
     }
 
     warnings = []
+
+    for name in getattr(studio, "readonly_fields", None) or []:
+        if name in required:
+            warnings.append(
+                (
+                    "content_studio.W002",
+                    f"{studio.__class__.__name__}: the required field "
+                    f"{name!r} is in readonly_fields, so creating objects "
+                    "will fail validation. Remove it from readonly_fields "
+                    "(override get_readonly_fields to make it read-only "
+                    "once the object exists), or give the model field a "
+                    "default, make it nullable or blank.",
+                )
+            )
 
     for field in iter_edit_fields(studio):
         if field.readonly and field.name in required:
@@ -1115,6 +1162,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in inline_fk_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in readonly_fields_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, warning in edit_field_warnings(studio):

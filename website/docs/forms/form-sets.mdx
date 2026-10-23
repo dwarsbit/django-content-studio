@@ -61,6 +61,38 @@ To edit one field with another widget, pass the widget class:
 `Field("body", widget=widgets.TextAreaWidget)`. See
 [Widgets](/docs/forms/widgets) for the widgets you can use.
 
+## Read-only fields
+
+Like the classic Django admin, a studio can list fields in
+`readonly_fields`. The edit page shows their values without an input, and
+saving never changes them. `readonly=True` on a `Field` does the same for
+that one place on the edit page.
+
+To decide per editor or per object, override `get_readonly_fields`. It
+receives the request and the object, which is `None` on the create form.
+This keeps an article's title editable until the article is published:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    def get_readonly_fields(self, request, obj=None):
+        if obj is not None and obj.status == Article.Status.PUBLISHED:
+            return ["title"]
+
+        return []
+```
+
+Inlines take `readonly_fields` and `get_readonly_fields` too. A required
+field in `readonly_fields` can never be filled in, so creating objects fails;
+system check `content_studio.W002` reports it.
+
 ## Components
 
 Besides fields, the edit page can show components: links, and the object's
