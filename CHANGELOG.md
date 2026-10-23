@@ -18,6 +18,14 @@
   Existing objects are never prepopulated. System check
   `content_studio.E016` reports misconfigurations. The slug widget now
   drops accents instead of turning them into hyphens.
+- **Duplicate warnings for unique fields.** While you type a value in a
+  field with `unique=True`, such as a prepopulated slug, the edit page
+  checks whether another object already uses it and shows a warning
+  under the field that names that object (only if you may view it).
+  Saving is not blocked; Django's uniqueness validation still decides.
+  Objects in the trash count, and on tenant-scoped models only the
+  current tenant's objects are compared. `unique_together` and
+  multi-field `UniqueConstraint`s are not checked.
 - **`Field(readonly=True)` is enforced on save.** The edit page already
   showed these fields without an input; saving now ignores any value
   sent for them as well.

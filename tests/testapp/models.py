@@ -76,3 +76,16 @@ class Note(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Page(models.Model):
+    title = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    # A tenant field when TENANT_MODEL is Category.
+    category = models.ForeignKey(
+        Category, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    removed_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    def __str__(self):
+        return self.title

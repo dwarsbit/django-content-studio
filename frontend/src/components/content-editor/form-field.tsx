@@ -17,6 +17,8 @@ import { WidgetRenderer } from "@/components/widgets/renderer";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import { FieldWidget, type FormField as IFormField, type Model } from "@/types";
 
+import { UniqueWarning } from "./unique-warning";
+
 const COMPONENTS: Partial<
   Record<
     IFormField["component_type"],
@@ -106,6 +108,9 @@ export function FormField({
                     </FormLabel>
                     {control}
                   </>
+                )}
+                {!isReadonly && modelField?.unique && (
+                  <UniqueWarning model={model} name={formField.name} />
                 )}
                 {modelField?.help_text && (
                   <FormDescription>{modelField.help_text}</FormDescription>
