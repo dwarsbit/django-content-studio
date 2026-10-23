@@ -11,6 +11,13 @@
   `content_studio.E015` reports entries that are not model fields, and
   `content_studio.W002` now also reports required fields in
   `readonly_fields`.
+- **Prepopulated fields.** `prepopulated_fields` and
+  `get_prepopulated_fields(request, obj=None)` work like the classic
+  Django admin's, on studios and inlines: on the create form, a field
+  such as a slug follows its source fields until you edit it yourself.
+  Existing objects are never prepopulated. System check
+  `content_studio.E016` reports misconfigurations. The slug widget now
+  drops accents instead of turning them into hyphens.
 - **`Field(readonly=True)` is enforced on save.** The edit page already
   showed these fields without an input; saving now ignores any value
   sent for them as well.

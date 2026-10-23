@@ -50,6 +50,7 @@ export function Inline({
   adminModel: {
     fk_name: string;
     readonly_fields?: string[];
+    prepopulated_fields?: Record<string, string[]>;
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
   };
 }) {
@@ -101,6 +102,7 @@ export function Inline({
               // inline model's own studio.
               __readonly_fields__: adminModel.readonly_fields ?? [],
             }}
+            prepopulatedFields={adminModel.prepopulated_fields ?? {}}
             onSave={async () => {
               setCreate(false);
               await queryClient.invalidateQueries({
@@ -203,6 +205,7 @@ function InlineRow({
   adminModel: {
     fk_name: string;
     readonly_fields?: string[];
+    prepopulated_fields?: Record<string, string[]>;
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
   };
 }) {

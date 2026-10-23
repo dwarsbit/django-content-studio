@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { stripAccents } from "@/lib/slug";
 import type { WidgetProps } from "@/types";
 
 export function SlugWidget({ value, onChange }: WidgetProps<string>) {
@@ -7,7 +8,11 @@ export function SlugWidget({ value, onChange }: WidgetProps<string>) {
       <Input
         value={value}
         onChange={(e) =>
-          onChange(e.target.value.toLowerCase().replace(/[^0-9a-z_-]/g, "-"))
+          onChange(
+            stripAccents(e.target.value)
+              .toLowerCase()
+              .replace(/[^0-9a-z_-]/g, "-"),
+          )
         }
       />
     </div>

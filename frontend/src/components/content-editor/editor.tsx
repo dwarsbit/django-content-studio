@@ -21,6 +21,7 @@ import type { Model, Resource } from "@/types";
 import { Aside } from "./aside";
 import { Header } from "./header";
 import { Main } from "./main";
+import { Prepopulate } from "./prepopulate";
 
 export function Editor({
   modelLabel,
@@ -34,6 +35,9 @@ export function Editor({
   id?: string | null;
   inlineOf?: string;
   initialValues?: Record<string, unknown>;
+  // The create form's prepopulated fields; defaults to the model's
+  // studio (inlines pass their own).
+  prepopulatedFields?: Record<string, string[]>;
   onCreated?: (id: string) => void;
   onSave?: VoidFunction;
   onClose?: VoidFunction;
@@ -51,6 +55,7 @@ function EditorForm({
   inlineOf,
   dialog = false,
   initialValues = {},
+  prepopulatedFields,
   onCreated,
   onDelete,
   onSave,
@@ -61,6 +66,9 @@ function EditorForm({
   inlineOf?: string;
   dialog?: boolean;
   initialValues?: Record<string, unknown>;
+  // The create form's prepopulated fields; defaults to the model's
+  // studio (inlines pass their own).
+  prepopulatedFields?: Record<string, string[]>;
   onCreated?: (id: string) => void;
   onSave?: VoidFunction;
   onClose?: VoidFunction;
@@ -240,6 +248,12 @@ function EditorForm({
 
   return model && initialized ? (
     <Form {...form}>
+      <Prepopulate
+        model={model}
+        fields={
+          prepopulatedFields ?? model.admin?.edit.prepopulated_fields ?? {}
+        }
+      />
       <div className="flex-1 flex flex-col overflow-hidden max-w-[1200px] mx-auto w-full">
         <TenantInfo label={model.label} />
         <Header

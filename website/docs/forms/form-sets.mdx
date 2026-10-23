@@ -93,6 +93,54 @@ Inlines take `readonly_fields` and `get_readonly_fields` too. A required
 field in `readonly_fields` can never be filled in, so creating objects fails;
 system check `content_studio.W002` reports it.
 
+## Prepopulated fields
+
+Like the classic Django admin, `prepopulated_fields` fills in a field from
+other fields while you create an object: typically a slug from the title.
+Map the field to the fields it is made from:
+
+```python
+# blog/models.py
+from django.db import models
+
+
+class Article(models.Model):
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True)
+
+    def __str__(self):
+        return self.title
+```
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    prepopulated_fields = {"slug": ("title",)}
+```
+
+As you type the title, the slug follows it: accents are dropped, spaces
+become hyphens and the result is cut to the field's `max_length`, as
+Django's `slugify` does. Once you edit the slug yourself, it stops
+following. Existing objects are never prepopulated, so a published URL does
+not change when you rename an article.
+
+To decide per editor, override `get_prepopulated_fields(request, obj=None)`.
+Inlines take `prepopulated_fields` too. A field that cannot hold text (a
+`DateTimeField`, `ForeignKey`, `OneToOneField` or `ManyToManyField`), a
+field in `readonly_fields` and names that are not fields are reported by
+system check `content_studio.E016`.
+
+A field that the model fills in itself when it is saved, and that is not
+editable (`editable=False`), needs no `prepopulated_fields`: the edit page
+shows its value read-only.
+
 ## Components
 
 Besides fields, the edit page can show components: links, and the object's

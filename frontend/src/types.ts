@@ -114,10 +114,13 @@ export interface Model {
       // The create form's read-only fields (get_readonly_fields without
       // an object); saved objects carry their own __readonly_fields__.
       readonly_fields?: string[];
+      // The create form's prepopulated fields, mapped to their sources.
+      prepopulated_fields?: Record<string, string[]>;
       inlines: {
         model: string;
         fk_name: string;
         readonly_fields?: string[];
+        prepopulated_fields?: Record<string, string[]>;
         table_display: {
           name: string;
           header: string | null;

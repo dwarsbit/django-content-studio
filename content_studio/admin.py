@@ -1,4 +1,4 @@
-from typing import Type, TypeVar, Generic, Any, Optional, Union
+from typing import Type, TypeVar, Generic, Any, Optional, Sequence, Union
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
@@ -118,6 +118,10 @@ class BaseStudio(Generic[T]):
     # like the classic admin's readonly_fields.
     readonly_fields: list[str] = []
 
+    # Fields filled in from other fields on the create form, like the
+    # classic admin's prepopulated_fields: {"slug": ("title",)}.
+    prepopulated_fields: dict[str, Sequence[str]] = {}
+
     def __init__(self, model: Type[T], admin_site: "ContentStudioSite"):
         self.model = model
         self.admin_site = admin_site
@@ -145,6 +149,16 @@ class BaseStudio(Generic[T]):
         e.g. a slug that is fixed once the object exists.
         """
         return list(self.readonly_fields)
+
+    def get_prepopulated_fields(
+        self, request: HttpRequest, obj: Optional[T] = None
+    ) -> dict[str, Sequence[str]]:
+        """
+        The fields the create form fills in from other fields, mapped to
+        the fields they are made from. Like the classic admin, existing
+        objects are never prepopulated.
+        """
+        return dict(self.prepopulated_fields)
 
     def _has_model_perm(self, request: HttpRequest, action: str) -> bool:
         opts = self.model._meta
@@ -677,6 +691,16 @@ def get_readonly_field_names(
     return names
 
 
+def serialize_prepopulated_fields(studio, request: HttpRequest) -> dict[str, list]:
+    """
+    The create form's prepopulated fields, with the sources as lists.
+    """
+    return {
+        target: list(sources)
+        for target, sources in studio.get_prepopulated_fields(request).items()
+    }
+
+
 def get_is_singleton(admin_class) -> bool:
     """
     Return the effective singleton state of a model studio.
@@ -734,6 +758,9 @@ class AdminSerializer:
                 # The create form's read-only fields; saved objects
                 # carry their own.
                 "readonly_fields": list(admin_class.get_readonly_fields(request)),
+                "prepopulated_fields": serialize_prepopulated_fields(
+                    admin_class, request
+                ),
                 "inlines": [
                     {
                         "model": inline.model._meta.label_lower,
@@ -742,6 +769,10 @@ class AdminSerializer:
                             inline(
                                 admin_class.model, admin_class.admin_site
                             ).get_readonly_fields(request)
+                        ),
+                        "prepopulated_fields": serialize_prepopulated_fields(
+                            inline(admin_class.model, admin_class.admin_site),
+                            request,
                         ),
                         "table_display": [
                             column.serialize()
