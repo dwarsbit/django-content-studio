@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.1.0 (unreleased)
+
+- **Read-only fields on the studio.** `readonly_fields` and
+  `get_readonly_fields(request, obj=None)` work like the classic Django
+  admin's, on studios and inlines: the edit page shows the fields
+  without an input, and saving never changes them. The hook receives
+  the object (`None` on the create form), so a field can be read-only
+  per editor or once the object exists. System check
+  `content_studio.E015` reports entries that are not model fields, and
+  `content_studio.W002` now also reports required fields in
+  `readonly_fields`.
+- **`Field(readonly=True)` is enforced on save.** The edit page already
+  showed these fields without an input; saving now ignores any value
+  sent for them as well.
+
 ## Unreleased
 
 - **Readable text and visible focus in the admin.** In the light theme,

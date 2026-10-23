@@ -81,7 +81,9 @@ function EditorForm({
   const hiddenFields = Object.keys(initialValues);
   const defaultValues = Object.entries(model?.fields ?? {}).reduce(
     (defaults, [key, field]) => ({ ...defaults, [key]: field.default }),
-    {},
+    {
+      __readonly_fields__: model?.admin?.edit.readonly_fields ?? [],
+    } as Record<string, unknown>,
   );
 
   const formSchema = z.looseObject({

@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 from django.contrib.auth import get_user_model
+from django.db import models
 from packaging.version import Version
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -96,6 +97,7 @@ class DjangoContentStudioConfig(AppConfig):
     def _create_view_set(self, model, admin_model, parent=None):
         from .admin import (
             get_is_singleton,
+            get_readonly_field_names,
             get_table_display_columns,
             is_computed_column,
         )
@@ -175,6 +177,47 @@ class DjangoContentStudioConfig(AppConfig):
                         model = self._model
                         fields = available_fields
                         exclude = excluded_fields
+
+                # Detail views: read-only fields are never written, and
+                # each object reports its own so the editor can show
+                # them (get_readonly_fields may depend on the object).
+                if self.action not in ("list", "trash") or self.is_singleton:
+                    admin_model = self._admin_model
+
+                    class DetailSerializer(Serializer):
+                        __readonly_fields__ = serializers.SerializerMethodField(
+                            method_name="get_readonly_field_list"
+                        )
+
+                        def _get_obj(self):
+                            return (
+                                self.instance
+                                if isinstance(self.instance, models.Model)
+                                else None
+                            )
+
+                        def get_fields(self):
+                            fields = super().get_fields()
+                            readonly = get_readonly_field_names(
+                                admin_model,
+                                self.context.get("request"),
+                                self._get_obj(),
+                            )
+
+                            for name in readonly:
+                                if name in fields:
+                                    fields[name].read_only = True
+
+                            return fields
+
+                        def get_readonly_field_list(self, obj):
+                            return list(
+                                admin_model.get_readonly_fields(
+                                    self.context.get("request"), obj
+                                )
+                            )
+
+                    return DetailSerializer
 
                 # Columns backed by a model studio method ship their
                 # computed value on every row, through the column's

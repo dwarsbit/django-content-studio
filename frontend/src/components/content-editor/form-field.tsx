@@ -1,5 +1,5 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 
 import { ActivityLog } from "@/components/form-components/activity-log";
 import { Link } from "@/components/form-components/link";
@@ -42,7 +42,16 @@ export function FormField({
   const { data: info } = useAdminInfo();
   const modelField = model.fields[formField.name];
   const label = formField.label || modelField?.verbose_name;
-  const isReadonly = !modelField || modelField.readonly || formField.readonly;
+  // The studio's read-only fields travel with the form values: the
+  // create form starts from the studio's list, a saved object brings
+  // its own.
+  const readonlyFields = useWatch({ name: "__readonly_fields__" }) as
+    string[] | undefined;
+  const isReadonly =
+    !modelField ||
+    modelField.readonly ||
+    formField.readonly ||
+    (readonlyFields?.includes(formField.name) ?? false);
 
   // Checkboxes render their label inline after the box, not above it.
   const widgetClass =

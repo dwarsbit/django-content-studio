@@ -123,6 +123,7 @@ function makeModel(
     main?: { label: string; formsets: IFormSet[] }[];
     list?: Partial<Model["admin"]["list"]>;
     sidebar?: IFormSet[];
+    readonlyFields?: string[];
   } = {},
 ): Model {
   return {
@@ -157,6 +158,7 @@ function makeModel(
           },
         ],
         sidebar: overrides.sidebar ?? [],
+        readonly_fields: overrides.readonlyFields ?? [],
         inlines: [],
       },
       permissions: {
@@ -189,6 +191,7 @@ function makeDiscover(models: Model[]) {
 interface FormValues {
   id?: string;
   __str__?: string;
+  __readonly_fields__?: string[];
   title: string;
   status: string;
   is_published: boolean;
@@ -357,6 +360,24 @@ describe("FormField", () => {
     );
 
     expect(screen.getByText("published")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("renders a read-only display for fields in the studio's readonly_fields", () => {
+    render(
+      <FormHarness
+        defaultValues={{
+          title: "Hello",
+          status: "draft",
+          is_published: false,
+          __readonly_fields__: ["title"],
+        }}
+      >
+        <FormField formField={makeFormField("title")} model={makeModel()} />
+      </FormHarness>,
+    );
+
+    expect(screen.getByText("Hello")).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
@@ -765,6 +786,51 @@ describe("Editor", () => {
     );
     expect(httpMock.post).not.toHaveBeenCalled();
     await waitFor(() => expect(onSave).toHaveBeenCalled());
+  });
+
+  it("applies the studio's readonly_fields on the create form", () => {
+    useDiscoverMock.mockReturnValue({
+      data: makeDiscover([makeModel({ readonlyFields: ["title"] })]),
+    });
+
+    renderEditorPage(
+      <Editor
+        modelLabel="testapp.article"
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox")).toBeInTheDocument();
+  });
+
+  it("applies the object's own read-only fields when editing", async () => {
+    httpMock.get.mockImplementation((url: string) =>
+      url.endsWith("/activity")
+        ? Promise.resolve({ data: [] })
+        : Promise.resolve({
+            data: {
+              id: "abc-123",
+              title: "Fixed title",
+              is_published: false,
+              __str__: "Article 1",
+              __readonly_fields__: ["title"],
+            },
+          }),
+    );
+
+    renderEditorPage(
+      <Editor
+        modelLabel="testapp.article"
+        id="abc-123"
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText("Fixed title")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
   it("shows the object's activity when the sidebar declares the component", async () => {

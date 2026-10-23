@@ -29,13 +29,14 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key to the parent model. |
 | `content_studio.E013` | Values in the site's `default_widget_mapping` or `default_format_mapping` that are not widget or format classes. |
 | `content_studio.E014` | A `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` that is not a list of extensions without the dot, or a `MEDIA_LIBRARY_MAX_UPLOAD_SIZE` that is not a positive number of bytes. |
+| `content_studio.E015` | `readonly_fields` entries that are not model fields. Inlines are checked too. |
 
 ## Warnings
 
 | ID | Reports |
 |----|---------|
 | `content_studio.W001` | A required model field missing from `edit_main` and `edit_sidebar`, so saving fails. Fields with a default, nullable or blank fields, and fields Content Studio fills in itself do not count. |
-| `content_studio.W002` | A required model field set to `readonly=True` on the edit page, so it can never be filled in and saving fails. |
+| `content_studio.W002` | A required model field set to `readonly=True` on the edit page or listed in `readonly_fields`, so it can never be filled in and saving fails. |
 | `content_studio.W003` | A choice widget (`SelectWidget`, `MultiSelectWidget`, `ToggleGroupWidget`, `RadioButtonWidget`) on a field without choices, which would show empty. |
 | `content_studio.W004` | `sortable_by` names that are not `table_display` columns. Sorting only applies to table columns. |
 | `content_studio.W005` | `list_filter` entries that are not field names, such as filter classes or tuples. They are ignored. |

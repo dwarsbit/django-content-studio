@@ -49,6 +49,7 @@ export function Inline({
   // Inline admin model
   adminModel: {
     fk_name: string;
+    readonly_fields?: string[];
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
   };
 }) {
@@ -96,6 +97,9 @@ export function Inline({
             inlineOf={relModel}
             initialValues={{
               [adminModel.fk_name]: { id: relId, __str__: relName },
+              // The inline studio decides what is read-only, not the
+              // inline model's own studio.
+              __readonly_fields__: adminModel.readonly_fields ?? [],
             }}
             onSave={async () => {
               setCreate(false);
@@ -198,6 +202,7 @@ function InlineRow({
   model: Model;
   adminModel: {
     fk_name: string;
+    readonly_fields?: string[];
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
   };
 }) {
