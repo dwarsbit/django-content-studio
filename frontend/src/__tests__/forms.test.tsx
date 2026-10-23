@@ -124,6 +124,7 @@ function makeModel(
     list?: Partial<Model["admin"]["list"]>;
     sidebar?: IFormSet[];
     readonlyFields?: string[];
+    prepopulatedFields?: Record<string, string[]>;
   } = {},
 ): Model {
   return {
@@ -159,6 +160,7 @@ function makeModel(
         ],
         sidebar: overrides.sidebar ?? [],
         readonly_fields: overrides.readonlyFields ?? [],
+        prepopulated_fields: overrides.prepopulatedFields ?? {},
         inlines: [],
       },
       permissions: {
@@ -831,6 +833,109 @@ describe("Editor", () => {
 
     expect(await screen.findByText("Fixed title")).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  describe("prepopulated fields", () => {
+    const sluggedModel = () =>
+      makeModel({
+        fields: {
+          ...articleFields,
+          slug: {
+            type: FieldType.CharField,
+            verbose_name: "Slug",
+            default: "",
+            max_length: 12,
+          },
+        },
+        main: [
+          {
+            label: "",
+            formsets: [
+              {
+                title: "",
+                description: "",
+                fields: [makeFormField("title"), makeFormField("slug")],
+              },
+            ],
+          },
+        ],
+        prepopulatedFields: { slug: ["title"] },
+      });
+
+    it("fills the field from its sources on the create form", async () => {
+      useDiscoverMock.mockReturnValue({
+        data: makeDiscover([sluggedModel()]),
+      });
+
+      renderEditorPage(
+        <Editor
+          modelLabel="testapp.article"
+          onSave={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      );
+
+      const [title, slug] = screen.getAllByRole("textbox");
+      await userEvent.setup().type(title, "Café au lait");
+
+      // Cut to the field's max_length (12), without a trailing hyphen.
+      await waitFor(() => expect(slug).toHaveValue("cafe-au-lait"));
+    });
+
+    it("stops following the sources once edited by hand", async () => {
+      useDiscoverMock.mockReturnValue({
+        data: makeDiscover([sluggedModel()]),
+      });
+
+      renderEditorPage(
+        <Editor
+          modelLabel="testapp.article"
+          onSave={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      );
+
+      const user = userEvent.setup();
+      const [title, slug] = screen.getAllByRole("textbox");
+      await user.type(title, "First");
+      await user.clear(slug);
+      await user.type(slug, "custom");
+      await user.type(title, " draft");
+
+      expect(slug).toHaveValue("custom");
+    });
+
+    it("never prepopulates an existing object", async () => {
+      useDiscoverMock.mockReturnValue({
+        data: makeDiscover([sluggedModel()]),
+      });
+      httpMock.get.mockImplementation((url: string) =>
+        url.endsWith("/activity")
+          ? Promise.resolve({ data: [] })
+          : Promise.resolve({
+              data: {
+                id: "abc-123",
+                title: "Old",
+                slug: "",
+                __str__: "Article 1",
+              },
+            }),
+      );
+
+      renderEditorPage(
+        <Editor
+          modelLabel="testapp.article"
+          id="abc-123"
+          onSave={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      );
+
+      const title = await screen.findByDisplayValue("Old");
+      await userEvent.setup().type(title, " news");
+
+      expect(screen.getAllByRole("textbox")[1]).toHaveValue("");
+    });
   });
 
   it("shows the object's activity when the sidebar declares the component", async () => {

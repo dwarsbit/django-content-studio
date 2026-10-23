@@ -783,6 +783,93 @@ def readonly_fields_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+# Fields a prepopulated value cannot go into, as in the classic admin.
+PREPOPULATED_TARGET_EXCLUDED = (
+    models.DateTimeField,
+    models.ForeignKey,
+    models.OneToOneField,
+    models.ManyToManyField,
+)
+
+
+def prepopulated_fields_errors(studio) -> list[tuple[str, str]]:
+    """
+    Misconfigured prepopulated_fields, as (check id, message) pairs:
+    not a mapping, a target that is not a field (or a field that cannot
+    take a slug-like value), sources that are not fields, or a target
+    that is read-only, so the filled-in value is never saved. Inlines
+    are checked too.
+    """
+    errors = []
+
+    def error(owner, message):
+        errors.append(("content_studio.E016", f"{config_name(owner)}.{message}"))
+
+    def validate(owner, model):
+        if model is None:
+            return
+
+        prepopulated = getattr(owner, "prepopulated_fields", None) or {}
+
+        if not isinstance(prepopulated, dict):
+            error(owner, "prepopulated_fields must be a mapping of field names.")
+            return
+
+        readonly = set(getattr(owner, "readonly_fields", None) or [])
+
+        for target, sources in prepopulated.items():
+            try:
+                field = model._meta.get_field(target)
+            except (FieldDoesNotExist, TypeError):
+                error(
+                    owner,
+                    f"prepopulated_fields refers to {target!r}, which is not "
+                    f"a field of {model._meta.label_lower}.",
+                )
+                continue
+
+            if isinstance(field, PREPOPULATED_TARGET_EXCLUDED):
+                error(
+                    owner,
+                    f"prepopulated_fields refers to {target!r}, which must "
+                    "not be a DateTimeField, ForeignKey, OneToOneField or "
+                    "ManyToManyField.",
+                )
+
+            if target in readonly:
+                error(
+                    owner,
+                    f"prepopulated_fields refers to {target!r}, which is in "
+                    "readonly_fields, so the filled-in value is never saved.",
+                )
+
+            if isinstance(sources, str) or not isinstance(sources, (list, tuple)):
+                error(
+                    owner,
+                    f"prepopulated_fields[{target!r}] must be a list or "
+                    "tuple of field names.",
+                )
+                continue
+
+            field_names = model_field_names(model)
+
+            for source in sources:
+                if source not in field_names:
+                    error(
+                        owner,
+                        f"prepopulated_fields[{target!r}] refers to "
+                        f"{source!r}, which is not a field of "
+                        f"{model._meta.label_lower}.",
+                    )
+
+    validate(studio, getattr(studio, "model", None))
+
+    for inline in getattr(studio, "inlines", None) or []:
+        validate(inline, getattr(inline, "model", None))
+
+    return errors
+
+
 def mapping_errors(site) -> list[tuple[str, str]]:
     """
     Widget and format mapping values that are not widget or format
@@ -1165,6 +1252,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in readonly_fields_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in prepopulated_fields_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, warning in edit_field_warnings(studio):
