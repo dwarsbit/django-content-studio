@@ -3,7 +3,7 @@ from content_studio.actions import bulk_action
 from content_studio.admin import InlineModelStudio, ModelStudio
 from content_studio.form import FormSet, TableColumn
 
-from .models import Article, Category, Note, Review, SiteSettings
+from .models import Article, Category, Note, Page, Review, SiteSettings
 
 
 class ReviewInline(InlineModelStudio):
@@ -67,4 +67,11 @@ class SiteSettingsAdmin(ModelStudio):
 class NoteAdmin(ModelStudio):
     table_display = ["id", "title"]
     sortable_by = ["title"]
+    soft_delete = "removed_at"
+
+
+@register(Page)
+class PageAdmin(ModelStudio):
+    table_display = ["id", "title"]
+    prepopulated_fields = {"slug": ["title"]}
     soft_delete = "removed_at"

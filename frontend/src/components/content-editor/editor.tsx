@@ -22,6 +22,7 @@ import { Aside } from "./aside";
 import { Header } from "./header";
 import { Main } from "./main";
 import { Prepopulate } from "./prepopulate";
+import { ResourcePathContext } from "./resource-path";
 
 export function Editor({
   modelLabel,
@@ -248,44 +249,46 @@ function EditorForm({
 
   return model && initialized ? (
     <Form {...form}>
-      <Prepopulate
-        model={model}
-        fields={
-          prepopulatedFields ?? model.admin?.edit.prepopulated_fields ?? {}
-        }
-      />
-      <div className="flex-1 flex flex-col overflow-hidden max-w-[1200px] mx-auto w-full">
-        <TenantInfo label={model.label} />
-        <Header
+      <ResourcePathContext value={resourcePath}>
+        <Prepopulate
           model={model}
-          resource={resource}
-          resourcePath={resourcePath}
-          isSaving={isPending}
-          dialog={dialog}
-          onSave={async () => {
-            await form.handleSubmit(onSubmit)();
-            onSave?.();
-          }}
-          onDelete={() => {
-            // The changes died with the object; leaving must not
-            // trigger the navigation guard.
-            form.reset();
-            allowNextNavigation.current = true;
-            onDelete?.();
-          }}
-          onClose={onClose}
+          fields={
+            prepopulatedFields ?? model.admin?.edit.prepopulated_fields ?? {}
+          }
         />
-        <div className="flex flex-col items-center overflow-y-auto scrollbar">
-          <div className="flex p-6 w-full gap-6 justify-center">
-            <div className="flex-1">
-              <Main model={model} id={id} hiddenFields={hiddenFields} />
-            </div>
-            <div className="shrink-0 w-[320px] empty:hidden">
-              <Aside model={model} hiddenFields={hiddenFields} />
+        <div className="flex-1 flex flex-col overflow-hidden max-w-[1200px] mx-auto w-full">
+          <TenantInfo label={model.label} />
+          <Header
+            model={model}
+            resource={resource}
+            resourcePath={resourcePath}
+            isSaving={isPending}
+            dialog={dialog}
+            onSave={async () => {
+              await form.handleSubmit(onSubmit)();
+              onSave?.();
+            }}
+            onDelete={() => {
+              // The changes died with the object; leaving must not
+              // trigger the navigation guard.
+              form.reset();
+              allowNextNavigation.current = true;
+              onDelete?.();
+            }}
+            onClose={onClose}
+          />
+          <div className="flex flex-col items-center overflow-y-auto scrollbar">
+            <div className="flex p-6 w-full gap-6 justify-center">
+              <div className="flex-1">
+                <Main model={model} id={id} hiddenFields={hiddenFields} />
+              </div>
+              <div className="shrink-0 w-[320px] empty:hidden">
+                <Aside model={model} hiddenFields={hiddenFields} />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </ResourcePathContext>
     </Form>
   ) : (
     <div className="py-12 sm:py-24 md:py-48 flex items-center justify-center">

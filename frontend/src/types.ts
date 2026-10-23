@@ -154,6 +154,8 @@ export interface ModelField {
   readonly?: boolean;
   default?: unknown;
   primary_key?: boolean;
+  // unique=True (not the primary key): the editor warns about duplicates.
+  unique?: boolean;
   max_length?: number;
   help_text?: string;
   widget_class?: FieldWidget;

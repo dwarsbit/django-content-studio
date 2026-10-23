@@ -247,6 +247,11 @@ class ModelSerializer:
             data["primary_key"] = True
             data["readonly"] = True
 
+        # Unique fields get a duplicate check while editing; the primary
+        # key is read-only and never checked.
+        if field.unique and not field.primary_key:
+            data["unique"] = True
+
         if field.is_relation:
             data["related_model"] = field.related_model._meta.label_lower
 

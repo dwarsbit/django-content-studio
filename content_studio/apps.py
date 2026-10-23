@@ -294,12 +294,17 @@ class DjangoContentStudioConfig(AppConfig):
                 # Soft delete, when configured: the regular lists exclude
                 # trashed objects, the trash lists only those, and the
                 # restore/permanent-delete actions reach trashed
-                # objects unfiltered.
+                # objects unfiltered, as does the unique check (a
+                # trashed object still occupies its unique values).
                 soft_delete_field = self._admin_model.soft_delete
                 if soft_delete_field:
                     if self.action == "trash":
                         qs = qs.filter(**{f"{soft_delete_field}__isnull": False})
-                    elif self.action not in ("restore", "destroy_permanently"):
+                    elif self.action not in (
+                        "restore",
+                        "destroy_permanently",
+                        "unique_check",
+                    ):
                         qs = qs.filter(**{f"{soft_delete_field}__isnull": True})
 
                 # Respect the model studio's ordering; fall back to pk so

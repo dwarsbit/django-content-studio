@@ -5,6 +5,7 @@ from functools import reduce
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -284,6 +285,70 @@ class BaseModelViewSet(ModelViewSet):
             return Response({"count": result})
 
         return Response({})
+
+    @action(methods=["get"], detail=False, url_path="unique-check")
+    def unique_check(self, request):
+        """
+        Whether another object already uses a value for a unique field:
+        ?field=slug&value=hello-world&exclude=<id>. Only single fields
+        with unique=True qualify. The lookup is tenant-scoped like the
+        list, but includes trashed objects: they still occupy the value
+        in the database. The conflicting object is only described when
+        the user may view it.
+        """
+        field_name = request.query_params.get("field", "")
+        value = request.query_params.get("value", "")
+        exclude = request.query_params.get("exclude")
+
+        try:
+            field = self._model._meta.get_field(field_name)
+        except FieldDoesNotExist:
+            raise ValidationError("Unknown field.")
+
+        if (
+            not getattr(field, "concrete", False)
+            or field.many_to_many
+            or field.primary_key
+            or not field.unique
+        ):
+            raise ValidationError("Only fields with unique=True can be checked.")
+
+        # A value the field cannot hold, or an empty one, conflicts with
+        # nothing.
+        try:
+            value = field.to_python(value)
+        except DjangoValidationError:
+            return Response({"exists": False})
+
+        if value in field.empty_values:
+            return Response({"exists": False})
+
+        # get_queryset scopes to the tenant and leaves trashed objects
+        # in for this action.
+        qs = self.get_queryset().filter(**{field.attname: value})
+
+        if exclude:
+            try:
+                qs = qs.exclude(pk=self._model._meta.pk.to_python(exclude))
+            except DjangoValidationError:
+                pass
+
+        obj = qs.first()
+
+        if obj is None:
+            return Response({"exists": False})
+
+        if not self._admin_model.has_view_permission(request, obj):
+            return Response({"exists": True})
+
+        display = get_relation_display_for(self._model, obj, request)
+        data = {"exists": True, "id": obj.pk, "__str__": display.title}
+
+        soft_delete_field = self._admin_model.soft_delete
+        if soft_delete_field and getattr(obj, soft_delete_field) is not None:
+            data["trashed"] = True
+
+        return Response(data)
 
     @action(methods=["post"], detail=False, url_path="relations/(?P<field_name>[^/]+)")
     def get_related_objects(self, request, field_name):

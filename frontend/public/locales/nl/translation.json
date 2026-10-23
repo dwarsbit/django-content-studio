@@ -71,7 +71,11 @@
     "unsaved_alert": "Je hebt niet-opgeslagen wijzigen. Weet je zeker dat je weg wilt gaan?",
     "empty_state": "Nog geen items",
     "back_to_list": "Terug naar de lijst",
-    "more_actions": "Meer acties"
+    "more_actions": "Meer acties",
+    "unique_warning": "\"{{object}}\" ({{modelName}}) gebruikt deze {{fieldName}} al.",
+    "unique_warning_trashed": "\"{{object}}\" ({{modelName}}, in de prullenbak) gebruikt deze {{fieldName}} al.",
+    "unique_warning_hidden": "Een ander object gebruikt deze {{fieldName}} al.",
+    "unique_warning_hint": "Opslaan mislukt tenzij je dit wijzigt."
   },
   "list_view": {
     "table_view": "Tabelweergave",

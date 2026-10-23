@@ -141,6 +141,24 @@ A field that the model fills in itself when it is saved, and that is not
 editable (`editable=False`), needs no `prepopulated_fields`: the edit page
 shows its value read-only.
 
+## Unique fields
+
+For every editable field with `unique=True`, such as the slug above, the
+edit page checks while you type whether another object already uses the
+value, and shows a warning under the field that names that object. The
+check works with any model field and needs no configuration.
+
+The warning does not stop you from saving: Django's uniqueness validation
+still decides, and reports the error when you save. Objects in the
+[trash](/docs/content/registering-models#soft-delete-and-the-trash) count, because they still hold the value. The warning
+names the other object only if you may view it.
+
+Only single fields with `unique=True` are checked, not `unique_together` or
+a `UniqueConstraint` across several fields. On a model scoped to a tenant,
+only objects of the current tenant are compared; when the field must be
+unique per tenant, a `UniqueConstraint` on the field and the tenant field
+expresses that, and saving reports conflicts.
+
 ## Components
 
 Besides fields, the edit page can show components: links, and the object's
