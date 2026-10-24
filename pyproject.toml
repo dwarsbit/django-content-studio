@@ -59,7 +59,7 @@ include = [
     { path = "content_studio/static/**/*", format = "wheel" }]
 
 [tool.poetry.group.dev.dependencies]
-black = "26.5.1"
+black = "26.10.1"
 pytest = "9.1.1"
 pytest-cov = "7.1.0"
 pytest-django = "4.14.0"
