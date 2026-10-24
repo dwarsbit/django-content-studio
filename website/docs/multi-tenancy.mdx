@@ -30,7 +30,9 @@ Editors choose a tenant in the admin, and everything they do happens within
 it:
 
 - Lists and searches only show the selected tenant's objects.
-- New objects are assigned to the selected tenant.
+- New objects are assigned to the selected tenant, and an object's
+  tenant cannot be changed afterwards.
+- Relation fields only offer objects of the selected tenant.
 - Without a selected tenant, tenant models show no objects at all.
 - A tenant the editor may not access is refused.
 

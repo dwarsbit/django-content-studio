@@ -128,7 +128,10 @@ class JsonWebTokenAuthentication(BaseAuthentication):
     keyword = "Bearer"
 
     def authenticate(self, request):
-        header = get_authorization_header(request).decode("utf-8")
+        try:
+            header = get_authorization_header(request).decode("utf-8")
+        except UnicodeError:
+            raise AuthenticationFailed("Invalid authorization header.")
 
         if not header:
             return None

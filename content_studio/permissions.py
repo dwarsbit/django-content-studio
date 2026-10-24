@@ -39,6 +39,15 @@ class ModelStudioPermissions(BasePermission):
             # only gate here.
             return admin_model.has_view_permission(request)
 
+        if getattr(view, "action", None) == "get_related_objects":
+            # The relation picker is a read (POST only for its payload):
+            # it serves the list filters and both the create and edit
+            # forms. The endpoint also requires view permission on the
+            # related model.
+            return admin_model.has_view_permission(
+                request
+            ) or admin_model.has_add_permission(request)
+
         if getattr(view, "action", None) == "restore":
             # Restoring a trashed object is a change, whatever the
             # HTTP method.

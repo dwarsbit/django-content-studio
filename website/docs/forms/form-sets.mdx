@@ -43,9 +43,10 @@ You do not have to wrap everything: a list of fields becomes a form set,
 and a list of form sets becomes a group.
 
 :::caution
-Every required model field must be in `edit_main` or `edit_sidebar`. The
-edit page only saves the fields it shows, so a required field that is left
-out, also through `exclude`, makes saving fail. System check
+Every required model field must be in `edit_main` or `edit_sidebar`. Like
+the classic Django admin's form, the edit page only saves the fields it
+shows, so a required field that is left out, also through `exclude`, makes
+saving fail. System check
 `content_studio.W001` reports these fields. Fields with a default, nullable
 or blank fields, and the fields Content Studio fills in itself (the audit
 stamps and the tenant), are never required.

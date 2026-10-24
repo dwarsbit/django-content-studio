@@ -32,7 +32,9 @@ from .utils import (
 
 
 class BaseModelViewSet(ModelViewSet):
-    lookup_field = "id"
+    # The pk under its usual URL name: primary keys need not be called id.
+    lookup_field = "pk"
+    lookup_url_kwarg = "id"
     is_singleton = False
     parser_classes = [JSONParser]
     renderer_classes = [JSONRenderer]
@@ -66,7 +68,12 @@ class BaseModelViewSet(ModelViewSet):
         tenant_field_name = get_tenant_field_name(model)
         attrs = {}
 
-        if tenant_model and tenant_id and tenant_field_name:
+        if tenant_model and tenant_field_name:
+            # Tenant-scoped models fail closed: the tenant comes from the
+            # validated header (the field itself is read-only).
+            if not tenant_id:
+                raise ValidationError("A tenant is required to create this object.")
+
             validate_tenant_access(self.request, tenant_id)
             attrs[f"{tenant_field_name}_id"] = tenant_id
 
@@ -80,7 +87,7 @@ class BaseModelViewSet(ModelViewSet):
             user=self.request.user,
             action_flag=ADDITION,
             content_type=content_type,
-            object_id=instance.id,
+            object_id=instance.pk,
             object_repr=str(instance)[:200],
             change_message="",
         )
@@ -108,7 +115,7 @@ class BaseModelViewSet(ModelViewSet):
             user=self.request.user,
             action_flag=CHANGE,
             content_type=content_type,
-            object_id=instance.id,
+            object_id=instance.pk,
             object_repr=str(instance)[:200],
             change_message="",
         )
@@ -119,7 +126,7 @@ class BaseModelViewSet(ModelViewSet):
             user=self.request.user,
             action_flag=DELETION,
             content_type=content_type,
-            object_id=instance.id,
+            object_id=instance.pk,
             object_repr=str(instance)[:200],
             change_message="",
         )
@@ -166,12 +173,12 @@ class BaseModelViewSet(ModelViewSet):
             user=self.request.user,
             action_flag=CHANGE,
             content_type=ContentType.objects.get_for_model(instance),
-            object_id=instance.id,
+            object_id=instance.pk,
             object_repr=str(instance)[:200],
             change_message="Restored from trash.",
         )
 
-        return Response({"id": instance.id, "__str__": str(instance)})
+        return Response({"id": instance.pk, "__str__": str(instance)})
 
     @action(methods=["delete"], detail=True, url_path="destroy")
     def destroy_permanently(self, request, id):
@@ -188,7 +195,7 @@ class BaseModelViewSet(ModelViewSet):
             user=self.request.user,
             action_flag=DELETION,
             content_type=ContentType.objects.get_for_model(instance),
-            object_id=instance.id,
+            object_id=instance.pk,
             object_repr=str(instance)[:200],
             change_message="",
         )
@@ -223,7 +230,9 @@ class BaseModelViewSet(ModelViewSet):
 
         component = self._admin_model.get_component(component_uuid)
 
-        if not component:
+        # Components without a request handler (like ActivityLog) have no
+        # endpoint of their own.
+        if not component or not callable(getattr(component, "handle_request", None)):
             raise NotFound()
 
         return component.handle_request(obj=self.get_object(), request=request)
@@ -273,6 +282,11 @@ class BaseModelViewSet(ModelViewSet):
 
         if action is None:
             raise NotFound("Unknown or unauthorized bulk action.")
+
+        try:
+            ids = [self._model._meta.pk.to_python(pk) for pk in ids]
+        except DjangoValidationError:
+            raise ValidationError("The ids must be primary keys of this model.")
 
         queryset = get_tenant_scoped_queryset(request, self._model).filter(pk__in=ids)
 
@@ -367,6 +381,9 @@ class BaseModelViewSet(ModelViewSet):
         except FieldDoesNotExist:
             raise ValidationError("Related field not found.")
 
+        if not related_field.is_relation or related_field.related_model is None:
+            raise ValidationError("Related field not found.")
+
         related_model = related_field.related_model
 
         self._check_related_permission(request, related_model)
@@ -385,6 +402,11 @@ class BaseModelViewSet(ModelViewSet):
 
         else:
             qs = self._get_related_search_queryset(related_model, search)
+
+        # Related objects of tenant-scoped models come from the request's
+        # tenant only, like any list.
+        if isinstance(qs, models.QuerySet):
+            qs = get_tenant_scoped_queryset(request, related_model, qs)
 
         items = []
         for obj in qs[:20]:

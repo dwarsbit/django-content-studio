@@ -102,6 +102,15 @@ class LookupFilter(BaseFilterBackend):
 
             # Get the model field.
             field = model_class._meta.get_field(field_name)
+
+            # A relation only takes a lookup of its own: anything longer
+            # (author__password__gt) ends in a lookup the relation also
+            # registers, but filters on the related model's fields.
+            if field.is_relation and len(key.split("__")) > 2:
+                raise FieldDoesNotExist(
+                    f"Filtering on '{key}' traverses into a related field; "
+                    "only lookups on the declared field are allowed."
+                )
             # Get the allowed lookups for this field.
             lookups = field_lookups.get(field_name, [])
             try:
