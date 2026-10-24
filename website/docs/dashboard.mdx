@@ -90,7 +90,9 @@ columns it spans.
   label, the object's `id`, a `title` and an optional `description`.
 - **`ActivityLogWidget`**: the five latest changes made in the admin. It
   needs no configuration and only shows changes to models the editor may
-  view.
+  view. With [multi-tenancy](/docs/multi-tenancy), changes to a tenant's
+  content only show in that tenant, and deletions of that content are not
+  shown.
 - **`ScheduledTasksWidget`**: the status of scheduled tasks, from your task
   runner. `get_data` returns `tasks`: items with a `title`, `last_run_at`,
   `next_run_at`, `duration` and a `status` (`"RUNNING"`,

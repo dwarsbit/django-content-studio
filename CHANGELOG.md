@@ -131,6 +131,11 @@ betas. Upgrading is strongly recommended.
   attempts were counted, and in projects with `ATOMIC_REQUESTS` a wrong
   code was not counted at all. Attempts are now checked one at a time
   and always counted.
+- **Recent activity showed other tenants' changes.** The dashboard's
+  `ActivityLogWidget` listed changes to tenant content from every
+  tenant. It now only shows changes to objects in the selected tenant;
+  deletions of tenant content cannot be placed in a tenant and are no
+  longer shown.
 
 ### Fixes
 

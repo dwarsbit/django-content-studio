@@ -230,3 +230,84 @@ def test_widgets_without_a_built_in_type_are_reported():
 
     assert [check_id for check_id, _ in warnings] == ["content_studio.W012"]
     assert "CustomWidget" in warnings[0][1]
+
+
+TENANT_SETTINGS = {
+    "ADMIN_SITE": "content_studio.admin.admin_site",
+    "TENANT_MODEL": "tests.testapp.models.Category",
+}
+
+
+def _log_object(user, obj, repr_=None):
+    return LogEntry.objects.create(
+        user=user,
+        action_flag=ADDITION,
+        content_type=ContentType.objects.get_for_model(obj),
+        object_id=str(obj.pk),
+        object_repr=repr_ or str(obj),
+        change_message="",
+    )
+
+
+def _tenant_request_for(user, tenant=None):
+    headers = {"HTTP_X_DCS_TENANT": str(tenant.pk)} if tenant else {}
+    request = Request(APIRequestFactory().get("/", **headers), parsers=[JSONParser()])
+    request.user = user
+    return request
+
+
+@pytest.mark.django_db
+def test_activity_log_widget_shows_the_tenant_only():
+    from django.test import override_settings
+    from django.utils import timezone
+
+    from tests.testapp.models import Category, Page
+
+    admin = auth_models.User.objects.create_superuser(username="admin", password="x")
+    a = Category.objects.create(name="A")
+    b = Category.objects.create(name="B")
+    own = Page.objects.create(title="own", slug="own", category=a)
+    trashed = Page.objects.create(
+        title="trashed", slug="trashed", category=a, removed_at=timezone.now()
+    )
+    other = Page.objects.create(title="other", slug="other", category=b)
+    gone = Page.objects.create(title="gone", slug="gone", category=a)
+
+    _log(admin, auth_models.Group, "editors")
+    _log_object(admin, own)
+    _log_object(admin, trashed)
+    _log_object(admin, other)
+    _log_object(admin, gone)
+    gone.delete()
+
+    with override_settings(CONTENT_STUDIO=TENANT_SETTINGS):
+        in_a = ActivityLogWidget().get_data(_tenant_request_for(admin, a))
+        without_tenant = ActivityLogWidget().get_data(_tenant_request_for(admin))
+
+    # Shared models show; of the tenant model, only objects in the tenant
+    # (trashed ones included). A deleted object cannot be placed.
+    assert {entry["object_repr"] for entry in in_a} == {"editors", "own", "trashed"}
+    assert [entry["object_repr"] for entry in without_tenant] == ["editors"]
+
+
+@pytest.mark.django_db
+def test_activity_log_widget_skips_other_tenants_to_fill_up():
+    from django.test import override_settings
+
+    from tests.testapp.models import Category, Page
+
+    admin = auth_models.User.objects.create_superuser(username="admin", password="x")
+    a = Category.objects.create(name="A")
+    b = Category.objects.create(name="B")
+    own = Page.objects.create(title="own", slug="own", category=a)
+    other = Page.objects.create(title="other", slug="other", category=b)
+
+    _log_object(admin, own)
+    # More recent entries of another tenant than one batch holds.
+    for _ in range(ActivityLogWidget.limit * 5):
+        _log_object(admin, other)
+
+    with override_settings(CONTENT_STUDIO=TENANT_SETTINGS):
+        data = ActivityLogWidget().get_data(_tenant_request_for(admin, a))
+
+    assert [entry["object_repr"] for entry in data] == ["own"]
