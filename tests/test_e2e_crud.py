@@ -155,10 +155,10 @@ class CreateUpdateDeleteTests(AuthenticatedTestCase):
 
         # Partial update exists for detail routes.
         response = self.client.patch(
-            f"/api/content/testapp.article/{pk}", {"views": 10}, format="json"
+            f"/api/content/testapp.article/{pk}", {"rating": "4.5"}, format="json"
         )
         assert response.status_code == 200, response.content
-        assert Article.objects.get(pk=pk).views == 10
+        assert str(Article.objects.get(pk=pk).rating) == "4.5"
 
         # Delete logs and removes.
         response = self.client.delete(f"/api/content/testapp.article/{pk}")

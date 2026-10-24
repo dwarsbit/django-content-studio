@@ -96,6 +96,7 @@ class DjangoContentStudioConfig(AppConfig):
 
     def _create_view_set(self, model, admin_model, parent=None):
         from .admin import (
+            get_form_field_names,
             get_is_singleton,
             get_readonly_field_names,
             get_table_display_columns,
@@ -104,7 +105,7 @@ class DjangoContentStudioConfig(AppConfig):
         from .viewsets import BaseModelViewSet
         from .router import content_studio_router
         from .serializers import ContentSerializer
-        from .utils import get_related_field_name
+        from .utils import get_related_field_name, get_tenant_field_name
 
         inline_parent_fk = None
 
@@ -120,7 +121,9 @@ class DjangoContentStudioConfig(AppConfig):
         # them is dropped instead of raising FieldError.
         model_field_names = {field.name for field in model._meta.get_fields()}
         columns = get_table_display_columns(admin_model)
-        allowed_ordering = ["id", "pk"] + [
+        # "id" is the pk's usual name, not a guaranteed one.
+        allowed_ordering = (["id"] if "id" in model_field_names else []) + ["pk"]
+        allowed_ordering += [
             column.field for column in columns if column.field in model_field_names
         ]
         # A sortable_by declaration narrows ordering to exactly those
@@ -165,7 +168,12 @@ class DjangoContentStudioConfig(AppConfig):
                 elif model is user_model:
                     available_fields = None
                     excluded_fields = ["password"]
-                    if user_model.USERNAME_FIELD != "username":
+                    # Custom user models need not have a username field;
+                    # excluding a missing field is an error in DRF.
+                    if user_model.USERNAME_FIELD != "username" and any(
+                        field.name == "username"
+                        for field in user_model._meta.get_fields()
+                    ):
                         excluded_fields.append("username")
                 # In all other cases we include all fields.
                 else:
@@ -178,11 +186,21 @@ class DjangoContentStudioConfig(AppConfig):
                         fields = available_fields
                         exclude = excluded_fields
 
+                # Rows always carry an "id": models whose primary key has
+                # another name get it as an alias of the pk.
+                if self._model._meta.pk.name != "id":
+                    Serializer = type(
+                        str("Serializer"),
+                        (Serializer,),
+                        {"id": serializers.ReadOnlyField(source="pk")},
+                    )
+
                 # Detail views: read-only fields are never written, and
                 # each object reports its own so the editor can show
                 # them (get_readonly_fields may depend on the object).
                 if self.action not in ("list", "trash") or self.is_singleton:
                     admin_model = self._admin_model
+                    parent_fk = self.parent_fk
 
                     class DetailSerializer(Serializer):
                         __readonly_fields__ = serializers.SerializerMethodField(
@@ -198,15 +216,33 @@ class DjangoContentStudioConfig(AppConfig):
 
                         def get_fields(self):
                             fields = super().get_fields()
+                            request = self.context.get("request")
+                            obj = self._get_obj()
                             readonly = get_readonly_field_names(
-                                admin_model,
-                                self.context.get("request"),
-                                self._get_obj(),
+                                admin_model, request, obj
                             )
 
-                            for name in readonly:
-                                if name in fields:
-                                    fields[name].read_only = True
+                            # Only the fields the edit page renders are
+                            # written, like the classic admin's form: an
+                            # excluded field is not writable through the
+                            # API either. Inlines always set their parent.
+                            writable = get_form_field_names(admin_model, request, obj)
+                            if parent_fk:
+                                writable.add(parent_fk)
+
+                            # The tenant comes from the validated tenant
+                            # header (see perform_create), never from the
+                            # payload: objects cannot be moved or created
+                            # into another tenant.
+                            tenant_field = get_tenant_field_name(model)
+
+                            for name, field in fields.items():
+                                if (
+                                    name in readonly
+                                    or name not in writable
+                                    or name == tenant_field
+                                ):
+                                    field.read_only = True
 
                             return fields
 

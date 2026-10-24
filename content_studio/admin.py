@@ -691,6 +691,35 @@ def get_readonly_field_names(
     return names
 
 
+def get_form_field_names(
+    studio, request: HttpRequest, obj: Optional[models.Model] = None
+) -> set[str]:
+    """
+    Every field the edit page renders for this studio: the fields of
+    edit_main (or get_fields when it is unset, which honors exclude)
+    and edit_sidebar. Like the classic admin's form, these are the only
+    fields the API writes.
+    """
+    # get_fields is called as the edit page's payload calls it.
+    edit_main = list(getattr(studio, "edit_main", None) or []) or list(
+        studio.get_fields(request)
+    )
+    entries = edit_main + list(getattr(studio, "edit_sidebar", None) or [])
+    flat_fields = flatten(
+        [f.get_fields() if hasattr(f, "get_fields") else [f] for f in entries]
+    )
+
+    names = set()
+
+    for field in flat_fields:
+        if isinstance(field, str):
+            names.add(field)
+        elif isinstance(field, Field):
+            names.add(field.name)
+
+    return names
+
+
 def serialize_prepopulated_fields(studio, request: HttpRequest) -> dict[str, list]:
     """
     The create form's prepopulated fields, with the sources as lists.

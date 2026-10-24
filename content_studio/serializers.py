@@ -7,7 +7,11 @@ from rest_framework import serializers
 from rest_framework.relations import RelatedField
 
 from content_studio.settings import cs_settings
-from content_studio.utils import get_tenant_field_name, is_jsonable
+from content_studio.utils import (
+    get_tenant_field_name,
+    get_tenant_scoped_queryset,
+    is_jsonable,
+)
 
 
 class ContentRelatedField(RelatedField):
@@ -21,7 +25,7 @@ class ContentRelatedField(RelatedField):
         display = get_relation_display_for(
             value.__class__, value, self.context.get("request")
         )
-        data = {"id": value.id, "__str__": display.title}
+        data = {"id": value.pk, "__str__": display.title}
 
         if display.description:
             data["description"] = display.description
@@ -43,12 +47,26 @@ class ContentRelatedField(RelatedField):
 
         return data
 
+    def get_queryset(self):
+        """
+        Related objects of tenant-scoped models can only be picked from
+        the request's tenant.
+        """
+        queryset = super().get_queryset()
+        request = self.context.get("request")
+
+        if request is None or queryset is None:
+            return queryset
+
+        return get_tenant_scoped_queryset(request, queryset.model, queryset)
+
     def to_internal_value(self, data):
         from django.core.exceptions import ObjectDoesNotExist
+        from django.core.exceptions import ValidationError as DjangoValidationError
 
         try:
-            return self.get_queryset().get(id=data["id"])
-        except (TypeError, KeyError):
+            return self.get_queryset().get(pk=data["id"])
+        except (TypeError, KeyError, ValueError, DjangoValidationError):
             raise serializers.ValidationError(
                 "A related item must be given as {'id': ...}."
             )
@@ -214,8 +232,14 @@ class ModelSerializer:
         standard_fields = self.model._meta.fields
         m2m_fields = self.model._meta.many_to_many
 
+        tenant_field = get_tenant_field_name(self.model)
+
         for field in standard_fields + m2m_fields:
             fields[field.name] = self.get_field(field)
+
+            # The tenant is set from the selected tenant, never edited.
+            if field.name == tenant_field:
+                fields[field.name]["readonly"] = True
 
         return fields
 

@@ -170,6 +170,49 @@ def test_relation_traversal_is_rejected():
     assert "traverses" in str(exc_info.value)
 
 
+@pytest.mark.parametrize(
+    "query",
+    [
+        "author__password__gt=pbkdf2",
+        "author__password__startswith=pbkdf2",
+        "~author__password__lt=pbkdf2",
+        "author__username__in=admin",
+    ],
+)
+def test_relation_traversal_ending_in_a_relation_lookup_is_rejected(query):
+    """
+    A traversal whose last part is also a lookup of the relation (gt,
+    lt, in, ...) must not reach the related model's fields: that would
+    turn the result count into an oracle for, say, password hashes.
+    """
+    from tests.testapp.models import Article
+
+    with pytest.raises(ParseError) as exc_info:
+        filter_via_action(Article, query, list_filter=("author",))
+
+    assert "traverses" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_relation_lookups_still_work():
+    """The relation's own lookups (in, isnull, gt) are not traversals."""
+    from tests.testapp.models import Article
+
+    author = auth_models.User.objects.create_user(username="author", password="x")
+    Article.objects.create(title="By author", author=author)
+    Article.objects.create(title="Anonymous")
+
+    by_in = filter_via_action(
+        Article, f"author__in={author.pk}", list_filter=("author",)
+    )
+    by_isnull = filter_via_action(
+        Article, "author__isnull=true", list_filter=("author",)
+    )
+
+    assert set(by_in.values_list("title", flat=True)) == {"By author"}
+    assert set(by_isnull.values_list("title", flat=True)) == {"Anonymous"}
+
+
 @pytest.mark.django_db
 def test_declared_field_lookups_are_allowed():
     """Lookups on the declared field itself (like isnull) still work."""

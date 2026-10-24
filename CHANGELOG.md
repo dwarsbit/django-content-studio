@@ -107,6 +107,32 @@ betas. Upgrading is strongly recommended.
   mail is sent during the request, as before.
 - Signing out clears the interface's cached data, so the next user in
   the same browser does not see the previous user's.
+- **List filters could read fields of related models.** A foreign key
+  in `list_filter` let a filter continue into the related model, so an
+  editor could probe its fields, such as the password hashes of the
+  users behind an `author` filter. Filters on a relation now only take
+  the relation's own lookups.
+- **Content could move to another tenant.** Saving an object could set
+  its tenant to any tenant, including ones the editor may not access,
+  and creating an object without a selected tenant was allowed. The
+  tenant now always comes from the selected tenant and cannot be
+  changed, relation pickers only offer the selected tenant's objects,
+  and related objects from other tenants are refused.
+- **Fields left out of the edit page could still be saved.** Like the
+  classic Django admin's form, saving now only writes the fields the
+  edit page shows: fields left out through `exclude`, or missing from
+  `edit_main` and `edit_sidebar`, keep their value whatever is sent.
+
+### Fixes
+
+- Editors with change permission but without add permission can use
+  relation pickers again.
+- Custom user models without a `username` field can be edited.
+- Models whose primary key is not called `id` work in the admin.
+- Malformed input, such as an invalid id in a bulk action or a
+  relation, is reported as an error instead of failing on the server.
+- An `ActivityLog` component no longer answers with a server error when
+  requested directly.
 
 **Upgrade notes:** only active staff users can sign in from now on;
 everyone is signed out once after upgrading (existing tokens carry no

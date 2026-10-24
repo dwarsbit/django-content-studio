@@ -89,3 +89,12 @@ class Page(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Label(models.Model):
+    # A primary key that is not called "id".
+    code = models.CharField(max_length=20, primary_key=True)
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
