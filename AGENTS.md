@@ -28,7 +28,7 @@ content_studio/
 ├── admin.py             # ModelStudio, InlineModelStudio, ContentStudioSite, registry
 ├── apps.py              # App configuration and registry
 ├── settings.py          # Content Studio specific settings (CONTENT_STUDIO namespace)
-├── models.py            # ActivityLog and the optional base models (ContentModel, SingletonModel, ...)
+├── models.py            # The optional base models (ContentModel, SingletonModel, ...); activity is Django's LogEntry
 ├── serializers.py       # DRF serializers
 ├── viewsets.py          # DRF viewsets for API endpoints
 ├── views.py             # Traditional Django views
