@@ -61,33 +61,52 @@ def get_reset_user(email):
     return users[0]
 
 
-def get_valid_code(email, code):
+INVALID_CODE = "Invalid code."
+EXPIRED_CODE = "Expired code."
+
+
+def check_code(email, code):
     """
-    Return the password reset code for the email when the code matches.
+    Check a password reset code for the email: (the code record, None)
+    when it matches, (None, the error) otherwise.
 
     Validation is bound to the email so failed attempts can be counted
     on the code record: after MAX_ATTEMPTS wrong codes the code is
     deleted and a new one has to be requested. Unknown emails and wrong
-    codes both raise the same error, so the endpoint does not reveal
+    codes both get the same error, so the endpoint does not reveal
     whether a code exists for an email.
+
+    The record is locked while it is checked, so concurrent guesses are
+    checked one at a time against the attempt limit. The error is
+    returned rather than raised: an exception would roll back the
+    counted attempt in projects with ATOMIC_REQUESTS.
     """
-    existing = PasswordResetCode.objects.filter(email__iexact=email).first()
+    with transaction.atomic():
+        existing = (
+            PasswordResetCode.objects.select_for_update()
+            .filter(email__iexact=email)
+            .first()
+        )
 
-    if (
-        not existing
-        or existing.locked
-        or not existing.code
-        or not constant_time_compare(existing.code, code)
-    ):
-        if existing and not existing.locked:
-            existing.register_failed_attempt()
-        raise ValidationError("Invalid code.")
+        if (
+            not existing
+            or existing.locked
+            or not existing.code
+            or not constant_time_compare(existing.code, code)
+        ):
+            if existing and not existing.locked:
+                existing.register_failed_attempt()
+            return None, INVALID_CODE
 
-    if existing.expired:
-        existing.delete()
-        raise ValidationError("Expired code.")
+        if existing.expired:
+            existing.delete()
+            return None, EXPIRED_CODE
 
-    return existing
+    return existing, None
+
+
+def code_error_response(error):
+    return Response([error], status=status.HTTP_400_BAD_REQUEST)
 
 
 class PasswordResetRequestView(APIView):
@@ -143,9 +162,12 @@ class CodeValidationView(APIView):
 
         serializer.is_valid(raise_exception=True)
 
-        get_valid_code(
+        _, error = check_code(
             serializer.validated_data["email"], serializer.validated_data["code"]
         )
+
+        if error:
+            return code_error_response(error)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -162,12 +184,15 @@ class PasswordResetSubmissionView(APIView):
         email = serializer.validated_data["email"]
         password = serializer.validated_data["password"]
 
-        existing = get_valid_code(email, serializer.validated_data["code"])
+        existing, error = check_code(email, serializer.validated_data["code"])
+
+        if error:
+            return code_error_response(error)
 
         user = get_reset_user(email)
 
         if not user:
-            raise ValidationError("Invalid code.")
+            return code_error_response(INVALID_CODE)
 
         try:
             validate_password(password, user)

@@ -123,8 +123,19 @@ betas. Upgrading is strongly recommended.
   edit page shows: fields left out through `exclude`, or missing from
   `edit_main` and `edit_sidebar`, keep their value whatever is sent.
 
+- **The media library was readable without permission.** Any staff
+  user could browse the media items and folders. Browsing now needs the
+  media model's view or change permission, like other content.
+- **Password reset codes could be guessed past the attempt limit.**
+  Guesses sent at the same time could each be checked before the failed
+  attempts were counted, and in projects with `ATOMIC_REQUESTS` a wrong
+  code was not counted at all. Attempts are now checked one at a time
+  and always counted.
+
 ### Fixes
 
+- Moving or deleting media items with an invalid item or folder is
+  reported as an error instead of failing on the server.
 - Editors with change permission but without add permission can use
   relation pickers again.
 - Custom user models without a `username` field can be edited.

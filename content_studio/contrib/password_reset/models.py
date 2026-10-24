@@ -64,16 +64,16 @@ class PasswordResetCode(models.Model):
         not the code: requesting a new code keeps it, and reaching the
         limit locks the email out, so short numeric codes cannot be
         brute-forced by requesting fresh ones.
+
+        The count is incremented in the database, so concurrent attempts
+        are all counted.
         """
-        self.attempts += 1
+        records = PasswordResetCode.objects.filter(pk=self.pk)
+        records.update(attempts=models.F("attempts") + 1)
+        # No code validates while locked out.
+        records.filter(attempts__gte=MAX_ATTEMPTS).update(code="")
 
-        if self.attempts >= MAX_ATTEMPTS:
-            # No code validates while locked out.
-            self.code = ""
-            self.save(update_fields=["attempts", "code"])
-            return
-
-        self.save(update_fields=["attempts"])
+        self.refresh_from_db(fields=["attempts", "code"])
 
     def __str__(self):
         return self.email
