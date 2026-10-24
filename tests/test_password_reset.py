@@ -327,3 +327,42 @@ def test_mails_use_the_language_of_the_request(user):
         post(PasswordResetRequestView, {"email": "a@example.com"})
 
     assert mail.outbox[0].subject != "Your password reset code"
+
+
+@pytest.mark.django_db
+def test_failed_attempts_are_counted_with_stale_records(user):
+    """The count is incremented in the database: concurrent attempts
+    working on the same record state are all counted."""
+    PasswordResetCode.objects.create(email="a@example.com")
+    first = PasswordResetCode.objects.get(email="a@example.com")
+    second = PasswordResetCode.objects.get(email="a@example.com")
+
+    first.register_failed_attempt()
+    second.register_failed_attempt()
+
+    assert PasswordResetCode.objects.get(email="a@example.com").attempts == 2
+    assert second.attempts == 2
+
+
+@pytest.mark.django_db
+def test_failed_attempts_survive_atomic_requests(user):
+    """With ATOMIC_REQUESTS, an error response must not roll back the
+    counted attempt: otherwise codes could be guessed without limit."""
+    from django.db import connection, transaction
+
+    PasswordResetCode.objects.create(email="a@example.com")
+    original = connection.settings_dict.get("ATOMIC_REQUESTS", False)
+    connection.settings_dict["ATOMIC_REQUESTS"] = True
+
+    try:
+        for _ in range(MAX_ATTEMPTS):
+            # The request's own transaction, as Django's handler opens it.
+            with transaction.atomic():
+                response = post(
+                    CodeValidationView, {"code": "000000", "email": "a@example.com"}
+                )
+            assert response.status_code == 400
+    finally:
+        connection.settings_dict["ATOMIC_REQUESTS"] = original
+
+    assert PasswordResetCode.objects.get(email="a@example.com").locked

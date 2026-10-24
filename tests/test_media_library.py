@@ -591,3 +591,94 @@ def test_upload_policy_can_be_opened_up(media_root):
     )
 
     assert response.status_code == 201
+
+
+def staff_with_media_perms(*codenames):
+    user = auth_models.User.objects.create_user(
+        username="staff", password="x", is_staff=True
+    )
+    user.user_permissions.set(
+        auth_models.Permission.objects.filter(
+            content_type__app_label="content_studio", codename__in=codenames
+        )
+    )
+    return auth_models.User.objects.get(pk=user.pk)
+
+
+@pytest.mark.django_db
+def test_reading_items_requires_view_permission(media_settings):
+    item = ItemModel.objects.create(name="one", type="file")
+    client = media_client(staff_with_media_perms())
+
+    assert client.get("/api/media-library/items").status_code == 403
+    assert client.get(f"/api/media-library/items/{item.pk}").status_code == 403
+    assert client.get("/api/media-library/items/tags").status_code == 403
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("codename", ["view_itemmodel", "change_itemmodel"])
+def test_reading_items_with_view_or_change_permission(media_settings, codename):
+    item = ItemModel.objects.create(name="one", type="file")
+    client = media_client(staff_with_media_perms(codename))
+
+    assert client.get("/api/media-library/items").status_code == 200
+    assert client.get(f"/api/media-library/items/{item.pk}").status_code == 200
+
+
+@pytest.mark.django_db
+def test_reading_folders_requires_view_permission(media_settings):
+    folder = FolderModel.objects.create(name="one")
+    client = media_client(staff_with_media_perms())
+
+    assert client.get("/api/media-library/folders").status_code == 403
+    assert client.get(f"/api/media-library/folders/{folder.pk}").status_code == 403
+    response = client.get("/api/media-library/folders/path", {"folder": folder.pk})
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("codename", ["view_foldermodel", "view_itemmodel"])
+def test_reading_folders_with_folder_or_item_view_permission(media_settings, codename):
+    client = media_client(staff_with_media_perms(codename))
+
+    assert client.get("/api/media-library/folders").status_code == 200
+
+
+@pytest.mark.django_db
+def test_bulk_with_malformed_ids_is_a_client_error(media_settings):
+    response = media_client(make_superuser()).post(
+        "/api/media-library/items/bulk",
+        {"action": "delete", "ids": ["not-a-number"]},
+        format="json",
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_bulk_move_to_malformed_folder_returns_404(media_settings):
+    item = ItemModel.objects.create(name="one", type="file")
+
+    response = media_client(make_superuser()).post(
+        "/api/media-library/items/bulk",
+        {"action": "move", "ids": [item.pk], "folder": "not-a-number"},
+        format="json",
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_bulk_move_without_folder_model_is_a_client_error():
+    item = ItemModel.objects.create(name="one", type="file")
+    settings = {**MEDIA_SETTINGS, "MEDIA_LIBRARY_FOLDER_MODEL": None}
+
+    with override_settings(CONTENT_STUDIO=settings):
+        response = media_client(make_superuser()).post(
+            "/api/media-library/items/bulk",
+            {"action": "move", "ids": [item.pk], "folder": 123},
+            format="json",
+        )
+
+    assert response.status_code == 400
+    assert ItemModel.objects.get(pk=item.pk).folder_id is None

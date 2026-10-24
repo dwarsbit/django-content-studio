@@ -2,13 +2,14 @@ from django.contrib.admin.models import LogEntry, DELETION
 from django.contrib.contenttypes.models import ContentType
 from django.db import router
 from django.db.models import Q
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models.deletion import Collector
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.parsers import JSONParser, MultiPartParser
-from rest_framework.permissions import DjangoModelPermissions
+from rest_framework.permissions import SAFE_METHODS, DjangoModelPermissions
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -24,16 +25,36 @@ BULK_ACTION_MOVE = "move"
 BULK_ACTION_NAMES = (BULK_ACTION_DELETE, BULK_ACTION_MOVE)
 
 
+def can_view(user, model) -> bool:
+    """View or change permission on the model, like the content lists."""
+    opts = model._meta
+
+    return user.has_perm(f"{opts.app_label}.view_{opts.model_name}") or user.has_perm(
+        f"{opts.app_label}.change_{opts.model_name}"
+    )
+
+
 class MediaLibraryPermissions(DjangoModelPermissions):
     """
     Django's model permissions, with the bulk endpoint gated on view
     only: the actions enforce their own permissions (delete for
     deleting, change for moving), mirroring the content bulk
     endpoint. Cropping is gated on change: DjangoModelPermissions
-    would map the crop action's POST to the add permission.
+    would map the crop action's POST to the add permission. Reading
+    requires view (or change) permission, which DjangoModelPermissions
+    does not check.
     """
 
     def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            media_model = view.get_media_model()
+
+            # Unconfigured: the base class reports it (NotConfigured).
+            if media_model is None:
+                return super().has_permission(request, view)
+
+            return can_view(request.user, media_model)
+
         if getattr(view, "action", None) == "bulk":
             media_model = view.get_media_model()
 
@@ -237,13 +258,26 @@ class MediaLibraryViewSet(ModelViewSet):
                 f"The {action_name} permission is required for this action."
             )
 
+        try:
+            ids = [model._meta.pk.to_python(pk) for pk in ids]
+        except DjangoValidationError:
+            raise ValidationError("The ids must be primary keys of media items.")
+
         objects = list(model.objects.filter(pk__in=ids))
 
         if action_name == BULK_ACTION_MOVE:
             folder_id = request.data.get("folder", None)
             folder_model = cs_settings.MEDIA_LIBRARY_FOLDER_MODEL
 
-            if folder_id and folder_model:
+            if folder_id:
+                if folder_model is None:
+                    raise ValidationError("The media library has no folders.")
+
+                try:
+                    folder_id = folder_model._meta.pk.to_python(folder_id)
+                except DjangoValidationError:
+                    raise NotFound("Unknown folder.")
+
                 if not folder_model.objects.filter(pk=folder_id).exists():
                     raise NotFound("Unknown folder.")
 
@@ -272,12 +306,35 @@ class MediaLibraryViewSet(ModelViewSet):
         return Response({"count": len(objects)})
 
 
+class MediaFolderPermissions(DjangoModelPermissions):
+    """
+    Django's model permissions, with reading gated on view (or change)
+    permission: folders are the media library's navigation, so view
+    permission on either the folders or the media items opens them.
+    """
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            folder_model = cs_settings.MEDIA_LIBRARY_FOLDER_MODEL
+            media_model = cs_settings.MEDIA_LIBRARY_MODEL
+
+            # Unconfigured: the base class reports it (NotConfigured).
+            if folder_model is None:
+                return super().has_permission(request, view)
+
+            return can_view(request.user, folder_model) or bool(
+                media_model and can_view(request.user, media_model)
+            )
+
+        return super().has_permission(request, view)
+
+
 class MediaFolderViewSet(ModelViewSet):
     _folder_model = None
     lookup_field = "id"
     parser_classes = [JSONParser]
     renderer_classes = [JSONRenderer]
-    permission_classes = [DjangoModelPermissions]
+    permission_classes = [MediaFolderPermissions]
     filter_backends = [SearchFilter, OrderingFilter]
     pagination_class = ContentPagination
 
