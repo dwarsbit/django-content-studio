@@ -23,6 +23,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { useReorderableRow } from "@/hooks/use-reorderable-row";
@@ -135,16 +136,22 @@ export function RowDragHandle({
 }
 
 /**
- * The row menu of a reorderable row: moves to either end of the list,
- * also across pages.
+ * The row menu of a reorderable row: moves one step up or down and to
+ * either end of the list, also across pages.
  */
 export function MoveMenu({
   onMove,
   disabledReason,
+  atStart,
+  atEnd,
   className,
 }: {
   onMove(move: Move): void;
   disabledReason?: string | null;
+  // Whether the row is the first or the last of the whole list, so it
+  // cannot move further that way.
+  atStart?: boolean;
+  atEnd?: boolean;
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -169,10 +176,29 @@ export function MoveMenu({
         align="end"
         onClick={(event) => event.stopPropagation()}
       >
-        <DropdownMenuItem onSelect={() => onMove({ position: "first" })}>
+        <DropdownMenuItem
+          disabled={atStart}
+          onSelect={() => onMove({ position: "up" })}
+        >
+          {t("reorder.move_up")}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={atEnd}
+          onSelect={() => onMove({ position: "down" })}
+        >
+          {t("reorder.move_down")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          disabled={atStart}
+          onSelect={() => onMove({ position: "first" })}
+        >
           {t("reorder.move_first")}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onMove({ position: "last" })}>
+        <DropdownMenuItem
+          disabled={atEnd}
+          onSelect={() => onMove({ position: "last" })}
+        >
           {t("reorder.move_last")}
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -1239,6 +1239,7 @@ describe("ModelListPage reordering", () => {
     expect(httpPostMock).toHaveBeenCalledWith(
       "/content/testapp.article/2/move",
       { position: "first" },
+      { params: {} },
     );
     // The optimistic update, before the server answers.
     await waitFor(() => expect(rowTitles()[0]).toContain("Second Article"));
@@ -1253,6 +1254,55 @@ describe("ModelListPage reordering", () => {
     resolve({ data: {} });
     // The refetch afterwards shows the server's order.
     await waitFor(() => expect(rowTitles()[0]).toContain("First Article"));
+  });
+
+  it("moves a row one step and sends the list's filters along", async () => {
+    const user = userEvent.setup();
+    httpPostMock.mockResolvedValue({ data: {} });
+    localStorage.setItem(
+      "__dcs_list_filters__:testapp.article",
+      JSON.stringify({ status: "published" }),
+    );
+    renderListPage(
+      makeModel({
+        list: { reorderable: true, filter: ["status"] },
+        fields: filteredArticleFields,
+      }),
+    );
+
+    await screen.findByText("First Article");
+    await user.click(
+      screen.getAllByRole("button", { name: "reorder.menu" })[0],
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: "reorder.move_down" }),
+    );
+
+    expect(httpPostMock).toHaveBeenCalledWith(
+      "/content/testapp.article/1/move",
+      { position: "down" },
+      { params: { status: "published" } },
+    );
+  });
+
+  it("offers no moves past the ends of the list", async () => {
+    const user = userEvent.setup();
+    renderListPage(makeModel({ list: { reorderable: true } }));
+
+    await screen.findByText("First Article");
+    await user.click(
+      screen.getAllByRole("button", { name: "reorder.menu" })[0],
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "reorder.move_up" }),
+    ).toHaveAttribute("data-disabled");
+    expect(
+      screen.getByRole("menuitem", { name: "reorder.move_first" }),
+    ).toHaveAttribute("data-disabled");
+    expect(
+      screen.getByRole("menuitem", { name: "reorder.move_down" }),
+    ).not.toHaveAttribute("data-disabled");
   });
 
   it("rolls the row back when the move fails", async () => {

@@ -209,9 +209,11 @@ class BaseModelViewSet(ModelViewSet):
     def move(self, request, id):
         """
         Move an object to another position in its list: {"after": id},
-        {"before": id} or {"position": "first" | "last"}. The target is
-        resolved among the objects the list shows in obj's scope, and
-        the studio's reorder hook does the move. Only exists when the
+        {"before": id} or {"position": "first" | "last" | "up" |
+        "down"}. The target is resolved among the objects the list shows
+        in obj's scope; up and down step past the neighbor in the list as
+        filtered by the query parameters, also across pages. The
+        studio's reorder hook does the move. Only exists when the
         studio configures reorder_field; gated by change permission on
         the object.
         """
@@ -242,9 +244,21 @@ class BaseModelViewSet(ModelViewSet):
         key = given[0]
         value = request.data[key]
 
-        if key == "position":
+        if key == "position" and value in ("up", "down"):
+            # The neighbor in the list the editor sees: filters apply.
+            pks = list(self.filter_queryset(siblings).values_list("pk", flat=True))
+            index = pks.index(instance.pk) if instance.pk in pks else -1
+            neighbor = index + (1 if value == "down" else -1)
+
+            if index != -1 and 0 <= neighbor < len(pks):
+                target = siblings.get(pk=pks[neighbor])
+                if value == "down":
+                    after = target
+                else:
+                    before = target
+        elif key == "position":
             if value not in ("first", "last"):
-                raise ValidationError("The position must be first or last.")
+                raise ValidationError("The position must be first, last, up or down.")
 
             # Already in place: nothing to move.
             edge = siblings.first() if value == "first" else siblings.last()

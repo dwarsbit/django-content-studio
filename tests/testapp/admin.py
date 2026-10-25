@@ -102,7 +102,7 @@ class LabelAdmin(ModelStudio):
 @register(Track)
 class TrackAdmin(ModelStudio):
     table_display = ["id", "title", "position"]
-    list_filter = ["category"]
+    list_filter = ["category", "title"]
     search_fields = ["title"]
     soft_delete = "removed_at"
     reorder_field = "position"

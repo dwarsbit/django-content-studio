@@ -81,9 +81,9 @@ test("inline reviews are reordered with the keyboard", async ({ page }) => {
   await page.getByRole("tab", { name: "reviews" }).click();
   await expect(rows(inline).nth(1)).toContainText("First review");
 
-  // The row menu puts it back on top; the editor does not open.
+  // The row menu moves it one step back up; the editor does not open.
   await rows(inline).nth(1).getByRole("button", { name: "Move" }).click();
-  await page.getByRole("menuitem", { name: "Move to top" }).click();
+  await page.getByRole("menuitem", { name: "Move up" }).click();
   await expect(rows(inline).first()).toContainText("First review");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });

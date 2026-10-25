@@ -100,6 +100,8 @@
   "reorder": {
     "drag": "Drag to reorder",
     "menu": "Move",
+    "move_up": "Move up",
+    "move_down": "Move down",
     "move_first": "Move to top",
     "move_last": "Move to bottom",
     "disabled_ordering": "Switch to the default ordering to reorder",

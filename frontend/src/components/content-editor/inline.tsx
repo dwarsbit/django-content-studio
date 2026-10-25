@@ -26,7 +26,7 @@ import {
 import { useHttp } from "@/hooks/use-http";
 import { useMoveResource } from "@/hooks/use-move-resource";
 import { useReorderableRow } from "@/hooks/use-reorderable-row";
-import type { Move } from "@/lib/reorder";
+import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type {
   FieldFormat,
@@ -195,10 +195,15 @@ export function Inline({
                   }
                   onMove={onMove}
                 >
-                  {data.results.map((resource) => (
+                  {data.results.map((resource, index) => (
                     <SortableInlineRow
                       key={resource.id}
                       resource={resource}
+                      edges={getEdges(index, data.results.length, {
+                        isFirstPage: data.pagination.current <= 1,
+                        isLastPage:
+                          data.pagination.current >= data.pagination.pages,
+                      })}
                       model={model}
                       adminModel={adminModel}
                       relModel={relModel}
@@ -266,6 +271,7 @@ function InlineRow({
   relName,
   onMove,
   sortable,
+  edges,
 }: {
   relId: Id;
   relName: string;
@@ -282,6 +288,7 @@ function InlineRow({
   };
   onMove?: (id: Id, move: Move) => void;
   sortable?: ReturnType<typeof useReorderableRow>;
+  edges?: ReturnType<typeof getEdges>;
 }) {
   const [edit, setEdit] = useState(false);
   const queryClient = useQueryClient();
@@ -347,7 +354,7 @@ function InlineRow({
             className="w-10"
             onClick={(event) => event.stopPropagation()}
           >
-            <MoveMenu onMove={(move) => onMove(resource.id, move)} />
+            <MoveMenu onMove={(move) => onMove(resource.id, move)} {...edges} />
           </TableCell>
         )}
       </TableRow>

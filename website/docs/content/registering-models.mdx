@@ -353,8 +353,9 @@ With the option set:
   drag rows with the pointer, or focus the handle and move the row with the
   keyboard (space to pick it up, the arrow keys to move it, space to drop
   it);
-- each row's menu moves the object to the top or the bottom of the list,
-  also when that is on another page;
+- each row's menu moves the object one step up or down, or to the top or
+  the bottom of the list, also when that is on another page. A step up or
+  down passes the neighboring object of the list as currently filtered;
 - reordering needs change permission, and every move is recorded in the
   object's history;
 - reordering is off while editors sort by a column or search, because then
