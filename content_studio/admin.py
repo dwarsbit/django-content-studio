@@ -122,6 +122,17 @@ class BaseStudio(Generic[T]):
     # classic admin's prepopulated_fields: {"slug": ("title",)}.
     prepopulated_fields: dict[str, Sequence[str]] = {}
 
+    # Reordering, as an opt-in: the name of the field the list is
+    # ordered by. Empty, the default, offers no reordering. The built-in
+    # implementation rewrites a numeric field; override reorder() for
+    # any other ordering implementation.
+    reorder_field: str = ""
+
+    # Fields whose values partition the order, e.g. ["book"]: objects
+    # are only ordered among those sharing them. Inlines are always
+    # ordered per parent.
+    reorder_scope: list[str] = []
+
     def __init__(self, model: Type[T], admin_site: "ContentStudioSite"):
         self.model = model
         self.admin_site = admin_site
@@ -159,6 +170,33 @@ class BaseStudio(Generic[T]):
         objects are never prepopulated.
         """
         return dict(self.prepopulated_fields)
+
+    def reorder(
+        self,
+        request: HttpRequest,
+        obj: T,
+        *,
+        after: Optional[T] = None,
+        before: Optional[T] = None,
+    ) -> Optional[bool]:
+        """
+        Move obj directly after `after` or directly before `before`;
+        exactly one is given, and it is an object in obj's list. The
+        built-in implementation rewrites the numeric reorder_field of
+        the objects in between. Override to use another ordering
+        implementation, e.g. django-ordered-model's obj.above(before).
+        Returning False reports that nothing moved, so no change is
+        logged.
+        """
+        from .reordering import get_scope_queryset, move
+
+        return move(
+            get_scope_queryset(self, obj),
+            obj,
+            self.reorder_field,
+            after=after,
+            before=before,
+        )
 
     def _has_model_perm(self, request: HttpRequest, action: str) -> bool:
         opts = self.model._meta
@@ -751,6 +789,14 @@ def get_is_singleton(admin_class) -> bool:
     return bool(getattr(model, "is_singleton", False))
 
 
+def is_reorderable(studio, request: HttpRequest) -> bool:
+    """
+    Whether the request may reorder a studio's list: reordering is
+    configured and moving an object is a change.
+    """
+    return bool(studio.reorder_field) and studio.has_change_permission(request)
+
+
 def get_relation_display_for(
     model: Type[models.Model], obj: models.Model, request: HttpRequest
 ) -> "RelationDisplay":
@@ -807,6 +853,10 @@ class AdminSerializer:
                             column.serialize()
                             for column in get_table_display_columns(inline)
                         ],
+                        "reorderable": is_reorderable(
+                            inline(admin_class.model, admin_class.admin_site),
+                            request,
+                        ),
                     }
                     for inline in admin_class.inlines
                 ],
@@ -820,6 +870,7 @@ class AdminSerializer:
                 "filter": admin_class.list_filter,
                 "trash": bool(admin_class.soft_delete),
                 "sortable_by": admin_class.sortable_by,
+                "reorderable": is_reorderable(admin_class, request),
                 "actions": [
                     action.serialize()
                     for action in get_bulk_actions(admin_class, request)

@@ -31,6 +31,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E014` | A `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` that is not a list of extensions without the dot, or a `MEDIA_LIBRARY_MAX_UPLOAD_SIZE` that is not a positive number of bytes. |
 | `content_studio.E015` | `readonly_fields` entries that are not model fields. Inlines are checked too. |
 | `content_studio.E016` | `prepopulated_fields` that is not a mapping, fields or source fields that are not model fields, fields that cannot be prepopulated (`DateTimeField`, `ForeignKey`, `OneToOneField`, `ManyToManyField`) and fields in `readonly_fields`. Inlines are checked too. |
+| `content_studio.E017` | A `reorder_field` that is not a model field or, unless the studio overrides `reorder`, not a number field, and `reorder_scope` entries that are not model fields. Inlines are checked too. |
 
 ## Warnings
 
@@ -48,3 +49,4 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.W010` | `list_display` used for the table columns. It works, but rename it to `table_display`. When both are set, `list_display` is ignored. Inlines are checked too. |
 | `content_studio.W011` | A studio that overrides `get_list_display`, which is never called. The list view uses `get_list_item_display`. |
 | `content_studio.W012` | A dashboard widget that does not subclass a built-in widget, which the admin cannot show. |
+| `content_studio.W013` | An `ordering` that does not start with the `reorder_field` (after any `reorder_scope` fields), so moves do not match the order of the list. Inlines are checked too. |

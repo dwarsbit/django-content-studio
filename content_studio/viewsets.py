@@ -22,6 +22,7 @@ from .admin import get_relation_display_for
 from .dashboard.activity_log import LogEntrySerializer
 from .filters import LookupFilter
 from .permissions import ModelStudioPermissions
+from .reordering import get_reorder_scope
 from .serializers import RelatedItemSerializer
 from .settings import cs_settings
 from .utils import (
@@ -203,6 +204,92 @@ class BaseModelViewSet(ModelViewSet):
         instance.delete()
 
         return Response(status=204)
+
+    @action(methods=["post"], detail=True, url_path="move")
+    def move(self, request, id):
+        """
+        Move an object to another position in its list: {"after": id},
+        {"before": id} or {"position": "first" | "last"}. The target is
+        resolved among the objects the list shows in obj's scope, and
+        the studio's reorder hook does the move. Only exists when the
+        studio configures reorder_field; gated by change permission on
+        the object.
+        """
+        admin_model = self._admin_model
+
+        if not admin_model.reorder_field:
+            raise NotFound("This model cannot be reordered.")
+
+        given = [key for key in ("after", "before", "position") if key in request.data]
+
+        if len(given) != 1:
+            raise ValidationError(
+                "A move requires exactly one of after, before or position."
+            )
+
+        instance = self.get_object()
+
+        # The objects the list shows next to obj: not trashed, in the
+        # request's tenant and in obj's scope, in the list's order.
+        siblings = self.get_queryset().filter(
+            **{
+                attname: getattr(instance, attname)
+                for attname in get_reorder_scope(admin_model)
+            }
+        )
+
+        after = before = None
+        key = given[0]
+        value = request.data[key]
+
+        if key == "position":
+            if value not in ("first", "last"):
+                raise ValidationError("The position must be first or last.")
+
+            # Already in place: nothing to move.
+            edge = siblings.first() if value == "first" else siblings.last()
+            others = siblings.exclude(pk=instance.pk)
+
+            if edge is None or edge.pk == instance.pk:
+                pass
+            elif value == "first":
+                before = others.first()
+            else:
+                after = others.last()
+        else:
+            try:
+                target = siblings.filter(
+                    pk=self._model._meta.pk.to_python(value)
+                ).first()
+            except DjangoValidationError:
+                target = None
+
+            if target is None:
+                raise ValidationError("The target is not in this list.")
+
+            if key == "after":
+                after = target
+            else:
+                before = target
+
+        target = after if after is not None else before
+
+        if target is not None and target.pk != instance.pk:
+            moved = admin_model.reorder(request, instance, after=after, before=before)
+        else:
+            moved = False
+
+        if moved is not False:
+            LogEntry.objects.create(
+                user=self.request.user,
+                action_flag=CHANGE,
+                content_type=ContentType.objects.get_for_model(instance),
+                object_id=instance.pk,
+                object_repr=str(instance)[:200],
+                change_message="Moved.",
+            )
+
+        return Response({"id": instance.pk, "__str__": str(instance)})
 
     def get_object(self):
         """

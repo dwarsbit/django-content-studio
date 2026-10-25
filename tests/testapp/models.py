@@ -1,5 +1,7 @@
 from django.db import models
 
+from content_studio.models import ManualOrderModel
+
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
@@ -98,3 +100,26 @@ class Label(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Track(models.Model):
+    title = models.CharField(max_length=100)
+    # The manual order, per category; see TrackAdmin.reorder_field.
+    position = models.IntegerField(default=0)
+    category = models.ForeignKey(
+        Category, null=True, blank=True, on_delete=models.CASCADE
+    )
+    removed_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    def __str__(self):
+        return self.title
+
+
+class Step(ManualOrderModel):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    text = models.CharField(max_length=100)
+
+    order_scope = ["article"]
+
+    def __str__(self):
+        return self.text

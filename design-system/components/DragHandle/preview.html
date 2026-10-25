@@ -1,0 +1,23 @@
+<!-- @dsCard group="Actions" height=120 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>DragHandle preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.col{display:flex;flex-direction:column;gap:12px;max-width:360px}
+label{display:flex;align-items:center;gap:8px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+function item(title, disabled) {
+  return h("div", { className: "row", style: { gap: 12, padding: "8px 12px", borderBottom: "1px solid var(--border)" } },
+    h(C.DragHandle, { disabled: disabled, title: disabled ? "Clear the search to reorder" : "Drag to reorder", "aria-label": "Drag to reorder" }),
+    h("span", { style: { flex: 1 } }, title));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(h("div", { className: "col", style: { gap: 0, border: "1px solid var(--border)", borderRadius: 8 } },
+  item("Getting started", false),
+  item("Writing your first post", false),
+  item("Disabled while searching", true)));
+</script>
+</body>
+</html>

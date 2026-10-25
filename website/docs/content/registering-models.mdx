@@ -39,6 +39,7 @@ own studio for it to change how it looks.
 | `list_per_page` | The number of objects per page (default `20`) |
 | `list_description` | A description below the model's name on the list page |
 | `soft_delete` | The field that marks objects as trashed (see [below](#soft-delete-and-the-trash)) |
+| `reorder_field` | The field editors reorder objects by (see [below](#reordering)) |
 | `icon` | The model's icon in the main menu, such as `"ph-bold ph-article"` |
 
 When `ordering` is not set, objects are sorted by primary key, so pages stay
@@ -312,6 +313,139 @@ With the option set:
 Any model with such a field works; the built-in `SoftDeletableModel` has one
 called `removed_at`. System check `content_studio.E008` reports a field that
 is missing or of the wrong type.
+
+## Reordering
+
+To let editors put objects in their own order, add a number field to the
+model and name it in `reorder_field`. The list page then follows that
+order, and every row gets a handle to drag it to another position:
+
+```python
+# blog/models.py
+from django.db import models
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=50)
+    position = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+```
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Category
+
+
+@register(Category)
+class CategoryStudio(ModelStudio):
+    table_display = ["name"]
+    reorder_field = "position"
+```
+
+With the option set:
+
+- the table view and the list view show a drag handle on every row; editors
+  drag rows with the pointer, or focus the handle and move the row with the
+  keyboard (space to pick it up, the arrow keys to move it, space to drop
+  it);
+- each row's menu moves the object to the top or the bottom of the list,
+  also when that is on another page;
+- reordering needs change permission, and every move is recorded in the
+  object's history;
+- reordering is off while editors sort by a column or search, because then
+  the list does not show the manual order. Filtering keeps it on.
+
+Content Studio only rewrites the positions of the objects between the old
+and the new place, in one update query: the model's `save()` method and
+its signals do not run for a move. Existing gaps between positions stay. When several
+objects share a position, such as `0` for every existing row after you add
+the field, Content Studio numbers the list from `1` on the first move. If
+you set `ordering` yourself, start it with the reorder field; system check
+`content_studio.W013` warns when it does not.
+
+### Reordering per group
+
+When objects are ordered within a group, such as reviews per article, list
+the fields that form the group in `reorder_scope`. Objects then move among
+the objects that share those values:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Review
+
+
+@register(Review)
+class ReviewStudio(ModelStudio):
+    table_display = ["text", "article"]
+    list_filter = ["article"]
+    reorder_field = "position"
+    reorder_scope = ["article"]
+```
+
+Filter the list by the group to see one order at a time. Inlines are always
+ordered per parent, so an inline needs only `reorder_field`:
+
+```python
+# blog/admin.py
+from content_studio.admin import InlineModelStudio
+
+from .models import Review
+
+
+class ReviewInline(InlineModelStudio):
+    model = Review
+    table_display = ["text", "stars"]
+    reorder_field = "position"
+```
+
+On a model with a tenant field, objects are ordered per tenant (see
+[Multi-tenancy](/docs/multi-tenancy)).
+
+### Your own ordering implementation
+
+The built-in reordering works with a number field. If your model keeps its
+order some other way, such as with django-ordered-model, override
+`reorder` on the studio. It receives the object and either `after` or
+`before`: the object to place it next to. Name the field the list is sorted
+by in `reorder_field`:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Category
+
+
+@register(Category)
+class CategoryStudio(ModelStudio):
+    reorder_field = "order"
+
+    def reorder(self, request, obj, *, after=None, before=None):
+        if after is not None:
+            obj.below(after)
+        else:
+            obj.above(before)
+```
+
+Return `False` from `reorder` when nothing moved, so no change is recorded.
+
+The built-in `ManualOrderModel` has an `order_key` field to use as the
+reorder field, and its `reorder()` method numbers the order keys from `1`
+again. Set `order_scope` on the model to the fields that form a group, like
+`reorder_scope`.
+
+System check `content_studio.E017` reports a reorder field that is missing
+or, without your own `reorder`, not a number field, and `reorder_scope`
+entries that are not model fields.
 
 ## Object history
 

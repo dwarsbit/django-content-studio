@@ -451,6 +451,68 @@ def soft_delete_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def reorder_errors(studio) -> list[tuple[str, str]]:
+    """
+    A misconfigured reorder_field or reorder_scope, as (check id,
+    message) pairs. The field must exist and, unless the studio
+    overrides reorder, be numeric: the built-in implementation rewrites
+    it. Scope entries must be concrete fields. Inlines are checked too.
+    """
+    from .admin import BaseStudio
+    from .reordering import NUMERIC_FIELDS
+
+    errors = []
+
+    def error(owner, message):
+        errors.append(("content_studio.E017", f"{config_name(owner)}.{message}"))
+
+    def validate(owner, model):
+        field_name = getattr(owner, "reorder_field", None)
+
+        if model is None or not field_name:
+            return
+
+        try:
+            field = model._meta.get_field(field_name)
+        except (FieldDoesNotExist, TypeError):
+            error(
+                owner,
+                f"reorder_field refers to {field_name!r}, which is not a "
+                f"field of {model._meta.label_lower}.",
+            )
+            return
+
+        cls = owner if isinstance(owner, type) else type(owner)
+        overridden = getattr(cls, "reorder", None) is not BaseStudio.reorder
+
+        if not overridden and not isinstance(field, NUMERIC_FIELDS):
+            error(
+                owner,
+                f"reorder_field must name a numeric field; {field_name!r} is "
+                "not. Override reorder() for another ordering implementation.",
+            )
+
+        for name in getattr(owner, "reorder_scope", None) or []:
+            try:
+                scope_field = model._meta.get_field(name)
+            except (FieldDoesNotExist, TypeError):
+                scope_field = None
+
+            if scope_field is None or not getattr(scope_field, "concrete", False):
+                error(
+                    owner,
+                    f"reorder_scope contains {name!r}, which is not a field "
+                    f"of {model._meta.label_lower}.",
+                )
+
+    validate(studio, getattr(studio, "model", None))
+
+    for inline in getattr(studio, "inlines", None) or []:
+        validate(inline, getattr(inline, "model", None))
+
+    return errors
+
+
 def media_upload_errors() -> list[tuple[str, str]]:
     """
     Malformed media library upload settings, as (check id, message)
@@ -1020,6 +1082,45 @@ def sortable_by_warnings(studio) -> list[tuple[str, str]]:
     return warnings
 
 
+def reorder_ordering_warnings(studio) -> list[tuple[str, str]]:
+    """
+    An ordering that contradicts reorder_field, as (check id, message)
+    pairs. A reorderable list must be ordered by its reorder field
+    (after any reorder_scope fields), or moves land somewhere other
+    than where they were dropped. Inlines are checked too.
+    """
+    warnings = []
+
+    def validate(owner):
+        field_name = getattr(owner, "reorder_field", None)
+        ordering = list(getattr(owner, "ordering", None) or [])
+
+        if not field_name or not ordering:
+            return
+
+        scope = set(getattr(owner, "reorder_scope", None) or [])
+        rest = list(ordering)
+        while rest and rest[0] in scope:
+            rest.pop(0)
+
+        if not rest or rest[0] != field_name:
+            warnings.append(
+                (
+                    "content_studio.W013",
+                    f"{config_name(owner)}.ordering does not start with its "
+                    f"reorder_field {field_name!r}, so reordering does not "
+                    "match the order of the list.",
+                )
+            )
+
+    validate(studio)
+
+    for inline in getattr(studio, "inlines", None) or []:
+        validate(inline)
+
+    return warnings
+
+
 def list_filter_entry_warnings(studio) -> list[tuple[str, str]]:
     """
     Non-string list_filter entries, as (check id, message) pairs.
@@ -1242,6 +1343,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         for check_id, error in soft_delete_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
+        for check_id, error in reorder_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
         for check_id, error in edit_form_config_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
@@ -1267,6 +1371,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in sortable_by_warnings(studio):
+            messages.append(checks.Warning(warning, obj=obj, id=check_id))
+
+        for check_id, warning in reorder_ordering_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in list_filter_entry_warnings(studio):

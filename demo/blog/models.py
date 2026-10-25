@@ -18,6 +18,8 @@ from content_studio.fields import HTMLField
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
+    # The manual order; see CategoryStudio.reorder_field.
+    position = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = "category"
@@ -133,6 +135,8 @@ class Review(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     text = models.TextField()
     stars = models.PositiveIntegerField(default=5)
+    # The manual order per article; see ReviewInline.reorder_field.
+    position = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = "review"
