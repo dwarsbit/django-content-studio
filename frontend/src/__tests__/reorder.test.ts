@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { applyMove, getMove } from "@/lib/reorder";
+import { applyMove, getEdges, getMove } from "@/lib/reorder";
 
 const ids = ["a", "b", "c", "d"];
 const rows = ids.map((id) => ({ id }));
@@ -52,6 +52,26 @@ describe("applyMove", () => {
     ]);
   });
 
+  it("applies steps up and down within the page", () => {
+    expect(order(applyMove(rows, "c", { position: "up" }))).toEqual([
+      "a",
+      "c",
+      "b",
+      "d",
+    ]);
+    expect(order(applyMove(rows, "a", { position: "down" }))).toEqual([
+      "b",
+      "a",
+      "c",
+      "d",
+    ]);
+  });
+
+  it("leaves the page alone for a step off the page", () => {
+    expect(applyMove(rows, "a", { position: "up" })).toBe(rows);
+    expect(applyMove(rows, "d", { position: "down" })).toBe(rows);
+  });
+
   it("leaves the page alone for rows or targets it does not show", () => {
     expect(applyMove(rows, "x", { position: "first" })).toBe(rows);
     expect(applyMove(rows, "a", { after: "x" })).toBe(rows);
@@ -86,5 +106,34 @@ describe("numeric ids", () => {
         String,
       ),
     ).toEqual(["3", "1", "2"]);
+  });
+});
+
+describe("getEdges", () => {
+  const pages = (isFirstPage: boolean, isLastPage: boolean) => ({
+    isFirstPage,
+    isLastPage,
+  });
+
+  it("marks the ends of the whole list", () => {
+    expect(getEdges(0, 3, pages(true, true))).toEqual({
+      atStart: true,
+      atEnd: false,
+    });
+    expect(getEdges(2, 3, pages(true, true))).toEqual({
+      atStart: false,
+      atEnd: true,
+    });
+  });
+
+  it("does not mark the ends of a page in the middle of the list", () => {
+    expect(getEdges(0, 3, pages(false, false))).toEqual({
+      atStart: false,
+      atEnd: false,
+    });
+    expect(getEdges(2, 3, pages(false, false))).toEqual({
+      atStart: false,
+      atEnd: false,
+    });
   });
 });

@@ -99,6 +99,8 @@
   "reorder": {
     "drag": "Sleep om te herschikken",
     "menu": "Verplaatsen",
+    "move_up": "Omhoog verplaatsen",
+    "move_down": "Omlaag verplaatsen",
     "move_first": "Naar boven verplaatsen",
     "move_last": "Naar beneden verplaatsen",
     "disabled_ordering": "Kies de standaardvolgorde om te herschikken",

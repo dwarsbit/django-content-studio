@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useReorderableRow } from "@/hooks/use-reorderable-row";
-import type { Move } from "@/lib/reorder";
+import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type { FieldFormat, Id, Model } from "@/types";
 
@@ -24,10 +24,14 @@ import { EmptyState } from "./empty-state";
 type Row = { id: string; __str__?: string; [p: string]: unknown };
 
 // Reordering, when the list offers it: the moves a drop or the row
-// menu make, and why reordering is off right now (null when it is on).
+// menu make, why reordering is off right now (null when it is on), and
+// whether the page is the list's first or last, where rows cannot move
+// further up or down.
 export interface ReorderProps {
   disabledReason: string | null;
   onMove(id: Id, move: Move): void;
+  isFirstPage: boolean;
+  isLastPage: boolean;
 }
 
 export function TableView({
@@ -180,10 +184,11 @@ export function TableView({
               }
               onMove={reorder.onMove}
             >
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <SortableTableViewRow
                   key={item.id}
                   item={item}
+                  edges={getEdges(index, items.length, reorder)}
                   model={model}
                   hasActions={hasActions}
                   selected={!!selected?.has(item.id)}
@@ -231,6 +236,7 @@ function TableViewRow({
   onToggle,
   reorder,
   sortable,
+  edges,
 }: {
   item: Row;
   model: Model;
@@ -239,6 +245,7 @@ function TableViewRow({
   onToggle?: (id: string) => void;
   reorder?: ReorderProps;
   sortable?: ReturnType<typeof useReorderableRow>;
+  edges?: ReturnType<typeof getEdges>;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -290,6 +297,7 @@ function TableViewRow({
           <MoveMenu
             disabledReason={reorder.disabledReason}
             onMove={(move) => reorder.onMove(item.id, move)}
+            {...edges}
           />
         </TableCell>
       )}

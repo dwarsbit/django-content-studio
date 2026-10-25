@@ -183,6 +183,35 @@ class MoveEndpointTests(AuthenticatedTestCase):
         self.move(c, position="last")
         self.assertEqual(self.list_titles(), list("abdc"))
 
+    def test_move_up_and_down_one_step(self):
+        a, b, c, d = self.tracks
+
+        self.move(c, position="up")
+        self.assertEqual(self.list_titles(), list("acbd"))
+
+        self.move(a, position="down")
+        self.assertEqual(self.list_titles(), list("cabd"))
+
+    def test_up_and_down_stop_at_the_ends(self):
+        a, b, c, d = self.tracks
+
+        self.assertEqual(self.move(a, position="up").status_code, 200)
+        self.assertEqual(self.move(d, position="down").status_code, 200)
+
+        self.assertEqual(self.list_titles(), list("abcd"))
+        self.assertFalse(LogEntry.objects.exists())
+
+    def test_up_and_down_step_past_the_neighbor_the_filtered_list_shows(self):
+        a, b, c, d = self.tracks
+
+        # With b filtered out, c's neighbor above is a.
+        response = self.client.post(
+            f"{TRACKS}/{c.pk}/move?~title=b", {"position": "up"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.list_titles(), list("cabd"))
+
     def test_move_is_logged_as_a_change(self):
         a, b, *_ = self.tracks
 
@@ -231,6 +260,7 @@ class MoveEndpointTests(AuthenticatedTestCase):
         self.assertEqual(self.move(a).status_code, 400)
         self.assertEqual(self.move(a, after=b.pk, before=b.pk).status_code, 400)
         self.assertEqual(self.move(a, position="middle").status_code, 400)
+        self.assertEqual(self.move(a, position=2).status_code, 400)
         self.assertEqual(self.move(a, after="nope").status_code, 400)
 
     def test_models_without_reorder_field_have_no_move(self):

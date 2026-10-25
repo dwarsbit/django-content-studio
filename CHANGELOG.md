@@ -29,8 +29,8 @@
 - **Reordering.** Set `reorder_field` to a number field on a studio or
   inline and editors drag rows into their own order in the table view,
   the list view and inlines, with the pointer or the keyboard. A row menu
-  moves an object to the top or the bottom of the list, also across
-  pages. `reorder_scope` orders objects within a group (inlines are
+  moves an object one step up or down, or to the top or the bottom of the
+  list, also across pages. `reorder_scope` orders objects within a group (inlines are
   always ordered per parent, tenant-scoped models per tenant), and
   overriding `reorder()` on the studio plugs in any other ordering
   implementation. Reordering needs change permission, is recorded in the

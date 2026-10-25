@@ -13,24 +13,28 @@ import type { Id, PaginatedResponse, Resource } from "@/types";
 /**
  * Move a row of a reorderable list. The page in the cache (queryKey)
  * reorders right away and rolls back when the move fails; afterwards
- * every list of the model (invalidateKey) refetches.
+ * every list of the model (invalidateKey) refetches. Steps up and
+ * down follow the list as filtered by params.
  */
 export function useMoveResource({
   endpoint,
   queryKey,
   invalidateKey,
+  params,
 }: {
   // The list endpoint, e.g. /content/blog.post.
   endpoint: string;
   queryKey: QueryKey;
   invalidateKey: QueryKey;
+  // The list's filters.
+  params?: Record<string, string>;
 }) {
   const http = useHttp();
   const queryClient = useQueryClient();
 
   return useMutation({
     async mutationFn({ id, move }: { id: Id; move: Move }) {
-      return http.post(`${endpoint}/${id}/move`, move);
+      return http.post(`${endpoint}/${id}/move`, move, { params });
     },
     async onMutate({ id, move }) {
       await queryClient.cancelQueries({ queryKey });

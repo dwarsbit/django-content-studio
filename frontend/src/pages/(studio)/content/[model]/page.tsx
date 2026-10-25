@@ -244,6 +244,7 @@ export function ModelListPage() {
     endpoint: `/content/${appLabel}`,
     queryKey,
     invalidateKey: ["resources", appLabel],
+    params: filters,
   });
   const reorder: ReorderProps | undefined = model?.admin.list.reorderable
     ? {
@@ -253,6 +254,8 @@ export function ModelListPage() {
             ? t("reorder.disabled_ordering")
             : null,
         onMove: (id, next) => move({ id, move: next }),
+        isFirstPage: !data || data.pagination.current <= 1,
+        isLastPage: !data || data.pagination.current >= data.pagination.pages,
       }
     : undefined;
 

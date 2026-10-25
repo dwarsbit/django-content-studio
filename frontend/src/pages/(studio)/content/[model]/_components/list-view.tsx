@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { MoveMenu, Reorderable, RowDragHandle } from "@/components/reorderable";
 import { Badge } from "@/components/ui/badge";
 import { useReorderableRow } from "@/hooks/use-reorderable-row";
+import { getEdges } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type { Model, Resource } from "@/types";
 
@@ -43,10 +44,11 @@ export function ListView({
           }
           onMove={reorder.onMove}
         >
-          {items.map((item) => (
+          {items.map((item, index) => (
             <SortableListViewRow
               key={item.id}
               item={item}
+              edges={getEdges(index, items.length, reorder)}
               model={model}
               reorder={reorder}
             />
@@ -79,11 +81,13 @@ function ListViewRow({
   model,
   reorder,
   sortable,
+  edges,
 }: {
   item: Resource;
   model: Model;
   reorder?: ReorderProps;
   sortable?: ReturnType<typeof useReorderableRow>;
+  edges?: ReturnType<typeof getEdges>;
 }) {
   const navigate = useNavigate();
   const display = item.list_item_display;
@@ -124,6 +128,7 @@ function ListViewRow({
         <MoveMenu
           disabledReason={reorder.disabledReason}
           onMove={(move) => reorder.onMove(item.id, move)}
+          {...edges}
         />
       )}
     </div>
