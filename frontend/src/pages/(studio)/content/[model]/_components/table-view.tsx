@@ -4,6 +4,7 @@ import { TbCaretDownFilled, TbCaretUpFilled } from "react-icons/tb";
 import { useNavigate } from "react-router";
 
 import { FormatRenderer } from "@/components/formats/renderer";
+import { MoveMenu, Reorderable, RowDragHandle } from "@/components/reorderable";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -13,10 +14,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useReorderableRow } from "@/hooks/use-reorderable-row";
+import type { Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
-import type { FieldFormat, Model } from "@/types";
+import type { FieldFormat, Id, Model } from "@/types";
 
 import { EmptyState } from "./empty-state";
+
+type Row = { id: string; __str__?: string; [p: string]: unknown };
+
+// Reordering, when the list offers it: the moves a drop or the row
+// menu make, and why reordering is off right now (null when it is on).
+export interface ReorderProps {
+  disabledReason: string | null;
+  onMove(id: Id, move: Move): void;
+}
 
 export function TableView({
   items,
@@ -28,8 +40,9 @@ export function TableView({
   onToggleAll,
   filtered,
   onClear,
+  reorder,
 }: {
-  items: { id: string; [p: string]: unknown }[];
+  items: Row[];
   model: Model;
   // The selected ids, when the model offers bulk actions.
   selected?: Set<string>;
@@ -44,9 +57,9 @@ export function TableView({
   filtered?: boolean;
   // Clears the search term and the remembered filters.
   onClear?: () => void;
+  reorder?: ReorderProps;
 }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const fields = model.admin.list.display;
   const { sortable_by, display } = model.admin.list;
   const hasActions = (model.admin.list.actions ?? []).length > 0;
@@ -60,6 +73,11 @@ export function TableView({
       <Table>
         <TableHeader>
           <TableRow>
+            {reorder && (
+              <TableHead className="sticky top-0 z-10 bg-muted w-8">
+                <span className="sr-only">{t("reorder.drag")}</span>
+              </TableHead>
+            )}
             {hasActions && (
               <TableHead className="sticky top-0 z-10 bg-muted w-10">
                 <Checkbox
@@ -129,13 +147,20 @@ export function TableView({
                 </TableHead>
               );
             })}
+            {reorder && (
+              <TableHead className="sticky top-0 z-10 bg-muted w-10">
+                <span className="sr-only">{t("reorder.menu")}</span>
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
           {R.isEmpty(items) && (
             <TableRow>
               <TableCell
-                colSpan={fields.length + (hasActions ? 1 : 0)}
+                colSpan={
+                  fields.length + (hasActions ? 1 : 0) + (reorder ? 2 : 0)
+                }
                 className="text-center"
               >
                 <EmptyState
@@ -146,38 +171,128 @@ export function TableView({
               </TableCell>
             </TableRow>
           )}
-          {items.map((item) => (
-            <TableRow
-              key={item.id}
-              onClick={() => navigate(`/content/${model.label}/${item.id}`)}
+          {reorder ? (
+            <Reorderable
+              ids={items.map((item) => item.id)}
+              getLabel={(id) =>
+                items.find((item) => String(item.id) === String(id))?.__str__ ??
+                id
+              }
+              onMove={reorder.onMove}
             >
-              {hasActions && (
-                <TableCell
-                  className="w-10"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <Checkbox
-                    checked={selected?.has(item.id)}
-                    aria-label={t("bulk.select_row")}
-                    onCheckedChange={() => onToggle?.(item.id)}
-                  />
-                </TableCell>
-              )}
-              {fields.map(({ name, format }) => (
-                <TableCell key={name}>
-                  <div className="truncate min-h-8 items-center flex">
-                    <FormatRenderer
-                      value={item[name]}
-                      field={model.fields[name]}
-                      formatName={(format as FieldFormat | null) ?? undefined}
-                    />
-                  </div>
-                </TableCell>
+              {items.map((item) => (
+                <SortableTableViewRow
+                  key={item.id}
+                  item={item}
+                  model={model}
+                  hasActions={hasActions}
+                  selected={!!selected?.has(item.id)}
+                  onToggle={onToggle}
+                  reorder={reorder}
+                />
               ))}
-            </TableRow>
-          ))}
+            </Reorderable>
+          ) : (
+            items.map((item) => (
+              <TableViewRow
+                key={item.id}
+                item={item}
+                model={model}
+                hasActions={hasActions}
+                selected={!!selected?.has(item.id)}
+                onToggle={onToggle}
+              />
+            ))
+          )}
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+function SortableTableViewRow(
+  props: Omit<Parameters<typeof TableViewRow>[0], "sortable"> & {
+    reorder: ReorderProps;
+  },
+) {
+  const sortable = useReorderableRow(
+    props.item.id,
+    !!props.reorder.disabledReason,
+  );
+
+  return <TableViewRow {...props} sortable={sortable} />;
+}
+
+function TableViewRow({
+  item,
+  model,
+  hasActions,
+  selected,
+  onToggle,
+  reorder,
+  sortable,
+}: {
+  item: Row;
+  model: Model;
+  hasActions: boolean;
+  selected: boolean;
+  onToggle?: (id: string) => void;
+  reorder?: ReorderProps;
+  sortable?: ReturnType<typeof useReorderableRow>;
+}) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const fields = model.admin.list.display;
+
+  return (
+    <TableRow
+      ref={sortable?.ref}
+      style={sortable?.style}
+      onClick={() => navigate(`/content/${model.label}/${item.id}`)}
+      className={cn({ "bg-muted shadow-sm": sortable?.isDragging })}
+    >
+      {reorder && sortable && (
+        <TableCell className="w-8 pr-0">
+          <RowDragHandle
+            handleProps={sortable.handleProps}
+            disabledReason={reorder.disabledReason}
+          />
+        </TableCell>
+      )}
+      {hasActions && (
+        <TableCell
+          className="w-10"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Checkbox
+            checked={selected}
+            aria-label={t("bulk.select_row")}
+            onCheckedChange={() => onToggle?.(item.id)}
+          />
+        </TableCell>
+      )}
+      {fields.map(({ name, format }) => (
+        <TableCell key={name}>
+          <div className="truncate min-h-8 items-center flex">
+            <FormatRenderer
+              value={item[name]}
+              field={model.fields[name]}
+              formatName={(format as FieldFormat | null) ?? undefined}
+            />
+          </div>
+        </TableCell>
+      ))}
+      {reorder && (
+        <TableCell
+          className="w-10"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <MoveMenu
+            disabledReason={reorder.disabledReason}
+            onMove={(move) => reorder.onMove(item.id, move)}
+          />
+        </TableCell>
+      )}
+    </TableRow>
   );
 }

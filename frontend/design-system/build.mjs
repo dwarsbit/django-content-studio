@@ -25,6 +25,7 @@ const CHECK = process.argv.includes("--check");
 const COMPONENTS = {
   Button: "button",
   ButtonGroup: "button-group",
+  DragHandle: "drag-handle",
   Toggle: "toggle",
   ToggleGroup: "toggle-group",
   Input: "input",

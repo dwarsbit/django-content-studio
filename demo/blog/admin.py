@@ -14,12 +14,16 @@ from . import models
 
 class ReviewInline(InlineModelStudio):
     model = models.Review
+    # Reviews are dragged into order per article.
+    reorder_field = "position"
 
 
 @register(models.Category)
 class CategoryStudio(ModelStudio):
     table_display = ["name"]
     search_fields = ["name"]
+    # Categories are dragged into order; the list follows it.
+    reorder_field = "position"
 
     def get_relation_display(self, obj, request):
         return RelationDisplay(

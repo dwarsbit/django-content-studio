@@ -26,6 +26,20 @@
   Objects in the trash count, and on tenant-scoped models only the
   current tenant's objects are compared. `unique_together` and
   multi-field `UniqueConstraint`s are not checked.
+- **Reordering.** Set `reorder_field` to a number field on a studio or
+  inline and editors drag rows into their own order in the table view,
+  the list view and inlines, with the pointer or the keyboard. A row menu
+  moves an object to the top or the bottom of the list, also across
+  pages. `reorder_scope` orders objects within a group (inlines are
+  always ordered per parent, tenant-scoped models per tenant), and
+  overriding `reorder()` on the studio plugs in any other ordering
+  implementation. Reordering needs change permission, is recorded in the
+  object's history and is off while the list is sorted by a column or
+  searched. System checks `content_studio.E017` and `content_studio.W013`
+  report misconfigurations.
+- **`ManualOrderModel.reorder()` is scoped and fast.** It renumbers only
+  the objects that share the model's new `order_scope` fields, in a single
+  update query, instead of saving every object of the model one by one.
 - **`Field(readonly=True)` is enforced on save.** The edit page already
   showed these fields without an input; saving now ignores any value
   sent for them as well.

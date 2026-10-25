@@ -10,6 +10,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
+import { useMoveResource } from "@/hooks/use-move-resource";
 import { cn } from "@/lib/utils";
 import type { PaginatedResponse, Resource } from "@/types";
 
@@ -17,7 +18,7 @@ import { BulkBar } from "./_components/bulk-bar";
 import { Filters } from "./_components/filters";
 import { ListView } from "./_components/list-view";
 import { SortSelect } from "./_components/sort-select";
-import { TableView } from "./_components/table-view";
+import { type ReorderProps, TableView } from "./_components/table-view";
 import { ContentEditorPage } from "./[id]/page";
 
 export function ModelListPage() {
@@ -208,14 +209,16 @@ export function ModelListPage() {
   const clearSelection = () => setSelected(new Set());
   const actions = model?.admin.list.actions ?? [];
 
+  const queryKey = [
+    "resources",
+    appLabel,
+    { search, page, ordering: effectiveOrdering, filters },
+  ];
+
   const { data } = useQuery({
     retry: false,
     enabled: !R.isNil(model),
-    queryKey: [
-      "resources",
-      appLabel,
-      { search, page, ordering: effectiveOrdering, filters },
-    ],
+    queryKey,
     placeholderData: keepPreviousData,
     async queryFn() {
       const { data } = await http.get<PaginatedResponse<Resource>>(
@@ -233,6 +236,25 @@ export function ModelListPage() {
       return data;
     },
   });
+
+  // Reordering follows the manual order, so it is off while another
+  // ordering or a search (ranked results) decides the order; filters
+  // only narrow the list and keep it on.
+  const { mutate: move } = useMoveResource({
+    endpoint: `/content/${appLabel}`,
+    queryKey,
+    invalidateKey: ["resources", appLabel],
+  });
+  const reorder: ReorderProps | undefined = model?.admin.list.reorderable
+    ? {
+        disabledReason: search
+          ? t("reorder.disabled_search")
+          : effectiveOrdering
+            ? t("reorder.disabled_ordering")
+            : null,
+        onMove: (id, next) => move({ id, move: next }),
+      }
+    : undefined;
 
   return model && data ? (
     <div className="flex flex-col overflow-hidden w-full max-w-[1200px] mx-auto pr-8 pl-4">
@@ -337,6 +359,7 @@ export function ModelListPage() {
             model={model}
             filtered={filtered}
             onClear={clearContext}
+            reorder={reorder}
           />
         ) : (
           <TableView
@@ -349,6 +372,7 @@ export function ModelListPage() {
             onToggleAll={toggleAll}
             filtered={filtered}
             onClear={clearContext}
+            reorder={reorder}
           />
         )}
         <div className="flex items-center justify-center">

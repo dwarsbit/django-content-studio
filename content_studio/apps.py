@@ -345,11 +345,19 @@ class DjangoContentStudioConfig(AppConfig):
 
                 # Respect the model studio's ordering; fall back to pk so
                 # paginated pages are stable (and silent). The trash
-                # falls back to most-recently-deleted first.
+                # falls back to most-recently-deleted first, a
+                # reorderable list to its manual order.
+                reorder_field = self._admin_model.reorder_field
                 if self._admin_model.ordering:
                     ordering = self._admin_model.ordering
                 elif self.action == "trash" and soft_delete_field:
                     ordering = [f"-{soft_delete_field}"]
+                elif reorder_field:
+                    ordering = [
+                        *self._admin_model.reorder_scope,
+                        reorder_field,
+                        "pk",
+                    ]
                 else:
                     ordering = ["pk"]
                 return qs.order_by(*ordering)

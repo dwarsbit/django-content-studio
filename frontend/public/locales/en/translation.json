@@ -97,6 +97,19 @@
       "max": "Max"
     }
   },
+  "reorder": {
+    "drag": "Drag to reorder",
+    "menu": "Move",
+    "move_first": "Move to top",
+    "move_last": "Move to bottom",
+    "disabled_ordering": "Switch to the default ordering to reorder",
+    "disabled_search": "Clear the search to reorder",
+    "instructions": "To pick up an item, press space or enter. Use the arrow keys to move it, press space or enter again to drop it, or escape to cancel.",
+    "picked_up": "Picked up {{item}}.",
+    "over": "{{item}} is over {{over}}.",
+    "dropped": "Dropped {{item}}.",
+    "cancelled": "Moving {{item}} was cancelled."
+  },
   "bulk": {
     "selected": "{{count}} selected",
     "count": "Applied to {{count}} items",

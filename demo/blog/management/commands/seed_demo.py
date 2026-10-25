@@ -34,16 +34,33 @@ class Command(BaseCommand):
             self.stdout.write("Created staff user 'editor'.")
 
         categories = {
-            slug: Category.objects.get_or_create(name=name)[0]
-            for slug, name in (
-                ("general", "General"),
-                ("technology", "Technology"),
-                ("opinion", "Opinion"),
+            slug: Category.objects.get_or_create(
+                name=name, defaults={"position": position}
+            )[0]
+            for position, (slug, name) in enumerate(
+                (
+                    ("general", "General"),
+                    ("technology", "Technology"),
+                    ("opinion", "Opinion"),
+                ),
+                start=1,
             )
         }
 
         if not Article.objects.exists():
             now = timezone.now()
+
+            # An article with reviews in a manual order, for reordering.
+            ordered = Article.objects.create(
+                title="Reviews in order",
+                body="Seeded sample article with ordered reviews.",
+                author=user,
+                created_by=user,
+            )
+            for position, text in enumerate(
+                ("First review", "Second review", "Third review"), start=1
+            ):
+                Review.objects.create(article=ordered, text=text, position=position)
 
             # Sample articles with varied values, so every filter type has
             # something to find: status choices, boolean, number range,

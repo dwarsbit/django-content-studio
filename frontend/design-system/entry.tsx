@@ -46,6 +46,7 @@ export {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 export { DebouncedInput } from "@/components/ui/debounced-input";
+export { DragHandle } from "@/components/ui/drag-handle";
 export {
   Dialog,
   DialogClose,

@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { PiPlus } from "react-icons/pi";
 
 import { FormatRenderer } from "@/components/formats/renderer";
+import { MoveMenu, Reorderable, RowDragHandle } from "@/components/reorderable";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -23,6 +24,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useHttp } from "@/hooks/use-http";
+import { useMoveResource } from "@/hooks/use-move-resource";
+import { useReorderableRow } from "@/hooks/use-reorderable-row";
+import type { Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type {
   FieldFormat,
@@ -52,6 +56,7 @@ export function Inline({
     readonly_fields?: string[];
     prepopulated_fields?: Record<string, string[]>;
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
+    reorderable?: boolean;
   };
 }) {
   const { t } = useTranslation();
@@ -61,6 +66,13 @@ export function Inline({
   const [page, setPage] = useState(1);
   const readOnly = !model.admin;
   const relName = useWatch({ name: "__str__" });
+  const listKey = [
+    "resources",
+    relModel,
+    model.label,
+    adminModel.fk_name,
+    relId,
+  ];
   const { data, isLoading } = useQuery({
     retry: false,
     refetchOnWindowFocus: true,
@@ -84,6 +96,18 @@ export function Inline({
       return data;
     },
   });
+
+  const { mutate: move } = useMoveResource({
+    endpoint: `/inlines/${relModel}/${model.label}`,
+    queryKey: [...listKey, page],
+    invalidateKey: listKey,
+  });
+  // Inline rows are always in their manual order: no search or
+  // ordering can turn reordering off.
+  const onMove = adminModel.reorderable
+    ? (id: Id, next: Move) => move({ id, move: next })
+    : undefined;
+  const columns = (adminModel.table_display?.length ?? 0) + (onMove ? 2 : 0);
 
   return (
     <div className="space-y-4">
@@ -123,6 +147,11 @@ export function Inline({
         <Table>
           <TableHeader>
             <TableRow>
+              {onMove && (
+                <TableHead className="w-8">
+                  <span className="sr-only">{t("reorder.drag")}</span>
+                </TableHead>
+              )}
               {adminModel.table_display?.map(({ name, header }) => (
                 <TableHead key={name}>
                   <div className="flex items-center">
@@ -130,12 +159,17 @@ export function Inline({
                   </div>
                 </TableHead>
               ))}
+              {onMove && (
+                <TableHead className="w-10">
+                  <span className="sr-only">{t("reorder.menu")}</span>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <tr>
-                <td colSpan={adminModel.table_display?.length}>
+                <td colSpan={columns}>
                   <div className="flex justify-center py-24">
                     <Spinner />
                   </div>
@@ -143,24 +177,51 @@ export function Inline({
               </tr>
             ) : R.isEmpty(data?.results) ? (
               <tr>
-                <td colSpan={adminModel.table_display?.length}>
+                <td colSpan={columns}>
                   <div className="text-center py-12 text-muted-foreground select-none">
                     {t("editor.empty_state")}
                   </div>
                 </td>
               </tr>
             ) : (
-              data?.results.map((resource) => (
-                <InlineRow
-                  key={resource.id}
-                  resource={resource}
-                  model={model}
-                  adminModel={adminModel}
-                  relModel={relModel}
-                  relId={relId}
-                  relName={relName}
-                  readOnly={readOnly}
-                />
+              data &&
+              (onMove ? (
+                <Reorderable
+                  ids={data.results.map((resource) => resource.id)}
+                  getLabel={(id) =>
+                    data.results.find(
+                      (resource) => String(resource.id) === String(id),
+                    )?.__str__ ?? id
+                  }
+                  onMove={onMove}
+                >
+                  {data.results.map((resource) => (
+                    <SortableInlineRow
+                      key={resource.id}
+                      resource={resource}
+                      model={model}
+                      adminModel={adminModel}
+                      relModel={relModel}
+                      relId={relId}
+                      relName={relName}
+                      readOnly={readOnly}
+                      onMove={onMove}
+                    />
+                  ))}
+                </Reorderable>
+              ) : (
+                data.results.map((resource) => (
+                  <InlineRow
+                    key={resource.id}
+                    resource={resource}
+                    model={model}
+                    adminModel={adminModel}
+                    relModel={relModel}
+                    relId={relId}
+                    relName={relName}
+                    readOnly={readOnly}
+                  />
+                ))
               ))
             )}
           </TableBody>
@@ -187,6 +248,14 @@ export function Inline({
   );
 }
 
+function SortableInlineRow(
+  props: Omit<Parameters<typeof InlineRow>[0], "sortable">,
+) {
+  const sortable = useReorderableRow(props.resource.id);
+
+  return <InlineRow {...props} sortable={sortable} />;
+}
+
 function InlineRow({
   resource,
   readOnly,
@@ -195,6 +264,8 @@ function InlineRow({
   adminModel,
   relId,
   relName,
+  onMove,
+  sortable,
 }: {
   relId: Id;
   relName: string;
@@ -207,7 +278,10 @@ function InlineRow({
     readonly_fields?: string[];
     prepopulated_fields?: Record<string, string[]>;
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
+    reorderable?: boolean;
   };
+  onMove?: (id: Id, move: Move) => void;
+  sortable?: ReturnType<typeof useReorderableRow>;
 }) {
   const [edit, setEdit] = useState(false);
   const queryClient = useQueryClient();
@@ -246,11 +320,19 @@ function InlineRow({
         )}
       </Dialog>
       <TableRow
+        ref={sortable?.ref}
+        style={sortable?.style}
         onClick={() => !readOnly && setEdit(true)}
         className={cn({
           "hover:bg-transparent": readOnly,
+          "bg-muted shadow-sm": sortable?.isDragging,
         })}
       >
+        {sortable && (
+          <TableCell className="w-8 pr-0">
+            <RowDragHandle handleProps={sortable.handleProps} />
+          </TableCell>
+        )}
         {adminModel.table_display?.map(({ name, format }) => (
           <TableCell key={name}>
             <FormatRenderer
@@ -260,6 +342,14 @@ function InlineRow({
             />
           </TableCell>
         ))}
+        {onMove && (
+          <TableCell
+            className="w-10"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <MoveMenu onMove={(move) => onMove(resource.id, move)} />
+          </TableCell>
+        )}
       </TableRow>
     </>
   );

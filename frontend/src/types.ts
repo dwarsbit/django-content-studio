@@ -106,6 +106,8 @@ export interface Model {
       filter: string[];
       trash?: boolean;
       sortable_by: string[] | null;
+      // Whether the user may reorder the list (reorder_field is set).
+      reorderable?: boolean;
       actions: BulkAction[];
     };
     edit: {
@@ -126,6 +128,7 @@ export interface Model {
           header: string | null;
           format: string | null;
         }[];
+        reorderable?: boolean;
       }[];
     };
     permissions: {

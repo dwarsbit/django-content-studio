@@ -96,6 +96,19 @@
       "max": "Max"
     }
   },
+  "reorder": {
+    "drag": "Sleep om te herschikken",
+    "menu": "Verplaatsen",
+    "move_first": "Naar boven verplaatsen",
+    "move_last": "Naar beneden verplaatsen",
+    "disabled_ordering": "Kies de standaardvolgorde om te herschikken",
+    "disabled_search": "Wis de zoekopdracht om te herschikken",
+    "instructions": "Druk op spatie of enter om een item op te pakken. Verplaats het met de pijltjestoetsen, druk nogmaals op spatie of enter om het neer te zetten, of op escape om te annuleren.",
+    "picked_up": "{{item}} opgepakt.",
+    "over": "{{item}} staat boven {{over}}.",
+    "dropped": "{{item}} neergezet.",
+    "cancelled": "Verplaatsen van {{item}} geannuleerd."
+  },
   "bulk": {
     "selected": "{{count}} geselecteerd",
     "count": "Toegepast op {{count}} items",
