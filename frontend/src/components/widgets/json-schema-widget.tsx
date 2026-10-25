@@ -17,7 +17,7 @@ export function JSONSchemaWidget({
     <div className="space-y-3">
       {Object.entries(schema.properties ?? {}).map(([key, props]) => (
         <div key={key}>
-          <Label className="font-normal mb-1.5">{props.verbose_name}</Label>
+          <Label className="font-normal mb-1.5">{props.title ?? key}</Label>
           <Input
             key={key}
             value={

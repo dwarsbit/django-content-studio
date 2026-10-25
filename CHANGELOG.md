@@ -50,6 +50,10 @@
   password reset and media library apps now pin it, and a test checks
   the shipped migrations against both settings.
 
+- **`FlexField` shows its inputs.** The edit page never received the
+  field's schema, so a `FlexField` showed a warning instead of an input
+  per property. Inputs are labeled with the property's `title`, or its
+  name when it has none.
 - **`Link` components render.** A `Link` on the edit page showed
   nothing; it is now a text link to the URL from `get_url`, next to the
   `ButtonLink` button.
