@@ -209,6 +209,46 @@ describe("BlockWidget", () => {
     expect(screen.getByText("quote")).toBeVisible();
   });
 
+  it("adds a block between two blocks", async () => {
+    render(<Harness body={[text("a", "One"), text("b", "Two")]} />);
+
+    // One "+" between the two blocks; the end has the "Add block" button.
+    const [insert] = screen.getAllByRole("button", {
+      name: "widgets.block_widget.insert",
+    });
+    await userEvent.click(insert);
+    await userEvent.click(await screen.findByRole("option", { name: /Quote/ }));
+
+    expect(form.getValues("body").map((block) => block.type)).toEqual([
+      "text",
+      "quote",
+      "text",
+    ]);
+  });
+
+  it("hides the insert points at max_num", () => {
+    render(
+      <Harness
+        body={[text("a", "One"), text("b", "Two")]}
+        field={bodyField({ max_num: 2 })}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "widgets.block_widget.insert" }),
+    ).toBeNull();
+  });
+
+  it("gives each block a drag handle", () => {
+    render(<Harness body={[text("a", "One"), text("b", "Two")]} />);
+
+    const handles = screen.getAllByRole("button", {
+      name: "widgets.block_widget.drag:Text",
+    });
+    expect(handles).toHaveLength(2);
+    expect(handles[0]).toHaveAttribute("aria-roledescription", "sortable");
+  });
+
   it("moves blocks up and down", async () => {
     render(<Harness body={[text("a", "One"), text("b", "Two")]} />);
 
