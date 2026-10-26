@@ -15,7 +15,13 @@ from rest_framework.viewsets import ModelViewSet
 from content_studio.paginators import ContentPagination
 from content_studio.exceptions import NotConfigured
 from content_studio.settings import cs_settings
-from content_studio.signals import DELETED, collect_changes, record_change
+from content_studio.signals import (
+    CREATED,
+    DELETED,
+    UPDATED,
+    collect_changes,
+    record_change,
+)
 from .serializers import build_media_folder_serializer, build_media_item_serializer
 
 # The bulk actions offered on the items endpoint.
@@ -158,6 +164,20 @@ class MediaLibraryViewSet(ModelViewSet):
 
         raise NotConfigured("The media library model is not defined.")
 
+    def perform_create(self, serializer):
+        record_change(self.request, serializer.save(), CREATED)
+
+    def perform_update(self, serializer):
+        record_change(self.request, serializer.save(), UPDATED)
+
+    def perform_destroy(self, instance):
+        using = router.db_for_write(type(instance))
+
+        # Logged first, as deleting clears the pk.
+        with transaction.atomic(using=using):
+            record_change(self.request, instance, DELETED)
+            instance.delete()
+
     def get_list_param(self, name):
         """A comma-separated query parameter as a list of values."""
         raw = self.request.query_params.get(name, None)
@@ -228,6 +248,7 @@ class MediaLibraryViewSet(ModelViewSet):
 
         obj = self.get_object()
         crop_image(obj, crop_info)
+        record_change(request, obj, UPDATED, "Cropped.")
 
         return Response(self.get_serializer(obj).data)
 
@@ -286,6 +307,9 @@ class MediaLibraryViewSet(ModelViewSet):
                     raise NotFound("Unknown folder.")
 
             model.objects.filter(pk__in=ids).update(folder_id=folder_id)
+
+            for obj in objects:
+                record_change(request, obj, UPDATED, "Moved.")
 
             return Response({"count": len(objects)})
 

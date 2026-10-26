@@ -184,3 +184,38 @@ class RecordChangeTests(SignalTestCase):
                 record_change(self.http_request, page, UPDATED)
 
         self.assertEqual(self.sent[0][0][0].tenant_id, tenant.pk)
+
+
+class CustomBulkActionTests(SignalTestCase):
+    def test_a_custom_action_records_its_changes_in_one_batch(self):
+        from content_studio.actions import bulk_action
+        from tests.testapp.admin import ArticleAdmin
+
+        @bulk_action()
+        def archive(self, request, queryset):
+            for article in queryset:
+                record_change(request, article, "updated", "Archived.")
+
+        articles = [Article.objects.create(title=title) for title in "ab"]
+        ArticleAdmin.archive = archive
+        self.addCleanup(delattr, ArticleAdmin, "archive")
+
+        response = self.request(
+            "post",
+            f"{ARTICLES}/bulk",
+            {"action": "archive", "ids": [article.pk for article in articles]},
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(self.actions(), [["updated", "updated"]])
+        self.assertEqual(
+            set(LogEntry.objects.values_list("change_message", flat=True)),
+            {"Archived."},
+        )
+
+    def test_an_unknown_action_is_refused(self):
+        request = RequestFactory().post("/")
+        request.user = self.user
+
+        with self.assertRaises(ValueError):
+            record_change(request, Article.objects.create(title="a"), "published")

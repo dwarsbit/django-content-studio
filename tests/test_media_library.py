@@ -685,3 +685,63 @@ def test_bulk_move_without_folder_model_is_a_client_error():
 
     assert response.status_code == 400
     assert ItemModel.objects.get(pk=item.pk).folder_id is None
+
+
+def log_entries():
+    return list(
+        LogEntry.objects.order_by("pk").values_list(
+            "action_flag", "object_id", "change_message"
+        )
+    )
+
+
+@pytest.mark.django_db
+def test_uploading_editing_and_deleting_an_item_are_logged(media_root):
+    from django.contrib.admin.models import ADDITION, CHANGE, DELETION
+
+    user = make_superuser()
+    pk = upload(user, "photo.png", PNG_BYTES).json()["id"]
+
+    with override_settings(CONTENT_STUDIO=MEDIA_SETTINGS):
+        client = media_client(user)
+        client.patch(f"/api/media-library/items/{pk}", {"name": "x"}, format="json")
+        client.delete(f"/api/media-library/items/{pk}")
+
+    assert log_entries() == [
+        (ADDITION, str(pk), ""),
+        (CHANGE, str(pk), ""),
+        (DELETION, str(pk), ""),
+    ]
+
+
+@pytest.mark.django_db
+def test_bulk_move_and_crop_are_logged(media_settings, media_root):
+    from django.contrib.admin.models import CHANGE
+
+    from content_studio.admin import admin_site
+
+    folder = FolderModel.objects.create(name="target")
+    item = ItemModel.objects.create(
+        name="one", type="image", file=ContentFile(b"image", name="one.png")
+    )
+    client = media_client(make_superuser())
+    admin_site.crop_image = lambda obj, crop_info: None
+
+    try:
+        client.post(
+            "/api/media-library/items/bulk",
+            {"action": "move", "ids": [item.pk], "folder": folder.pk},
+            format="json",
+        )
+        client.post(
+            f"/api/media-library/items/{item.pk}/crop",
+            {"crop": CROP_INFO},
+            format="json",
+        )
+    finally:
+        del admin_site.crop_image
+
+    assert log_entries() == [
+        (CHANGE, str(item.pk), "Moved."),
+        (CHANGE, str(item.pk), "Cropped."),
+    ]

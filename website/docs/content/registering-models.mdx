@@ -272,6 +272,35 @@ class ArticleStudio(ModelStudio):
 The return value is the message editors see: a number reports how many
 objects changed, a string is shown as it is.
 
+The built-in actions record every object they change in its history. Your
+own actions record nothing by themselves. To record a change, call
+`record_change` for each object, with `"created"`, `"updated"`,
+`"deleted"`, `"restored"` or `"reordered"` and an optional message. Record a
+deletion before you delete the object:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.actions import bulk_action
+from content_studio.admin import ModelStudio
+from content_studio.signals import record_change
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    @bulk_action(label="Publish", allowed_permissions=["change"])
+    def publish(self, request, queryset):
+        articles = list(queryset)
+        queryset.update(status=Article.Status.PUBLISHED)
+
+        for article in articles:
+            record_change(request, article, "updated", "Published.")
+
+        return len(articles)
+```
+
 The studio's `actions` attribute chooses which actions are offered:
 
 ```python

@@ -24,6 +24,7 @@ from .utils import get_tenant_field_name
 __all__ = [
     "Change",
     "content_changed",
+    "record_change",
 ]
 
 # Sent with changes=[Change, ...] and user. The sender is None.
@@ -78,8 +79,16 @@ def record_change(request, instance, action: str, message: str = "") -> LogEntry
     """
     Record a change made in the admin: log it in the activity log and
     add it to the request's batch once its transaction commits. Outside
-    a batch, the change is sent on its own.
+    a batch, the change is sent on its own. Custom bulk actions call it
+    for each object they change; action is one of "created",
+    "updated", "deleted", "restored" or "reordered", and a deleted
+    object is recorded before it is deleted (deleting clears its pk).
     """
+    if action not in ACTION_FLAGS:
+        raise ValueError(
+            f"Unknown action {action!r}; expected one of {', '.join(ACTION_FLAGS)}."
+        )
+
     model = type(instance)
     entry = LogEntry.objects.create(
         user=request.user,
