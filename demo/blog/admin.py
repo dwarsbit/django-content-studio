@@ -108,4 +108,4 @@ class SiteSettingsStudio(ModelStudio):
 
 @register(models.LandingPage)
 class LandingPageStudio(ModelStudio):
-    edit_main = ["title", "body"]
+    edit_main = ["title", "body", "sections"]

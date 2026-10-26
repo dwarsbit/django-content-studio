@@ -94,6 +94,7 @@ Menu links and embedded pages.
 The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_mapping`. `BaseWidget` is their base type; custom widgets are not supported.
 
 - `BaseWidget`
+- `BlockWidget`
 - `CheckboxWidget`
 - `DateTimeWidget`
 - `DateWidget`
@@ -121,6 +122,7 @@ The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_
 The built-in display formats, to use in `TableColumn(format=...)` and `default_format_mapping`. `BaseFormat` is their base type; custom formats are not supported.
 
 - `BaseFormat`
+- `BlockFormat`
 - `BooleanFormat`
 - `DateFormat`
 - `DateTimeFormat`
@@ -145,6 +147,13 @@ Optional content fields.
 - `MultipleChoiceField`
 - `TagField`
 - `URLPathField`
+
+## `content_studio.blocks`
+
+The block field: an ordered list of content blocks. `Block` is the base type of the blocks you define.
+
+- `Block`
+- `BlockField`
 
 ## `content_studio.models`
 
