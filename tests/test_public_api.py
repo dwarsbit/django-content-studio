@@ -35,6 +35,7 @@ PUBLIC_MODULES = [
     "content_studio.exceptions",
     "content_studio.media_library.fields",
     "content_studio.media_library.models",
+    "content_studio.webhooks.models",
 ]
 
 

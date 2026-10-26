@@ -13,7 +13,12 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-SHIPPED_APPS = ["content_studio", "content_studio_media_library", "password_reset"]
+SHIPPED_APPS = [
+    "content_studio",
+    "content_studio_media_library",
+    "content_studio_webhooks",
+    "password_reset",
+]
 
 
 @pytest.mark.parametrize(

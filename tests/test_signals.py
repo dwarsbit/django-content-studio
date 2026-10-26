@@ -219,3 +219,18 @@ class CustomBulkActionTests(SignalTestCase):
 
         with self.assertRaises(ValueError):
             record_change(request, Article.objects.create(title="a"), "published")
+
+
+class FailingReceiverTests(SignalTestCase):
+    def test_a_failing_receiver_does_not_fail_the_request(self):
+        def broken(**kwargs):
+            raise RuntimeError("broken")
+
+        content_changed.connect(broken)
+        self.addCleanup(content_changed.disconnect, broken)
+
+        with self.assertLogs("content_studio.signals", "ERROR"):
+            response = self.request("post", ARTICLES, {"title": "one"})
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(self.actions(), [["created"]])

@@ -9,6 +9,7 @@ with fifty changes, and a rolled back change is never sent.
 """
 
 import contextvars
+import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
@@ -26,6 +27,8 @@ __all__ = [
     "content_changed",
     "record_change",
 ]
+
+logger = logging.getLogger("content_studio.signals")
 
 # Sent with changes=[Change, ...] and user. The sender is None.
 content_changed = Signal()
@@ -71,8 +74,20 @@ _batch: contextvars.ContextVar[Optional[list[Change]]] = contextvars.ContextVar(
 
 
 def _send(changes: list[Change], user):
-    if changes:
-        content_changed.send(sender=None, changes=list(changes), user=user)
+    if not changes:
+        return
+
+    # Sent after the commit: a failing receiver is logged rather than
+    # failing a request whose changes are already saved.
+    for receiver, result in content_changed.send_robust(
+        sender=None, changes=list(changes), user=user
+    ):
+        if isinstance(result, Exception):
+            logger.error(
+                "content_changed receiver %r failed",
+                receiver,
+                exc_info=(type(result), result, result.__traceback__),
+            )
 
 
 def record_change(request, instance, action: str, message: str = "") -> LogEntry:

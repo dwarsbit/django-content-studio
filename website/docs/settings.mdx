@@ -139,6 +139,28 @@ field without a media library model, or one that is missing or not a
 The tenant model for [multi-tenancy](/docs/multi-tenancy), as an import path
 string. Default: `None`, which turns multi-tenancy off.
 
+## Webhooks
+
+These settings apply when the `content_studio.webhooks` app is installed.
+
+### WEBHOOK_ALLOWED_HOSTS {#webhook_allowed_hosts}
+
+Host names that webhooks may reach although they resolve to a private,
+loopback or link-local address, or use plain HTTP, such as a build server on
+your own network. Default: `[]`. Outside this list, webhooks only connect to
+public addresses, over HTTPS unless `DEBUG` is on.
+
+### WEBHOOK_MAX_ATTEMPTS {#webhook_max_attempts}
+
+How many times a webhook delivery is attempted before it is marked as
+failed. Default: `5`. The wait between attempts grows from 1 minute to 64
+minutes.
+
+### WEBHOOK_TIMEOUT {#webhook_timeout}
+
+How long a webhook request may take to connect and to respond, in seconds.
+Default: `5`.
+
 ## Password reset
 
 ### PASSWORD_RESET_EXPIRATION_TIME {#password_reset_expiration_time}

@@ -74,6 +74,13 @@ DEFAULTS = {
     # limit.
     "MEDIA_LIBRARY_MAX_UPLOAD_SIZE": 50 * 1024 * 1024,
     "TENANT_MODEL": None,
+    # Hosts webhooks may reach although they resolve to a private,
+    # loopback or link-local address, or are served over plain HTTP.
+    "WEBHOOK_ALLOWED_HOSTS": [],
+    # Attempts per webhook delivery before it is marked as failed.
+    "WEBHOOK_MAX_ATTEMPTS": 5,
+    # Seconds a webhook request may take, to connect and to respond.
+    "WEBHOOK_TIMEOUT": 5,
     "PASSWORD_RESET_EXPIRATION_TIME": 10,
     # Rate limit for the password reset endpoints, per IP; None disables
     # throttling.

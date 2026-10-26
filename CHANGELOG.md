@@ -51,6 +51,17 @@
   model, the object's pk and label, the tenant, the user and a
   timestamp. Changes that are rolled back are not sent. Custom bulk
   actions record their changes with `record_change`.
+- **Webhooks.** The optional `content_studio.webhooks` app sends a
+  signed POST request to a URL after changes made in the admin, for
+  example to rebuild a static site. A `Webhook` chooses the events, the
+  models and the tenant it fires on; one request in the admin makes one
+  delivery per webhook, with all its matching changes. Deliveries are
+  sent as Django tasks (directly on Django 5.2 without django-tasks),
+  stored as `WebhookDelivery` with their outcome, and retried with a
+  growing wait by the `content_studio_deliver_webhooks` command.
+  Webhooks only reach public addresses over HTTPS and never follow
+  redirects, unless the host is in the new `WEBHOOK_ALLOWED_HOSTS`
+  setting. New settings `WEBHOOK_MAX_ATTEMPTS` and `WEBHOOK_TIMEOUT`.
 - **Media library changes are recorded in the history.** Uploading,
   editing, deleting, cropping and moving media items are logged in the
   activity log, like changes to content.
