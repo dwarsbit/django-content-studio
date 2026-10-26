@@ -96,7 +96,7 @@ test("blocks are reordered by dragging and added in between", async ({
   await page.evaluate(() => new Promise((resolve) => setTimeout(resolve)));
   await page.keyboard.press("ArrowDown");
   // Drop once the move is through, as the announcement tells.
-  await expect(page.getByText("Image is at position 2 of 3.")).toBeAttached();
+  await expect(page.getByText("Image 1 is over Image 2.")).toBeAttached();
   await page.keyboard.press("Space");
   await expect.poll(order).toEqual(["First", "Second", "Middle"]);
 });

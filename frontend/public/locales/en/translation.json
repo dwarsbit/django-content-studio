@@ -208,12 +208,7 @@
       "remove": "Remove",
       "unknown_type": "Unknown block type: {{type}}",
       "insert": "Add block here",
-      "drag": "Drag {{block}} to reorder",
-      "drag_instructions": "To pick up a block, press space or enter. Move it with the arrow keys, press space or enter to drop it, or escape to cancel.",
-      "drag_start": "Picked up {{block}}.",
-      "drag_over": "{{block}} is at position {{position}} of {{count}}.",
-      "drag_end": "{{block}} dropped at position {{position}} of {{count}}.",
-      "drag_cancel": "Moving {{block}} was canceled."
+      "drag": "Drag {{block}} to reorder"
     },
     "block_format": {
       "count_one": "{{count}} block",

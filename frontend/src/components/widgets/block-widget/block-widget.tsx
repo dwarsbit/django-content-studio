@@ -1,24 +1,10 @@
-import {
-  type Announcements,
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  type UniqueIdentifier,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 import { useState } from "react";
 import { get, useFormContext, useFormState, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { PiPlusBold } from "react-icons/pi";
 
+import { Reorderable } from "@/components/reorderable";
+import { applyMove } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type {
   BlockDefinition,
@@ -99,56 +85,15 @@ export function BlockWidget({
     update([...blocks.slice(0, index), block, ...blocks.slice(index)]);
   }
 
-  const sensors = useSensors(
-    // A few pixels of movement before a drag starts, so clicking the
-    // handle stays a click.
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
+  // The name of a block for screen reader announcements: its type and
+  // its position, as blocks of one type look alike.
+  const labelOf = (id: unknown) => {
+    const index = blocks.findIndex((block) => block.id === id);
+    const type = blocks[index]?.type;
+    const label =
+      definitions.find((d) => d.name === type)?.verbose_name ?? type ?? "";
 
-  function onDragEnd({ active, over }: DragEndEvent) {
-    const from = blocks.findIndex((block) => block.id === active.id);
-    const to = blocks.findIndex((block) => block.id === over?.id);
-
-    if (from !== -1 && to !== -1 && from !== to) {
-      update(moveBlock(blocks, from, to));
-    }
-  }
-
-  // Screen reader announcements while dragging with the keyboard.
-  const labelOf = (id: UniqueIdentifier) => {
-    const block = blocks.find((b) => b.id === id);
-    return (
-      definitions.find((d) => d.name === block?.type)?.verbose_name ??
-      block?.type ??
-      ""
-    );
-  };
-  const positionOf = (id?: UniqueIdentifier) =>
-    blocks.findIndex((block) => block.id === id) + 1;
-  const announcements: Announcements = {
-    onDragStart: ({ active }) =>
-      t("widgets.block_widget.drag_start", { block: labelOf(active.id) }),
-    onDragOver: ({ active, over }) =>
-      over
-        ? t("widgets.block_widget.drag_over", {
-            block: labelOf(active.id),
-            position: positionOf(over.id),
-            count: blocks.length,
-          })
-        : undefined,
-    onDragEnd: ({ active, over }) =>
-      over
-        ? t("widgets.block_widget.drag_end", {
-            block: labelOf(active.id),
-            position: positionOf(over.id),
-            count: blocks.length,
-          })
-        : undefined,
-    onDragCancel: ({ active }) =>
-      t("widgets.block_widget.drag_cancel", { block: labelOf(active.id) }),
+    return `${label} ${index + 1}`;
   };
 
   return (
@@ -166,60 +111,44 @@ export function BlockWidget({
           {t("widgets.block_widget.empty")}
         </div>
       )}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={onDragEnd}
-        accessibility={{
-          announcements,
-          screenReaderInstructions: {
-            draggable: t("widgets.block_widget.drag_instructions"),
-          },
-        }}
+      <Reorderable
+        ids={blocks.map((block) => block.id)}
+        getLabel={labelOf}
+        onMove={(id, move) => update(applyMove(blocks, id, move))}
       >
-        <SortableContext
-          items={blocks.map((block) => block.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div>
-            {blocks.map((block, index) => (
-              <div key={block.id}>
-                {index > 0 && (
-                  <InsertPoint
-                    blocks={definitions}
-                    disabled={isFull}
-                    onSelect={(definition) => add(definition, index)}
-                  />
-                )}
-                <BlockCard
-                  name={name}
-                  index={index}
-                  count={blocks.length}
-                  block={block}
-                  definition={definitions.find((d) => d.name === block.type)}
-                  model={model}
-                  open={openIds.has(block.id) || hasErrors(index)}
-                  canDuplicate={!isFull}
-                  onToggle={() => toggle(block.id)}
-                  onMove={(to) => update(moveBlock(blocks, index, to))}
-                  onDuplicate={() => {
-                    const { blocks: next, copy } = duplicateBlock(
-                      blocks,
-                      index,
-                    );
-
-                    open(copy.id);
-                    update(next);
-                  }}
-                  onRemove={() =>
-                    update(blocks.filter((b) => b.id !== block.id))
-                  }
+        <div>
+          {blocks.map((block, index) => (
+            <div key={block.id}>
+              {index > 0 && (
+                <InsertPoint
+                  blocks={definitions}
+                  disabled={isFull}
+                  onSelect={(definition) => add(definition, index)}
                 />
-              </div>
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+              )}
+              <BlockCard
+                name={name}
+                index={index}
+                count={blocks.length}
+                block={block}
+                definition={definitions.find((d) => d.name === block.type)}
+                model={model}
+                open={openIds.has(block.id) || hasErrors(index)}
+                canDuplicate={!isFull}
+                onToggle={() => toggle(block.id)}
+                onMove={(to) => update(moveBlock(blocks, index, to))}
+                onDuplicate={() => {
+                  const { blocks: next, copy } = duplicateBlock(blocks, index);
+
+                  open(copy.id);
+                  update(next);
+                }}
+                onRemove={() => update(blocks.filter((b) => b.id !== block.id))}
+              />
+            </div>
+          ))}
+        </div>
+      </Reorderable>
       <BlockPicker blocks={definitions} disabled={isFull} onSelect={add} />
       {isFull && (
         <div className="text-xs text-muted-foreground text-center">
