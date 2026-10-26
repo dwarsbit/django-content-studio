@@ -205,7 +205,14 @@
       "more_actions": "Meer acties voor {{block}}",
       "duplicate": "Dupliceren",
       "remove": "Verwijderen",
-      "unknown_type": "Onbekend bloktype: {{type}}"
+      "unknown_type": "Onbekend bloktype: {{type}}",
+      "insert": "Blok hier toevoegen",
+      "drag": "{{block}} verslepen om te ordenen",
+      "drag_instructions": "Druk op spatie of enter om een blok op te pakken. Verplaats het met de pijltjestoetsen, druk op spatie of enter om het neer te zetten, of op escape om te annuleren.",
+      "drag_start": "{{block}} opgepakt.",
+      "drag_over": "{{block}} staat op positie {{position}} van {{count}}.",
+      "drag_end": "{{block}} neergezet op positie {{position}} van {{count}}.",
+      "drag_cancel": "Verplaatsen van {{block}} geannuleerd."
     },
     "block_format": {
       "count_one": "{{count}} blok",

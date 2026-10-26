@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PiPlusBold } from "react-icons/pi";
 
@@ -23,27 +23,40 @@ import { BlockIcon } from "./block-icon";
 export function BlockPicker({
   blocks,
   disabled,
+  trigger,
   onSelect,
+  onOpenChange,
 }: {
   blocks: BlockDefinition[];
   disabled?: boolean;
+  // The button that opens the picker; by default a full-width
+  // "Add block" button.
+  trigger?: ReactNode;
   onSelect(definition: BlockDefinition): void;
+  onOpenChange?(open: boolean): void;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
+  function changeOpen(next: boolean) {
+    setOpen(next);
+    onOpenChange?.(next);
+  }
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={changeOpen}>
       <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled}
-          className="w-full border-dashed shadow-none text-accent-foreground"
-        >
-          <PiPlusBold />
-          {t("widgets.block_widget.add_block")}
-        </Button>
+        {trigger ?? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={disabled}
+            className="w-full border-dashed shadow-none text-accent-foreground"
+          >
+            <PiPlusBold />
+            {t("widgets.block_widget.add_block")}
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="center">
         <Command>
@@ -56,7 +69,7 @@ export function BlockPicker({
                   key={definition.name}
                   value={`${definition.verbose_name} ${definition.description}`}
                   onSelect={() => {
-                    setOpen(false);
+                    changeOpen(false);
                     onSelect(definition);
                   }}
                   className="gap-2.5"
