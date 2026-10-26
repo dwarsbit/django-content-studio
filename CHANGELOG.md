@@ -2,6 +2,16 @@
 
 ## 1.1.0 (unreleased)
 
+- **Block fields.** `BlockField` stores an ordered list of content
+  blocks that editors add, reorder, duplicate and remove in the admin, to
+  build a page body from predefined blocks such as text and images.
+  Define a block as a `Block` subclass with plain model fields, which
+  pick the widgets and validate the block's data; blocks are not models
+  and need no migrations. `max_num` and `min_num` limit the number of
+  blocks, relations in blocks (such as `MediaField`) are stored as
+  primary keys and scoped to the tenant, and HTML in blocks is sanitized
+  on save. System check `content_studio.E018` reports misconfigured
+  block fields.
 - **Read-only fields on the studio.** `readonly_fields` and
   `get_readonly_fields(request, obj=None)` work like the classic Django
   admin's, on studios and inlines: the edit page shows the fields

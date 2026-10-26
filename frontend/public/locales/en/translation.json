@@ -191,6 +191,26 @@
     },
     "date_picker": {
       "placeholder": "Select a date"
+    },
+    "block_widget": {
+      "add_block": "Add block",
+      "search": "Search blocks",
+      "no_results": "No blocks found",
+      "empty": "No blocks yet",
+      "count": "{{count}} of {{max}} blocks",
+      "max_reached": "This field holds at most {{max}} blocks.",
+      "expand": "Expand {{block}}",
+      "collapse": "Collapse {{block}}",
+      "move_up": "Move {{block}} up",
+      "move_down": "Move {{block}} down",
+      "more_actions": "More actions for {{block}}",
+      "duplicate": "Duplicate",
+      "remove": "Remove",
+      "unknown_type": "Unknown block type: {{type}}"
+    },
+    "block_format": {
+      "count_one": "{{count}} block",
+      "count_other": "{{count}} blocks"
     }
   },
   "dashboard": {
