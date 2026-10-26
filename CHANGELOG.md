@@ -3,7 +3,8 @@
 ## 1.1.0 (unreleased)
 
 - **Block fields.** `BlockField` stores an ordered list of content
-  blocks that editors add, reorder, duplicate and remove in the admin, to
+  blocks that editors add (also between two blocks), reorder by dragging
+  or with the keyboard, duplicate and remove in the admin, to
   build a page body from predefined blocks such as text and images.
   Define a block as a `Block` subclass with plain model fields, which
   pick the widgets and validate the block's data; blocks are not models

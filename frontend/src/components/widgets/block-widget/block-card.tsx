@@ -1,3 +1,5 @@
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -5,6 +7,7 @@ import {
   PiArrowUpBold,
   PiCaretDownBold,
   PiCaretRightBold,
+  PiDotsSixVerticalBold,
   PiDotsThreeBold,
   PiWarningBold,
 } from "react-icons/pi";
@@ -70,15 +73,44 @@ export function BlockCard({
   const label = definition?.verbose_name ?? block.type;
   const summary = definition ? blockSummary(definition, block) : "";
   const isOpen = open && definition !== undefined;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
 
   return (
-    <div className="rounded-lg border bg-card shadow-xs" data-testid="block">
+    <div
+      ref={setNodeRef}
+      // Translate, not transform: blocks differ in height and must not
+      // be scaled to each other's size while sorting.
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      className={cn(
+        "rounded-lg border bg-card shadow-xs",
+        isDragging && "relative z-10 shadow-lg",
+      )}
+      data-testid="block"
+    >
       <div
         className={cn(
-          "flex items-center gap-2 py-1.5 pl-1.5 pr-1.5",
+          "flex items-center gap-1 py-1.5 pl-1 pr-1.5",
           isOpen && "border-b bg-muted rounded-t-lg",
         )}
       >
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          aria-label={t("widgets.block_widget.drag", { block: label })}
+          className="size-7 shrink-0 flex items-center justify-center rounded-md text-muted-foreground cursor-grab touch-none hover:bg-accent outline-none focus-visible:ring-3 focus-visible:ring-ring active:cursor-grabbing"
+        >
+          <PiDotsSixVerticalBold aria-hidden className="size-4" />
+        </button>
         <Button
           type="button"
           size="icon-xs"
@@ -95,7 +127,7 @@ export function BlockCard({
         >
           {isOpen ? <PiCaretDownBold /> : <PiCaretRightBold />}
         </Button>
-        <span className="flex items-center gap-1.5 font-semibold text-sm shrink-0">
+        <span className="flex items-center gap-1.5 font-semibold text-sm shrink-0 ml-1">
           <span className="size-6 flex items-center justify-center rounded-md bg-accent text-accent-foreground">
             {definition ? (
               <BlockIcon icon={definition.icon} className="text-sm size-3.5" />
