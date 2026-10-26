@@ -97,8 +97,59 @@ tenant only.
 
 These fields cannot be used in a block: `ManyToManyField` and
 `ManyMediaField`, `FileField` and `ImageField` (upload to the media library
-and use a `MediaField` instead), auto fields and another `BlockField`.
-System check [`content_studio.E018`](/docs/system-checks) reports them.
+and use a `MediaField` instead), and auto fields. A `BlockField` can, one
+level deep: see [Blocks inside blocks](#blocks-inside-blocks). System check
+[`content_studio.E018`](/docs/system-checks) reports the fields that cannot
+be used.
+
+## Blocks inside blocks
+
+A block can have block fields of its own, for layouts such as columns or a
+section with a background:
+
+```python
+# blog/models.py (a fragment; TextBlock and ImageBlock as above)
+class ColumnsBlock(Block):
+    left = BlockField(blocks=[TextBlock, ImageBlock], blank=True, max_num=4)
+    right = BlockField(blocks=[TextBlock, ImageBlock], blank=True, max_num=4)
+
+    class Meta:
+        description = "Two columns of blocks"
+        icon = "ph-bold ph-columns"
+
+
+class LandingPage(models.Model):
+    title = models.CharField(max_length=200)
+    sections = BlockField(blocks=[TextBlock, ImageBlock, ColumnsBlock], max_num=20)
+
+    def __str__(self):
+        return self.title
+```
+
+On the edit page, each block field of the block is a list of blocks inside
+the block's card, with the same options as the page's own list. Editors
+drag blocks within a list and between lists, such as from one column to
+the other or out to the page, as long as the list takes that kind of block
+and has room for it.
+
+Blocks inside blocks go one level deep: the blocks of `left` and `right`
+cannot have block fields themselves. Their options, such as `max_num` and
+`blank`, apply per list. Leave out `blank=True` to require at least one
+block in each list.
+
+In the block's template, render a list with `render_blocks`:
+
+```django
+{# blog/templates/blog/blocks/columns.html #}
+{% load content_studio %}
+<div class="columns">
+  <div>{% render_blocks value.left %}</div>
+  <div>{% render_blocks value.right %}</div>
+</div>
+```
+
+The related objects of the blocks inside blocks load together with those
+of the page, still with one query per related model.
 
 ## Limit the number of blocks
 

@@ -13,8 +13,10 @@
   primary keys and scoped to the tenant, and HTML in blocks is sanitized
   on save. In templates, `{% render_blocks page.sections %}` (from the
   `content_studio` template library) renders each block with its own
-  template, with related objects loaded in one query per model. System
-  check `content_studio.E018` reports misconfigured block fields.
+  template, with related objects loaded in one query per model. A block
+  can have block fields of its own, one level deep, for layouts such as
+  columns; editors drag blocks between those lists and the page's own.
+  System check `content_studio.E018` reports misconfigured block fields.
 - **Read-only fields on the studio.** `readonly_fields` and
   `get_readonly_fields(request, obj=None)` work like the classic Django
   admin's, on studios and inlines: the edit page shows the fields

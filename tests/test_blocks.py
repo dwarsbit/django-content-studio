@@ -16,7 +16,12 @@ from django.test.utils import CaptureQueriesContext
 from content_studio.blocks import Block, BlockErrors, BlockField, BlockList
 from content_studio.serializers import ModelSerializer
 from tests.test_e2e_crud import AuthenticatedTestCase
-from tests.testapp.models import Category, CategoryLinkBlock, LandingPage, TextBlock
+from tests.testapp.models import (
+    Category,
+    CategoryLinkBlock,
+    LandingPage,
+    TextBlock,
+)
 
 body_field = LandingPage._meta.get_field("body")
 
@@ -206,7 +211,7 @@ def test_field_metadata_describes_the_blocks():
     assert data["max_num"] == 3
     assert data["min_num"] is None
 
-    text_block, link_block = data["blocks"]
+    text_block, link_block, columns_block = data["blocks"]
     assert text_block["name"] == "text"
     assert text_block["description"] == "Rich text"
     assert text_block["icon"] == "ph-bold ph-text-t"
@@ -214,6 +219,11 @@ def test_field_metadata_describes_the_blocks():
     assert text_block["fields"]["body"]["required"] is True
     assert text_block["fields"]["heading"]["max_length"] == 50
     assert link_block["fields"]["category"]["related_model"] == "testapp.category"
+    # A block field in a block describes its own blocks.
+    left = columns_block["fields"]["left"]
+    assert left["type"] == "BlockField"
+    assert [block["name"] for block in left["blocks"]] == ["text", "category_link"]
+    assert left["max_num"] == 2
 
 
 # System checks
@@ -513,3 +523,272 @@ def test_get_context_adds_to_the_template_context():
 
     assert context["words"] == 3
     assert context["value"] == {"quote": "Less is more"}
+
+
+# Blocks inside blocks
+
+
+def columns(left=(), right=(), id="cols"):
+    return {
+        "id": id,
+        "type": "columns",
+        "data": {"left": list(left), "right": list(right)},
+    }
+
+
+@pytest.mark.django_db
+def test_blocks_inside_blocks_are_cleaned():
+    news = Category.objects.create(name="News")
+
+    cleaned = body_field.clean_blocks(
+        [
+            columns(
+                left=[text(heading="Left")],
+                right=[
+                    {
+                        "id": "r",
+                        "type": "category_link",
+                        "data": {"category": {"id": news.pk}},
+                    }
+                ],
+            )
+        ]
+    )
+
+    left, right = cleaned[0]["data"]["left"], cleaned[0]["data"]["right"]
+    assert left[0]["data"] == {"heading": "Left", "body": "<p>Hi</p>"}
+    assert left[0]["id"]
+    assert right == [
+        {
+            "id": "r",
+            "type": "category_link",
+            "data": {"category": news.pk, "published": None},
+        }
+    ]
+
+
+def test_a_missing_block_field_in_a_block_is_empty():
+    cleaned = body_field.clean_blocks([{"id": "c", "type": "columns", "data": {}}])
+
+    assert cleaned[0]["data"] == {"left": [], "right": []}
+
+
+@pytest.mark.django_db
+def test_errors_inside_blocks_are_nested():
+    with pytest.raises(BlockErrors) as e:
+        body_field.clean_blocks(
+            [
+                text(),
+                columns(
+                    left=[text(), text(body="")],
+                    right=[text(), text(), text()],
+                ),
+            ]
+        )
+
+    assert e.value.errors == {
+        1: {
+            "left": {1: {"body": ["This field cannot be blank."]}},
+            "right": ["Use at most 2 blocks."],
+        }
+    }
+    assert e.value.as_data() == {
+        "1": {
+            "data": {
+                "left": {"1": {"data": {"body": ["This field cannot be blank."]}}},
+                "right": ["Use at most 2 blocks."],
+            }
+        }
+    }
+    assert e.value.as_validation_error().messages == [
+        "Block 2, left, block 2, body: This field cannot be blank.",
+        "Block 2, right: Use at most 2 blocks.",
+    ]
+
+
+@pytest.mark.django_db
+def test_saving_sanitizes_html_inside_blocks():
+    page = LandingPage.objects.create(
+        title="Spring",
+        body=[
+            columns(left=[{"id": "a", **text(body="<p>Hi<script>x()</script></p>")}])
+        ],
+    )
+    page.refresh_from_db()
+
+    assert page.body[0]["data"]["left"][0]["data"]["body"] == "<p>Hi</p>"
+
+
+@pytest.mark.django_db
+def test_blocks_inside_blocks_bind_with_one_query_per_model():
+    news, events = Category.objects.create(name="News"), Category.objects.create(
+        name="Events"
+    )
+    page = LandingPage(
+        title="Spring",
+        body=[
+            {"id": "a", "type": "category_link", "data": {"category": news.pk}},
+            columns(
+                left=[
+                    {
+                        "id": "b",
+                        "type": "category_link",
+                        "data": {"category": events.pk},
+                    }
+                ],
+                right=[text(heading="Right")],
+            ),
+        ],
+    )
+
+    with CaptureQueriesContext(connection) as queries:
+        blocks = page.body.blocks
+        left = blocks[1].value["left"]
+        right = blocks[1].value["right"]
+        left_blocks, right_blocks = left.blocks, right.blocks
+
+    assert len(queries) == 1
+    assert isinstance(left, BlockList)
+    assert left_blocks[0].value["category"] == events
+    assert right_blocks[0].value["heading"] == "Right"
+
+
+@pytest.mark.django_db
+@override_settings(
+    TEMPLATES=[
+        {
+            "BACKEND": "django.template.backends.django.DjangoTemplates",
+            "OPTIONS": {
+                "loaders": [
+                    (
+                        "django.template.loaders.locmem.Loader",
+                        {
+                            **BLOCK_TEMPLATES,
+                            "testapp/blocks/columns.html": (
+                                "{% load content_studio %}"
+                                "<div>{% render_blocks value.left %}</div>"
+                                "<div>{% render_blocks value.right %}</div>"
+                            ),
+                        },
+                    )
+                ],
+            },
+        }
+    ]
+)
+def test_blocks_inside_blocks_render_with_render_blocks():
+    page = LandingPage(
+        title="Spring",
+        body=[columns(left=[text(body="L")], right=[text(body="R", heading="H")])],
+    )
+
+    html = render_to_string("page.html", {"page": page})
+
+    assert html == ("<div><section>|L</section></div><div><section>H|R</section></div>")
+
+
+def test_blocks_inside_blocks_go_one_level_deep():
+    class InnerBlock(Block):
+        items = BlockField(blocks=[TextBlock])
+
+    class OuterBlock(Block):
+        inner = BlockField(blocks=[InnerBlock])
+
+    errors = BlockField(blocks=[OuterBlock])._check_blocks()
+
+    assert [error.id for error in errors] == ["content_studio.E018"]
+    assert "one level deep" in errors[0].msg
+
+
+def test_block_fields_in_blocks_are_checked():
+    class EmptyColumnsBlock(Block):
+        left = BlockField(blocks=[])
+
+    errors = BlockField(blocks=[EmptyColumnsBlock])._check_blocks()
+
+    assert [error.msg for error in errors] == [
+        "EmptyColumnsBlock.left: BlockField needs at least one block in blocks."
+    ]
+
+
+class NestedBlockApiTests(AuthenticatedTestCase):
+    url = "/api/content/testapp.landingpage"
+
+    def setUp(self):
+        self.client = self.client_for(self.create_user(superuser=True))
+        self.category = Category.objects.create(name="News")
+
+    def test_relations_inside_blocks_round_trip(self):
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Spring",
+                "body": [
+                    columns(
+                        right=[
+                            {
+                                "id": "r",
+                                "type": "category_link",
+                                "data": {"category": {"id": self.category.pk}},
+                            }
+                        ]
+                    )
+                ],
+            },
+            format="json",
+        )
+
+        assert response.status_code == 201, response.json()
+        page = LandingPage.objects.get()
+        assert page.body[0]["data"]["right"][0]["data"]["category"] == self.category.pk
+
+        response = self.client.get(f"{self.url}/{page.pk}")
+        right = response.json()["body"][0]["data"]["right"]
+        assert right[0]["data"]["category"] == {
+            "id": self.category.pk,
+            "__str__": "News",
+        }
+        # The stored value is not touched by the representation.
+        page.refresh_from_db()
+        assert page.body[0]["data"]["right"][0]["data"]["category"] == self.category.pk
+
+    def test_errors_inside_blocks_are_keyed_by_path(self):
+        response = self.client.post(
+            self.url,
+            {"title": "Spring", "body": [columns(left=[text(body="")])]},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert response.json() == {
+            "body": {
+                "0": {
+                    "data": {
+                        "left": {
+                            "0": {"data": {"body": ["This field cannot be blank."]}}
+                        }
+                    }
+                }
+            }
+        }
+
+    def test_relation_pickers_resolve_fields_inside_blocks(self):
+        response = self.client.post(
+            f"{self.url}/relations/body.columns.left.category_link.category",
+            {"search": ""},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        assert response.json() == [{"id": str(self.category.pk), "__str__": "News"}]
+
+        for name in [
+            "body.columns.left",
+            "body.columns.left.category_link",
+            "body.columns.middle.text.body",
+            "body.text.body.text.body",
+        ]:
+            response = self.client.post(
+                f"{self.url}/relations/{name}", {"search": ""}, format="json"
+            )
+            assert response.status_code == 400, name

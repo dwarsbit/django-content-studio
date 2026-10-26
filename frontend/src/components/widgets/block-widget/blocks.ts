@@ -45,12 +45,39 @@ export function moveBlock(
   return moved;
 }
 
+/**
+ * A copy of a block with new ids, for it and for the blocks inside it:
+ * ids are unique across all lists of a block field.
+ */
+function copyBlock(block: BlockValue): BlockValue {
+  const data = Object.fromEntries(
+    Object.entries(block.data ?? {}).map(([name, value]) => [
+      name,
+      Array.isArray(value) && value.every(isBlockValue)
+        ? value.map(copyBlock)
+        : structuredClone(value),
+    ]),
+  );
+
+  return { ...block, id: newBlockId(), data };
+}
+
+function isBlockValue(value: unknown): value is BlockValue {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    "type" in value &&
+    "data" in value
+  );
+}
+
 /** A copy of the block, with its own id, right after the original. */
 export function duplicateBlock(
   blocks: BlockValue[],
   index: number,
 ): { blocks: BlockValue[]; copy: BlockValue } {
-  const copy = { ...structuredClone(blocks[index]), id: newBlockId() };
+  const copy = copyBlock(blocks[index]);
 
   return {
     blocks: [...blocks.slice(0, index + 1), copy, ...blocks.slice(index + 1)],
@@ -89,4 +116,143 @@ export function blockSummary(
   }
 
   return "";
+}
+
+/**
+ * A list of blocks in a block field: the field's own list ("root"), or a
+ * block field inside one of its blocks, "<block id>:<field name>".
+ */
+export type ListId = string;
+
+export const ROOT_LIST: ListId = "root";
+
+export function nestedListId(blockId: string, field: string): ListId {
+  return `${blockId}:${field}`;
+}
+
+function parseListId(list: ListId): { blockId: string; field: string } | null {
+  if (list === ROOT_LIST) {
+    return null;
+  }
+
+  const at = list.lastIndexOf(":");
+  return { blockId: list.slice(0, at), field: list.slice(at + 1) };
+}
+
+function asBlocks(value: unknown): BlockValue[] {
+  return Array.isArray(value) ? (value as BlockValue[]) : [];
+}
+
+/** The blocks of a list, from the field's value. */
+export function getList(root: BlockValue[], list: ListId): BlockValue[] {
+  const ref = parseListId(list);
+
+  if (!ref) {
+    return root;
+  }
+
+  const parent = root.find((block) => block.id === ref.blockId);
+  return asBlocks(parent?.data?.[ref.field]);
+}
+
+/** The field's value with the blocks of a list replaced. */
+export function setList(
+  root: BlockValue[],
+  list: ListId,
+  blocks: BlockValue[],
+): BlockValue[] {
+  const ref = parseListId(list);
+
+  if (!ref) {
+    return blocks;
+  }
+
+  return root.map((block) =>
+    block.id === ref.blockId
+      ? { ...block, data: { ...block.data, [ref.field]: blocks } }
+      : block,
+  );
+}
+
+/** The list a block is in, and where, or null. */
+export function findBlock(
+  root: BlockValue[],
+  id: string,
+): { list: ListId; index: number } | null {
+  const index = root.findIndex((block) => block.id === id);
+
+  if (index !== -1) {
+    return { list: ROOT_LIST, index };
+  }
+
+  for (const parent of root) {
+    for (const [field, value] of Object.entries(parent.data ?? {})) {
+      const nested = asBlocks(value);
+      const at = nested.findIndex(
+        (block) => block && typeof block === "object" && block.id === id,
+      );
+
+      if (at !== -1) {
+        return { list: nestedListId(parent.id, field), index: at };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * The field's value with a block moved to index of a list (counted
+ * without the block), within its list or into another one.
+ */
+export function moveBlockTo(
+  root: BlockValue[],
+  id: string,
+  list: ListId,
+  index: number,
+): BlockValue[] {
+  const from = findBlock(root, id);
+
+  if (!from) {
+    return root;
+  }
+
+  const block = getList(root, from.list)[from.index];
+  const removed = setList(
+    root,
+    from.list,
+    getList(root, from.list).filter((other) => other.id !== id),
+  );
+  const target = getList(removed, list);
+  const at = Math.max(0, Math.min(index, target.length));
+
+  return setList(removed, list, [
+    ...target.slice(0, at),
+    block,
+    ...target.slice(at),
+  ]);
+}
+
+/**
+ * Whether a block may move into a list: the list takes its type, has
+ * room for it, and is not inside the block itself.
+ */
+export function canMoveInto(
+  block: BlockValue,
+  list: ListId,
+  {
+    definitions,
+    count,
+    maxNum,
+  }: {
+    definitions: BlockDefinition[];
+    count: number;
+    maxNum: number | null;
+  },
+): boolean {
+  return (
+    parseListId(list)?.blockId !== block.id &&
+    definitions.some((definition) => definition.name === block.type) &&
+    (maxNum === null || count < maxNum)
+  );
 }

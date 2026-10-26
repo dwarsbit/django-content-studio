@@ -584,19 +584,21 @@ class BaseModelViewSet(ModelViewSet):
 def get_relation_field(model, field_name):
     """
     A model field, or a field of a block in a BlockField, named as
-    "<block field>.<block type>.<field>".
+    "<block field>.<block type>.<field>", and so on for blocks inside
+    blocks: "<block field>.<block type>.<block field>.<block type>.<field>".
     """
     from .blocks import BlockField
 
     name, *block_path = field_name.split(".")
     field = model._meta.get_field(name)
 
-    if not block_path:
-        return field
-
-    if not isinstance(field, BlockField) or len(block_path) != 2:
+    if len(block_path) % 2:
         raise FieldDoesNotExist(field_name)
 
-    block_type, block_field = block_path
+    for block_type, block_field in zip(block_path[::2], block_path[1::2]):
+        if not isinstance(field, BlockField):
+            raise FieldDoesNotExist(field_name)
 
-    return field.block_types[block_type].get_fields()[block_field]
+        field = field.block_types[block_type].get_fields()[block_field]
+
+    return field

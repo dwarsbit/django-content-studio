@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Locator, test } from "@playwright/test";
 
 import { fieldByLabel, login, uniqueSuffix } from "./helpers";
 
@@ -99,4 +99,89 @@ test("blocks are reordered by dragging and added in between", async ({
   await expect(page.getByText("Image 1 is over Image 2.")).toBeAttached();
   await page.keyboard.press("Space");
   await expect.poll(order).toEqual(["First", "Second", "Middle"]);
+});
+
+test("blocks move between the lists of blocks inside blocks", async ({
+  page,
+}) => {
+  await page.goto("/admin/content/demo_blog.landingpage/new");
+  await fieldByLabel(page, "title").fill(`Columns page ${uniqueSuffix()}`);
+
+  const root = page.getByTestId("block-list");
+  await root
+    .getByRole("button", { name: "Add block", exact: true })
+    .last()
+    .click();
+  await page.getByRole("option", { name: /Columns/ }).click();
+
+  const columns = page.getByTestId("nested-block-list");
+  const addText = async (column: number, text: string) => {
+    await columns
+      .nth(column)
+      .getByRole("button", { name: "Add block", exact: true })
+      .click();
+    await page.getByRole("option", { name: /Text/ }).click();
+    await columns.nth(column).locator("[contenteditable=true]").last().click();
+    await page.keyboard.type(text);
+  };
+  await addText(0, "Left one");
+  await addText(0, "Left two");
+  await addText(1, "Right one");
+
+  // The texts of a column's blocks, from their (collapsed) summaries.
+  const texts = (scope: Locator) =>
+    scope
+      .getByTestId("block")
+      .locator("[contenteditable=true]")
+      .allTextContents();
+
+  for (const column of [0, 1]) {
+    const collapse = columns
+      .nth(column)
+      .getByRole("button", { name: "Collapse Text" });
+    while ((await collapse.count()) > 0) {
+      await collapse.first().click();
+    }
+  }
+
+  async function drag(handle: Locator, target: Locator, offset: number) {
+    const from = (await handle.boundingBox())!;
+    const to = (await target.boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2, to.y + offset, {
+      steps: 15,
+    });
+    await page.mouse.up();
+  }
+
+  // The second block of the left column, below the block on the right.
+  const rightBlock = columns.nth(1).getByTestId("block").first();
+  await drag(
+    columns.nth(0).getByRole("button", { name: "Drag Text to reorder" }).nth(1),
+    rightBlock,
+    (await rightBlock.boundingBox())!.height - 5,
+  );
+  await expect.poll(() => texts(columns.nth(0))).toEqual(["Left one"]);
+  await expect
+    .poll(() => texts(columns.nth(1)))
+    .toEqual(["Right one", "Left two"]);
+
+  // A columns block does not go inside a column.
+  await drag(
+    page.getByRole("button", { name: "Drag Columns to reorder" }),
+    columns.nth(0).getByTestId("block").first(),
+    10,
+  );
+  await expect(columns).toHaveCount(2);
+
+  // dnd-kit ignores clicks for 50ms after a drag, so the click that ends
+  // a drag never counts as one; a click this fast only happens in a test.
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 60)));
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page).toHaveURL(/\/content\/demo_blog\.landingpage\/\d+$/);
+  await page.reload();
+  await expect
+    .poll(() => texts(page.getByTestId("nested-block-list").nth(1)))
+    .toEqual(["Right one", "Left two"]);
 });
