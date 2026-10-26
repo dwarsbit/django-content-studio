@@ -1,0 +1,207 @@
+# 🏗️ Block fields
+
+A block field holds an ordered list of content blocks, such as text and
+images. Editors add, reorder and remove blocks freely, so they can build a
+page body from the blocks you define. Use it for content an editor
+composes; give anything with a fixed place on the page, such as a page's
+title or header image, a regular field.
+
+## Define blocks
+
+A block is a `Block` subclass that declares its fields as Django model
+fields. Add the blocks to a `BlockField` on your model:
+
+```python
+# blog/models.py
+from django.db import models
+
+from content_studio.blocks import Block, BlockField
+from content_studio.fields import HTMLField
+from content_studio.media_library.fields import MediaField
+
+
+class TextBlock(Block):
+    body = HTMLField()
+
+    class Meta:
+        description = "Rich text with headings and lists"
+        icon = "ph-bold ph-text-t"
+
+
+class ImageBlock(Block):
+    image = MediaField("blog.MediaItem", blank=False)
+    caption = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        description = "An image from the media library"
+        icon = "ph-bold ph-image"
+
+
+class LandingPage(models.Model):
+    title = models.CharField(max_length=200)
+    sections = BlockField(blocks=[TextBlock, ImageBlock], max_num=20)
+
+    def __str__(self):
+        return self.title
+```
+
+Register the model as usual. The edit page shows the block field with
+its own widget; the studio needs no configuration for it:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import LandingPage
+
+
+@register(LandingPage)
+class LandingPageStudio(ModelStudio):
+    table_display = ["title"]
+```
+
+On the edit page, editors add a block from a searchable list, also between
+two blocks, and edit its fields with the same widgets as the fields of a
+model. They reorder blocks by dragging or with the keyboard, and collapse,
+duplicate and remove them. Tables show the number of blocks.
+
+Blocks are not models. They have no table: the blocks are stored as JSON in
+the block field's column, so adding or changing a block needs no migration.
+
+## Block options
+
+Set these on the block's `Meta`:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `name` | The class name without `Block`, in snake case: `ImageBlock` is `"image"` | The block's type in the stored data. Set it to rename the class without breaking stored blocks. |
+| `verbose_name` | From the class name: `"Image"` | The block's name in the admin. |
+| `description` | `""` | A short description in the list of blocks. |
+| `icon` | A generic block icon | A [Phosphor](https://phosphoricons.com) icon class, such as `"ph-bold ph-image"`. |
+| `template_name` | `"<app_label>/blocks/<name>.html"` | The template that renders the block. See [Render blocks in templates](#render-blocks-in-templates). |
+
+Blocks inherit the fields of their parent blocks, but not their `Meta`.
+
+## Fields in blocks
+
+A block field validates its value the way the model field does: required
+fields, `max_length`, choices and validators all apply. HTML in an
+`HTMLField` is sanitized when the page is saved, as on a model.
+
+Relations, such as a `ForeignKey` or a `MediaField`, store the related
+object's primary key. There is no database constraint behind it: when the
+related object is deleted, the block keeps its key, and the admin and your
+templates read it as empty. Editors pick related objects of the selected
+tenant only.
+
+These fields cannot be used in a block: `ManyToManyField` and
+`ManyMediaField`, `FileField` and `ImageField` (upload to the media library
+and use a `MediaField` instead), auto fields and another `BlockField`.
+System check [`content_studio.E018`](/docs/system-checks) reports them.
+
+## Limit the number of blocks
+
+`max_num` and `min_num` limit the total number of blocks:
+
+```python
+sections = BlockField(blocks=[TextBlock, ImageBlock], min_num=2, max_num=20)
+```
+
+A block field without `blank=True` needs at least one block, like any
+required field. With `max_num`, the admin shows the count and stops
+adding blocks at the limit.
+
+## Render blocks in templates
+
+The `render_blocks` tag renders each block with its block's template:
+
+```django
+{# blog/templates/blog/landing_page.html #}
+{% load content_studio %}
+<h1>{{ page.title }}</h1>
+{% render_blocks page.sections %}
+```
+
+By default the template of a block is `<app_label>/blocks/<name>.html`
+for the app that defines the block. It gets the block as `block` (with
+`block.id` and `block.type`) and the block's field values as `value`, with
+related objects instead of primary keys:
+
+```django
+{# blog/templates/blog/blocks/text.html #}
+<section>{{ value.body|safe }}</section>
+```
+
+```django
+{# blog/templates/blog/blocks/image.html #}
+<figure>
+  <img src="{{ value.image.file.url }}" alt="{{ value.caption }}">
+  {% if value.caption %}<figcaption>{{ value.caption }}</figcaption>{% endif %}
+</figure>
+```
+
+The related objects of all blocks load together, with one query per
+related model. To add to a block's template context, override
+`get_context`:
+
+```python
+# blog/models.py (a fragment)
+class TextBlock(Block):
+    body = HTMLField()
+
+    @classmethod
+    def get_context(cls, block):
+        context = super().get_context(block)
+        context["anchor"] = f"section-{block.id}"
+        return context
+```
+
+To render the blocks yourself, loop over `blocks`. Each block also renders
+on its own:
+
+```django
+{# blog/templates/blog/landing_page.html #}
+{% for block in page.sections.blocks %}
+  {% if block.type == "image" %}
+    {{ block.render }}
+  {% else %}
+    <div class="prose">{{ block.render }}</div>
+  {% endif %}
+{% endfor %}
+```
+
+In Python, `page.sections` is a list of the stored blocks, and
+`page.sections.blocks` the same blocks with their values.
+
+## Change blocks later
+
+Because blocks are stored as JSON, existing pages keep the shape they were
+saved with:
+
+- **A new field** takes its default on existing blocks. A new required
+  field without a default asks the editor for a value on the next save.
+- **A renamed block class** keeps its stored blocks when `Meta.name` keeps
+  the old name.
+- **A removed block** stays in the stored data. The admin shows it as an
+  unknown block that editors can remove, the page cannot be saved until
+  they do, and templates leave it out.
+
+To find the pages that use a block, use a
+[JSON containment lookup](https://docs.djangoproject.com/en/stable/topics/db/queries/#contains),
+which works on PostgreSQL, MySQL and MariaDB:
+`LandingPage.objects.filter(sections__contains=[{"type": "image"}])`.
+
+## Without a block field
+
+A block field is optional. With plain Django, a related model does the same
+job: a `Section` model with a foreign key to the page, a type and an
+ordering field, edited as an [inline](/docs/content/registering-models#inlines) on
+the page's studio. Each section is then a row in its own table, which you
+can query and protect with database constraints.
+
+## Related pages
+
+- [Widgets](/docs/forms/widgets)
+- [Media library](/docs/media-library)
+- [System checks](/docs/system-checks)
