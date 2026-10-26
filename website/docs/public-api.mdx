@@ -17,6 +17,11 @@ The public API consists of:
   `get_readonly_fields`, `get_prepopulated_fields`, `get_list_item_display`,
   `get_relation_display`, `get_tenants`, `get_thumbnail`,
   `get_media_serializer_fields` and `crop_image`;
+- the documented options and methods of blocks: the `Meta` options of
+  `Block`, `get_context` and `get_template_name`, and the
+  [values of a block field](/docs/content/block-fields#render-blocks-in-templates)
+  (`blocks`, and each block's `id`, `type`, `value` and `render`);
+- the `render_blocks` tag of the `content_studio` template library;
 - every [setting](/docs/settings) in `CONTENT_STUDIO`;
 - the [system check](/docs/system-checks) IDs, but not their messages;
 - `content_studio.urls` and the `content_studio.contrib.password_reset` app,

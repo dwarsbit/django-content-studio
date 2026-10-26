@@ -4,12 +4,16 @@ field metadata and the API round trip.
 """
 
 import datetime
+from types import SimpleNamespace
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import connection, models
+from django.template.loader import render_to_string
+from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 
-from content_studio.blocks import Block, BlockErrors, BlockField
+from content_studio.blocks import Block, BlockErrors, BlockField, BlockList
 from content_studio.serializers import ModelSerializer
 from tests.test_e2e_crud import AuthenticatedTestCase
 from tests.testapp.models import Category, CategoryLinkBlock, LandingPage, TextBlock
@@ -362,3 +366,150 @@ class BlockFieldApiTests(AuthenticatedTestCase):
             )
 
             assert response.status_code == 400, name
+
+
+# Rendering
+
+BLOCK_TEMPLATES = {
+    "testapp/blocks/text.html": "<section>{{ value.heading }}|{{ value.body|safe }}</section>",
+    "links/category.html": "<a>{{ value.category.name }} {{ value.published|date:'Y' }} {{ block.id }} {{ site }}</a>",
+    "page.html": "{% load content_studio %}{% render_blocks page.body %}",
+    "page_slice.html": "{% load content_studio %}{% render_blocks blocks %}",
+}
+
+TEMPLATE_SETTINGS = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "OPTIONS": {
+            "loaders": [("django.template.loaders.locmem.Loader", BLOCK_TEMPLATES)],
+        },
+    }
+]
+
+
+class LinkBlock(Block):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    published = models.DateField(null=True, blank=True)
+
+    class Meta:
+        name = "category_link"
+        template_name = "links/category.html"
+
+
+def test_template_names_default_to_the_app_and_block_name():
+    assert TextBlock.get_template_name() == "testapp/blocks/text.html"
+    assert LinkBlock.get_template_name() == "links/category.html"
+
+
+@pytest.mark.django_db
+def test_the_value_is_a_block_list():
+    page = LandingPage(title="Spring", body=[text()])
+
+    assert isinstance(page.body, BlockList)
+    assert page.body == [text()]
+
+    page.save()
+    page.refresh_from_db()
+
+    assert isinstance(page.body, BlockList)
+    assert page.body.field is body_field
+
+
+@pytest.mark.django_db
+def test_blocks_have_python_values_and_related_objects():
+    news, events = Category.objects.create(name="News"), Category.objects.create(
+        name="Events"
+    )
+    gone = Category.objects.create(name="Gone")
+    page = LandingPage(
+        title="Spring",
+        body=[
+            {
+                "id": "a",
+                "type": "category_link",
+                "data": {"category": news.pk, "published": "2026-03-01"},
+            },
+            {"id": "b", "type": "hero", "data": {}},
+            {"id": "c", "type": "category_link", "data": {"category": events.pk}},
+            {"id": "d", "type": "category_link", "data": {"category": gone.pk}},
+        ],
+    )
+    gone.delete()
+
+    with CaptureQueriesContext(connection) as queries:
+        blocks = page.body.blocks
+
+    assert len(queries) == 1  # one query per related model
+    assert [block.id for block in blocks] == ["a", "c", "d"]  # unknown type left out
+    assert blocks[0].value == {
+        "category": news,
+        "published": datetime.date(2026, 3, 1),
+    }
+    assert blocks[1].value == {"category": events, "published": None}
+    assert blocks[2].value["category"] is None
+    assert blocks[0].block is CategoryLinkBlock
+
+
+@pytest.mark.django_db
+@override_settings(TEMPLATES=TEMPLATE_SETTINGS)
+def test_render_blocks_renders_each_block_with_its_template():
+    news = Category.objects.create(name="News")
+    field = BlockField(blocks=[TextBlock, LinkBlock])
+    field.set_attributes_from_name("body")
+    blocks = BlockList(
+        [
+            text(body="<p>Hi</p>", heading="Intro"),
+            {
+                "id": "x",
+                "type": "category_link",
+                "data": {"category": news.pk, "published": "2026-03-01"},
+            },
+        ],
+        field,
+    )
+
+    html = render_to_string(
+        "page.html", {"page": SimpleNamespace(body=blocks), "site": "Blog"}
+    )
+
+    assert html == "<section>Intro|<p>Hi</p></section><a>News 2026 x Blog</a>"
+
+
+@pytest.mark.django_db
+@override_settings(TEMPLATES=TEMPLATE_SETTINGS)
+def test_render_blocks_takes_a_list_of_blocks():
+    page = LandingPage(title="Spring", body=[text(body="One"), text(body="Two")])
+
+    html = render_to_string("page_slice.html", {"blocks": page.body.blocks[1:]})
+
+    assert html == "<section>|Two</section>"
+
+
+@override_settings(TEMPLATES=TEMPLATE_SETTINGS)
+def test_a_block_renders_on_its_own():
+    page = LandingPage(title="Spring", body=[text(heading="Intro")])
+
+    assert page.body.blocks[0].render() == "<section>Intro|<p>Hi</p></section>"
+
+
+class QuoteBlock(Block):
+    quote = models.TextField()
+
+    @classmethod
+    def get_context(cls, block):
+        return {
+            **super().get_context(block),
+            "words": len(block.value["quote"].split()),
+        }
+
+
+def test_get_context_adds_to_the_template_context():
+    field = BlockField(blocks=[QuoteBlock])
+    blocks = BlockList(
+        [{"id": "q", "type": "quote", "data": {"quote": "Less is more"}}], field
+    )
+
+    context = QuoteBlock.get_context(blocks.blocks[0])
+
+    assert context["words"] == 3
+    assert context["value"] == {"quote": "Less is more"}
