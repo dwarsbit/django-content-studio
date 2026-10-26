@@ -3,6 +3,7 @@ import { type ComponentType, useMemo } from "react";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import { FieldWidget, type Model, type ModelField } from "@/types";
 
+import { BlockWidget } from "./block-widget/block-widget";
 import { CheckboxWidget } from "./checkbox-widget";
 import { DateTimeWidget } from "./date-time-widget";
 import { DateWidget } from "./date-widget";
@@ -44,6 +45,7 @@ type WidgetComponent = ComponentType<{
 // renderer, so it is asserted once here rather than weakened with `any`
 // in every widget.
 const WIDGETS = {
+  [FieldWidget.BlockWidget]: BlockWidget,
   [FieldWidget.CheckboxWidget]: CheckboxWidget,
   [FieldWidget.DateWidget]: DateWidget,
   [FieldWidget.DateTimeWidget]: DateTimeWidget,

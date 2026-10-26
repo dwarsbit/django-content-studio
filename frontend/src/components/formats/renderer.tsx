@@ -3,6 +3,7 @@ import { type ComponentType, useMemo } from "react";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import { FieldFormat, type ModelField } from "@/types";
 
+import { BlockFormat } from "./block-format";
 import { BooleanFormat } from "./boolean-format";
 import { ChoiceFormat } from "./choice-format";
 import { DateFormat } from "./date-format";
@@ -22,6 +23,7 @@ type FormatComponent = ComponentType<{
 }>;
 
 const FORMATS: Partial<Record<FieldFormat, FormatComponent>> = {
+  [FieldFormat.BlockFormat]: BlockFormat,
   [FieldFormat.BooleanFormat]: BooleanFormat,
   [FieldFormat.DateFormat]: DateFormat,
   [FieldFormat.DateTimeFormat]: DatetimeFormat,

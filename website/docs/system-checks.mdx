@@ -31,6 +31,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E014` | A `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` that is not a list of extensions without the dot, or a `MEDIA_LIBRARY_MAX_UPLOAD_SIZE` that is not a positive number of bytes. |
 | `content_studio.E015` | `readonly_fields` entries that are not model fields. Inlines are checked too. |
 | `content_studio.E016` | `prepopulated_fields` that is not a mapping, fields or source fields that are not model fields, fields that cannot be prepopulated (`DateTimeField`, `ForeignKey`, `OneToOneField`, `ManyToManyField`) and fields in `readonly_fields`. Inlines are checked too. |
+| `content_studio.E017` | A `BlockField` without blocks, with entries in `blocks` that are not `Block` subclasses, with two blocks of the same name, with a negative `min_num` or `max_num`, or with `min_num` greater than `max_num`. Also block fields that a block cannot store: `ManyToManyField`, `ManyMediaField`, `FileField`, auto fields and nested `BlockField`s, and relations to models that are not installed. |
 
 ## Warnings
 

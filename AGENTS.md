@@ -37,12 +37,13 @@ content_studio/
 ├── paginators.py        # Custom pagination classes
 ├── form.py              # Form and field definitions
 ├── fields.py            # Optional content fields (HTMLField, TagField, FlexField, ...)
+├── blocks.py            # BlockField and Block: an ordered list of content blocks
 ├── managers.py          # Managers for the base models (SingletonManager, SoftDeletableManager)
 ├── sanitizers.py        # HTML sanitizer (allowlist based on nh3)
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E016, W001-W012)
+├── checks.py            # System checks (content_studio.E001-E017, W001-W012)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── extensions.py        # Extension base classes
@@ -275,6 +276,7 @@ Content Studio uses a widget system to render fields. Default mappings are defin
 - `JSONField` → `JSONWidget`
 - `HTMLField` → `RichTextWidget` (built into Content Studio)
 - `TagField` → `TagWidget` (built into Content Studio)
+- `BlockField` → `BlockWidget` (built into Content Studio; blocks declare plain model fields and are not models)
 - `FlexField` → `JSONSchemaWidget`, `MultipleChoiceField` → `MultiSelectWidget`, `URLPathField` → `URLPathWidget` (built into Content Studio)
 - `MediaField` / `ManyMediaField` → media picker widgets (built into the optional `content_studio.media_library` app)
 

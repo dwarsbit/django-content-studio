@@ -14,38 +14,39 @@ from content_studio.utils import (
 )
 
 
+def represent_related(value, request):
+    """The admin's representation of a related object."""
+    from .admin import get_relation_display_for
+
+    admin_site = cs_settings.ADMIN_SITE
+    display = get_relation_display_for(value.__class__, value, request)
+    data = {"id": value.pk, "__str__": display.title}
+
+    if display.description:
+        data["description"] = display.description
+
+    if display.icon:
+        data["icon"] = display.icon
+
+    if display.initials:
+        data["initials"] = display.initials
+
+    if display.avatar:
+        data["avatar"] = display.avatar
+
+    # Add file URL and media type if the model is a media library model.
+    if value.__class__ is cs_settings.MEDIA_LIBRARY_MODEL:
+        data["file"] = value.file.url
+        data["type"] = value.type
+        data["thumbnail"] = admin_site.get_thumbnail(value)
+
+    return data
+
+
 class ContentRelatedField(RelatedField):
 
     def to_representation(self, value):
-        from content_studio.settings import cs_settings
-
-        from .admin import get_relation_display_for
-
-        admin_site = cs_settings.ADMIN_SITE
-        display = get_relation_display_for(
-            value.__class__, value, self.context.get("request")
-        )
-        data = {"id": value.pk, "__str__": display.title}
-
-        if display.description:
-            data["description"] = display.description
-
-        if display.icon:
-            data["icon"] = display.icon
-
-        if display.initials:
-            data["initials"] = display.initials
-
-        if display.avatar:
-            data["avatar"] = display.avatar
-
-        # Add file URL and media type if the model is a media library model.
-        if value.__class__ is cs_settings.MEDIA_LIBRARY_MODEL:
-            data["file"] = value.file.url
-            data["type"] = value.type
-            data["thumbnail"] = admin_site.get_thumbnail(value)
-
-        return data
+        return represent_related(value, self.context.get("request"))
 
     def get_queryset(self):
         """
@@ -72,6 +73,104 @@ class ContentRelatedField(RelatedField):
             )
         except ObjectDoesNotExist:
             raise serializers.ValidationError("Unknown related item.")
+
+
+class BlockSerializerField(serializers.JSONField):
+    """
+    A BlockField in the admin: relations in blocks travel in the same
+    shape as a model's relations, and errors are keyed by block index.
+    """
+
+    def __init__(self, *args, block_field, **kwargs):
+        self.block_field = block_field
+        super().__init__(*args, **kwargs)
+
+    def get_related_queryset(self, model):
+        """Blocks can only refer to objects of the request's tenant."""
+        request = self.context.get("request")
+        queryset = model._default_manager.all()
+
+        if request is None:
+            return queryset
+
+        return get_tenant_scoped_queryset(request, model, queryset)
+
+    def to_internal_value(self, data):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        from .blocks import BlockErrors
+
+        value = super().to_internal_value(data)
+
+        try:
+            self.block_field.validate(value, None)
+            return self.block_field.clean_blocks(value, self.get_related_queryset)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        except BlockErrors as e:
+            if isinstance(e.errors, list):
+                raise serializers.ValidationError(e.errors)
+            # The errors mirror the value: body.<index>.data.<field>.
+            raise serializers.ValidationError(
+                {str(index): {"data": errors} for index, errors in e.errors.items()}
+            )
+
+    def to_representation(self, value):
+        value = super().to_representation(value)
+
+        if not isinstance(value, list):
+            return value
+
+        block_types = self.block_field.block_types
+        request = self.context.get("request")
+
+        # The primary keys per related model, so each model takes one query.
+        wanted: dict[type[models.Model], set] = {}
+
+        for item in value:
+            block = (
+                block_types.get(item.get("type")) if isinstance(item, dict) else None
+            )
+            data = item.get("data") if block else None
+
+            if not isinstance(data, dict):
+                continue
+
+            for name, field in block.get_fields().items():
+                if field.is_relation and data.get(name) is not None:
+                    wanted.setdefault(field.related_model, set()).add(data[name])
+
+        objects = {
+            model: {
+                str(obj.pk): represent_related(obj, request)
+                for obj in self.get_related_queryset(model).filter(pk__in=pks)
+            }
+            for model, pks in wanted.items()
+        }
+
+        represented = []
+
+        for item in value:
+            block = (
+                block_types.get(item.get("type")) if isinstance(item, dict) else None
+            )
+            data = item.get("data") if block else None
+
+            if not isinstance(data, dict):
+                represented.append(item)
+                continue
+
+            data = dict(data)
+
+            for name, field in block.get_fields().items():
+                if field.is_relation and data.get(name) is not None:
+                    # Missing objects (deleted, or of another tenant) show
+                    # as empty.
+                    data[name] = objects[field.related_model].get(str(data[name]))
+
+            represented.append({**item, "data": data})
+
+        return represented
 
 
 class ContentSerializer(serializers.ModelSerializer):
@@ -126,6 +225,19 @@ class ContentSerializer(serializers.ModelSerializer):
         Create a ReadOnlyField for property attributes.
         """
         return serializers.ReadOnlyField, {}
+
+    def build_standard_field(self, field_name, model_field):
+        from .blocks import BlockField
+
+        field_class, field_kwargs = super().build_standard_field(
+            field_name, model_field
+        )
+
+        if isinstance(model_field, BlockField):
+            field_class = BlockSerializerField
+            field_kwargs["block_field"] = model_field
+
+        return field_class, field_kwargs
 
     def build_field(self, field_name, info, model_class, nested_depth):
         """
