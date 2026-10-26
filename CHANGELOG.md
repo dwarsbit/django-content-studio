@@ -43,6 +43,16 @@
 - **`Field(readonly=True)` is enforced on save.** The edit page already
   showed these fields without an input; saving now ignores any value
   sent for them as well.
+- **The `content_changed` signal.** `content_studio.signals.content_changed`
+  is sent after changes made in the admin are committed: creating,
+  editing, deleting, restoring and reordering objects, including the
+  built-in bulk delete and the media library's bulk delete. One request
+  sends one signal with all its changes, each a `Change` with the
+  action, the model, the object's pk and label, the tenant, the user and
+  a timestamp. Changes that are rolled back are not sent.
+- **Bulk deletes are logged with the object's pk.** The built-in bulk
+  delete and the media library's bulk delete recorded their history
+  entries without the deleted object's pk.
 
 ## Unreleased
 

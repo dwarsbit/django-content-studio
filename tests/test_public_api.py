@@ -29,6 +29,7 @@ PUBLIC_MODULES = [
     "content_studio.fields",
     "content_studio.models",
     "content_studio.managers",
+    "content_studio.signals",
     "content_studio.validators",
     "content_studio.sanitizers",
     "content_studio.exceptions",

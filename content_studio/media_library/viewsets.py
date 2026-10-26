@@ -1,6 +1,4 @@
-from django.contrib.admin.models import LogEntry, DELETION
-from django.contrib.contenttypes.models import ContentType
-from django.db import router
+from django.db import router, transaction
 from django.db.models import Q
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models.deletion import Collector
@@ -17,6 +15,7 @@ from rest_framework.viewsets import ModelViewSet
 from content_studio.paginators import ContentPagination
 from content_studio.exceptions import NotConfigured
 from content_studio.settings import cs_settings
+from content_studio.signals import DELETED, collect_changes, record_change
 from .serializers import build_media_folder_serializer, build_media_item_serializer
 
 # The bulk actions offered on the items endpoint.
@@ -97,6 +96,11 @@ class MediaLibraryViewSet(ModelViewSet):
         self.authentication_classes = [
             admin_site.token_backend.active_backend.authentication_class
         ]
+
+    def dispatch(self, request, *args, **kwargs):
+        # The request's changes are sent as one content_changed signal.
+        with collect_changes(request):
+            return super().dispatch(request, *args, **kwargs)
 
     def get_media_model(self):
         if not self._media_model:
@@ -286,22 +290,17 @@ class MediaLibraryViewSet(ModelViewSet):
             return Response({"count": len(objects)})
 
         # Deleting through the collector fires deletion signals, like
-        # the content bulk delete.
-        collector = Collector(using=router.db_for_write(model))
-        collector.collect(objects)
-        collector.delete()
+        # the content bulk delete; logged first, as deleting clears the
+        # objects' pks.
+        using = router.db_for_write(model)
 
-        content_type = ContentType.objects.get_for_model(model)
+        with transaction.atomic(using=using):
+            for obj in objects:
+                record_change(request, obj, DELETED)
 
-        for obj in objects:
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=DELETION,
-                content_type=content_type,
-                object_id=obj.pk,
-                object_repr=str(obj)[:200],
-                change_message="",
-            )
+            collector = Collector(using=using)
+            collector.collect(objects)
+            collector.delete()
 
         return Response({"count": len(objects)})
 

@@ -3,6 +3,7 @@ Tests for the media library viewsets.
 """
 
 import pytest
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth import models as auth_models
 from django.core.files.base import ContentFile
 from django.test import override_settings
@@ -253,6 +254,8 @@ def test_bulk_delete_removes_items_and_logs(media_settings):
     assert response.status_code == 200
     assert response.json()["count"] == 1
     assert list(ItemModel.objects.values_list("pk", flat=True)) == [keep.pk]
+    # Logged with the pk the deletion clears.
+    assert LogEntry.objects.get().object_id == str(gone.pk)
 
 
 @pytest.mark.django_db
