@@ -8,6 +8,8 @@ from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
+from django.db.models.query_utils import DeferredAttribute
+from django.template.loader import render_to_string
 from django.utils.text import camel_case_to_spaces
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
@@ -25,7 +27,7 @@ __all__ = [
 # have no table, and all block data lives in the BlockField's JSON column.
 ###
 
-META_OPTIONS = {"name", "verbose_name", "description", "icon"}
+META_OPTIONS = {"name", "verbose_name", "description", "icon", "template_name"}
 
 # Field kinds a block cannot store as a JSON value.
 UNSUPPORTED_FIELDS = (
@@ -58,6 +60,7 @@ class BlockOptions:
         )
         self.description = getattr(meta, "description", "")
         self.icon = getattr(meta, "icon", None)
+        self.template_name = getattr(meta, "template_name", None)
 
 
 class BlockMeta(type):
@@ -116,6 +119,25 @@ class Block(metaclass=BlockMeta):
                 remote_field.model = apps.get_model(remote_field.model)
 
         return cls.base_fields
+
+    @classmethod
+    def get_template_name(cls) -> str:
+        """
+        Meta.template_name, or "<app_label>/blocks/<name>.html" for the
+        app that defines the block.
+        """
+        if cls._meta.template_name:
+            return cls._meta.template_name
+
+        app_config = apps.get_containing_app_config(cls.__module__)
+        prefix = f"{app_config.label}/" if app_config else ""
+
+        return f"{prefix}blocks/{cls._meta.name}.html"
+
+    @classmethod
+    def get_context(cls, block: "BoundBlock") -> dict:
+        """The template context of a block; override to add to it."""
+        return {"block": block, "value": block.value}
 
     @classmethod
     def clean(cls, data, get_queryset=None) -> dict:
@@ -223,8 +245,130 @@ class BlockErrors(Exception):
         )
 
 
+class BoundBlock:
+    """
+    One block of a page, for templates: its id, its type, the Block class
+    and its value, a dict of the block's fields as Python values (related
+    objects instead of primary keys, dates instead of strings).
+    """
+
+    def __init__(self, id, type, block, value):
+        self.id = id
+        self.type = type
+        self.block = block
+        self.value = value
+
+    def __repr__(self):
+        return f"<BoundBlock {self.type} {self.id}>"
+
+    def render(self, context=None, request=None) -> str:
+        return render_to_string(
+            self.block.get_template_name(),
+            {**(context or {}), **self.block.get_context(self)},
+            request,
+        )
+
+
+class BlockList(list):
+    """
+    The value of a BlockField: the stored list of blocks, which also knows
+    its block types. `blocks` gives the blocks as BoundBlocks.
+    """
+
+    def __init__(self, value, field):
+        super().__init__(value)
+        self.field = field
+
+    @property
+    def blocks(self) -> list[BoundBlock]:
+        """
+        The blocks, ready for templates. Related objects take one query per
+        related model; blocks of a type the field no longer has are left
+        out.
+        """
+        block_types = self.field.block_types
+        items = [
+            (item, block_types[item["type"]])
+            for item in self
+            if isinstance(item, dict) and item.get("type") in block_types
+        ]
+
+        wanted: dict[type[models.Model], set] = {}
+
+        for item, block in items:
+            data = item.get("data") or {}
+
+            for name, field in block.get_fields().items():
+                pk = related_pk(field, data.get(name))
+                if pk is not None:
+                    wanted.setdefault(field.related_model, set()).add(pk)
+
+        objects = {
+            model: model._default_manager.in_bulk(pks) for model, pks in wanted.items()
+        }
+
+        bound = []
+
+        for item, block in items:
+            data = item.get("data") or {}
+            value = {}
+
+            for name, field in block.get_fields().items():
+                if field.is_relation:
+                    pk = related_pk(field, data.get(name))
+                    value[name] = (
+                        objects[field.related_model].get(pk) if pk is not None else None
+                    )
+                elif name not in data:
+                    value[name] = field.get_default()
+                else:
+                    try:
+                        value[name] = field.to_python(data[name])
+                    except ValidationError:
+                        value[name] = data[name]
+
+            bound.append(BoundBlock(item.get("id"), item["type"], block, value))
+
+        return bound
+
+
+def related_pk(field, value):
+    """The primary key a block stores for a relation, or None."""
+    if not field.is_relation or value in (None, ""):
+        return None
+
+    try:
+        return field.related_model._meta.pk.to_python(value)
+    except ValidationError:
+        return None
+
+
+class BlockDescriptor(DeferredAttribute):
+    """
+    Gives a BlockField's value as a BlockList, which knows its blocks. A
+    data descriptor (it defines __set__), like Django's FileDescriptor, so
+    reads always pass through it.
+    """
+
+    def __get__(self, instance, cls=None):
+        if instance is None:
+            return self
+
+        value = super().__get__(instance, cls)
+
+        if isinstance(value, list) and not isinstance(value, BlockList):
+            value = BlockList(value, self.field)
+            instance.__dict__[self.field.attname] = value
+
+        return value
+
+    def __set__(self, instance, value):
+        instance.__dict__[self.field.attname] = value
+
+
 class BlockField(models.JSONField):
     description = "An ordered list of content blocks."
+    descriptor_class = BlockDescriptor
 
     def __init__(self, *args, blocks=(), min_num=None, max_num=None, **kwargs):
         self.blocks = list(blocks)

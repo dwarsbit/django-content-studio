@@ -11,8 +11,10 @@
   and need no migrations. `max_num` and `min_num` limit the number of
   blocks, relations in blocks (such as `MediaField`) are stored as
   primary keys and scoped to the tenant, and HTML in blocks is sanitized
-  on save. System check `content_studio.E017` reports misconfigured
-  block fields.
+  on save. In templates, `{% render_blocks page.sections %}` (from the
+  `content_studio` template library) renders each block with its own
+  template, with related objects loaded in one query per model. System
+  check `content_studio.E017` reports misconfigured block fields.
 - **Read-only fields on the studio.** `readonly_fields` and
   `get_readonly_fields(request, obj=None)` work like the classic Django
   admin's, on studios and inlines: the edit page shows the fields
