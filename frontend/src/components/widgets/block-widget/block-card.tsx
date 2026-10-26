@@ -1,5 +1,4 @@
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import type React from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -7,12 +6,12 @@ import {
   PiArrowUpBold,
   PiCaretDownBold,
   PiCaretRightBold,
-  PiDotsSixVerticalBold,
   PiDotsThreeBold,
   PiWarningBold,
 } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
+import { DragHandle } from "@/components/ui/drag-handle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +28,7 @@ import {
 } from "@/components/ui/form";
 import { WidgetRenderer } from "@/components/widgets/renderer";
 import { useAdminInfo } from "@/hooks/use-admin-info";
+import { useReorderableRow } from "@/hooks/use-reorderable-row";
 import { cn } from "@/lib/utils";
 import {
   type BlockDefinition,
@@ -40,7 +40,18 @@ import {
 import { BlockIcon } from "./block-icon";
 import { blockSummary } from "./blocks";
 
-export function BlockCard({
+// The hook's ref and style go on the card; passed in as a prop, like the
+// rows of the list views.
+export function BlockCard(
+  props: Omit<React.ComponentProps<typeof BlockCardBody>, "sortable">,
+) {
+  const sortable = useReorderableRow(props.block.id);
+
+  return <BlockCardBody {...props} sortable={sortable} />;
+}
+
+function BlockCardBody({
+  sortable,
   name,
   index,
   count,
@@ -68,49 +79,32 @@ export function BlockCard({
   onMove(to: number): void;
   onDuplicate(): void;
   onRemove(): void;
+  sortable?: ReturnType<typeof useReorderableRow>;
 }) {
   const { t } = useTranslation();
   const label = definition?.verbose_name ?? block.type;
   const summary = definition ? blockSummary(definition, block) : "";
   const isOpen = open && definition !== undefined;
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    setActivatorNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: block.id });
-
   return (
     <div
-      ref={setNodeRef}
-      // Translate, not transform: blocks differ in height and must not
-      // be scaled to each other's size while sorting.
-      style={{ transform: CSS.Translate.toString(transform), transition }}
+      ref={sortable?.ref}
+      style={sortable?.style}
       className={cn(
         "rounded-lg border bg-card shadow-xs",
-        isDragging && "relative z-10 shadow-lg",
+        sortable?.isDragging && "shadow-lg",
       )}
       data-testid="block"
     >
       <div
         className={cn(
-          "flex items-center gap-1 py-1.5 pl-1 pr-1.5",
+          "flex items-center gap-1 py-1.5 pl-1.5 pr-1.5",
           isOpen && "border-b bg-muted rounded-t-lg",
         )}
       >
-        <button
-          type="button"
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
+        <DragHandle
+          {...sortable?.handleProps}
           aria-label={t("widgets.block_widget.drag", { block: label })}
-          className="size-7 shrink-0 flex items-center justify-center rounded-md text-muted-foreground cursor-grab touch-none hover:bg-accent outline-none focus-visible:ring-3 focus-visible:ring-ring active:cursor-grabbing"
-        >
-          <PiDotsSixVerticalBold aria-hidden className="size-4" />
-        </button>
+        />
         <Button
           type="button"
           size="icon-xs"

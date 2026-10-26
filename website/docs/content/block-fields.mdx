@@ -195,10 +195,12 @@ which works on PostgreSQL, MySQL and MariaDB:
 ## Without a block field
 
 A block field is optional. With plain Django, a related model does the same
-job: a `Section` model with a foreign key to the page, a type and an
-ordering field, edited as an [inline](/docs/content/registering-models#inlines) on
-the page's studio. Each section is then a row in its own table, which you
-can query and protect with database constraints.
+job: a `Section` model with a foreign key to the page, a type field and a
+position field, edited as an [inline](/docs/content/registering-models#inlines)
+on the page's studio with `reorder_field = "position"`, so editors can drag
+sections into order (see [Reordering](/docs/content/registering-models#reordering)).
+Each section is then a row in its own table, which you can query and protect
+with database constraints.
 
 ## Related pages
 
