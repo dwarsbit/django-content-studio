@@ -141,9 +141,14 @@ class CategoryLinkBlock(Block):
     published = models.DateField(null=True, blank=True)
 
 
+class ColumnsBlock(Block):
+    left = BlockField(blocks=[TextBlock, CategoryLinkBlock], blank=True, max_num=2)
+    right = BlockField(blocks=[TextBlock, CategoryLinkBlock], blank=True, max_num=2)
+
+
 class LandingPage(models.Model):
     title = models.CharField(max_length=100)
-    body = BlockField(blocks=[TextBlock, CategoryLinkBlock], max_num=3)
+    body = BlockField(blocks=[TextBlock, CategoryLinkBlock, ColumnsBlock], max_num=3)
 
     def __str__(self):
         return self.title

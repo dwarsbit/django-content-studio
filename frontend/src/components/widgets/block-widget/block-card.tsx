@@ -1,4 +1,5 @@
-import type React from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -28,31 +29,26 @@ import {
 } from "@/components/ui/form";
 import { WidgetRenderer } from "@/components/widgets/renderer";
 import { useAdminInfo } from "@/hooks/use-admin-info";
-import { useReorderableRow } from "@/hooks/use-reorderable-row";
 import { cn } from "@/lib/utils";
 import {
   type BlockDefinition,
   type BlockValue,
+  FieldType,
   FieldWidget,
   type Model,
 } from "@/types";
 
 import { BlockIcon } from "./block-icon";
-import { blockSummary } from "./blocks";
+import type { DragData } from "./block-tree";
+import { BlockList } from "./block-widget";
+import { blockSummary, type ListId, nestedListId } from "./blocks";
 
-// The hook's ref and style go on the card; passed in as a prop, like the
-// rows of the list views.
-export function BlockCard(
-  props: Omit<React.ComponentProps<typeof BlockCardBody>, "sortable">,
-) {
-  const sortable = useReorderableRow(props.block.id);
-
-  return <BlockCardBody {...props} sortable={sortable} />;
-}
-
-function BlockCardBody({
-  sortable,
-  name,
+export function BlockCard({
+  list,
+  depth,
+  parentId,
+  path,
+  relationPrefix,
   index,
   count,
   block,
@@ -65,8 +61,13 @@ function BlockCardBody({
   onDuplicate,
   onRemove,
 }: {
-  // The BlockField's name in the form.
-  name: string;
+  // The list the block is in, and its place in the form and for the
+  // related object pickers.
+  list: ListId;
+  depth: number;
+  parentId?: string;
+  path: string;
+  relationPrefix: string;
   index: number;
   count: number;
   block: BlockValue;
@@ -79,19 +80,30 @@ function BlockCardBody({
   onMove(to: number): void;
   onDuplicate(): void;
   onRemove(): void;
-  sortable?: ReturnType<typeof useReorderableRow>;
 }) {
+  const data: DragData = { type: "block", list, depth, parentId };
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id, data });
   const { t } = useTranslation();
   const label = definition?.verbose_name ?? block.type;
   const summary = definition ? blockSummary(definition, block) : "";
   const isOpen = open && definition !== undefined;
   return (
     <div
-      ref={sortable?.ref}
-      style={sortable?.style}
+      ref={setNodeRef}
+      // Translate, not transform: blocks differ in height and must not
+      // be scaled to each other's size while sorting.
+      style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn(
-        "rounded-lg border bg-card shadow-xs",
-        sortable?.isDragging && "shadow-lg",
+        "relative rounded-lg border bg-card shadow-xs",
+        // The overlay follows the pointer; the block stays as a placeholder.
+        isDragging && "opacity-40",
       )}
       data-testid="block"
     >
@@ -102,7 +114,8 @@ function BlockCardBody({
         )}
       >
         <DragHandle
-          {...sortable?.handleProps}
+          {...attributes}
+          {...listeners}
           aria-label={t("widgets.block_widget.drag", { block: label })}
         />
         <Button
@@ -188,9 +201,10 @@ function BlockCardBody({
           {Object.keys(definition.fields).map((fieldName) => (
             <BlockFieldInput
               key={fieldName}
-              path={`${name}.${index}.data.${fieldName}`}
-              relationName={`${name}.${definition.name}.${fieldName}`}
+              path={`${path}.${index}.data.${fieldName}`}
+              relationName={`${relationPrefix}.${definition.name}.${fieldName}`}
               fieldName={fieldName}
+              block={block}
               definition={definition}
               model={model}
             />
@@ -201,28 +215,84 @@ function BlockCardBody({
   );
 }
 
+/** The block under the pointer while it is dragged. */
+export function BlockPreview({
+  block,
+  definition,
+}: {
+  block: BlockValue;
+  definition?: BlockDefinition;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border bg-card py-2.5 px-3 shadow-lg cursor-grabbing">
+      <span className="size-6 flex items-center justify-center rounded-md bg-accent text-accent-foreground">
+        <BlockIcon
+          icon={definition?.icon ?? null}
+          className="text-sm size-3.5"
+        />
+      </span>
+      <span className="font-semibold text-sm shrink-0">
+        {definition?.verbose_name ?? block.type}
+      </span>
+      <span className="flex-1 min-w-0 truncate text-sm text-muted-foreground">
+        {definition ? blockSummary(definition, block) : ""}
+      </span>
+    </div>
+  );
+}
+
 /**
  * One field of a block, rendered with the regular widgets. The widget sees
  * a model whose fields are the block's, keyed by
  * "<block field>.<block type>.<field>": the name the relations endpoint
- * resolves for related object pickers.
+ * resolves for related object pickers. A block field in the block is a
+ * list of blocks of its own, in the same drag and drop context.
  */
 function BlockFieldInput({
   path,
   relationName,
   fieldName,
+  block,
   definition,
   model,
 }: {
   path: string;
   relationName: string;
   fieldName: string;
+  block: BlockValue;
   definition: BlockDefinition;
   model: Model;
 }) {
   const form = useFormContext();
   const { data: info } = useAdminInfo();
   const modelField = definition.fields[fieldName];
+
+  if (modelField.type === FieldType.BlockField) {
+    return (
+      <FormField
+        control={form.control}
+        name={path}
+        render={() => (
+          <FormItem>
+            <FormLabel>{modelField.verbose_name}</FormLabel>
+            <BlockList
+              list={nestedListId(block.id, fieldName)}
+              path={path}
+              relationPrefix={relationName}
+              field={modelField}
+              depth={1}
+              parentId={block.id}
+            />
+            {modelField.help_text && (
+              <FormDescription>{modelField.help_text}</FormDescription>
+            )}
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
   const blockModel: Model = {
     ...model,
     fields: { [relationName]: modelField },

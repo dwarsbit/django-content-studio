@@ -1,3 +1,4 @@
+import copy
 import inspect
 
 from django.contrib.auth import get_user_model
@@ -108,34 +109,27 @@ class BlockSerializerField(serializers.JSONField):
         except DjangoValidationError as e:
             raise serializers.ValidationError(e.messages)
         except BlockErrors as e:
-            if isinstance(e.errors, list):
-                raise serializers.ValidationError(e.errors)
-            # The errors mirror the value: body.<index>.data.<field>.
-            raise serializers.ValidationError(
-                {str(index): {"data": errors} for index, errors in e.errors.items()}
-            )
+            # The errors mirror the value: body.<index>.data.<field>, and
+            # so on for blocks inside blocks.
+            raise serializers.ValidationError(e.as_data())
 
     def to_representation(self, value):
+        from .blocks import iter_blocks
+
         value = super().to_representation(value)
 
         if not isinstance(value, list):
             return value
 
-        block_types = self.block_field.block_types
+        # A copy, whose block data takes the related objects' representation.
+        value = copy.deepcopy(list(value))
         request = self.context.get("request")
 
-        # The primary keys per related model, so each model takes one query.
+        # The primary keys per related model, so each model takes one query,
+        # for the blocks inside blocks too.
         wanted: dict[type[models.Model], set] = {}
 
-        for item in value:
-            block = (
-                block_types.get(item.get("type")) if isinstance(item, dict) else None
-            )
-            data = item.get("data") if block else None
-
-            if not isinstance(data, dict):
-                continue
-
+        for block, data in iter_blocks(value, self.block_field):
             for name, field in block.get_fields().items():
                 if field.is_relation and data.get(name) is not None:
                     wanted.setdefault(field.related_model, set()).add(data[name])
@@ -148,29 +142,14 @@ class BlockSerializerField(serializers.JSONField):
             for model, pks in wanted.items()
         }
 
-        represented = []
-
-        for item in value:
-            block = (
-                block_types.get(item.get("type")) if isinstance(item, dict) else None
-            )
-            data = item.get("data") if block else None
-
-            if not isinstance(data, dict):
-                represented.append(item)
-                continue
-
-            data = dict(data)
-
+        for block, data in iter_blocks(value, self.block_field):
             for name, field in block.get_fields().items():
                 if field.is_relation and data.get(name) is not None:
                     # Missing objects (deleted, or of another tenant) show
                     # as empty.
                     data[name] = objects[field.related_model].get(str(data[name]))
 
-            represented.append({**item, "data": data})
-
-        return represented
+        return value
 
 
 class ContentSerializer(serializers.ModelSerializer):

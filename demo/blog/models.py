@@ -178,10 +178,21 @@ class ImageBlock(Block):
         icon = "ph-bold ph-image"
 
 
+class ColumnsBlock(Block):
+    left = BlockField(blocks=[TextBlock, ImageBlock], blank=True, max_num=4)
+    right = BlockField(blocks=[TextBlock, ImageBlock], blank=True, max_num=4)
+
+    class Meta:
+        description = "Two columns of blocks"
+        icon = "ph-bold ph-columns"
+
+
 class LandingPage(models.Model):
     title = models.CharField(max_length=200)
     body = HTMLField(blank=True)
-    sections = BlockField(blocks=[TextBlock, ImageBlock], blank=True, max_num=20)
+    sections = BlockField(
+        blocks=[TextBlock, ImageBlock, ColumnsBlock], blank=True, max_num=20
+    )
 
     class Meta:
         verbose_name = "landing page"
