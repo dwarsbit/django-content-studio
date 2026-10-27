@@ -218,6 +218,12 @@ class DjangoContentStudioConfig(AppConfig):
                             fields = super().get_fields()
                             request = self.context.get("request")
                             obj = self._get_obj()
+
+                            # Excluded fields are not on the edit page,
+                            # and not sent to the admin either: exclude
+                            # keeps a value such as a key out of it.
+                            for name in admin_model.exclude or []:
+                                fields.pop(name, None)
                             readonly = get_readonly_field_names(
                                 admin_model, request, obj
                             )

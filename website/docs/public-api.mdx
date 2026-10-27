@@ -15,8 +15,8 @@ The public API consists of:
   `InlineModelStudio` and `ContentStudioSite`: the configuration options and
   the hooks, such as the `has_*_permission` methods, `get_fields`,
   `get_readonly_fields`, `get_prepopulated_fields`, `get_list_item_display`,
-  `get_relation_display`, `get_tenants`, `get_thumbnail`,
-  `get_media_serializer_fields` and `crop_image`;
+  `get_relation_display`, `get_created_result`, `get_tenants`,
+  `get_thumbnail`, `get_media_serializer_fields` and `crop_image`;
 - the documented options and methods of blocks: the `Meta` options of
   `Block`, `get_context` and `get_template_name`, and the
   [values of a block field](/docs/content/block-fields#render-blocks-in-templates)
@@ -25,7 +25,10 @@ The public API consists of:
 - every [setting](/docs/settings) in `CONTENT_STUDIO`;
 - the [system check](/docs/system-checks) IDs, but not their messages;
 - `content_studio.urls` and the `content_studio.contrib.password_reset` app,
-  as a whole.
+  as a whole;
+- the `content_studio.webhooks` app's `content_studio_deliver_webhooks`
+  command, and the requests its webhooks send: the payload with its
+  `version`, and the `X-Content-Studio-*` headers.
 
 Everything else may change in any release, including any name that is not
 on this page, even when you can import it.
@@ -52,10 +55,12 @@ Studios, the site and their configuration objects. `admin_site` is the default s
 
 ## `content_studio.form`
 
-Edit page layouts, components and table columns. `Component` is the base type of the built-in components; custom component types are not supported.
+Edit page layouts, components and table columns. `Component` is the base type of the built-in components; custom component types are not supported, but `Link`, `ButtonLink` and `Button` are meant to be subclassed.
 
 - `ActivityLog`
+- `Button`
 - `ButtonLink`
+- `ButtonResult`
 - `Component`
 - `Field`
 - `FieldLayout`
@@ -89,9 +94,10 @@ The built-in dashboard widgets, each from its own module.
 
 ## `content_studio.extensions`
 
-Menu links and embedded pages.
+Menu links, menu buttons and embedded pages.
 
 - `IFramePage`
+- `MainMenuButton`
 - `MainMenuLink`
 
 ## `content_studio.widgets`
@@ -181,6 +187,14 @@ Managers of the base models.
 - `SoftDeletableManager`
 - `SoftDeletableQuerySet`
 
+## `content_studio.signals`
+
+The signal sent after changes made in the admin are committed, the changes it carries, and the function that records a change.
+
+- `Change`
+- `content_changed`
+- `record_change`
+
 ## `content_studio.validators`
 
 Validators used by the content fields, usable on any field.
@@ -215,3 +229,22 @@ The media library app's concrete models.
 
 - `Folder`
 - `Media`
+
+## `content_studio.webhooks.models`
+
+The webhooks app's models: the webhooks and their deliveries.
+
+- `Webhook`
+- `WebhookDelivery`
+
+## `content_studio.webhooks.dashboard`
+
+The webhooks app's dashboard widget.
+
+- `WebhookDeliveriesWidget`
+
+## `content_studio.webhooks.extensions`
+
+The webhooks app's main menu button.
+
+- `DeployButton`

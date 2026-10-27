@@ -287,5 +287,12 @@
     "theme_system": "Systeem",
     "logout": "Uitloggen",
     "empty": "Geen resultaten."
+  },
+  "button": {
+    "done": "Klaar.",
+    "value_title": "Kopieer deze waarde",
+    "value_description": "Deze wordt maar één keer getoond. Kopieer hem nu en bewaar hem op een veilige plek.",
+    "copy": "Kopiëren",
+    "close": "Sluiten"
   }
 }

@@ -4,8 +4,9 @@ sidebar_position: 10
 
 # 🔌 Extensions
 
-Extensions add links and pages to the admin's menu: a link to an external
-tool, or another web application shown inside the admin.
+Extensions add links, buttons and pages to the admin's menu: a link to an
+external tool, a button that runs your code, or another web application shown
+inside the admin.
 
 ```python
 # mysite/studio.py
@@ -33,7 +34,56 @@ admin_site = BlogStudioSite()
 ## MainMenuLink
 
 A link in the admin's main menu. It takes a `url`, a `label` and an `icon`,
-and optionally a `color` and a `weight` that orders the links.
+and optionally a `color` and a `weight`. The menu orders its links and
+buttons by `weight`, lowest first; with equal weights, which is the default
+of `0`, they keep their order in `extensions`.
+
+## MainMenuButton
+
+A button in the admin's main menu that runs your code on the server, such as
+clearing a cache or starting a deployment. Subclass `MainMenuButton` and
+implement `handle(request)`:
+
+```python
+# mysite/studio.py
+from django.core.cache import cache
+
+from content_studio.admin import ContentStudioSite
+from content_studio.extensions import MainMenuButton
+
+
+class ClearCacheButton(MainMenuButton):
+    label = "Clear cache"
+    icon = "ph-bold ph-broom"
+    confirm = "Clear the cache for every visitor?"
+
+    def is_visible(self, request):
+        return request.user.is_superuser
+
+    def handle(self, request):
+        cache.clear()
+        return "The cache is cleared."
+
+
+class BlogStudioSite(ContentStudioSite):
+    extensions = [ClearCacheButton()]
+
+
+admin_site = BlogStudioSite()
+```
+
+- `label`, `icon`, `color` and `weight`: as for `MainMenuLink`.
+- `confirm`: a question to confirm before the button runs.
+- `is_visible(request)`: who sees the button. By default every staff user
+  does. Content Studio checks it again when the button runs.
+
+`handle` returns what the editor sees: a string as a notification, or a
+[`ButtonResult`](/docs/forms/form-sets#buttons) with a `message` and a
+`value` that appears once in a dialog with a copy button. The options can
+also be passed as arguments, such as `ClearCacheButton(label="Empty
+cache")`. Record the changes the button makes with `record_change`, so they
+appear in the objects' history. The [webhooks app](/docs/webhooks#a-deploy-button-and-a-dashboard-widget)
+ships one ready to use: `DeployButton`.
 
 ## IFramePage
 

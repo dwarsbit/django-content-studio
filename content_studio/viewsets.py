@@ -2,7 +2,7 @@ import operator
 import uuid
 from functools import reduce
 
-from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
+from django.contrib.admin.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -21,10 +21,20 @@ from .actions import get_bulk_actions
 from .admin import get_relation_display_for
 from .dashboard.activity_log import LogEntrySerializer
 from .filters import LookupFilter
+from .form import Button, ButtonResult
 from .permissions import ModelStudioPermissions
 from .reordering import get_reorder_scope
 from .serializers import RelatedItemSerializer
 from .settings import cs_settings
+from .signals import (
+    CREATED,
+    DELETED,
+    REORDERED,
+    RESTORED,
+    UPDATED,
+    collect_changes,
+    record_change,
+)
 from .utils import (
     get_tenant_field_name,
     get_tenant_scoped_queryset,
@@ -51,6 +61,11 @@ class BaseModelViewSet(ModelViewSet):
         self.authentication_classes = [
             admin_site.token_backend.active_backend.authentication_class
         ]
+
+    def dispatch(self, request, *args, **kwargs):
+        # The request's changes are sent as one content_changed signal.
+        with collect_changes(request):
+            return super().dispatch(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
         """
@@ -83,15 +98,28 @@ class BaseModelViewSet(ModelViewSet):
 
         instance = serializer.save(**attrs)
 
-        content_type = ContentType.objects.get_for_model(instance)
-        LogEntry.objects.create(
-            user=self.request.user,
-            action_flag=ADDITION,
-            content_type=content_type,
-            object_id=instance.pk,
-            object_repr=str(instance)[:200],
-            change_message="",
+        record_change(self.request, instance, CREATED)
+
+        self._created_result = self._admin_model.get_created_result(
+            self.request, instance
         )
+
+    def create(self, request, *args, **kwargs):
+        """
+        Create the object; what the studio's get_created_result returns
+        travels along under __result__, for the editor to show once.
+        """
+        self._created_result = None
+        response = super().create(request, *args, **kwargs)
+        result = self._created_result
+
+        if result is not None:
+            if not isinstance(result, ButtonResult):
+                result = ButtonResult(message=result)
+
+            response.data = {**response.data, "__result__": result.serialize()}
+
+        return response
 
     def perform_update(self, serializer):
         instance = serializer.save()
@@ -111,26 +139,10 @@ class BaseModelViewSet(ModelViewSet):
         if stamp_fields:
             instance.save(update_fields=stamp_fields)
 
-        content_type = ContentType.objects.get_for_model(instance)
-        LogEntry.objects.create(
-            user=self.request.user,
-            action_flag=CHANGE,
-            content_type=content_type,
-            object_id=instance.pk,
-            object_repr=str(instance)[:200],
-            change_message="",
-        )
+        record_change(self.request, instance, UPDATED)
 
     def perform_destroy(self, instance):
-        content_type = ContentType.objects.get_for_model(instance)
-        LogEntry.objects.create(
-            user=self.request.user,
-            action_flag=DELETION,
-            content_type=content_type,
-            object_id=instance.pk,
-            object_repr=str(instance)[:200],
-            change_message="",
-        )
+        record_change(self.request, instance, DELETED)
 
         # With soft_delete configured, deleting moves the object to the
         # trash: the field is stamped instead of the row being removed.
@@ -170,14 +182,7 @@ class BaseModelViewSet(ModelViewSet):
         setattr(instance, soft_delete_field, None)
         instance.save(update_fields=[soft_delete_field])
 
-        LogEntry.objects.create(
-            user=self.request.user,
-            action_flag=CHANGE,
-            content_type=ContentType.objects.get_for_model(instance),
-            object_id=instance.pk,
-            object_repr=str(instance)[:200],
-            change_message="Restored from trash.",
-        )
+        record_change(self.request, instance, RESTORED, "Restored from trash.")
 
         return Response({"id": instance.pk, "__str__": str(instance)})
 
@@ -192,14 +197,7 @@ class BaseModelViewSet(ModelViewSet):
 
         instance = self.get_object()
 
-        LogEntry.objects.create(
-            user=self.request.user,
-            action_flag=DELETION,
-            content_type=ContentType.objects.get_for_model(instance),
-            object_id=instance.pk,
-            object_repr=str(instance)[:200],
-            change_message="",
-        )
+        record_change(self.request, instance, DELETED)
 
         instance.delete()
 
@@ -294,14 +292,7 @@ class BaseModelViewSet(ModelViewSet):
             moved = False
 
         if moved is not False:
-            LogEntry.objects.create(
-                user=self.request.user,
-                action_flag=CHANGE,
-                content_type=ContentType.objects.get_for_model(instance),
-                object_id=instance.pk,
-                object_repr=str(instance)[:200],
-                change_message="Moved.",
-            )
+            record_change(self.request, instance, REORDERED, "Moved.")
 
         return Response({"id": instance.pk, "__str__": str(instance)})
 
@@ -324,12 +315,15 @@ class BaseModelViewSet(ModelViewSet):
         methods=["get"], detail=True, url_path="components/(?P<component_id>[^/.]+)"
     )
     def get_component(self, request, id, component_id):
-        try:
-            component_uuid = uuid.UUID(component_id)
-        except ValueError:
-            raise NotFound()
+        component = self._find_component(component_id)
 
-        component = self._admin_model.get_component(component_uuid)
+        # A button's state: whether this request may see and run it on
+        # the object.
+        if isinstance(component, Button):
+            obj = self.get_object()
+            visible = component.is_allowed(self._admin_model, obj, request)
+
+            return Response({"visible": visible})
 
         # Components without a request handler (like ActivityLog) have no
         # endpoint of their own.
@@ -337,6 +331,48 @@ class BaseModelViewSet(ModelViewSet):
             raise NotFound()
 
         return component.handle_request(obj=self.get_object(), request=request)
+
+    @action(
+        methods=["post"],
+        detail=True,
+        url_path="components/(?P<component_id>[^/.]+)/run",
+    )
+    def run_component(self, request, id, component_id):
+        """
+        Run a button on the object. Seeing the object is the gate here;
+        the button checks its own allowed_permissions and visibility.
+        """
+        component = self._find_component(component_id)
+
+        if not isinstance(component, Button):
+            raise NotFound()
+
+        obj = self.get_object()
+
+        if not component.is_allowed(self._admin_model, obj, request):
+            raise PermissionDenied()
+
+        return Response(component.run(obj, request).serialize())
+
+    def _find_component(self, component_id):
+        try:
+            component_uuid = uuid.UUID(component_id)
+        except ValueError:
+            raise NotFound()
+
+        component = self._admin_model.get_component(component_uuid)
+
+        # An inline object's editor shows the layout of the inline
+        # model's own studio, with the inline studio's header: its
+        # components are reached through the inline endpoints too. The
+        # inline studio's permissions still apply.
+        if component is None and getattr(self, "parent_model", None) is not None:
+            model_studio = cs_settings.ADMIN_SITE._registry.get(self._model)
+
+            if model_studio is not None:
+                component = model_studio.get_component(component_uuid)
+
+        return component
 
     @action(methods=["get"], detail=True, url_path="activity")
     def activity(self, request, id):

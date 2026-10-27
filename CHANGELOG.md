@@ -58,6 +58,92 @@
 - **`Field(readonly=True)` is enforced on save.** The edit page already
   showed these fields without an input; saving now ignores any value
   sent for them as well.
+- **Buttons on the edit page.** The new `Button` component runs your
+  code for the object being edited: subclass it and implement
+  `handle(obj, request)`. It takes a `label`, an `icon`, a `confirm`
+  question, a `destructive` style and `allowed_permissions`, and
+  `is_visible(obj, request)` hides it per object. The editor sees the
+  returned message as a notification; a `ButtonResult` can also carry a
+  value shown once in a dialog with a copy button.
+- **Webhooks in the admin.** The webhooks app registers its own studio:
+  editors create webhooks, choosing events and models from lists, and
+  copy the secret, which is shown once after creating and after
+  **Regenerate secret**. **Trigger now** sends a request without changes
+  (event `webhook.triggered`) and reports how the webhook responded. Each
+  webhook shows its delivery log, read-only, with **Retry** on failed
+  deliveries for one more attempt. Unsafe URLs are refused on save, and
+  changes to webhooks themselves never trigger a webhook.
+- **A deploy button and a webhooks widget.** `DeployButton`, a
+  `MainMenuButton`, triggers the active webhooks (or the ones named in
+  `webhooks`) from the main menu, for editors who may change webhooks;
+  with multi-tenancy, the current tenant's and the global ones.
+  `WebhookDeliveriesWidget` shows each webhook's latest delivery on the
+  dashboard. Neither is added to the site by itself.
+- **The scheduled tasks widget shows missing values and errors properly.**
+  Tasks without a last run, a duration or a next run showed "null" or
+  an invalid date; those values are now left out. A failed task shows
+  its `error_message`, and the widget no longer depends on another
+  widget to format its times.
+- **`MultipleChoiceField` shows its options.** The admin's multi-select
+  for a `MultipleChoiceField` had no options to choose from: the field's
+  `options` were never sent to the admin.
+- **Excluded fields stay out of the admin.** Fields in a studio's
+  `exclude` are no longer sent to the admin read-only: they are left out
+  of the edit page's data entirely.
+- **Buttons in the main menu.** The new `MainMenuButton` extension runs
+  your code from the admin's main menu: subclass it and implement
+  `handle(request)`. It takes a `label`, an `icon`, a `color`, a
+  `weight` and a `confirm` question, and `is_visible(request)` decides
+  who sees and runs it. Its result is shown like a `Button`'s.
+- **Components in the edit page's header.** `edit_header` on a studio
+  places components, such as buttons, next to the save button; on an
+  inline studio, in the header of the inline object's editor. System
+  check `content_studio.E020` reports entries that are not components.
+- **`MainMenuLink(weight=...)` orders the menu.** The weight was accepted
+  but ignored; the main menu now orders its links and buttons by weight,
+  lowest first, keeping equal weights in the order of `extensions`.
+- **Components work in inline objects' editors.** Links and buttons of an
+  inline model's own studio failed in the dialog in which an editor opens
+  one of the inline's objects; they now work there, gated by the inline
+  studio's permissions.
+- **Read-only inlines.** Inlines follow their studio's permissions in the
+  admin: without add permission there is no create button, and without
+  change permission objects open read-only, deletable only with delete
+  permission.
+- **A message after creating.** A studio's
+  `get_created_result(request, obj)` returns a message or a
+  `ButtonResult` the editor sees after creating an object, with a value
+  shown once in a dialog with a copy button.
+- **The `content_changed` signal.** `content_studio.signals.content_changed`
+  is sent after changes made in the admin are committed: creating,
+  editing, deleting, restoring and reordering objects, including the
+  built-in bulk delete and the media library. One request sends one
+  signal with all its changes, each a `Change` with the action, the
+  model, the object's pk and label, the tenant, the user and a
+  timestamp. Changes that are rolled back are not sent. Custom bulk
+  actions record their changes with `record_change`.
+- **Webhooks.** The optional `content_studio.webhooks` app sends a
+  signed POST request to a URL after changes made in the admin, for
+  example to rebuild a static site. A `Webhook` chooses the events, the
+  models and the tenant it fires on; one request in the admin makes one
+  delivery per webhook, with all its matching changes. Deliveries are
+  sent as Django tasks (directly on Django 5.2 without django-tasks),
+  stored as `WebhookDelivery` with their outcome, and retried with a
+  growing wait by the `content_studio_deliver_webhooks` command.
+  Webhooks only reach public addresses over HTTPS and never follow
+  redirects, unless the host is in the new `WEBHOOK_ALLOWED_HOSTS`
+  setting. The same command removes finished deliveries after
+  `WEBHOOK_DELIVERY_RETENTION` days (30 by default). New settings
+  `WEBHOOK_MAX_ATTEMPTS` and `WEBHOOK_TIMEOUT`; system check
+  `content_studio.E019` reports malformed webhook settings.
+- **Media library changes are recorded in the history.** Uploading,
+  editing, deleting, cropping and moving media items are logged in the
+  activity log, like changes to content, and so are creating, renaming,
+  moving and deleting folders. Deleting a folder also records the
+  subfolders and media items deleted with it.
+- **Bulk deletes are logged with the object's pk.** The built-in bulk
+  delete and the media library's bulk delete recorded their history
+  entries without the deleted object's pk.
 
 ## Unreleased
 

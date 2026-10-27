@@ -101,6 +101,34 @@ one to use with `fk_name`. The inline's `table_display` sets its columns.
 Inline objects only exist within their parent: editors can only add them to
 parents they may view.
 
+The inline studio's permission methods decide what editors can do with the
+inline's objects, as on any studio. Without add permission, the inline offers
+no create button. Without change permission, an object opens read-only: its
+fields are shown but cannot be saved, and it can only be deleted with delete
+permission. To make an inline read-only for everyone, return `False` from
+`has_add_permission`, `has_change_permission` and `has_delete_permission`:
+
+```python
+# blog/admin.py
+from content_studio.admin import InlineModelStudio
+
+from .models import Review
+
+
+class ReviewInline(InlineModelStudio):
+    model = Review
+    table_display = ["text", "stars"]
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+```
+
 ## How related objects appear
 
 Wherever an object shows up as a related object (in a picker, in a column or
@@ -271,6 +299,35 @@ class ArticleStudio(ModelStudio):
 
 The return value is the message editors see: a number reports how many
 objects changed, a string is shown as it is.
+
+The built-in actions record every object they change in its history. Your
+own actions record nothing by themselves. To record a change, call
+`record_change` for each object, with `"created"`, `"updated"`,
+`"deleted"`, `"restored"` or `"reordered"` and an optional message. Record a
+deletion before you delete the object:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.actions import bulk_action
+from content_studio.admin import ModelStudio
+from content_studio.signals import record_change
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    @bulk_action(label="Publish", allowed_permissions=["change"])
+    def publish(self, request, queryset):
+        articles = list(queryset)
+        queryset.update(status=Article.Status.PUBLISHED)
+
+        for article in articles:
+            record_change(request, article, "updated", "Published.")
+
+        return len(articles)
+```
 
 The studio's `actions` attribute chooses which actions are offered:
 

@@ -15,11 +15,13 @@ import { Spinner } from "@/components/ui/spinner";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
+import { useShowResult } from "@/hooks/use-show-result";
 import { type ServerErrors, setServerErrors } from "@/lib/server-errors";
 import { getErrorMessage } from "@/lib/utils";
-import type { Model, Resource } from "@/types";
+import type { ButtonResult, FormField, Model, Resource } from "@/types";
 
 import { Aside } from "./aside";
+import { EditorReadOnlyContext } from "./editor-read-only";
 import { Header } from "./header";
 import { Main } from "./main";
 import { Prepopulate } from "./prepopulate";
@@ -40,6 +42,12 @@ export function Editor({
   // The create form's prepopulated fields; defaults to the model's
   // studio (inlines pass their own).
   prepopulatedFields?: Record<string, string[]>;
+  // The header's components; defaults to the model's studio (inline
+  // rows pass their inline's).
+  headerComponents?: FormField[];
+  // Show the object without saving: every field read-only.
+  readOnly?: boolean;
+  canDelete?: boolean;
   onCreated?: (id: string) => void;
   onSave?: VoidFunction;
   onClose?: VoidFunction;
@@ -58,6 +66,9 @@ function EditorForm({
   dialog = false,
   initialValues = {},
   prepopulatedFields,
+  headerComponents,
+  readOnly = false,
+  canDelete,
   onCreated,
   onDelete,
   onSave,
@@ -71,6 +82,12 @@ function EditorForm({
   // The create form's prepopulated fields; defaults to the model's
   // studio (inlines pass their own).
   prepopulatedFields?: Record<string, string[]>;
+  // The header's components; defaults to the model's studio (inline
+  // rows pass their inline's).
+  headerComponents?: FormField[];
+  // Show the object without saving: every field read-only.
+  readOnly?: boolean;
+  canDelete?: boolean;
   onCreated?: (id: string) => void;
   onSave?: VoidFunction;
   onClose?: VoidFunction;
@@ -80,6 +97,7 @@ function EditorForm({
   const http = useHttp();
   const { t } = useTranslation();
   const confirm = useConfirmDialog();
+  const showResult = useShowResult();
   const modelLabel = model.label;
   const isSingleton = model?.admin.is_singleton ?? false;
   // Inline models are managed through the inline endpoints of their parent,
@@ -213,7 +231,16 @@ function EditorForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const saved = await save(values);
+      const { __result__: result, ...saved } = (await save(
+        values,
+      )) as Resource & {
+        __result__?: ButtonResult;
+      };
+
+      // What the studio's get_created_result reports, shown once.
+      if (result) {
+        showResult(result);
+      }
 
       // The saved data becomes the form's new baseline: the form is
       // pristine again, and a create learns its id for later saves.
@@ -251,44 +278,49 @@ function EditorForm({
   return model && initialized ? (
     <Form {...form}>
       <ResourcePathContext value={resourcePath}>
-        <Prepopulate
-          model={model}
-          fields={
-            prepopulatedFields ?? model.admin?.edit.prepopulated_fields ?? {}
-          }
-        />
-        <div className="flex-1 flex flex-col overflow-hidden max-w-[1200px] mx-auto w-full">
-          <TenantInfo label={model.label} />
-          <Header
+        <EditorReadOnlyContext value={readOnly}>
+          <Prepopulate
             model={model}
-            resource={resource}
-            resourcePath={resourcePath}
-            isSaving={isPending}
-            dialog={dialog}
-            onSave={async () => {
-              await form.handleSubmit(onSubmit)();
-              onSave?.();
-            }}
-            onDelete={() => {
-              // The changes died with the object; leaving must not
-              // trigger the navigation guard.
-              form.reset();
-              allowNextNavigation.current = true;
-              onDelete?.();
-            }}
-            onClose={onClose}
+            fields={
+              prepopulatedFields ?? model.admin?.edit.prepopulated_fields ?? {}
+            }
           />
-          <div className="flex flex-col items-center overflow-y-auto scrollbar">
-            <div className="flex p-6 w-full gap-6 justify-center">
-              <div className="flex-1">
-                <Main model={model} id={id} hiddenFields={hiddenFields} />
-              </div>
-              <div className="shrink-0 w-[320px] empty:hidden">
-                <Aside model={model} hiddenFields={hiddenFields} />
+          <div className="flex-1 flex flex-col overflow-hidden max-w-[1200px] mx-auto w-full">
+            <TenantInfo label={model.label} />
+            <Header
+              model={model}
+              resource={resource}
+              resourcePath={resourcePath}
+              isSaving={isPending}
+              dialog={dialog}
+              components={headerComponents}
+              readOnly={readOnly}
+              canDelete={canDelete}
+              onSave={async () => {
+                await form.handleSubmit(onSubmit)();
+                onSave?.();
+              }}
+              onDelete={() => {
+                // The changes died with the object; leaving must not
+                // trigger the navigation guard.
+                form.reset();
+                allowNextNavigation.current = true;
+                onDelete?.();
+              }}
+              onClose={onClose}
+            />
+            <div className="flex flex-col items-center overflow-y-auto scrollbar">
+              <div className="flex p-6 w-full gap-6 justify-center">
+                <div className="flex-1">
+                  <Main model={model} id={id} hiddenFields={hiddenFields} />
+                </div>
+                <div className="shrink-0 w-[320px] empty:hidden">
+                  <Aside model={model} hiddenFields={hiddenFields} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </EditorReadOnlyContext>
       </ResourcePathContext>
     </Form>
   ) : (

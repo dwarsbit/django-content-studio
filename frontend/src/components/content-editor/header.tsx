@@ -16,7 +16,9 @@ import { useAdminInfo } from "@/hooks/use-admin-info";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useHttp } from "@/hooks/use-http";
 import { cn } from "@/lib/utils";
-import type { DateTimeString, Model, Resource } from "@/types";
+import type { DateTimeString, FormField, Model, Resource } from "@/types";
+
+import { ComponentRenderer } from "./form-field";
 
 export function Header({
   model,
@@ -24,6 +26,9 @@ export function Header({
   resourcePath,
   isSaving,
   dialog = false,
+  components = model?.admin.edit.header ?? [],
+  readOnly = false,
+  canDelete = true,
   onSave,
   onDelete,
   onClose,
@@ -32,6 +37,12 @@ export function Header({
   resource?: Resource;
   resourcePath: string;
   isSaving: boolean;
+  // The edit_header components; defaults to the model's studio
+  // (inline rows pass their inline's).
+  components?: FormField[];
+  // Read-only editors have no save button.
+  readOnly?: boolean;
+  canDelete?: boolean;
   // Whether the editor renders inside a Dialog: the title then is a
   // DialogTitle and the close button confirms unsaved changes itself;
   // routed editors rely on the navigation guard instead.
@@ -123,7 +134,15 @@ export function Header({
                 </div>
               ) : null}
 
-              {!isSingleton && !isCreate && (
+              {components.map((component) => (
+                <ComponentRenderer
+                  key={component.component_id}
+                  formField={component}
+                  model={model}
+                />
+              ))}
+
+              {!isSingleton && !isCreate && canDelete && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -162,19 +181,23 @@ export function Header({
                 </DropdownMenu>
               )}
 
-              <Button
-                className="rounded-full px-6"
-                onClick={async () => {
-                  try {
-                    await onSave();
-                  } catch {
-                    // Errors are already surfaced by the save flow.
-                  }
-                }}
-                isLoading={isSaving}
-              >
-                {t(isCreate && !isSingleton ? "common.create" : "common.save")}
-              </Button>
+              {!readOnly && (
+                <Button
+                  className="rounded-full px-6"
+                  onClick={async () => {
+                    try {
+                      await onSave();
+                    } catch {
+                      // Errors are already surfaced by the save flow.
+                    }
+                  }}
+                  isLoading={isSaving}
+                >
+                  {t(
+                    isCreate && !isSingleton ? "common.create" : "common.save",
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </DialogHeader>

@@ -111,6 +111,8 @@ export interface Model {
       actions: BulkAction[];
     };
     edit: {
+      // Components in the edit page's header, next to the save button.
+      header?: FormField[];
       main: FormSetGroup[];
       sidebar: FormSet[];
       // The create form's read-only fields (get_readonly_fields without
@@ -129,16 +131,23 @@ export interface Model {
           format: string | null;
         }[];
         reorderable?: boolean;
+        // Components in the header of an inline row's editor.
+        header?: FormField[];
+        // The inline studio's permissions; unset grants everything the
+        // inline endpoints allow.
+        permissions?: Permissions;
       }[];
     };
-    permissions: {
-      add_permission: boolean;
-      change_permission: boolean;
-      delete_permission: boolean;
-      view_permission: boolean;
-    };
+    permissions: Permissions;
   };
   fields: Record<string, ModelField>;
+}
+
+export interface Permissions {
+  add_permission: boolean;
+  change_permission: boolean;
+  delete_permission: boolean;
+  view_permission: boolean;
 }
 
 export interface BulkAction {
@@ -243,10 +252,20 @@ export interface FormField {
   // model field's default widget when null.
   widget: FieldWidget | null;
   component_id: string;
-  component_type: "Link" | "LinkButton" | "ActivityLog";
+  component_type: "Link" | "LinkButton" | "Button" | "ActivityLog";
   copy: boolean;
   icon: string;
   title?: string | null;
+  // Button: a question to confirm first, and the destructive style.
+  confirm?: string | null;
+  destructive?: boolean;
+}
+
+// What a server-side button reports back: a message, and optionally a
+// value shown once (such as a generated secret).
+export interface ButtonResult {
+  message: string | null;
+  value: string | null;
 }
 
 export enum FieldType {
@@ -389,6 +408,16 @@ export interface MainMenuLinkConfig {
   icon: string | null;
   color: TailwindColor | null;
   label: string;
+  // The position among the menu's links and buttons: lower first.
+  weight?: number;
+}
+
+export interface MainMenuButtonConfig {
+  label: string;
+  icon: string | null;
+  color: TailwindColor | null;
+  confirm: string | null;
+  weight?: number;
 }
 
 export interface IFramePageConfig {
@@ -408,9 +437,17 @@ export interface IFramePageExtension {
   config: IFramePageConfig;
 }
 
-export type Extension = MainMenuLinkExtension | IFramePageExtension;
+export interface MainMenuButtonExtension {
+  extension_id: string;
+  extension_type: ExtensionType.MainMenuButton;
+  config: MainMenuButtonConfig;
+}
+
+export type Extension =
+  MainMenuLinkExtension | MainMenuButtonExtension | IFramePageExtension;
 
 export enum ExtensionType {
   MainMenuLink = "MainMenuLink",
+  MainMenuButton = "MainMenuButton",
   IFramePage = "IFramePage",
 }

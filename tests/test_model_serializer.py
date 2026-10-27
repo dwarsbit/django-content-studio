@@ -29,3 +29,17 @@ def test_optional_fields_are_clearable():
     first_name = serializer.get_field(auth_models.User._meta.get_field("first_name"))
 
     assert first_name["required"] is False
+
+
+def test_multiple_choice_options_are_the_choices():
+    from content_studio.webhooks.models import Webhook
+
+    fields = ModelSerializer(Webhook).serialize()["fields"]
+
+    assert fields["events"]["choices"] == [
+        ("created", "Created"),
+        ("updated", "Updated"),
+        ("deleted", "Deleted"),
+        ("restored", "Restored"),
+        ("reordered", "Reordered"),
+    ]

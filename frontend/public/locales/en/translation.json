@@ -288,5 +288,12 @@
     "theme_system": "System",
     "logout": "Log out",
     "empty": "No results."
+  },
+  "button": {
+    "done": "Done.",
+    "value_title": "Copy this value",
+    "value_description": "It is shown only once. Copy it now and store it somewhere safe.",
+    "copy": "Copy",
+    "close": "Close"
   }
 }

@@ -24,7 +24,7 @@ from .admin import (
     iter_components,
     resolve_table_display,
 )
-from .form import Field, TableColumn
+from .form import Component, Field, TableColumn
 from .settings import cs_settings
 from .utils import flatten, get_tenant_field_name
 
@@ -398,7 +398,11 @@ def duplicate_id_errors(site) -> list[tuple[str, str]]:
 
     seen = {}
     for model, studio in site._registry.items():
-        for component in iter_components(studio):
+        components = list(iter_components(studio))
+        for inline in studio.inlines:
+            components.extend(iter_components(inline))
+
+        for component in components:
             key = str(component.component_id)
             if key in seen:
                 errors.append(
@@ -546,6 +550,63 @@ def media_upload_errors() -> list[tuple[str, str]]:
                 "content_studio.E014",
                 "MEDIA_LIBRARY_MAX_UPLOAD_SIZE must be None or a positive "
                 "number of bytes.",
+            )
+        )
+
+    return errors
+
+
+def _is_positive_number(value, integer=False) -> bool:
+    types = int if integer else (int, float)
+    return not isinstance(value, bool) and isinstance(value, types) and value > 0
+
+
+def webhook_setting_errors() -> list[tuple[str, str]]:
+    """
+    Malformed webhook settings, as (check id, message) pairs: the
+    allowed hosts must be a list of host names, the attempts and the
+    retention positive whole numbers, the timeout a positive number.
+    """
+    errors = []
+    hosts = cs_settings.WEBHOOK_ALLOWED_HOSTS
+
+    if (
+        isinstance(hosts, str)
+        or not isinstance(hosts, (list, tuple, set))
+        or not all(isinstance(host, str) and host for host in hosts)
+    ):
+        errors.append(
+            (
+                "content_studio.E019",
+                "WEBHOOK_ALLOWED_HOSTS must be a list of host names, like "
+                "['build.internal'].",
+            )
+        )
+
+    if not _is_positive_number(cs_settings.WEBHOOK_MAX_ATTEMPTS, integer=True):
+        errors.append(
+            (
+                "content_studio.E019",
+                "WEBHOOK_MAX_ATTEMPTS must be a positive whole number.",
+            )
+        )
+
+    if not _is_positive_number(cs_settings.WEBHOOK_TIMEOUT):
+        errors.append(
+            (
+                "content_studio.E019",
+                "WEBHOOK_TIMEOUT must be a positive number of seconds.",
+            )
+        )
+
+    retention = cs_settings.WEBHOOK_DELIVERY_RETENTION
+
+    if retention is not None and not _is_positive_number(retention, integer=True):
+        errors.append(
+            (
+                "content_studio.E019",
+                "WEBHOOK_DELIVERY_RETENTION must be None or a positive whole "
+                "number of days.",
             )
         )
 
@@ -841,6 +902,47 @@ def readonly_fields_errors(studio) -> list[tuple[str, str]]:
 
     for inline in getattr(studio, "inlines", None) or []:
         validate(inline, getattr(inline, "model", None))
+
+    return errors
+
+
+def edit_header_errors(studio) -> list[tuple[str, str]]:
+    """
+    edit_header entries that are not components, as (check id,
+    message) pairs: the header only shows components, so fields and
+    other values would be silently dropped. Inlines are checked too.
+    """
+    errors = []
+
+    def validate(owner):
+        header = getattr(owner, "edit_header", None) or []
+
+        if isinstance(header, (str, Component)) or not isinstance(
+            header, (list, tuple)
+        ):
+            errors.append(
+                (
+                    "content_studio.E020",
+                    f"{config_name(owner)}.edit_header must be a list of "
+                    "components.",
+                )
+            )
+            return
+
+        for entry in header:
+            if not isinstance(entry, Component):
+                errors.append(
+                    (
+                        "content_studio.E020",
+                        f"{config_name(owner)}.edit_header entry {entry!r} is "
+                        "not a component, such as a Button.",
+                    )
+                )
+
+    validate(studio)
+
+    for inline in getattr(studio, "inlines", None) or []:
+        validate(inline)
 
     return errors
 
@@ -1361,6 +1463,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         for check_id, error in prepopulated_fields_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
+        for check_id, error in edit_header_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
         for check_id, warning in edit_field_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
@@ -1392,6 +1497,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in media_upload_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in webhook_setting_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, warning in dashboard_widget_warnings(site):
