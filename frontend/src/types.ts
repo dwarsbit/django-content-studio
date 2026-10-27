@@ -225,10 +225,20 @@ export interface FormField {
   // model field's default widget when null.
   widget: FieldWidget | null;
   component_id: string;
-  component_type: "Link" | "LinkButton" | "ActivityLog";
+  component_type: "Link" | "LinkButton" | "Button" | "ActivityLog";
   copy: boolean;
   icon: string;
   title?: string | null;
+  // Button: a question to confirm first, and the destructive style.
+  confirm?: string | null;
+  destructive?: boolean;
+}
+
+// What a server-side button reports back: a message, and optionally a
+// value shown once (such as a generated secret).
+export interface ButtonResult {
+  message: string | null;
+  value: string | null;
 }
 
 export enum FieldType {

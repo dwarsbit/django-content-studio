@@ -43,6 +43,13 @@
 - **`Field(readonly=True)` is enforced on save.** The edit page already
   showed these fields without an input; saving now ignores any value
   sent for them as well.
+- **Buttons on the edit page.** The new `Button` component runs your
+  code for the object being edited: subclass it and implement
+  `handle(obj, request)`. It takes a `label`, an `icon`, a `confirm`
+  question, a `destructive` style and `allowed_permissions`, and
+  `is_visible(obj, request)` hides it per object. The editor sees the
+  returned message as a notification; a `ButtonResult` can also carry a
+  value shown once in a dialog with a copy button.
 - **The `content_changed` signal.** `content_studio.signals.content_changed`
   is sent after changes made in the admin are committed: creating,
   editing, deleting, restoring and reordering objects, including the

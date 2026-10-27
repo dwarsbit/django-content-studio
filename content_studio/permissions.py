@@ -33,6 +33,11 @@ class ModelStudioPermissions(BasePermission):
         if request.method in SAFE_METHODS:
             return admin_model.has_view_permission(request)
 
+        if getattr(view, "action", None) == "run_component":
+            # Buttons enforce their own allowed_permissions on the
+            # object (see form.Button); seeing it is the only gate here.
+            return admin_model.has_view_permission(request)
+
         if getattr(view, "action", None) == "bulk":
             # The bulk endpoint enforces its own per-action permissions
             # (see actions.get_bulk_actions); seeing the list is the
@@ -77,6 +82,9 @@ class ModelStudioPermissions(BasePermission):
             view, "action", None
         ) in ("restore", "move"):
             return admin_model.has_change_permission(request, obj)
+
+        if getattr(view, "action", None) == "run_component":
+            return admin_model.has_view_permission(request, obj)
 
         if request.method in ("PUT", "PATCH"):
             return admin_model.has_change_permission(request, obj)

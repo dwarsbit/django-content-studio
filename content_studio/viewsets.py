@@ -21,6 +21,7 @@ from .actions import get_bulk_actions
 from .admin import get_relation_display_for
 from .dashboard.activity_log import LogEntrySerializer
 from .filters import LookupFilter
+from .form import Button
 from .permissions import ModelStudioPermissions
 from .reordering import get_reorder_scope
 from .serializers import RelatedItemSerializer
@@ -293,12 +294,15 @@ class BaseModelViewSet(ModelViewSet):
         methods=["get"], detail=True, url_path="components/(?P<component_id>[^/.]+)"
     )
     def get_component(self, request, id, component_id):
-        try:
-            component_uuid = uuid.UUID(component_id)
-        except ValueError:
-            raise NotFound()
+        component = self._find_component(component_id)
 
-        component = self._admin_model.get_component(component_uuid)
+        # A button's state: whether this request may see and run it on
+        # the object.
+        if isinstance(component, Button):
+            obj = self.get_object()
+            visible = component.is_allowed(self._admin_model, obj, request)
+
+            return Response({"visible": visible})
 
         # Components without a request handler (like ActivityLog) have no
         # endpoint of their own.
@@ -306,6 +310,36 @@ class BaseModelViewSet(ModelViewSet):
             raise NotFound()
 
         return component.handle_request(obj=self.get_object(), request=request)
+
+    @action(
+        methods=["post"],
+        detail=True,
+        url_path="components/(?P<component_id>[^/.]+)/run",
+    )
+    def run_component(self, request, id, component_id):
+        """
+        Run a button on the object. Seeing the object is the gate here;
+        the button checks its own allowed_permissions and visibility.
+        """
+        component = self._find_component(component_id)
+
+        if not isinstance(component, Button):
+            raise NotFound()
+
+        obj = self.get_object()
+
+        if not component.is_allowed(self._admin_model, obj, request):
+            raise PermissionDenied()
+
+        return Response(component.run(obj, request).serialize())
+
+    def _find_component(self, component_id):
+        try:
+            component_uuid = uuid.UUID(component_id)
+        except ValueError:
+            raise NotFound()
+
+        return self._admin_model.get_component(component_uuid)
 
     @action(methods=["get"], detail=True, url_path="activity")
     def activity(self, request, id):

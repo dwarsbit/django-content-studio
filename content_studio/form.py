@@ -2,7 +2,8 @@
 # Form field classes are used for grouping, ordering and laying out fields.
 ###
 import uuid
-from typing import Type
+from dataclasses import dataclass
+from typing import Optional, Type, Union
 
 from django.db.models import Model
 from django.utils.translation import gettext_lazy as _
@@ -12,7 +13,9 @@ from .utils import derive_uuid
 
 __all__ = [
     "ActivityLog",
+    "Button",
     "ButtonLink",
+    "ButtonResult",
     "Component",
     "Field",
     "FieldLayout",
@@ -273,6 +276,92 @@ class ButtonLink(Link):
             **super().serialize(),
             "icon": self.icon,
             "copy": self.copy,
+        }
+
+
+@dataclass
+class ButtonResult:
+    """
+    What a button reports back to the editor: a message shown as a
+    notification, and optionally a value shown once in a dialog with a
+    copy button (such as a newly generated secret).
+    """
+
+    message: Optional[str] = None
+    value: Optional[str] = None
+
+    def serialize(self):
+        return {
+            "message": None if self.message is None else str(self.message),
+            "value": self.value,
+        }
+
+
+class Button(Component):
+    """
+    A button on the edit page that runs handle() on the server for the
+    object being edited:
+
+        class PublishButton(Button):
+            label = _("Publish")
+            icon = "ph-bold ph-paper-plane-tilt"
+            confirm = _("Publish this article?")
+            allowed_permissions = ["change"]
+
+            def handle(self, obj, request):
+                obj.status = Article.Status.PUBLISHED
+                obj.save(update_fields=["status"])
+                return _("Published.")
+
+    handle returns None, a message (shown as a notification) or a
+    ButtonResult. allowed_permissions gates the button on the studio's
+    has_<permission>_permission for the object, any one of them being
+    enough (anyone who can view the object when empty); is_visible
+    hides it per object. Buttons only show on saved objects.
+    """
+
+    component_type = "Button"
+    label: str
+    icon: Optional[str] = None
+    # A question to confirm before the button runs.
+    confirm: Optional[str] = None
+    # Shown in the destructive style.
+    destructive: bool = False
+    allowed_permissions: Union[list[str], tuple[str, ...]] = ()
+
+    def get_id_parts(self):
+        return (self.label,)
+
+    def is_visible(self, obj: Model, request) -> bool:
+        return True
+
+    def is_allowed(self, studio, obj: Model, request) -> bool:
+        """Whether the request may see and run the button on obj."""
+        allowed = not self.allowed_permissions or any(
+            getattr(studio, f"has_{permission}_permission")(request, obj)
+            for permission in self.allowed_permissions
+        )
+
+        return allowed and self.is_visible(obj, request)
+
+    def handle(self, obj: Model, request) -> Union[None, str, ButtonResult]:
+        raise NotImplementedError("A button needs a handle(obj, request) method.")
+
+    def run(self, obj: Model, request) -> ButtonResult:
+        result = self.handle(obj, request)
+
+        if isinstance(result, ButtonResult):
+            return result
+
+        return ButtonResult(message=result)
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "label": str(self.label),
+            "icon": self.icon,
+            "confirm": None if self.confirm is None else str(self.confirm),
+            "destructive": self.destructive,
         }
 
 
