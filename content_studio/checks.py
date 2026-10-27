@@ -552,6 +552,63 @@ def media_upload_errors() -> list[tuple[str, str]]:
     return errors
 
 
+def _is_positive_number(value, integer=False) -> bool:
+    types = int if integer else (int, float)
+    return not isinstance(value, bool) and isinstance(value, types) and value > 0
+
+
+def webhook_setting_errors() -> list[tuple[str, str]]:
+    """
+    Malformed webhook settings, as (check id, message) pairs: the
+    allowed hosts must be a list of host names, the attempts and the
+    retention positive whole numbers, the timeout a positive number.
+    """
+    errors = []
+    hosts = cs_settings.WEBHOOK_ALLOWED_HOSTS
+
+    if (
+        isinstance(hosts, str)
+        or not isinstance(hosts, (list, tuple, set))
+        or not all(isinstance(host, str) and host for host in hosts)
+    ):
+        errors.append(
+            (
+                "content_studio.E018",
+                "WEBHOOK_ALLOWED_HOSTS must be a list of host names, like "
+                "['build.internal'].",
+            )
+        )
+
+    if not _is_positive_number(cs_settings.WEBHOOK_MAX_ATTEMPTS, integer=True):
+        errors.append(
+            (
+                "content_studio.E018",
+                "WEBHOOK_MAX_ATTEMPTS must be a positive whole number.",
+            )
+        )
+
+    if not _is_positive_number(cs_settings.WEBHOOK_TIMEOUT):
+        errors.append(
+            (
+                "content_studio.E018",
+                "WEBHOOK_TIMEOUT must be a positive number of seconds.",
+            )
+        )
+
+    retention = cs_settings.WEBHOOK_DELIVERY_RETENTION
+
+    if retention is not None and not _is_positive_number(retention, integer=True):
+        errors.append(
+            (
+                "content_studio.E018",
+                "WEBHOOK_DELIVERY_RETENTION must be None or a positive whole "
+                "number of days.",
+            )
+        )
+
+    return errors
+
+
 def focal_point_errors() -> list[tuple[str, str]]:
     """
     A misconfigured FOCAL_POINT_ATTR, as (check id, message) pairs.
@@ -1392,6 +1449,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in media_upload_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in webhook_setting_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, warning in dashboard_widget_warnings(site):

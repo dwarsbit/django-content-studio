@@ -7,7 +7,8 @@ choice through Django's TASKS setting: without one, Django's
 ImmediateBackend sends it right away, after the commit. Django 5.2 has
 no django.tasks; there the django-tasks backport is used when
 installed, and otherwise the delivery is sent in place. Failed attempts
-are retried by the content_studio_deliver_webhooks command.
+are retried by the content_studio_deliver_webhooks command, which also
+removes old finished deliveries.
 
 Requests are signed, never follow redirects, and only connect to public
 addresses (checked on the address the connection uses, so a DNS answer
@@ -306,6 +307,24 @@ def deliver_due(limit=None) -> int:
         due = due[:limit]
 
     return sum(deliver(pk) for pk in list(due))
+
+
+def prune_deliveries() -> int:
+    """Delete the finished deliveries older than
+    WEBHOOK_DELIVERY_RETENTION days; pending ones are kept. Returns the
+    number of deleted deliveries."""
+    retention = cs_settings.WEBHOOK_DELIVERY_RETENTION
+
+    if retention is None:
+        return 0
+
+    deleted, _ = (
+        WebhookDelivery.objects.exclude(status=WebhookDelivery.Status.PENDING)
+        .filter(created_at__lt=timezone.now() - timedelta(days=retention))
+        .delete()
+    )
+
+    return deleted
 
 
 class _SynchronousTask:

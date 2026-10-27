@@ -61,7 +61,10 @@
   growing wait by the `content_studio_deliver_webhooks` command.
   Webhooks only reach public addresses over HTTPS and never follow
   redirects, unless the host is in the new `WEBHOOK_ALLOWED_HOSTS`
-  setting. New settings `WEBHOOK_MAX_ATTEMPTS` and `WEBHOOK_TIMEOUT`.
+  setting. The same command removes finished deliveries after
+  `WEBHOOK_DELIVERY_RETENTION` days (30 by default). New settings
+  `WEBHOOK_MAX_ATTEMPTS` and `WEBHOOK_TIMEOUT`; system check
+  `content_studio.E018` reports malformed webhook settings.
 - **Media library changes are recorded in the history.** Uploading,
   editing, deleting, cropping and moving media items are logged in the
   activity log, like changes to content, and so are creating, renaming,

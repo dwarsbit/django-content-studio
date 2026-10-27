@@ -81,6 +81,8 @@ DEFAULTS = {
     "WEBHOOK_MAX_ATTEMPTS": 5,
     # Seconds a webhook request may take, to connect and to respond.
     "WEBHOOK_TIMEOUT": 5,
+    # Days finished webhook deliveries are kept; None keeps them.
+    "WEBHOOK_DELIVERY_RETENTION": 30,
     "PASSWORD_RESET_EXPIRATION_TIME": 10,
     # Rate limit for the password reset endpoints, per IP; None disables
     # throttling.

@@ -27,6 +27,7 @@ from content_studio.webhooks.delivery import (
     backoff,
     deliver,
     deliver_due,
+    prune_deliveries,
     sign,
 )
 from content_studio.webhooks.models import Webhook, WebhookDelivery
@@ -282,7 +283,7 @@ class DeliveryTests(ReceiverMixin, SignalTestCase):
         out = StringIO()
         call_command("content_studio_deliver_webhooks", stdout=out)
 
-        self.assertIn("Attempted 1", out.getvalue())
+        self.assertIn("Attempted 1 webhook deliveries", out.getvalue())
         self.assertEqual(len(self.server.requests), 1)
         self.assertEqual(
             WebhookDelivery.objects.get().status, WebhookDelivery.Status.SUCCESS
@@ -361,3 +362,48 @@ class BackoffTests(TestCase):
     def test_the_signature_covers_the_timestamp_and_body(self):
         self.assertNotEqual(sign("s", 1, b"{}"), sign("s", 2, b"{}"))
         self.assertTrue(sign("s", 1, b"{}").startswith("t=1,v1="))
+
+
+class PruneTests(TestCase):
+    def test_old_finished_deliveries_are_removed(self):
+        webhook = Webhook.objects.create(name="x", url="https://example.com")
+        Status = WebhookDelivery.Status
+        old = timezone.now() - timedelta(days=31)
+        deliveries = {
+            (status, age): WebhookDelivery.objects.create(
+                webhook=webhook, payload={}, status=status
+            )
+            for status in (Status.SUCCESS, Status.FAILED, Status.PENDING)
+            for age in ("old", "new")
+        }
+        WebhookDelivery.objects.filter(
+            pk__in=[d.pk for (_, age), d in deliveries.items() if age == "old"]
+        ).update(created_at=old)
+
+        self.assertEqual(prune_deliveries(), 2)
+        self.assertEqual(
+            set(WebhookDelivery.objects.values_list("pk", flat=True)),
+            {
+                d.pk
+                for (status, age), d in deliveries.items()
+                if age == "new" or status == Status.PENDING
+            },
+        )
+
+    def test_without_retention_everything_is_kept(self):
+        webhook = Webhook.objects.create(name="x", url="https://example.com")
+        WebhookDelivery.objects.create(
+            webhook=webhook, payload={}, status=WebhookDelivery.Status.SUCCESS
+        )
+        WebhookDelivery.objects.update(created_at=timezone.now() - timedelta(days=999))
+
+        with override_settings(CONTENT_STUDIO={"WEBHOOK_DELIVERY_RETENTION": None}):
+            self.assertEqual(prune_deliveries(), 0)
+
+        self.assertEqual(WebhookDelivery.objects.count(), 1)
+
+    def test_the_command_prunes(self):
+        out = StringIO()
+        call_command("content_studio_deliver_webhooks", stdout=out)
+
+        self.assertIn("removed 0 old deliveries", out.getvalue())

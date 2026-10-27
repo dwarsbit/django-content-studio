@@ -1,0 +1,235 @@
+---
+sidebar_position: 10.5
+---
+
+# 🪝 Webhooks
+
+Webhooks send a request to a URL after editors change content in the admin.
+Use them to rebuild a static site, clear a cache or notify another service,
+for example with the build hook of your hosting provider. In Python, the
+[`content_changed` signal](#react-in-python) gives you the same changes
+without a webhook.
+
+## Set up a webhook
+
+1. Add the webhooks app to your project:
+
+   ```python
+   # mysite/settings.py
+   INSTALLED_APPS = [
+       # ...
+       "content_studio",
+       "content_studio.webhooks",
+   ]
+   ```
+
+2. Run `manage.py migrate` to create its tables.
+3. Create a webhook with the URL to call. For example, in `manage.py shell`:
+
+   ```python
+   from content_studio.webhooks.models import Webhook
+
+   Webhook.objects.create(
+       name="Rebuild the blog",
+       url="https://api.netlify.com/build_hooks/5f3a9c0e2b1d4e0012345678",
+   )
+   ```
+
+4. Schedule the delivery command, which retries failed requests and removes
+   old ones. For example, every minute from cron:
+
+   ```text
+   * * * * * /srv/mysite/venv/bin/python /srv/mysite/manage.py content_studio_deliver_webhooks
+   ```
+
+From now on, every change an editor makes in the admin sends a `POST`
+request to the URL.
+
+## What triggers a webhook
+
+These changes in the admin trigger webhooks:
+
+- creating, editing and deleting objects, including bulk deletes;
+- moving objects to the trash and restoring them;
+- reordering objects;
+- uploading, editing, cropping, moving and deleting media items, and
+  creating, renaming, moving and deleting media folders. Deleting a folder
+  also counts for the subfolders and media items deleted with it.
+
+Changes are sent after they are saved; a change that fails or is rolled
+back sends nothing. Everything one action changes goes into one request per
+webhook, so a bulk delete of fifty articles starts one build, not fifty.
+
+Changes made outside the admin, such as in `manage.py shell`, a data import
+or your own views, do not trigger webhooks. Your own
+[bulk actions](/docs/content/registering-models#bulk-actions) only do when
+they record their changes with `record_change`.
+
+## Choose what triggers it
+
+By default a webhook fires on every change. Three fields narrow it down; an
+empty field matches everything:
+
+- `events`: a list of `"created"`, `"updated"`, `"deleted"`, `"restored"`
+  and `"reordered"`.
+- `content_types`: the models whose changes count.
+- `tenant`: with [multi-tenancy](/docs/multi-tenancy), the primary key of the
+  tenant whose changes count, as a string. Changes to models without a
+  tenant then do not count.
+
+```python
+from django.contrib.contenttypes.models import ContentType
+
+from blog.models import Article, Category
+from content_studio.webhooks.models import Webhook
+
+webhook = Webhook.objects.create(
+    name="Rebuild the blog",
+    url="https://api.netlify.com/build_hooks/5f3a9c0e2b1d4e0012345678",
+    events=["created", "updated", "deleted", "restored"],
+)
+webhook.content_types.set(
+    ContentType.objects.get_for_models(Article, Category).values()
+)
+```
+
+Set `is_active` to `False` to pause a webhook without deleting it.
+
+## The request
+
+Each request is a `POST` with a JSON body:
+
+```json
+{
+  "version": 1,
+  "event": "content.changed",
+  "delivery": "0b8e2c55-6f4e-4f6a-9d1c-3c2f5a7e9b10",
+  "webhook": "Rebuild the blog",
+  "timestamp": "2026-10-27T09:30:12.481930+00:00",
+  "changes": [
+    {
+      "action": "updated",
+      "model": "blog.article",
+      "id": "42",
+      "label": "Ten tips for better headlines",
+      "tenant": null,
+      "timestamp": "2026-10-27T09:30:12.402117+00:00"
+    }
+  ]
+}
+```
+
+- `version`: the format of the body; it only changes in a major release.
+- `delivery`: the request's ID. A retry sends the same ID, so the receiver
+  can skip a request it has already handled.
+- `changes`: the changes the webhook matches, each with its action, the
+  model as `app_label.model_name`, the object's primary key as a string, its
+  name, its tenant and when it was made.
+
+The body does not contain the content itself. To fetch the changed objects,
+the receiver reads them from your own API, for example one built with
+[django-headless](https://github.com/BitsOfAbstraction/django-headless).
+
+These headers come with it:
+
+| Header | Value |
+|--------|-------|
+| `X-Content-Studio-Event` | `content.changed` |
+| `X-Content-Studio-Delivery` | The request's ID, as in the body. |
+| `X-Content-Studio-Signature` | `t=<timestamp>,v1=<signature>`: see below. |
+
+## Verify the signature
+
+Every webhook has a `secret`, generated when you create it. The signature is
+the HMAC-SHA256 of the timestamp, a period and the raw body, with the secret
+as the key. Check it before you trust a request, and refuse old timestamps
+so a recorded request cannot be replayed:
+
+```python
+# receiver.py
+import hashlib
+import hmac
+import time
+
+
+def is_valid(secret: str, header: str, body: bytes, tolerance: int = 300) -> bool:
+    fields = dict(part.split("=", 1) for part in header.split(","))
+    timestamp = int(fields["t"])
+    expected = hmac.new(
+        secret.encode(), f"{timestamp}.".encode() + body, hashlib.sha256
+    ).hexdigest()
+
+    return abs(time.time() - timestamp) <= tolerance and hmac.compare_digest(
+        expected, fields["v1"]
+    )
+```
+
+A build hook URL that contains its own token, like the one above, does not
+need to check the signature.
+
+## Delivery and retries
+
+Each request is stored as a `WebhookDelivery`, with the response status,
+the start of the response body and any error.
+
+Content Studio sends deliveries as [Django tasks](https://docs.djangoproject.com/en/stable/topics/tasks/),
+so the project's `TASKS` setting decides when they run. Without one,
+Django sends them straight away, at the end of the editor's request. With a
+task worker, the request is sent from the worker instead. On Django 5.2,
+deliveries are sent straight away, unless the `django-tasks` package is
+installed.
+
+A response with a 2xx status code counts as delivered. Anything else, such as
+a timeout or a 503, is retried by `content_studio_deliver_webhooks`, after 1,
+4, 16 and 64 minutes. After [`WEBHOOK_MAX_ATTEMPTS`](/docs/settings#webhook_max_attempts)
+attempts, the delivery is marked as failed and a warning is logged to the
+`content_studio.webhooks` logger. The same command removes finished
+deliveries after [`WEBHOOK_DELIVERY_RETENTION`](/docs/settings#webhook_delivery_retention)
+days.
+
+:::caution
+Without the scheduled command, a delivery that fails once is never retried,
+and with a task backend that only stores tasks, nothing is sent at all.
+Schedule the command in every deployment that uses webhooks.
+:::
+
+## Security
+
+Webhooks only connect to public IP addresses, over HTTPS, and do not follow
+redirects. A URL that resolves to a private, loopback or link-local address
+fails, so a webhook cannot reach services on your own network. To call such
+a host on purpose, such as a build server on your network, add it to
+[`WEBHOOK_ALLOWED_HOSTS`](/docs/settings#webhook_allowed_hosts). Plain HTTP
+works for those hosts, and for every host while `DEBUG` is on.
+
+Anyone who can change a webhook can send your content changes to any URL.
+Give the permissions on the webhook models only to people you trust with
+that, like the permissions on users. See [Access control](/docs/permissions).
+
+## React in Python
+
+To act on changes in your own code, connect a receiver to the
+`content_changed` signal. It is sent after the changes of a request in the
+admin are saved, with all of them in `changes`:
+
+```python
+# blog/signals.py
+from django.dispatch import receiver
+
+from content_studio.signals import content_changed
+
+
+@receiver(content_changed)
+def log_changes(sender, changes, user, **kwargs):
+    for change in changes:
+        print(change.action, change.model.__name__, change.object_id)
+```
+
+Import the module in your app's `ready()` method so the receiver is
+connected. Each change is a `Change` with `action`, `model`, `object_id`,
+`object_repr`, `tenant_id`, `user` and `timestamp`. The signal does not need
+the webhooks app; an error in a receiver is logged and does not affect the
+editor's request.
+
+Related pages: [Settings reference](/docs/settings#webhooks),
+[System checks](/docs/system-checks).
