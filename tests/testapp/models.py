@@ -1,5 +1,7 @@
 from django.db import models
 
+from content_studio.blocks import Block, BlockField
+from content_studio.fields import HTMLField
 from content_studio.models import ManualOrderModel
 
 
@@ -123,3 +125,30 @@ class Step(ManualOrderModel):
 
     def __str__(self):
         return self.text
+
+
+class TextBlock(Block):
+    heading = models.CharField(max_length=50, blank=True)
+    body = HTMLField()
+
+    class Meta:
+        description = "Rich text"
+        icon = "ph-bold ph-text-t"
+
+
+class CategoryLinkBlock(Block):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    published = models.DateField(null=True, blank=True)
+
+
+class ColumnsBlock(Block):
+    left = BlockField(blocks=[TextBlock, CategoryLinkBlock], blank=True, max_num=2)
+    right = BlockField(blocks=[TextBlock, CategoryLinkBlock], blank=True, max_num=2)
+
+
+class LandingPage(models.Model):
+    title = models.CharField(max_length=100)
+    body = BlockField(blocks=[TextBlock, CategoryLinkBlock, ColumnsBlock], max_num=3)
+
+    def __str__(self):
+        return self.title

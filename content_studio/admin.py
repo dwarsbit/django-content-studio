@@ -7,7 +7,7 @@ from django.db.models import Model
 from django.utils.translation import gettext_lazy as _
 from rest_framework.request import HttpRequest
 
-from . import widgets, formats, fields
+from . import widgets, formats, fields, blocks
 from .actions import get_bulk_actions
 from .exceptions import AlreadyRegistered, NotRegistered
 from .form import FormSet, FormSetGroup, Field, Component, TableColumn
@@ -450,6 +450,7 @@ class ContentStudioSite:
         fields.HTMLField: widgets.RichTextWidget,
         fields.TagField: widgets.TagWidget,
         fields.FlexField: widgets.JSONSchemaWidget,
+        blocks.BlockField: widgets.BlockWidget,
         fields.MultipleChoiceField: widgets.MultiSelectWidget,
         fields.URLPathField: widgets.URLPathWidget,
         ml_fields.MediaField: widgets.MediaWidget,
@@ -482,6 +483,7 @@ class ContentStudioSite:
         fields.HTMLField: formats.HtmlFormat,
         fields.TagField: formats.TagFormat,
         fields.FlexField: formats.JSONFormat,
+        blocks.BlockField: formats.BlockFormat,
         fields.MultipleChoiceField: formats.TextFormat,
         fields.URLPathField: formats.TextFormat,
         ml_fields.MediaField: formats.MediaFormat,
@@ -652,7 +654,7 @@ def register(*models, site: ContentStudioSite = None):
 
 def _header_entries(studio) -> list:
     """A studio's edit_header as a list; anything but a list or tuple
-    counts as empty (system check E019 reports it)."""
+    counts as empty (system check E020 reports it)."""
     header = getattr(studio, "edit_header", None)
 
     return list(header) if isinstance(header, (list, tuple)) else []

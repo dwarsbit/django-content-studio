@@ -27,6 +27,7 @@ PUBLIC_MODULES = [
     "content_studio.widgets",
     "content_studio.formats",
     "content_studio.fields",
+    "content_studio.blocks",
     "content_studio.models",
     "content_studio.managers",
     "content_studio.signals",

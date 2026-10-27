@@ -175,6 +175,24 @@ export interface ModelField {
   related_model?: string;
   json_schema?: Record<string, unknown>;
   multiple?: boolean;
+  // BlockField: the block types and the limits on the number of blocks.
+  blocks?: BlockDefinition[];
+  min_num?: number | null;
+  max_num?: number | null;
+}
+
+export interface BlockDefinition {
+  name: string;
+  verbose_name: string;
+  description: string;
+  icon: string | null;
+  fields: Record<string, ModelField>;
+}
+
+export interface BlockValue {
+  id: string;
+  type: string;
+  data: Record<string, unknown>;
 }
 
 /**
@@ -251,6 +269,7 @@ export interface ButtonResult {
 }
 
 export enum FieldType {
+  BlockField = "BlockField",
   BooleanField = "BooleanField",
   CharField = "CharField",
   DateField = "DateField",
@@ -268,6 +287,7 @@ export enum FieldType {
 }
 
 export enum FieldFormat {
+  BlockFormat = "BlockFormat",
   BooleanFormat = "BooleanFormat",
   DateFormat = "DateFormat",
   DateTimeFormat = "DateTimeFormat",
@@ -284,6 +304,7 @@ export enum FieldFormat {
 }
 
 export enum FieldWidget {
+  BlockWidget = "BlockWidget",
   CheckboxWidget = "CheckboxWidget",
   DateTimeWidget = "DateTimeWidget",
   DateWidget = "DateWidget",

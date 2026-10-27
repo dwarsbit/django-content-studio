@@ -2,6 +2,21 @@
 
 ## 1.1.0 (unreleased)
 
+- **Block fields.** `BlockField` stores an ordered list of content
+  blocks that editors add (also between two blocks), reorder by dragging
+  or with the keyboard, duplicate and remove in the admin, to
+  build a page body from predefined blocks such as text and images.
+  Define a block as a `Block` subclass with plain model fields, which
+  pick the widgets and validate the block's data; blocks are not models
+  and need no migrations. `max_num` and `min_num` limit the number of
+  blocks, relations in blocks (such as `MediaField`) are stored as
+  primary keys and scoped to the tenant, and HTML in blocks is sanitized
+  on save. In templates, `{% render_blocks page.sections %}` (from the
+  `content_studio` template library) renders each block with its own
+  template, with related objects loaded in one query per model. A block
+  can have block fields of its own, one level deep, for layouts such as
+  columns; editors drag blocks between those lists and the page's own.
+  System check `content_studio.E018` reports misconfigured block fields.
 - **Read-only fields on the studio.** `readonly_fields` and
   `get_readonly_fields(request, obj=None)` work like the classic Django
   admin's, on studios and inlines: the edit page shows the fields
@@ -83,7 +98,7 @@
 - **Components in the edit page's header.** `edit_header` on a studio
   places components, such as buttons, next to the save button; on an
   inline studio, in the header of the inline object's editor. System
-  check `content_studio.E019` reports entries that are not components.
+  check `content_studio.E020` reports entries that are not components.
 - **`MainMenuLink(weight=...)` orders the menu.** The weight was accepted
   but ignored; the main menu now orders its links and buttons by weight,
   lowest first, keeping equal weights in the order of `extensions`.
@@ -120,7 +135,7 @@
   setting. The same command removes finished deliveries after
   `WEBHOOK_DELIVERY_RETENTION` days (30 by default). New settings
   `WEBHOOK_MAX_ATTEMPTS` and `WEBHOOK_TIMEOUT`; system check
-  `content_studio.E018` reports malformed webhook settings.
+  `content_studio.E019` reports malformed webhook settings.
 - **Media library changes are recorded in the history.** Uploading,
   editing, deleting, cropping and moving media items are logged in the
   activity log, like changes to content, and so are creating, renaming,

@@ -1,5 +1,6 @@
 __all__ = [
     "BaseWidget",
+    "BlockWidget",
     "CheckboxWidget",
     "DateTimeWidget",
     "DateWidget",
@@ -116,4 +117,8 @@ class ManyMediaWidget(BaseWidget):
 
 
 class TagWidget(BaseWidget):
+    pass
+
+
+class BlockWidget(BaseWidget):
     pass

@@ -577,7 +577,7 @@ def webhook_setting_errors() -> list[tuple[str, str]]:
     ):
         errors.append(
             (
-                "content_studio.E018",
+                "content_studio.E019",
                 "WEBHOOK_ALLOWED_HOSTS must be a list of host names, like "
                 "['build.internal'].",
             )
@@ -586,7 +586,7 @@ def webhook_setting_errors() -> list[tuple[str, str]]:
     if not _is_positive_number(cs_settings.WEBHOOK_MAX_ATTEMPTS, integer=True):
         errors.append(
             (
-                "content_studio.E018",
+                "content_studio.E019",
                 "WEBHOOK_MAX_ATTEMPTS must be a positive whole number.",
             )
         )
@@ -594,7 +594,7 @@ def webhook_setting_errors() -> list[tuple[str, str]]:
     if not _is_positive_number(cs_settings.WEBHOOK_TIMEOUT):
         errors.append(
             (
-                "content_studio.E018",
+                "content_studio.E019",
                 "WEBHOOK_TIMEOUT must be a positive number of seconds.",
             )
         )
@@ -604,7 +604,7 @@ def webhook_setting_errors() -> list[tuple[str, str]]:
     if retention is not None and not _is_positive_number(retention, integer=True):
         errors.append(
             (
-                "content_studio.E018",
+                "content_studio.E019",
                 "WEBHOOK_DELIVERY_RETENTION must be None or a positive whole "
                 "number of days.",
             )
@@ -922,7 +922,7 @@ def edit_header_errors(studio) -> list[tuple[str, str]]:
         ):
             errors.append(
                 (
-                    "content_studio.E019",
+                    "content_studio.E020",
                     f"{config_name(owner)}.edit_header must be a list of "
                     "components.",
                 )
@@ -933,7 +933,7 @@ def edit_header_errors(studio) -> list[tuple[str, str]]:
             if not isinstance(entry, Component):
                 errors.append(
                     (
-                        "content_studio.E019",
+                        "content_studio.E020",
                         f"{config_name(owner)}.edit_header entry {entry!r} is "
                         "not a component, such as a Button.",
                     )

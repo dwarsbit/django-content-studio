@@ -617,7 +617,7 @@ def test_empty_login_backends_surfaces_as_warning():
     assert "LOGIN_BACKENDS" in str(warning)
 
 
-# --- E018: webhook settings --------------------------------------------------
+# --- E019: webhook settings --------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -640,8 +640,8 @@ def test_malformed_webhook_settings_surface_as_system_error(overrides):
     ):
         messages = check_content_studio()
 
-    assert [m.id for m in messages if m.id == "content_studio.E018"] == [
-        "content_studio.E018"
+    assert [m.id for m in messages if m.id == "content_studio.E019"] == [
+        "content_studio.E019"
     ]
 
 
@@ -658,7 +658,7 @@ def test_valid_webhook_settings_pass():
     ):
         messages = check_content_studio()
 
-    assert not [m for m in messages if m.id == "content_studio.E018"]
+    assert not [m for m in messages if m.id == "content_studio.E019"]
 
 
 # --- E014: media library upload settings -------------------------------------

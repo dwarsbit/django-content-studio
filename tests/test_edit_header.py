@@ -153,7 +153,7 @@ def test_the_created_result_travels_with_the_create_response(monkeypatch):
 
 def checked(monkeypatch, studio_class, header):
     monkeypatch.setattr(studio_class, "edit_header", header)
-    return [m for m in check_content_studio() if m.id == "content_studio.E019"]
+    return [m for m in check_content_studio() if m.id == "content_studio.E020"]
 
 
 def test_header_entries_must_be_components(monkeypatch):

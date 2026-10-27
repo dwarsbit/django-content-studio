@@ -17,6 +17,11 @@ The public API consists of:
   `get_readonly_fields`, `get_prepopulated_fields`, `get_list_item_display`,
   `get_relation_display`, `get_created_result`, `get_tenants`,
   `get_thumbnail`, `get_media_serializer_fields` and `crop_image`;
+- the documented options and methods of blocks: the `Meta` options of
+  `Block`, `get_context` and `get_template_name`, and the
+  [values of a block field](/docs/content/block-fields#render-blocks-in-templates)
+  (`blocks`, and each block's `id`, `type`, `value` and `render`);
+- the `render_blocks` tag of the `content_studio` template library;
 - every [setting](/docs/settings) in `CONTENT_STUDIO`;
 - the [system check](/docs/system-checks) IDs, but not their messages;
 - `content_studio.urls` and the `content_studio.contrib.password_reset` app,
@@ -100,6 +105,7 @@ Menu links, menu buttons and embedded pages.
 The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_mapping`. `BaseWidget` is their base type; custom widgets are not supported.
 
 - `BaseWidget`
+- `BlockWidget`
 - `CheckboxWidget`
 - `DateTimeWidget`
 - `DateWidget`
@@ -127,6 +133,7 @@ The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_
 The built-in display formats, to use in `TableColumn(format=...)` and `default_format_mapping`. `BaseFormat` is their base type; custom formats are not supported.
 
 - `BaseFormat`
+- `BlockFormat`
 - `BooleanFormat`
 - `DateFormat`
 - `DateTimeFormat`
@@ -151,6 +158,13 @@ Optional content fields.
 - `MultipleChoiceField`
 - `TagField`
 - `URLPathField`
+
+## `content_studio.blocks`
+
+The block field: an ordered list of content blocks. `Block` is the base type of the blocks you define.
+
+- `Block`
+- `BlockField`
 
 ## `content_studio.models`
 

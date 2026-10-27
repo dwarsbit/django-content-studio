@@ -1,0 +1,691 @@
+import copy
+import json
+import re
+import uuid
+from types import SimpleNamespace
+
+from django.apps import apps
+from django.core import checks
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db import models
+from django.db.models.query_utils import DeferredAttribute
+from django.template.loader import render_to_string
+from django.utils.text import camel_case_to_spaces
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ngettext
+
+__all__ = [
+    "Block",
+    "BlockField",
+]
+
+###
+# Blocks are the building parts of a BlockField: an ordered list of
+# content blocks that editors add, reorder and remove freely. A block
+# declares its fields as plain (unbound) Django model fields, which pick
+# the widget and validate the block's data. Blocks are not models: they
+# have no table, and all block data lives in the BlockField's JSON column.
+###
+
+META_OPTIONS = {"name", "verbose_name", "description", "icon", "template_name"}
+
+# Field kinds a block cannot store as a JSON value.
+UNSUPPORTED_FIELDS = (
+    models.ManyToManyField,
+    models.FileField,
+    models.AutoField,
+    models.BigAutoField,
+    models.SmallAutoField,
+)
+
+
+class BlockOptions:
+    def __init__(self, cls, meta):
+        unknown = set(vars(meta)) - META_OPTIONS if meta else set()
+        unknown = {key for key in unknown if not key.startswith("_")}
+
+        if unknown:
+            raise TypeError(
+                f"{cls.__name__}.Meta has invalid attribute(s): "
+                f"{', '.join(sorted(unknown))}"
+            )
+
+        base_name = re.sub(r"Block$", "", cls.__name__) or cls.__name__
+
+        self.name = getattr(meta, "name", None) or camel_case_to_spaces(
+            base_name
+        ).replace(" ", "_")
+        self.verbose_name = getattr(meta, "verbose_name", None) or (
+            camel_case_to_spaces(base_name).capitalize()
+        )
+        self.description = getattr(meta, "description", "")
+        self.icon = getattr(meta, "icon", None)
+        self.template_name = getattr(meta, "template_name", None)
+
+
+class BlockMeta(type):
+    """
+    Collects the declared model fields, like a model's metaclass but
+    without a table: the fields are never bound to a model.
+    """
+
+    def __new__(mcs, name, bases, attrs):
+        meta = attrs.pop("Meta", None)
+        declared = {
+            key: value
+            for key, value in attrs.items()
+            if isinstance(value, models.Field)
+        }
+
+        for key in declared:
+            attrs.pop(key)
+
+        cls = super().__new__(mcs, name, bases, attrs)
+
+        base_fields = {}
+        for base in reversed(cls.__mro__[1:]):
+            base_fields.update(getattr(base, "base_fields", {}))
+
+        for key, field in declared.items():
+            field.set_attributes_from_name(key)
+            base_fields[key] = field
+
+        cls.base_fields = base_fields
+        cls._meta = BlockOptions(cls, meta)
+
+        return cls
+
+
+class Block(metaclass=BlockMeta):
+    """
+    A block type of a BlockField. Declare its fields as model fields:
+
+        class ImageBlock(Block):
+            image = MediaField()
+            caption = models.CharField(max_length=200, blank=True)
+
+            class Meta:
+                verbose_name = "Image"
+                icon = "ph-bold ph-image"
+    """
+
+    @classmethod
+    def get_fields(cls) -> dict[str, models.Field]:
+        """The block's fields, with lazy relations resolved."""
+        for field in cls.base_fields.values():
+            remote_field = getattr(field, "remote_field", None)
+
+            if remote_field is not None and isinstance(remote_field.model, str):
+                remote_field.model = apps.get_model(remote_field.model)
+
+        return cls.base_fields
+
+    @classmethod
+    def get_template_name(cls) -> str:
+        """
+        Meta.template_name, or "<app_label>/blocks/<name>.html" for the
+        app that defines the block.
+        """
+        if cls._meta.template_name:
+            return cls._meta.template_name
+
+        app_config = apps.get_containing_app_config(cls.__module__)
+        prefix = f"{app_config.label}/" if app_config else ""
+
+        return f"{prefix}blocks/{cls._meta.name}.html"
+
+    @classmethod
+    def get_context(cls, block: "BoundBlock") -> dict:
+        """The template context of a block; override to add to it."""
+        return {"block": block, "value": block.value}
+
+    @classmethod
+    def clean(cls, data, get_queryset=None) -> dict:
+        """
+        Validates the block's data and returns it as stored: declared
+        fields only, relations as primary keys, JSON-serializable values.
+        Raises BlockErrors with a dict of field errors; the errors of a
+        block field in the block are that field's BlockErrors.
+        """
+        if not isinstance(data, dict):
+            data = {}
+
+        cleaned, errors = {}, {}
+
+        for name, field in cls.get_fields().items():
+            if isinstance(field, BlockField):
+                value = data.get(name)
+                value = field.get_default() if value is None else value
+
+                try:
+                    field.validate(value, None)
+                    cleaned[name] = field.clean_blocks(value, get_queryset)
+                except ValidationError as e:
+                    errors[name] = e.messages
+                except BlockErrors as e:
+                    errors[name] = e.errors
+
+                continue
+
+            try:
+                if field.is_relation:
+                    value = clean_relation(field, data.get(name), get_queryset)
+                elif name in data:
+                    value = field.clean(data[name], None)
+                else:
+                    value = field.clean(field.get_default(), None)
+            except ValidationError as e:
+                errors[name] = e.messages
+                continue
+
+            cleaned[name] = to_json(value)
+
+        if errors:
+            raise BlockErrors(errors)
+
+        return cleaned
+
+    @classmethod
+    def serialize(cls) -> dict:
+        from .serializers import ModelSerializer
+
+        serializer = ModelSerializer(model=None)
+
+        return {
+            "name": cls._meta.name,
+            "verbose_name": cls._meta.verbose_name,
+            "description": cls._meta.description,
+            "icon": cls._meta.icon,
+            # The same shape as a model field, so the admin renders block
+            # fields with the regular widgets.
+            "fields": {
+                name: serializer.get_field(field)
+                for name, field in cls.get_fields().items()
+            },
+        }
+
+
+def clean_relation(field, value, get_queryset=None):
+    """
+    A related object is given as {"id": ...} (the admin's shape) or as a
+    bare primary key, and stored as its primary key.
+    """
+    if isinstance(value, dict):
+        value = value.get("id")
+
+    if value in field.empty_values:
+        if not field.blank:
+            raise ValidationError(field.error_messages["blank"], code="blank")
+        return None
+
+    model = field.related_model
+    queryset = get_queryset(model) if get_queryset else model._default_manager.all()
+
+    try:
+        pk = model._meta.pk.to_python(value)
+        queryset.get(pk=pk)
+    except (ValidationError, ValueError, TypeError, ObjectDoesNotExist):
+        raise ValidationError(_("Unknown related item."), code="invalid")
+
+    return pk
+
+
+def to_json(value):
+    """Dates, decimals and UUIDs are stored the way Django encodes them."""
+    return json.loads(json.dumps(value, cls=DjangoJSONEncoder))
+
+
+class BlockErrors(Exception):
+    """
+    Errors of a list of blocks: either a list of messages about the whole
+    list, or per block (by index) a dict of field errors. A field's errors
+    are a list of messages, or for a block field in the block, its own
+    BlockErrors' errors.
+    """
+
+    def __init__(self, errors: list | dict):
+        self.errors = errors
+        super().__init__(errors)
+
+    def as_validation_error(self) -> ValidationError:
+        """One message per error, prefixed with where it is."""
+        return ValidationError(
+            [
+                f"{', '.join(map(str, path))}: {message}" if path else message
+                for path, message in self.messages(self.errors)
+            ]
+        )
+
+    @classmethod
+    def messages(cls, errors, path=()):
+        if isinstance(errors, list):
+            for message in errors:
+                yield path, message
+            return
+
+        for index, fields in errors.items():
+            number = index + 1
+            block = (
+                _("block %(number)s") % {"number": number}
+                if path
+                else _("Block %(number)s") % {"number": number}
+            )
+
+            for name, field_errors in fields.items():
+                yield from cls.messages(field_errors, (*path, block, name))
+
+    def as_data(self):
+        """The errors keyed like the value: <index>.data.<field>."""
+        return as_data(self.errors)
+
+
+def as_data(errors):
+    if isinstance(errors, list):
+        return errors
+
+    return {
+        str(index): {"data": {name: as_data(e) for name, e in fields.items()}}
+        for index, fields in errors.items()
+    }
+
+
+def iter_blocks(value, field):
+    """
+    The (Block, data) of every block in a list of blocks, the blocks of
+    block fields in those blocks included. Skips what is not a block of
+    a known type.
+    """
+    if not isinstance(value, list):
+        return
+
+    block_types = field.block_types
+
+    for item in value:
+        if not isinstance(item, dict) or not isinstance(item.get("data"), dict):
+            continue
+
+        block = block_types.get(item.get("type"))
+
+        if block is None:
+            continue
+
+        yield block, item["data"]
+
+        for name, sub_field in block.get_fields().items():
+            if isinstance(sub_field, BlockField):
+                yield from iter_blocks(item["data"].get(name), sub_field)
+
+
+class BoundBlock:
+    """
+    One block of a page, for templates: its id, its type, the Block class
+    and its value, a dict of the block's fields as Python values (related
+    objects instead of primary keys, dates instead of strings).
+    """
+
+    def __init__(self, id, type, block, value):
+        self.id = id
+        self.type = type
+        self.block = block
+        self.value = value
+
+    def __repr__(self):
+        return f"<BoundBlock {self.type} {self.id}>"
+
+    def render(self, context=None, request=None) -> str:
+        return render_to_string(
+            self.block.get_template_name(),
+            {**(context or {}), **self.block.get_context(self)},
+            request,
+        )
+
+
+class BlockList(list):
+    """
+    The value of a BlockField: the stored list of blocks, which also knows
+    its block types. `blocks` gives the blocks as BoundBlocks.
+    """
+
+    def __init__(self, value, field):
+        super().__init__(value)
+        self.field = field
+
+    @property
+    def blocks(self) -> list[BoundBlock]:
+        """
+        The blocks, ready for templates. Related objects take one query per
+        related model, for the blocks inside blocks too; blocks of a type
+        the field no longer has are left out.
+        """
+        bound = getattr(self, "_bound", None)
+
+        if bound is not None:
+            return bound
+
+        wanted: dict[type[models.Model], set] = {}
+
+        for block, data in iter_blocks(self, self.field):
+            for name, field in block.get_fields().items():
+                pk = related_pk(field, data.get(name))
+                if pk is not None:
+                    wanted.setdefault(field.related_model, set()).add(pk)
+
+        objects = {
+            model: model._default_manager.in_bulk(pks) for model, pks in wanted.items()
+        }
+
+        return self._bind(objects)
+
+    def _bind(self, objects) -> list[BoundBlock]:
+        block_types = self.field.block_types
+        bound = []
+
+        for item in self:
+            if not isinstance(item, dict) or item.get("type") not in block_types:
+                continue
+
+            block = block_types[item["type"]]
+            data = item.get("data") if isinstance(item.get("data"), dict) else {}
+            value = {}
+
+            for name, field in block.get_fields().items():
+                if isinstance(field, BlockField):
+                    # Blocks inside the block, bound with the same objects.
+                    raw = data.get(name)
+                    nested = BlockList(raw if isinstance(raw, list) else [], field)
+                    nested._bound = nested._bind(objects)
+                    value[name] = nested
+                elif field.is_relation:
+                    pk = related_pk(field, data.get(name))
+                    value[name] = (
+                        objects[field.related_model].get(pk) if pk is not None else None
+                    )
+                elif name not in data:
+                    value[name] = field.get_default()
+                else:
+                    try:
+                        value[name] = field.to_python(data[name])
+                    except ValidationError:
+                        value[name] = data[name]
+
+            bound.append(BoundBlock(item.get("id"), item["type"], block, value))
+
+        return bound
+
+
+def related_pk(field, value):
+    """The primary key a block stores for a relation, or None."""
+    if not field.is_relation or value in (None, ""):
+        return None
+
+    try:
+        return field.related_model._meta.pk.to_python(value)
+    except ValidationError:
+        return None
+
+
+class BlockDescriptor(DeferredAttribute):
+    """
+    Gives a BlockField's value as a BlockList, which knows its blocks. A
+    data descriptor (it defines __set__), like Django's FileDescriptor, so
+    reads always pass through it.
+    """
+
+    def __get__(self, instance, cls=None):
+        if instance is None:
+            return self
+
+        value = super().__get__(instance, cls)
+
+        if isinstance(value, list) and not isinstance(value, BlockList):
+            value = BlockList(value, self.field)
+            instance.__dict__[self.field.attname] = value
+
+        return value
+
+    def __set__(self, instance, value):
+        instance.__dict__[self.field.attname] = value
+
+
+class BlockField(models.JSONField):
+    description = "An ordered list of content blocks."
+    descriptor_class = BlockDescriptor
+
+    def __init__(self, *args, blocks=(), min_num=None, max_num=None, **kwargs):
+        self.blocks = list(blocks)
+        self.min_num = min_num
+        self.max_num = max_num
+
+        kwargs.setdefault("default", list)
+
+        super().__init__(*args, **kwargs)
+
+    @property
+    def block_types(self) -> dict[str, type[Block]]:
+        return {block._meta.name: block for block in self.blocks}
+
+    def clean_blocks(self, value, get_queryset=None) -> list[dict] | None:
+        """
+        Validates a list of blocks and returns it as stored. Raises
+        BlockErrors. `get_queryset(model)` limits which related objects
+        blocks may refer to.
+        """
+        if value is None:
+            return None
+
+        if not isinstance(value, list):
+            raise BlockErrors([_("Enter a list of blocks.")])
+
+        block_types = self.block_types
+        errors, ids = [], set()
+
+        for index, item in enumerate(value):
+            number = index + 1
+
+            if not isinstance(item, dict) or not isinstance(item.get("type"), str):
+                errors.append(
+                    _("Block %(number)s is not a valid block.") % {"number": number}
+                )
+            elif item["type"] not in block_types:
+                errors.append(
+                    _("Block %(number)s has an unknown type: %(type)s.")
+                    % {"number": number, "type": item["type"]}
+                )
+            elif item.get("id") is not None and item["id"] in ids:
+                errors.append(
+                    _("Block %(number)s has the same id as another block.")
+                    % {"number": number}
+                )
+            else:
+                ids.add(item.get("id"))
+
+        count = len(value)
+
+        if self.min_num is not None and count < self.min_num:
+            errors.append(
+                ngettext(
+                    "Add at least %(num)d block.",
+                    "Add at least %(num)d blocks.",
+                    self.min_num,
+                )
+                % {"num": self.min_num}
+            )
+
+        if self.max_num is not None and count > self.max_num:
+            errors.append(
+                ngettext(
+                    "Use at most %(num)d block.",
+                    "Use at most %(num)d blocks.",
+                    self.max_num,
+                )
+                % {"num": self.max_num}
+            )
+
+        if errors:
+            raise BlockErrors(errors)
+
+        cleaned, block_errors = [], {}
+
+        for index, item in enumerate(value):
+            block = block_types[item["type"]]
+
+            try:
+                data = block.clean(item.get("data"), get_queryset)
+            except BlockErrors as e:
+                block_errors[index] = e.errors
+                continue
+
+            cleaned.append(
+                {
+                    "id": str(item.get("id") or uuid.uuid4()),
+                    "type": item["type"],
+                    "data": data,
+                }
+            )
+
+        if block_errors:
+            raise BlockErrors(block_errors)
+
+        return cleaned
+
+    def clean(self, value, model_instance):
+        value = self.to_python(value)
+        self.validate(value, model_instance)
+
+        try:
+            value = self.clean_blocks(value)
+        except BlockErrors as e:
+            raise e.as_validation_error()
+
+        self.run_validators(value)
+
+        return value
+
+    def pre_save(self, model_instance, add):
+        """
+        Runs each block field's own save-time normalization, such as the
+        HTMLField sanitizer, on the block data.
+        """
+        value = super().pre_save(model_instance, add)
+
+        if not isinstance(value, list):
+            return value
+
+        saved = self.pre_save_blocks(value, add)
+        setattr(model_instance, self.attname, saved)
+
+        return saved
+
+    def pre_save_blocks(self, value, add):
+        block_types = self.block_types
+        saved = []
+
+        for item in value:
+            block = (
+                block_types.get(item.get("type")) if isinstance(item, dict) else None
+            )
+
+            if block is None or not isinstance(item.get("data"), dict):
+                saved.append(item)
+                continue
+
+            data = dict(item["data"])
+
+            for name, field in block.get_fields().items():
+                if name not in data or field.is_relation:
+                    continue
+
+                if isinstance(field, BlockField):
+                    if isinstance(data[name], list):
+                        data[name] = field.pre_save_blocks(data[name], add)
+                else:
+                    holder = SimpleNamespace(**{field.attname: data[name]})
+                    data[name] = to_json(field.pre_save(holder, add))
+
+            saved.append({**item, "data": data})
+
+        return saved
+
+    def check(self, **kwargs):
+        return [*super().check(**kwargs), *self._check_blocks()]
+
+    def _check_blocks(self, prefix="", nested=False, obj=None):
+        errors = []
+
+        def error(msg):
+            errors.append(
+                checks.Error(
+                    f"{prefix}{msg}", obj=obj or self, id="content_studio.E018"
+                )
+            )
+
+        if not self.blocks:
+            error("BlockField needs at least one block in blocks.")
+
+        names = set()
+
+        for block in self.blocks:
+            if not (isinstance(block, type) and issubclass(block, Block)):
+                error(f"{block!r} in blocks is not a Block subclass.")
+                continue
+
+            if block._meta.name in names:
+                error(f"Two blocks are named {block._meta.name!r}.")
+            names.add(block._meta.name)
+
+            for name, field in block.base_fields.items():
+                if isinstance(field, BlockField):
+                    if nested:
+                        error(
+                            f"{block.__name__}.{name}: blocks inside blocks go one "
+                            "level deep, so this block cannot have a BlockField."
+                        )
+                    else:
+                        errors.extend(
+                            field._check_blocks(
+                                prefix=f"{block.__name__}.{name}: ",
+                                nested=True,
+                                obj=obj or self,
+                            )
+                        )
+                elif isinstance(field, UNSUPPORTED_FIELDS):
+                    error(
+                        f"{block.__name__}.{name}: a "
+                        f"{field.__class__.__name__} cannot be used in a block."
+                    )
+                elif field.is_relation:
+                    try:
+                        block.get_fields()
+                    except (LookupError, ValueError):
+                        error(
+                            f"{block.__name__}.{name}: the related model "
+                            f"{field.remote_field.model!r} is not installed."
+                        )
+
+        for option in ("min_num", "max_num"):
+            num = getattr(self, option)
+            if num is not None and (
+                not isinstance(num, int) or isinstance(num, bool) or num < 0
+            ):
+                error(f"{option} must be a non-negative integer.")
+
+        if (
+            isinstance(self.min_num, int)
+            and isinstance(self.max_num, int)
+            and self.min_num > self.max_num
+        ):
+            error("min_num cannot be greater than max_num.")
+
+        return errors
+
+    def cs_get_field_attributes(self):
+        return {
+            "blocks": [
+                block.serialize()
+                for block in self.blocks
+                if isinstance(block, type) and issubclass(block, Block)
+            ],
+            "min_num": self.min_num,
+            "max_num": self.max_num,
+        }

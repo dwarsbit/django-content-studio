@@ -190,6 +190,28 @@
     },
     "date_picker": {
       "placeholder": "Selecteer een datum"
+    },
+    "block_widget": {
+      "add_block": "Blok toevoegen",
+      "search": "Blokken zoeken",
+      "no_results": "Geen blokken gevonden",
+      "empty": "Nog geen blokken",
+      "count": "{{count}} van {{max}} blokken",
+      "max_reached": "Dit veld bevat maximaal {{max}} blokken.",
+      "expand": "{{block}} uitklappen",
+      "collapse": "{{block}} inklappen",
+      "move_up": "{{block}} omhoog verplaatsen",
+      "move_down": "{{block}} omlaag verplaatsen",
+      "more_actions": "Meer acties voor {{block}}",
+      "duplicate": "Dupliceren",
+      "remove": "Verwijderen",
+      "unknown_type": "Onbekend bloktype: {{type}}",
+      "insert": "Blok hier toevoegen",
+      "drag": "{{block}} verslepen om te ordenen"
+    },
+    "block_format": {
+      "count_one": "{{count}} blok",
+      "count_other": "{{count}} blokken"
     }
   },
   "dashboard": {

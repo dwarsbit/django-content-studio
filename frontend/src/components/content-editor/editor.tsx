@@ -16,6 +16,7 @@ import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
 import { useShowResult } from "@/hooks/use-show-result";
+import { type ServerErrors, setServerErrors } from "@/lib/server-errors";
 import { getErrorMessage } from "@/lib/utils";
 import type { ButtonResult, FormField, Model, Resource } from "@/types";
 
@@ -255,7 +256,7 @@ function EditorForm({
     } catch (e: unknown) {
       if (axios.isAxiosError(e) && e.response) {
         const errors = Object.entries(
-          e.response.data as Record<string, string[]>,
+          e.response.data as Record<string, ServerErrors>,
         );
         toast.error(
           <div>
@@ -267,7 +268,7 @@ function EditorForm({
         );
 
         for (const [key, error] of errors) {
-          form.setError(key, { type: "custom", message: error[0] ?? "" });
+          setServerErrors(form.setError, key, error);
         }
       }
       throw e;

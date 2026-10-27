@@ -7,6 +7,7 @@ from .models import (
     Article,
     Category,
     Label,
+    LandingPage,
     Note,
     Page,
     Review,
@@ -107,3 +108,8 @@ class TrackAdmin(ModelStudio):
     soft_delete = "removed_at"
     reorder_field = "position"
     reorder_scope = ["category"]
+
+
+@register(LandingPage)
+class LandingPageAdmin(ModelStudio):
+    table_display = ["title"]
