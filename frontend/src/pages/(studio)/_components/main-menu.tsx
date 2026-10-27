@@ -39,6 +39,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
@@ -47,10 +48,17 @@ import {
 } from "@/components/ui/tooltip";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import { useDiscover } from "@/hooks/use-discover";
+import { useHttp } from "@/hooks/use-http";
 import { useMe } from "@/hooks/use-me";
+import { useRunButton } from "@/hooks/use-run-button";
 import { cn } from "@/lib/utils";
 import { useTenant } from "@/tenant";
-import { ExtensionType, type TailwindColor } from "@/types";
+import {
+  type ButtonResult,
+  ExtensionType,
+  type MainMenuButtonExtension,
+  type TailwindColor,
+} from "@/types";
 
 import { TenantSelector } from "./tenant-selector";
 
@@ -78,6 +86,10 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
   const linkExtensions =
     discover?.extensions.filter(
       (extension) => extension.extension_type === ExtensionType.MainMenuLink,
+    ) ?? [];
+  const buttonExtensions =
+    discover?.extensions.filter(
+      (extension) => extension.extension_type === ExtensionType.MainMenuButton,
     ) ?? [];
 
   useEffect(() => {
@@ -218,6 +230,13 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
                 />
               ))}
 
+              {buttonExtensions.map((extension) => (
+                <MenuButton
+                  key={extension.extension_id}
+                  extension={extension}
+                />
+              ))}
+
               <div className="h-4" role="separator" />
 
               {discover?.model_groups.map((group) => (
@@ -282,6 +301,39 @@ const COLORS: Record<TailwindColor, string> = {
   taupe: "bg-taupe-100 text-taupe-600",
 };
 
+/**
+ * A MainMenuButton extension: runs the button's handle() on the server,
+ * confirming first when it asks to, and shows its result.
+ */
+function MenuButton({ extension }: { extension: MainMenuButtonExtension }) {
+  const http = useHttp();
+  const { extension_id, config } = extension;
+  const run = useCallback(async () => {
+    const { data } = await http.post<ButtonResult>(
+      `/extensions/${extension_id}/run`,
+    );
+
+    return data;
+  }, [http, extension_id]);
+  const { trigger, isPending } = useRunButton({ confirm: config.confirm, run });
+
+  return (
+    <MenuItem
+      color={config.color ?? undefined}
+      icon={
+        isPending ? (
+          <Spinner className="size-3" />
+        ) : (
+          <span className={config.icon ?? undefined} />
+        )
+      }
+      label={config.label}
+      disabled={isPending}
+      onClick={trigger}
+    />
+  );
+}
+
 function MenuItem({
   label,
   icon,
@@ -289,6 +341,8 @@ function MenuItem({
   color,
   children,
   isSubItem,
+  disabled,
+  onClick,
 }: {
   label: string;
   isSubItem?: boolean;
@@ -296,6 +350,8 @@ function MenuItem({
   to?: Partial<Path> | string;
   color?: TailwindColor;
   children?: React.ReactElement[];
+  disabled?: boolean;
+  onClick?(): void;
 }) {
   const Comp = to ? Link : "button";
   const match = useMatch(`${to ?? ""}`);
@@ -314,10 +370,13 @@ function MenuItem({
           "justify-center": menuCollapsed,
         },
       )}
+      disabled={disabled}
       onClick={() => {
         if (children) {
           toggleGroup(label, expanded);
         }
+
+        onClick?.();
       }}
     >
       {icon && (

@@ -389,6 +389,13 @@ export interface MainMenuLinkConfig {
   label: string;
 }
 
+export interface MainMenuButtonConfig {
+  label: string;
+  icon: string | null;
+  color: TailwindColor | null;
+  confirm: string | null;
+}
+
 export interface IFramePageConfig {
   path: string;
   iframe_url: string;
@@ -406,9 +413,17 @@ export interface IFramePageExtension {
   config: IFramePageConfig;
 }
 
-export type Extension = MainMenuLinkExtension | IFramePageExtension;
+export interface MainMenuButtonExtension {
+  extension_id: string;
+  extension_type: ExtensionType.MainMenuButton;
+  config: MainMenuButtonConfig;
+}
+
+export type Extension =
+  MainMenuLinkExtension | MainMenuButtonExtension | IFramePageExtension;
 
 export enum ExtensionType {
   MainMenuLink = "MainMenuLink",
+  MainMenuButton = "MainMenuButton",
   IFramePage = "IFramePage",
 }

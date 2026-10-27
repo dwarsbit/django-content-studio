@@ -50,6 +50,11 @@
   `is_visible(obj, request)` hides it per object. The editor sees the
   returned message as a notification; a `ButtonResult` can also carry a
   value shown once in a dialog with a copy button.
+- **Buttons in the main menu.** The new `MainMenuButton` extension runs
+  your code from the admin's main menu: subclass it and implement
+  `handle(request)`. It takes a `label`, an `icon`, a `color` and a
+  `confirm` question, and `is_visible(request)` decides who sees and
+  runs it. Its result is shown like a `Button`'s.
 - **Components in the edit page's header.** `edit_header` on a studio
   places components, such as buttons, next to the save button; on an
   inline studio, in the header of the inline object's editor. System
