@@ -10,7 +10,7 @@ from rest_framework.test import APIClient, APIRequestFactory
 
 from content_studio.admin import AdminSerializer, ModelStudio, admin_site
 from content_studio.checks import check_content_studio
-from content_studio.form import Button, ButtonResult, Field
+from content_studio.form import Button, ButtonResult, Field, Link
 from content_studio.token_backends.jwt import create_access_token
 from tests.testapp.admin import ArticleAdmin, ReviewInline
 from tests.testapp.models import Article, Review
@@ -180,3 +180,52 @@ def test_inline_studios_find_their_header_components(headers):
         ReviewInline(Article, admin_site).get_component(helpful.component_id) is helpful
     )
     assert ModelStudio(Review, admin_site).get_component(helpful.component_id) is None
+
+
+class ReviewLink(Link):
+    label = "Open review"
+
+    def get_url(self, obj, request):
+        return f"https://example.com/reviews/{obj.pk}"
+
+
+@pytest.mark.django_db
+def test_inline_rows_reach_the_components_of_the_inline_models_studio(monkeypatch):
+    link, helpful = ReviewLink(), HelpfulButton()
+
+    class ReviewStudio(ModelStudio):
+        edit_sidebar = [link, helpful]
+
+    monkeypatch.setitem(admin_site._registry, Review, ReviewStudio(Review, admin_site))
+    review = Review.objects.create(article=Article.objects.create(title="a"), text="x")
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+
+    response = client.get(f"{REVIEWS}/{review.pk}/components/{link.component_id}")
+    assert response.json() == {"url": f"https://example.com/reviews/{review.pk}"}
+
+    response = client.post(
+        f"{REVIEWS}/{review.pk}/components/{helpful.component_id}/run"
+    )
+    assert response.json() == {"message": "Marked.", "value": None}
+
+
+@pytest.mark.django_db
+def test_the_inline_studios_permissions_gate_the_models_components(monkeypatch):
+    helpful = HelpfulButton()
+    helpful.allowed_permissions = ["change"]
+
+    class ReviewStudio(ModelStudio):
+        edit_sidebar = [helpful]
+
+    monkeypatch.setitem(admin_site._registry, Review, ReviewStudio(Review, admin_site))
+    monkeypatch.setattr(
+        ReviewInline, "has_change_permission", lambda self, request, obj=None: False
+    )
+    review = Review.objects.create(article=Article.objects.create(title="a"), text="x")
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+
+    response = client.post(
+        f"{REVIEWS}/{review.pk}/components/{helpful.component_id}/run"
+    )
+
+    assert response.status_code == 403

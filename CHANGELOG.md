@@ -59,6 +59,10 @@
   places components, such as buttons, next to the save button; on an
   inline studio, in the header of the inline object's editor. System
   check `content_studio.E019` reports entries that are not components.
+- **Components work in inline objects' editors.** Links and buttons of an
+  inline model's own studio failed in the dialog in which an editor opens
+  one of the inline's objects; they now work there, gated by the inline
+  studio's permissions.
 - **Read-only inlines.** Inlines follow their studio's permissions in the
   admin: without add permission there is no create button, and without
   change permission objects open read-only, deletable only with delete

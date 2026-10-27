@@ -360,7 +360,19 @@ class BaseModelViewSet(ModelViewSet):
         except ValueError:
             raise NotFound()
 
-        return self._admin_model.get_component(component_uuid)
+        component = self._admin_model.get_component(component_uuid)
+
+        # An inline object's editor shows the layout of the inline
+        # model's own studio, with the inline studio's header: its
+        # components are reached through the inline endpoints too. The
+        # inline studio's permissions still apply.
+        if component is None and getattr(self, "parent_model", None) is not None:
+            model_studio = cs_settings.ADMIN_SITE._registry.get(self._model)
+
+            if model_studio is not None:
+                component = model_studio.get_component(component_uuid)
+
+        return component
 
     @action(methods=["get"], detail=True, url_path="activity")
     def activity(self, request, id):

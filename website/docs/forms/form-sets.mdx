@@ -285,7 +285,10 @@ class ArticleStudio(ModelStudio):
 
 An [inline studio](/docs/content/registering-models#inlines) takes
 `edit_header` too: its components appear in the header of the dialog in
-which an editor opens one of the inline's objects. `edit_header` only takes
+which an editor opens one of the inline's objects. That dialog shows the
+fields and components of the inline model's own studio, when it has one, and
+its links and buttons work there too. The inline studio's permissions decide
+who may use them. `edit_header` only takes
 components; system check `content_studio.E019` reports anything else.
 
 ### After creating an object
