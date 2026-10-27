@@ -329,6 +329,22 @@ class MediaLibraryViewSet(ModelViewSet):
         return Response({"count": len(objects)})
 
 
+def _collected(collector, models):
+    """The instances of the given models a collector will delete,
+    including the ones it deletes in bulk, ordered per model by pk."""
+    objects = []
+
+    for model, instances in collector.data.items():
+        if model in models:
+            objects.extend(sorted(instances, key=lambda obj: obj.pk))
+
+    for queryset in collector.fast_deletes:
+        if queryset.model in models:
+            objects.extend(queryset.order_by("pk"))
+
+    return objects
+
+
 class MediaFolderPermissions(DjangoModelPermissions):
     """
     Django's model permissions, with reading gated on view (or change)
@@ -370,6 +386,41 @@ class MediaFolderViewSet(ModelViewSet):
         self.authentication_classes = [
             admin_site.token_backend.active_backend.authentication_class
         ]
+
+    def dispatch(self, request, *args, **kwargs):
+        # The request's changes are sent as one content_changed signal.
+        with collect_changes(request):
+            return super().dispatch(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        record_change(self.request, serializer.save(), CREATED)
+
+    def perform_update(self, serializer):
+        record_change(self.request, serializer.save(), UPDATED)
+
+    def perform_destroy(self, instance):
+        """
+        Delete a folder with what cascades from it. The subfolders and
+        media items deleted with it are recorded too, so their deletion
+        reaches the history and content_changed; all of it is logged
+        first, as deleting clears the pks.
+        """
+        using = router.db_for_write(type(instance))
+        recorded = {type(instance), cs_settings.MEDIA_LIBRARY_MODEL}
+
+        with transaction.atomic(using=using):
+            collector = Collector(using=using)
+            collector.collect([instance])
+
+            record_change(self.request, instance, DELETED)
+
+            for obj in _collected(collector, recorded):
+                if obj != instance:
+                    record_change(
+                        self.request, obj, DELETED, "Deleted with its folder."
+                    )
+
+            collector.delete()
 
     def get_queryset(self):
         if not self._folder_model:

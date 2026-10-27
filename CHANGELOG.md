@@ -64,7 +64,9 @@
   setting. New settings `WEBHOOK_MAX_ATTEMPTS` and `WEBHOOK_TIMEOUT`.
 - **Media library changes are recorded in the history.** Uploading,
   editing, deleting, cropping and moving media items are logged in the
-  activity log, like changes to content.
+  activity log, like changes to content, and so are creating, renaming,
+  moving and deleting folders. Deleting a folder also records the
+  subfolders and media items deleted with it.
 - **Bulk deletes are logged with the object's pk.** The built-in bulk
   delete and the media library's bulk delete recorded their history
   entries without the deleted object's pk.
