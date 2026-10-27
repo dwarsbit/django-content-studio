@@ -36,6 +36,8 @@ PUBLIC_MODULES = [
     "content_studio.media_library.fields",
     "content_studio.media_library.models",
     "content_studio.webhooks.models",
+    "content_studio.webhooks.dashboard",
+    "content_studio.webhooks.extensions",
 ]
 
 

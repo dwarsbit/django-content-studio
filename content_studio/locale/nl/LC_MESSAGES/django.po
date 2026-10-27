@@ -228,3 +228,33 @@ msgstr "Antwoord"
 #: webhooks/models.py
 msgid "Error"
 msgstr "Fout"
+
+#: webhooks/dashboard.py
+msgid "The latest delivery of each webhook"
+msgstr "De laatste levering van elke webhook"
+
+#: webhooks/dashboard.py
+msgid "Paused"
+msgstr "Gepauzeerd"
+
+#: webhooks/extensions.py
+msgid "Deploy"
+msgstr "Publiceren"
+
+#: webhooks/extensions.py
+msgid "Trigger the webhooks to rebuild the site?"
+msgstr "De webhooks aanroepen om de site opnieuw op te bouwen?"
+
+#: webhooks/extensions.py
+msgid "There are no active webhooks to trigger."
+msgstr "Er zijn geen actieve webhooks om aan te roepen."
+
+#: webhooks/extensions.py
+#, python-format
+msgid "Triggered %(count)d webhook. Its delivery log shows how it responded."
+msgid_plural ""
+"Triggered %(count)d webhooks. Their delivery logs show how they responded."
+msgstr[0] ""
+"%(count)d webhook aangeroepen. Het leveringslog toont hoe hij antwoordde."
+msgstr[1] ""
+"%(count)d webhooks aangeroepen. Hun leveringslogs tonen hoe ze antwoordden."

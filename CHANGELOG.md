@@ -58,6 +58,17 @@
   webhook shows its delivery log, read-only, with **Retry** on failed
   deliveries for one more attempt. Unsafe URLs are refused on save, and
   changes to webhooks themselves never trigger a webhook.
+- **A deploy button and a webhooks widget.** `DeployButton`, a
+  `MainMenuButton`, triggers the active webhooks (or the ones named in
+  `webhooks`) from the main menu, for editors who may change webhooks;
+  with multi-tenancy, the current tenant's and the global ones.
+  `WebhookDeliveriesWidget` shows each webhook's latest delivery on the
+  dashboard. Neither is added to the site by itself.
+- **The scheduled tasks widget shows missing values and errors properly.**
+  Tasks without a last run, a duration or a next run showed "null" or
+  an invalid date; those values are now left out. A failed task shows
+  its `error_message`, and the widget no longer depends on another
+  widget to format its times.
 - **`MultipleChoiceField` shows its options.** The admin's multi-select
   for a `MultipleChoiceField` had no options to choose from: the field's
   `options` were never sent to the admin.

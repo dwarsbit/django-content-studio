@@ -116,6 +116,40 @@ webhook.content_types.set(
 )
 ```
 
+## A deploy button and a dashboard widget
+
+Two optional additions put webhooks within reach of every editor. Neither
+appears until you add it to your site.
+
+`DeployButton` is a button in the main menu that triggers the active
+webhooks, after confirming, with the same request as **Trigger now**. Pass
+`webhooks` to trigger only the webhooks with those names; with
+[multi-tenancy](/docs/multi-tenancy), it triggers the current tenant's
+webhooks and those without a tenant. It is shown to editors who may change
+webhooks, and takes the options of a
+[`MainMenuButton`](/docs/extensions#mainmenubutton), such as its `label`.
+
+`WebhookDeliveriesWidget` shows every webhook on the dashboard with its
+latest delivery: when it was made, whether it was delivered, the error of a
+failed one and when a retry is due. Editors who may not view webhooks see an
+empty list.
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+from content_studio.dashboard import Dashboard
+from content_studio.webhooks.dashboard import WebhookDeliveriesWidget
+from content_studio.webhooks.extensions import DeployButton
+
+
+class BlogStudioSite(ContentStudioSite):
+    extensions = [DeployButton(webhooks=["Rebuild the blog"])]
+    dashboard = Dashboard(widgets=[WebhookDeliveriesWidget()])
+
+
+admin_site = BlogStudioSite()
+```
+
 ## The request
 
 Each request is a `POST` with a JSON body:
@@ -142,7 +176,8 @@ Each request is a `POST` with a JSON body:
 
 - `version`: the format of the body; it only changes in a major release.
 - `event`: `content.changed` for changes in the admin, `webhook.triggered`
-  for a request sent with **Trigger now**, which has no changes.
+  for a request sent with **Trigger now** or the deploy button, which has no
+  changes.
 - `delivery`: the request's ID. A retry sends the same ID, so the receiver
   can skip a request it has already handled.
 - `changes`: the changes the webhook matches, each with its action, the

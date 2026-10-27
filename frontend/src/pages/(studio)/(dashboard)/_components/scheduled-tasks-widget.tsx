@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,6 +15,8 @@ import { useHttp } from "@/hooks/use-http";
 import { cn } from "@/lib/utils";
 import { type DashboardWidget, type DateTimeString } from "@/types";
 
+dayjs.extend(relativeTime);
+
 export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
   const http = useHttp();
   const { t } = useTranslation();
@@ -26,11 +29,11 @@ export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
     async queryFn() {
       const { data } = await http.get<{
         title: string;
-        description: number;
+        description: string;
         tasks: {
-          last_run_at: DateTimeString;
-          next_run_at: DateTimeString;
-          duration: number;
+          last_run_at: DateTimeString | null;
+          next_run_at: DateTimeString | null;
+          duration: number | null;
           title: string;
           description: string;
           status: "RUNNING" | "SCHEDULED" | "SUCCESS" | "FAILURE";
@@ -88,20 +91,33 @@ export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
                       )}
                     </Badge>
                   </div>
-                  <div className="flex gap-3 items-center text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <PiClockBold />
-                      {dayjs(task.last_run_at).fromNow()}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <PiPlayCircleBold />
-                      {`${task.duration}s`}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <PiCalendarBlankBold />
-                      {`${t("dashboard.widgets.scheduled_tasks.next")} ${dayjs(task.next_run_at).fromNow()}`}
-                    </div>
+                  {/* Unknown values are left out, such as the next run
+                      of a task that is not scheduled again. */}
+                  <div className="flex gap-3 items-center text-sm text-muted-foreground empty:hidden">
+                    {task.last_run_at && (
+                      <div className="flex items-center gap-1">
+                        <PiClockBold />
+                        {dayjs(task.last_run_at).fromNow()}
+                      </div>
+                    )}
+                    {task.duration != null && (
+                      <div className="flex items-center gap-1">
+                        <PiPlayCircleBold />
+                        {`${task.duration}s`}
+                      </div>
+                    )}
+                    {task.next_run_at && (
+                      <div className="flex items-center gap-1">
+                        <PiCalendarBlankBold />
+                        {`${t("dashboard.widgets.scheduled_tasks.next")} ${dayjs(task.next_run_at).fromNow()}`}
+                      </div>
+                    )}
                   </div>
+                  {task.error_message && task.status !== "SUCCESS" && (
+                    <div className="mt-1 text-sm text-destructive">
+                      {task.error_message}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
