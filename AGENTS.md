@@ -195,6 +195,14 @@ locked Python dependencies, `npm audit --omit=dev` on the frontend runtime
 dependencies), and a packaging job that builds the wheel and verifies the
 compiled assets and translations on a fresh install.
 
+Releases: run the **Release** workflow (`release.yml`) from `main` with the
+version (`X.Y.Z` or `X.Y.Z-rc.N`). It requires green CI on `main` and a
+`## X.Y.Z (unreleased)` heading in the changelog, sets the version with
+`scripts/bump_version.py`, commits, and pushes the tag `vX.Y.Z` (using the
+`RELEASE_TOKEN` secret, so the tag triggers other workflows). The **Publish**
+workflow (`publish.yml`) then builds the package, publishes it to PyPI
+(trusted publishing, environment `pypi`) and creates the GitHub Release.
+
 ---
 
 ## Public API
