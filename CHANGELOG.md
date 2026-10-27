@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 (unreleased)
+## 1.1.0 (2026-10-27)
 
 - **Block fields.** `BlockField` stores an ordered list of content
   blocks that editors add (also between two blocks), reorder by dragging
