@@ -1,6 +1,7 @@
-import { useCallback } from "react";
+import { useCallback, useContext } from "react";
 import { useFormContext } from "react-hook-form";
 
+import { ResourcePathContext } from "@/components/content-editor/resource-path";
 import { useHttp } from "@/hooks/use-http";
 import type { FormField, Model } from "@/types";
 
@@ -14,14 +15,22 @@ export function useComponentLink(model: Model, formField: FormField) {
   const http = useHttp();
   const form = useFormContext();
   const id = form.watch("id");
+  const resourcePath =
+    useContext(ResourcePathContext) ?? `/content/${model.label}`;
 
   const getLink = useCallback(async () => {
     const { data } = await http.get<{ url: string }>(
-      `/content/${model.label}${model.admin.is_singleton ? "" : `/${id}`}/components/${formField.component_id}`,
+      `${resourcePath}${model.admin.is_singleton ? "" : `/${id}`}/components/${formField.component_id}`,
     );
 
     return data.url;
-  }, [http, model.label, model.admin.is_singleton, id, formField.component_id]);
+  }, [
+    http,
+    resourcePath,
+    model.admin.is_singleton,
+    id,
+    formField.component_id,
+  ]);
 
   return id ? getLink : null;
 }

@@ -30,9 +30,11 @@ import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type {
   FieldFormat,
+  FormField,
   Id,
   Model,
   PaginatedResponse,
+  Permissions,
   Resource,
 } from "@/types";
 
@@ -57,6 +59,8 @@ export function Inline({
     prepopulated_fields?: Record<string, string[]>;
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
     reorderable?: boolean;
+    header?: FormField[];
+    permissions?: Permissions;
   };
 }) {
   const { t } = useTranslation();
@@ -65,6 +69,9 @@ export function Inline({
   const [create, setCreate] = useState(false);
   const [page, setPage] = useState(1);
   const readOnly = !model.admin;
+  // Without add permission there is nothing to create; rows still open
+  // read-only for editors who may only view them.
+  const canAdd = !readOnly && (adminModel.permissions?.add_permission ?? true);
   const relName = useWatch({ name: "__str__" });
   const listKey = [
     "resources",
@@ -120,6 +127,7 @@ export function Inline({
             dialog
             modelLabel={model.label}
             inlineOf={relModel}
+            headerComponents={adminModel.header}
             initialValues={{
               [adminModel.fk_name]: { id: relId, __str__: relName },
               // The inline studio decides what is read-only, not the
@@ -243,12 +251,14 @@ export function Inline({
         </div>
       )}
 
-      <div className="flex justify-center">
-        <Button size="sm" variant="outline" onClick={() => setCreate(true)}>
-          <PiPlus />
-          {t("common.create")}
-        </Button>
-      </div>
+      {canAdd && (
+        <div className="flex justify-center">
+          <Button size="sm" variant="outline" onClick={() => setCreate(true)}>
+            <PiPlus />
+            {t("common.create")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -285,6 +295,8 @@ function InlineRow({
     prepopulated_fields?: Record<string, string[]>;
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
     reorderable?: boolean;
+    header?: FormField[];
+    permissions?: Permissions;
   };
   onMove?: (id: Id, move: Move) => void;
   sortable?: ReturnType<typeof useReorderableRow>;
@@ -292,6 +304,7 @@ function InlineRow({
 }) {
   const [edit, setEdit] = useState(false);
   const queryClient = useQueryClient();
+  const canChange = adminModel.permissions?.change_permission ?? true;
 
   return (
     <>
@@ -305,6 +318,9 @@ function InlineRow({
               modelLabel={model.label}
               inlineOf={relModel}
               id={resource.id}
+              headerComponents={adminModel.header}
+              readOnly={!canChange}
+              canDelete={adminModel.permissions?.delete_permission ?? true}
               initialValues={{
                 [adminModel.fk_name]: { id: relId, __str__: relName },
               }}

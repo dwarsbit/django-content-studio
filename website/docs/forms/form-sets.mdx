@@ -251,9 +251,67 @@ class ArticleStudio(ModelStudio):
 The button checks the permissions and `is_visible` again when it runs. After
 it runs, the edit page shows the object's new values and loads its inlines
 again. Unsaved changes on the edit page are kept: the new values then appear
-after you save or reload. Record the changes
-your button makes with `record_change`, so they appear in the object's
-history.
+after you save or reload. Record the changes your button makes with
+`record_change`, so they appear in the object's history.
+
+### The header
+
+Components in `edit_header` appear in the edit page's header, next to the
+save button. Use it for buttons that act on the whole object:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import Button
+
+from .models import Article
+
+
+class PublishButton(Button):
+    label = "Publish"
+    allowed_permissions = ["change"]
+
+    def handle(self, obj, request):
+        obj.status = Article.Status.PUBLISHED
+        obj.save(update_fields=["status"])
+        return "Published."
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_header = [PublishButton()]
+```
+
+An [inline studio](/docs/content/registering-models#inlines) takes
+`edit_header` too: its components appear in the header of the dialog in
+which an editor opens one of the inline's objects. `edit_header` only takes
+components; system check `content_studio.E019` reports anything else.
+
+### After creating an object
+
+To tell editors something once they create an object, return it from the
+studio's `get_created_result(request, obj)`: a message, or a `ButtonResult`
+whose `value` appears once in a dialog with a copy button. This suits a value
+the admin never shows again, such as a generated key:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import ButtonResult
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    def get_created_result(self, request, obj):
+        return ButtonResult(
+            message="The article was created.",
+            value=obj.get_absolute_url(),
+        )
+```
 
 Each component gets an ID from its class and its label, so every worker of a
 deployment agrees on it. Two components of the same class with the same

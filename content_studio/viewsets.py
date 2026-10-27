@@ -21,7 +21,7 @@ from .actions import get_bulk_actions
 from .admin import get_relation_display_for
 from .dashboard.activity_log import LogEntrySerializer
 from .filters import LookupFilter
-from .form import Button
+from .form import Button, ButtonResult
 from .permissions import ModelStudioPermissions
 from .reordering import get_reorder_scope
 from .serializers import RelatedItemSerializer
@@ -99,6 +99,27 @@ class BaseModelViewSet(ModelViewSet):
         instance = serializer.save(**attrs)
 
         record_change(self.request, instance, CREATED)
+
+        self._created_result = self._admin_model.get_created_result(
+            self.request, instance
+        )
+
+    def create(self, request, *args, **kwargs):
+        """
+        Create the object; what the studio's get_created_result returns
+        travels along under __result__, for the editor to show once.
+        """
+        self._created_result = None
+        response = super().create(request, *args, **kwargs)
+        result = self._created_result
+
+        if result is not None:
+            if not isinstance(result, ButtonResult):
+                result = ButtonResult(message=result)
+
+            response.data = {**response.data, "__result__": result.serialize()}
+
+        return response
 
     def perform_update(self, serializer):
         instance = serializer.save()

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import { ActivityLog } from "@/components/form-components/activity-log";
@@ -18,6 +18,7 @@ import { WidgetRenderer } from "@/components/widgets/renderer";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import { FieldWidget, type FormField as IFormField, type Model } from "@/types";
 
+import { EditorReadOnlyContext } from "./editor-read-only";
 import { UniqueWarning } from "./unique-warning";
 
 const COMPONENTS: Partial<
@@ -51,7 +52,9 @@ export function FormField({
   // its own.
   const readonlyFields = useWatch({ name: "__readonly_fields__" }) as
     string[] | undefined;
+  const editorReadOnly = useContext(EditorReadOnlyContext);
   const isReadonly =
+    editorReadOnly ||
     !modelField ||
     modelField.readonly ||
     formField.readonly ||
@@ -124,14 +127,27 @@ export function FormField({
         />
       ) : (
         <div>
-          {(() => {
-            const Component = COMPONENTS[formField.component_type];
-            return (
-              Component && React.createElement(Component, { formField, model })
-            );
-          })()}
+          <ComponentRenderer formField={formField} model={model} />
         </div>
       )}
     </div>
   );
+}
+
+/**
+ * Renders a component (Link, LinkButton, Button, ActivityLog) of the
+ * edit page, in a form set or in the header.
+ */
+export function ComponentRenderer({
+  formField,
+  model,
+}: {
+  formField: IFormField;
+  model: Model;
+}) {
+  const Component = COMPONENTS[formField.component_type];
+
+  return Component
+    ? React.createElement(Component, { formField, model })
+    : null;
 }

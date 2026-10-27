@@ -50,6 +50,18 @@
   `is_visible(obj, request)` hides it per object. The editor sees the
   returned message as a notification; a `ButtonResult` can also carry a
   value shown once in a dialog with a copy button.
+- **Components in the edit page's header.** `edit_header` on a studio
+  places components, such as buttons, next to the save button; on an
+  inline studio, in the header of the inline object's editor. System
+  check `content_studio.E019` reports entries that are not components.
+- **Read-only inlines.** Inlines follow their studio's permissions in the
+  admin: without add permission there is no create button, and without
+  change permission objects open read-only, deletable only with delete
+  permission.
+- **A message after creating.** A studio's
+  `get_created_result(request, obj)` returns a message or a
+  `ButtonResult` the editor sees after creating an object, with a value
+  shown once in a dialog with a copy button.
 - **The `content_changed` signal.** `content_studio.signals.content_changed`
   is sent after changes made in the admin are committed: creating,
   editing, deleting, restoring and reordering objects, including the

@@ -133,9 +133,33 @@ class BaseStudio(Generic[T]):
     # ordered per parent.
     reorder_scope: list[str] = []
 
+    # Components shown in the edit page's header, next to the save
+    # button, such as buttons. On an inline, they show in the header of
+    # the inline row's editor.
+    edit_header: list[Component] = []
+
     def __init__(self, model: Type[T], admin_site: "ContentStudioSite"):
         self.model = model
         self.admin_site = admin_site
+
+    def get_created_result(self, request: HttpRequest, obj: T):
+        """
+        What the editor sees after creating obj in the admin: None (the
+        default), a message, or a ButtonResult whose value is shown once
+        in a dialog with a copy button, such as a generated secret.
+        """
+        return None
+
+    def get_component(self, component_id) -> Optional[Component]:
+        """
+        Retrieves a component from the edit_header, edit_main or
+        edit_sidebar attributes by ID.
+        """
+        for component in iter_components(self):
+            if component.component_id == component_id:
+                return component
+
+        return None
 
     def get_fields(self, request: HttpRequest, obj: Optional[T] = None) -> list[str]:
         """
@@ -343,16 +367,6 @@ class ModelStudio(BaseStudio[T]):
             return False
 
         return super().has_delete_permission(request, obj)
-
-    def get_component(self, component_id) -> Optional[Component]:
-        """
-        Retrieves a component from the edit_main or edit_sidebar attributes by ID.
-        """
-        for component in iter_components(self):
-            if component.component_id == component_id:
-                return component
-
-        return None
 
 
 class InlineModelStudio(BaseStudio[T]):
@@ -636,13 +650,41 @@ def register(*models, site: ContentStudioSite = None):
     return _model_studio_wrapper
 
 
+def _header_entries(studio) -> list:
+    """A studio's edit_header as a list; anything but a list or tuple
+    counts as empty (system check E019 reports it)."""
+    header = getattr(studio, "edit_header", None)
+
+    return list(header) if isinstance(header, (list, tuple)) else []
+
+
+def serialize_edit_header(studio) -> list[dict[str, Any]]:
+    """The serialized components of a studio's edit_header."""
+    return [
+        component.serialize()
+        for component in _header_entries(studio)
+        if isinstance(component, Component)
+    ]
+
+
+def serialize_permissions(studio, request) -> dict[str, bool]:
+    return {
+        "add_permission": studio.has_add_permission(request),
+        "delete_permission": studio.has_delete_permission(request),
+        "change_permission": studio.has_change_permission(request),
+        "view_permission": studio.has_view_permission(request),
+    }
+
+
 def iter_components(admin_class):
     """
-    Yield the components configured in a model studio's edit_main and
-    edit_sidebar.
+    Yield the components configured in a studio's edit_header,
+    edit_main and edit_sidebar.
     """
-    all_fields = getattr(admin_class, "edit_main", []) + getattr(
-        admin_class, "edit_sidebar", []
+    all_fields = (
+        _header_entries(admin_class)
+        + list(getattr(admin_class, "edit_main", None) or [])
+        + list(getattr(admin_class, "edit_sidebar", None) or [])
     )
 
     flat_fields = flatten(
@@ -828,6 +870,7 @@ class AdminSerializer:
             "icon": admin_class.icon,
             "is_singleton": get_is_singleton(admin_class),
             "edit": {
+                "header": serialize_edit_header(admin_class),
                 "main": self.serialize_edit_main(request),
                 "sidebar": self.serialize_edit_sidebar(request),
                 # The create form's read-only fields; saved objects
@@ -857,6 +900,11 @@ class AdminSerializer:
                             inline(admin_class.model, admin_class.admin_site),
                             request,
                         ),
+                        "header": serialize_edit_header(inline),
+                        "permissions": serialize_permissions(
+                            inline(admin_class.model, admin_class.admin_site),
+                            request,
+                        ),
                     }
                     for inline in admin_class.inlines
                 ],
@@ -876,12 +924,7 @@ class AdminSerializer:
                     for action in get_bulk_actions(admin_class, request)
                 ],
             },
-            "permissions": {
-                "add_permission": admin_class.has_add_permission(request),
-                "delete_permission": admin_class.has_delete_permission(request),
-                "change_permission": admin_class.has_change_permission(request),
-                "view_permission": admin_class.has_view_permission(request),
-            },
+            "permissions": serialize_permissions(admin_class, request),
         }
 
     def serialize_edit_main(self, request: HttpRequest) -> list[dict[str, Any]]:

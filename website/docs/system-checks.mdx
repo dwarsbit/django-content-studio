@@ -33,6 +33,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E016` | `prepopulated_fields` that is not a mapping, fields or source fields that are not model fields, fields that cannot be prepopulated (`DateTimeField`, `ForeignKey`, `OneToOneField`, `ManyToManyField`) and fields in `readonly_fields`. Inlines are checked too. |
 | `content_studio.E017` | A `reorder_field` that is not a model field or, unless the studio overrides `reorder`, not a number field, and `reorder_scope` entries that are not model fields. Inlines are checked too. |
 | `content_studio.E018` | Webhook settings: a `WEBHOOK_ALLOWED_HOSTS` that is not a list of host names, a `WEBHOOK_MAX_ATTEMPTS` that is not a positive whole number, a `WEBHOOK_TIMEOUT` that is not a positive number of seconds, or a `WEBHOOK_DELIVERY_RETENTION` that is not `None` or a positive whole number of days. |
+| `content_studio.E019` | An `edit_header` that is not a list, or entries in it that are not components, such as fields. Inlines are checked too. |
 
 ## Warnings
 

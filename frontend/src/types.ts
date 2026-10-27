@@ -111,6 +111,8 @@ export interface Model {
       actions: BulkAction[];
     };
     edit: {
+      // Components in the edit page's header, next to the save button.
+      header?: FormField[];
       main: FormSetGroup[];
       sidebar: FormSet[];
       // The create form's read-only fields (get_readonly_fields without
@@ -129,16 +131,23 @@ export interface Model {
           format: string | null;
         }[];
         reorderable?: boolean;
+        // Components in the header of an inline row's editor.
+        header?: FormField[];
+        // The inline studio's permissions; unset grants everything the
+        // inline endpoints allow.
+        permissions?: Permissions;
       }[];
     };
-    permissions: {
-      add_permission: boolean;
-      change_permission: boolean;
-      delete_permission: boolean;
-      view_permission: boolean;
-    };
+    permissions: Permissions;
   };
   fields: Record<string, ModelField>;
+}
+
+export interface Permissions {
+  add_permission: boolean;
+  change_permission: boolean;
+  delete_permission: boolean;
+  view_permission: boolean;
 }
 
 export interface BulkAction {

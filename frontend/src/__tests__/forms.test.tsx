@@ -19,6 +19,7 @@ import { FormSet } from "@/components/content-editor/form-set";
 import { Inline } from "@/components/content-editor/inline";
 import { Main } from "@/components/content-editor/main";
 import { Form } from "@/components/ui/form";
+import { ValueDialogProvider } from "@/components/value-dialog-provider";
 import type {
   FormField as IFormField,
   FormSet as IFormSet,
@@ -1321,5 +1322,159 @@ describe("Editor save navigation", () => {
 
     expect(await screen.findByText("Object page")).toBeInTheDocument();
     expect(screen.queryByText("editor.unsaved_alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("Edit header and read-only editors", () => {
+  const existing = {
+    id: "abc-123",
+    title: "Existing title",
+    is_published: false,
+    __str__: "Existing title",
+  };
+  const publish = makeFormField("", {
+    type: "component",
+    component_id: "0f1e2d3c",
+    component_type: "Button",
+    label: "Publish",
+  });
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    useAdminInfoMock.mockReturnValue({ data: adminInfo });
+    useDiscoverMock.mockReturnValue({
+      data: makeDiscover([makeModel()]),
+    });
+    httpMock.get.mockImplementation((url: string) =>
+      Promise.resolve({
+        data: url.includes("/components/") ? { visible: true } : existing,
+      }),
+    );
+  });
+
+  it("renders the header components next to the save button", async () => {
+    renderEditorPage(
+      <Editor
+        modelLabel="testapp.article"
+        id="abc-123"
+        headerComponents={[publish]}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(
+      await screen.findByRole("button", { name: "Publish" }),
+    ).toBeInTheDocument();
+    expect(httpMock.get).toHaveBeenCalledWith(
+      "/content/testapp.article/abc-123/components/0f1e2d3c",
+    );
+    expect(
+      screen.getByRole("button", { name: "common.save" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the object without saving in a read-only editor", async () => {
+    renderEditorPage(
+      <Editor
+        modelLabel="testapp.article"
+        inlineOf="testapp.blog"
+        id="abc-123"
+        readOnly
+        canDelete={false}
+        headerComponents={[publish]}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await screen.findByText("Existing title", { selector: "div" });
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByRole("button", { name: "common.save" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "editor.more_actions" }),
+    ).toBeNull();
+    // Inline rows reach their buttons through the inline endpoints.
+    expect(
+      await screen.findByRole("button", { name: "Publish" }),
+    ).toBeInTheDocument();
+    expect(httpMock.get).toHaveBeenCalledWith(
+      "/inlines/testapp.blog/testapp.article/abc-123/components/0f1e2d3c",
+    );
+  });
+
+  it("shows the result the studio returns after creating", async () => {
+    httpMock.post.mockResolvedValue({
+      data: {
+        id: "new-1",
+        title: "Hello",
+        __result__: { message: "Created.", value: "s3cr3t" },
+      },
+    });
+    const user = userEvent.setup();
+
+    renderEditorPage(
+      <ValueDialogProvider>
+        <Editor modelLabel="testapp.article" onClose={vi.fn()} />
+      </ValueDialogProvider>,
+    );
+    await user.type(screen.getByRole("textbox"), "Hello");
+    await user.click(screen.getByRole("button", { name: "common.create" }));
+
+    expect(await screen.findByText("s3cr3t")).toBeInTheDocument();
+  });
+});
+
+describe("Inline permissions", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    useAdminInfoMock.mockReturnValue({ data: adminInfo });
+    httpMock.get.mockResolvedValue({
+      data: {
+        pagination: { count: 1, current: 1, pages: 1 },
+        results: [{ id: "row-1", title: "A row", __str__: "A row" }],
+      },
+    });
+  });
+
+  function renderInline(permissions: Partial<Model["admin"]["permissions"]>) {
+    return renderWithQueryClient(
+      <FormHarness
+        defaultValues={{
+          __str__: "Parent",
+          title: "",
+          status: "draft",
+          is_published: false,
+        }}
+      >
+        <Inline
+          relModel="testapp.blog"
+          relId="blog-1"
+          model={makeModel()}
+          adminModel={{
+            fk_name: "blog",
+            table_display: [{ name: "title", header: null, format: null }],
+            permissions: {
+              add_permission: true,
+              change_permission: true,
+              delete_permission: true,
+              view_permission: true,
+              ...permissions,
+            },
+          }}
+        />
+      </FormHarness>,
+    );
+  }
+
+  it("offers creating only with add permission", async () => {
+    const { unmount } = renderInline({});
+    await screen.findByText("A row");
+    expect(
+      screen.getByRole("button", { name: "common.create" }),
+    ).toBeInTheDocument();
+    unmount();
+
+    renderInline({ add_permission: false });
+    await screen.findByText("A row");
+    expect(screen.queryByRole("button", { name: "common.create" })).toBeNull();
   });
 });

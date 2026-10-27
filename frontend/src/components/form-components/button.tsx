@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useContext } from "react";
 import { useFormContext } from "react-hook-form";
 
-import { ButtonValueDialog } from "@/components/buttons/button-value-dialog";
 import { ResourcePathContext } from "@/components/content-editor/resource-path";
 import { Button } from "@/components/ui/button";
 import { useHttp } from "@/hooks/use-http";
@@ -49,7 +48,7 @@ export function ComponentButton({
     return data;
   }, [http, path]);
 
-  const { trigger, isPending, value, clearValue } = useRunButton({
+  const { trigger, isPending } = useRunButton({
     confirm: formField.confirm,
     run,
     async onDone() {
@@ -87,7 +86,6 @@ export function ComponentButton({
           {formField.label}
         </Button>
       )}
-      <ButtonValueDialog value={value} onClose={clearValue} />
     </>
   );
 }

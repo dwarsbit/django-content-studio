@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfirmDialogProvider } from "@/components/confirm-dialog-provider";
 import { ComponentButton } from "@/components/form-components/button";
 import { Form } from "@/components/ui/form";
+import { ValueDialogProvider } from "@/components/value-dialog-provider";
 import type { FormField, Model } from "@/types";
 
 const httpMock = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
@@ -68,10 +69,12 @@ function renderButton(
   return render(
     <QueryClientProvider client={queryClient}>
       <ConfirmDialogProvider>
-        <Harness id={id}>
-          <ComponentButton model={model} formField={formField} />
-          {extra}
-        </Harness>
+        <ValueDialogProvider>
+          <Harness id={id}>
+            <ComponentButton model={model} formField={formField} />
+            {extra}
+          </Harness>
+        </ValueDialogProvider>
       </ConfirmDialogProvider>
     </QueryClientProvider>,
   );
