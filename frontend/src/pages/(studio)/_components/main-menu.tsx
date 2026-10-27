@@ -83,14 +83,16 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
     string | null
   >(null);
 
-  const linkExtensions =
+  // Links and buttons share one list, ordered by weight (lower first);
+  // equal weights keep the order of the site's extensions.
+  const menuExtensions = R.sortBy(
+    (extension) => extension.config.weight ?? 0,
     discover?.extensions.filter(
-      (extension) => extension.extension_type === ExtensionType.MainMenuLink,
-    ) ?? [];
-  const buttonExtensions =
-    discover?.extensions.filter(
-      (extension) => extension.extension_type === ExtensionType.MainMenuButton,
-    ) ?? [];
+      (extension) =>
+        extension.extension_type === ExtensionType.MainMenuLink ||
+        extension.extension_type === ExtensionType.MainMenuButton,
+    ) ?? [],
+  );
 
   useEffect(() => {
     localStorage.setItem("main-menu-collapsed", String(collapsed));
@@ -220,22 +222,24 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
                 />
               )}
 
-              {linkExtensions.map(({ extension_id, config }) => (
-                <MenuItem
-                  key={extension_id}
-                  to={config.url}
-                  color={config.color ?? undefined}
-                  icon={<span className={config.icon ?? undefined} />}
-                  label={config.label}
-                />
-              ))}
-
-              {buttonExtensions.map((extension) => (
-                <MenuButton
-                  key={extension.extension_id}
-                  extension={extension}
-                />
-              ))}
+              {menuExtensions.map((extension) =>
+                extension.extension_type === ExtensionType.MainMenuLink ? (
+                  <MenuItem
+                    key={extension.extension_id}
+                    to={extension.config.url}
+                    color={extension.config.color ?? undefined}
+                    icon={
+                      <span className={extension.config.icon ?? undefined} />
+                    }
+                    label={extension.config.label}
+                  />
+                ) : (
+                  <MenuButton
+                    key={extension.extension_id}
+                    extension={extension}
+                  />
+                ),
+              )}
 
               <div className="h-4" role="separator" />
 

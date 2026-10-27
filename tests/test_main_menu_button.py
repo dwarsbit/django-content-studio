@@ -79,6 +79,7 @@ def test_a_button_serializes_its_options():
             "icon": "ph-bold ph-broom",
             "color": "amber",
             "confirm": "Clear the cache?",
+            "weight": 0,
         },
     }
 
@@ -182,3 +183,10 @@ def test_duplicate_button_ids_are_reported(monkeypatch):
     )
 
     assert "content_studio.E003" in [m.id for m in check_content_studio()]
+
+
+def test_links_and_buttons_carry_their_weight():
+    assert ClearCacheButton(weight=-5).serialize()["config"]["weight"] == -5
+    link = MainMenuLink(url="https://example.com", label="Website", weight=3)
+    assert link.serialize()["config"]["weight"] == 3
+    assert MainMenuLink(url="/", label="Home").serialize()["config"]["weight"] == 0

@@ -387,6 +387,8 @@ export interface MainMenuLinkConfig {
   icon: string | null;
   color: TailwindColor | null;
   label: string;
+  // The position among the menu's links and buttons: lower first.
+  weight?: number;
 }
 
 export interface MainMenuButtonConfig {
@@ -394,6 +396,7 @@ export interface MainMenuButtonConfig {
   icon: string | null;
   color: TailwindColor | null;
   confirm: string | null;
+  weight?: number;
 }
 
 export interface IFramePageConfig {

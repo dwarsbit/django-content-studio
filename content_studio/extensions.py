@@ -56,6 +56,7 @@ class MainMenuLink(BaseExtension):
     label: str
     icon: str = None
     color: str = None
+    # The position among the main menu's links and buttons: lower first.
     weight: int = 0
 
     def __init__(
@@ -85,6 +86,7 @@ class MainMenuLink(BaseExtension):
                 "icon": self.icon,
                 "color": self.color,
                 "label": self.label,
+                "weight": self.weight,
             },
         }
 
@@ -119,6 +121,8 @@ class MainMenuButton(BaseExtension):
     color: Optional[str] = None
     # A question to confirm before the button runs.
     confirm: Optional[str] = None
+    # The position among the main menu's links and buttons: lower first.
+    weight: int = 0
 
     def __init__(
         self,
@@ -126,6 +130,7 @@ class MainMenuButton(BaseExtension):
         icon: str = None,
         color: str = None,
         confirm: str = None,
+        weight: int = None,
         extension_id: uuid.UUID = None,
     ):
         # Arguments override the class attributes, so subclasses can
@@ -139,6 +144,8 @@ class MainMenuButton(BaseExtension):
             self.color = color
         if confirm is not None:
             self.confirm = confirm
+        if weight is not None:
+            self.weight = weight
 
         if not getattr(self, "label", None):
             raise ValueError("A main menu button needs a label.")
@@ -170,6 +177,7 @@ class MainMenuButton(BaseExtension):
                 "icon": self.icon,
                 "color": self.color,
                 "confirm": None if self.confirm is None else str(self.confirm),
+                "weight": self.weight,
             },
         }
 

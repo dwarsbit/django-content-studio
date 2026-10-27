@@ -52,13 +52,16 @@
   value shown once in a dialog with a copy button.
 - **Buttons in the main menu.** The new `MainMenuButton` extension runs
   your code from the admin's main menu: subclass it and implement
-  `handle(request)`. It takes a `label`, an `icon`, a `color` and a
-  `confirm` question, and `is_visible(request)` decides who sees and
-  runs it. Its result is shown like a `Button`'s.
+  `handle(request)`. It takes a `label`, an `icon`, a `color`, a
+  `weight` and a `confirm` question, and `is_visible(request)` decides
+  who sees and runs it. Its result is shown like a `Button`'s.
 - **Components in the edit page's header.** `edit_header` on a studio
   places components, such as buttons, next to the save button; on an
   inline studio, in the header of the inline object's editor. System
   check `content_studio.E019` reports entries that are not components.
+- **`MainMenuLink(weight=...)` orders the menu.** The weight was accepted
+  but ignored; the main menu now orders its links and buttons by weight,
+  lowest first, keeping equal weights in the order of `extensions`.
 - **Components work in inline objects' editors.** Links and buttons of an
   inline model's own studio failed in the dialog in which an editor opens
   one of the inline's objects; they now work there, gated by the inline

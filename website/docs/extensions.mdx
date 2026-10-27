@@ -34,7 +34,9 @@ admin_site = BlogStudioSite()
 ## MainMenuLink
 
 A link in the admin's main menu. It takes a `url`, a `label` and an `icon`,
-and optionally a `color` and a `weight` that orders the links.
+and optionally a `color` and a `weight`. The menu orders its links and
+buttons by `weight`, lowest first; with equal weights, which is the default
+of `0`, they keep their order in `extensions`.
 
 ## MainMenuButton
 
@@ -70,7 +72,7 @@ class BlogStudioSite(ContentStudioSite):
 admin_site = BlogStudioSite()
 ```
 
-- `label`, `icon` and `color`: as for `MainMenuLink`.
+- `label`, `icon`, `color` and `weight`: as for `MainMenuLink`.
 - `confirm`: a question to confirm before the button runs.
 - `is_visible(request)`: who sees the button. By default every staff user
   does. Content Studio checks it again when the button runs.

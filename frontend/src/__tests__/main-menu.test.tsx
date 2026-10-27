@@ -121,4 +121,45 @@ describe("Main menu buttons", () => {
     expect(await screen.findByText("build-42")).toBeInTheDocument();
     expect(toastMock.success).toHaveBeenCalledWith("button.done");
   });
+
+  it("orders links and buttons by weight, keeping ties in order", () => {
+    const link = (id: string, label: string, weight?: number) => ({
+      extension_id: id,
+      extension_type: ExtensionType.MainMenuLink,
+      config: { url: `/${id}`, label, icon: null, color: null, weight },
+    });
+    useDiscoverMock.mockReturnValue({
+      data: {
+        ...discover().data,
+        extensions: [
+          link("docs", "Docs", 10),
+          link("blog", "Blog"),
+          link("shop", "Shop"),
+          {
+            extension_id: "deploy",
+            extension_type: ExtensionType.MainMenuButton,
+            config: {
+              label: "Deploy",
+              icon: null,
+              color: null,
+              confirm: null,
+              weight: -1,
+            },
+          },
+        ],
+      },
+    });
+
+    renderMenu();
+
+    const labels = ["Deploy", "Blog", "Shop", "Docs"].map((label) =>
+      screen.getByText(label),
+    );
+    for (let index = 1; index < labels.length; index++) {
+      expect(
+        labels[index - 1].compareDocumentPosition(labels[index]) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+  });
 });
