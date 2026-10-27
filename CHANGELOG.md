@@ -50,6 +50,20 @@
   `is_visible(obj, request)` hides it per object. The editor sees the
   returned message as a notification; a `ButtonResult` can also carry a
   value shown once in a dialog with a copy button.
+- **Webhooks in the admin.** The webhooks app registers its own studio:
+  editors create webhooks, choosing events and models from lists, and
+  copy the secret, which is shown once after creating and after
+  **Regenerate secret**. **Trigger now** sends a request without changes
+  (event `webhook.triggered`) and reports how the webhook responded. Each
+  webhook shows its delivery log, read-only, with **Retry** on failed
+  deliveries for one more attempt. Unsafe URLs are refused on save, and
+  changes to webhooks themselves never trigger a webhook.
+- **`MultipleChoiceField` shows its options.** The admin's multi-select
+  for a `MultipleChoiceField` had no options to choose from: the field's
+  `options` were never sent to the admin.
+- **Excluded fields stay out of the admin.** Fields in a studio's
+  `exclude` are no longer sent to the admin read-only: they are left out
+  of the edit page's data entirely.
 - **Buttons in the main menu.** The new `MainMenuButton` extension runs
   your code from the admin's main menu: subclass it and implement
   `handle(request)`. It takes a `label`, an `icon`, a `color`, a

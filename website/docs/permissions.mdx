@@ -77,7 +77,10 @@ Memcached when you run more than one worker.
 
 Content Studio has no per-field permissions: an editor who may change an
 object sees all fields the studio shows. To hide a field from every editor,
-leave it out of the edit page with `exclude` or `edit_main`. To let some
+leave it out of the edit page with `exclude` or `edit_main`. Fields in
+`exclude` are also never sent to the admin, so `exclude` keeps a value such
+as an API key out of editors' browsers; a field you only leave out of
+`edit_main` is still sent. To let some
 editors see a field without changing it, return it from the studio's
 [`get_readonly_fields`](/docs/forms/form-sets#read-only-fields) for those
 editors. To protect

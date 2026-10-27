@@ -34,7 +34,9 @@ msgstr "Je wachtwoord is gewijzigd"
 msgid ""
 "Your password has been reset. If you did not do this, please contact your "
 "administrator."
-msgstr "Je wachtwoord is gewijzigd. Neem contact op met je administrator als jij dit niet hebt gedaan."
+msgstr ""
+"Je wachtwoord is gewijzigd. Neem contact op met je administrator als jij dit"
+" niet hebt gedaan."
 
 #: dashboard/scheduled_tasks.py:23
 msgid "Scheduled tasks"
@@ -50,8 +52,8 @@ msgstr "Content"
 
 #: actions.py:129
 msgid ""
-"The selected items will be moved to the trash, where they can be "
-"restored. Are you sure you want to delete?"
+"The selected items will be moved to the trash, where they can be restored. "
+"Are you sure you want to delete?"
 msgstr ""
 "De geselecteerde items worden verplaatst naar de prullenbak, waar ze "
 "hersteld kunnen worden. Weet je zeker dat je ze wilt verwijderen?"
@@ -59,3 +61,170 @@ msgstr ""
 #: form.py:227
 msgid "Activity"
 msgstr "Activiteit"
+
+#: webhooks/admin.py
+msgid "Trigger now"
+msgstr "Nu aanroepen"
+
+#: webhooks/admin.py
+msgid "Regenerate secret"
+msgstr "Geheim opnieuw genereren"
+
+#: webhooks/admin.py
+msgid ""
+"Requests are signed with the new secret from now on: receivers that check "
+"the signature need the new secret. Regenerate it?"
+msgstr ""
+"Verzoeken worden vanaf nu met het nieuwe geheim ondertekend: ontvangers die "
+"de handtekening controleren, hebben het nieuwe geheim nodig. Opnieuw "
+"genereren?"
+
+#: webhooks/admin.py
+msgid "The secret was regenerated."
+msgstr "Het geheim is opnieuw gegenereerd."
+
+#: webhooks/admin.py
+msgid "Retry"
+msgstr "Opnieuw proberen"
+
+#: webhooks/admin.py
+msgid "The delivery is already being retried."
+msgstr "De levering wordt al opnieuw geprobeerd."
+
+#: webhooks/admin.py
+#, python-format
+msgid "Delivered: the webhook responded with %(status)s."
+msgstr "Afgeleverd: de webhook antwoordde met %(status)s."
+
+#: webhooks/admin.py
+#, python-format
+msgid "The delivery failed and is retried later: %(error)s"
+msgstr "De levering is mislukt en wordt later opnieuw geprobeerd: %(error)s"
+
+#: webhooks/admin.py
+#, python-format
+msgid "The delivery failed: %(error)s"
+msgstr "De levering is mislukt: %(error)s"
+
+#: webhooks/admin.py
+msgid "The webhook was created. Copy its secret now: it is not shown again."
+msgstr ""
+"De webhook is aangemaakt. Kopieer nu het geheim: het wordt niet opnieuw "
+"getoond."
+
+#: webhooks/apps.py
+msgid "Webhooks"
+msgstr "Webhooks"
+
+#: webhooks/models.py
+msgid "Webhook"
+msgstr "Webhook"
+
+#: webhooks/models.py
+msgid "Name"
+msgstr "Naam"
+
+#: webhooks/models.py
+msgid "URL"
+msgstr "URL"
+
+#: webhooks/models.py
+msgid "Secret"
+msgstr "Geheim"
+
+#: webhooks/models.py
+msgid "Signs every request, so the receiver can verify it."
+msgstr "Ondertekent elk verzoek, zodat de ontvanger het kan controleren."
+
+#: webhooks/models.py
+msgid "Events"
+msgstr "Gebeurtenissen"
+
+#: webhooks/models.py
+msgid "The changes that trigger the webhook; empty for all."
+msgstr "De wijzigingen die de webhook aanroepen; leeg voor alle."
+
+#: webhooks/models.py
+msgid "Models"
+msgstr "Modellen"
+
+#: webhooks/models.py
+msgid "The models whose changes trigger the webhook; empty for all."
+msgstr "De modellen waarvan wijzigingen de webhook aanroepen; leeg voor alle."
+
+#: webhooks/models.py
+msgid "Tenant"
+msgstr "Tenant"
+
+#: webhooks/models.py
+msgid "Only changes in this tenant trigger the webhook; empty for all."
+msgstr ""
+"Alleen wijzigingen in deze tenant roepen de webhook aan; leeg voor alle."
+
+#: webhooks/models.py
+msgid "Active"
+msgstr "Actief"
+
+#: webhooks/models.py
+msgid "Created"
+msgstr "Aangemaakt"
+
+#: webhooks/models.py
+msgid "Updated"
+msgstr "Gewijzigd"
+
+#: webhooks/models.py
+msgid "Deleted"
+msgstr "Verwijderd"
+
+#: webhooks/models.py
+msgid "Restored"
+msgstr "Hersteld"
+
+#: webhooks/models.py
+msgid "Reordered"
+msgstr "Opnieuw gesorteerd"
+
+#: webhooks/models.py
+msgid "Webhook delivery"
+msgstr "Webhook-levering"
+
+#: webhooks/models.py
+msgid "Webhook deliveries"
+msgstr "Webhook-leveringen"
+
+#: webhooks/models.py
+msgid "Pending"
+msgstr "In afwachting"
+
+#: webhooks/models.py
+msgid "Success"
+msgstr "Geslaagd"
+
+#: webhooks/models.py
+msgid "Failed"
+msgstr "Mislukt"
+
+#: webhooks/models.py
+msgid "Payload"
+msgstr "Inhoud"
+
+#: webhooks/models.py
+msgid "Status"
+msgstr "Status"
+
+#: webhooks/models.py
+msgid "Attempts"
+msgstr "Pogingen"
+
+#: webhooks/models.py
+msgid "Response status"
+msgstr "Antwoordstatus"
+
+#: webhooks/models.py
+msgid "Response"
+msgstr "Antwoord"
+
+#: webhooks/models.py
+msgid "Error"
+msgstr "Fout"

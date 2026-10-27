@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from ..signals import ACTION_FLAGS
+from ..fields import MultipleChoiceField
 
 __all__ = [
     "Webhook",
@@ -18,12 +18,25 @@ def generate_secret():
     return secrets.token_hex(32)
 
 
-def validate_events(value):
-    if not isinstance(value, list) or any(event not in ACTION_FLAGS for event in value):
-        raise ValidationError(
-            _("Events must be a list of: %(events)s."),
-            params={"events": ", ".join(ACTION_FLAGS)},
-        )
+def validate_webhook_url(value):
+    """Webhooks only call http(s) URLs, and plain http only where
+    delivery allows it (DEBUG, or a host in WEBHOOK_ALLOWED_HOSTS)."""
+    from .delivery import WebhookError, check_url
+
+    try:
+        check_url(value)
+    except WebhookError as exc:
+        raise ValidationError(str(exc))
+
+
+# The changes a webhook can fire on, with their labels in the admin.
+EVENT_OPTIONS = [
+    ("created", _("Created")),
+    ("updated", _("Updated")),
+    ("deleted", _("Deleted")),
+    ("restored", _("Restored")),
+    ("reordered", _("Reordered")),
+]
 
 
 class Webhook(models.Model):
@@ -38,17 +51,17 @@ class Webhook(models.Model):
         ordering = ["name"]
 
     name = models.CharField(max_length=100, verbose_name=_("Name"))
-    url = models.URLField(max_length=2000, verbose_name=_("URL"))
+    url = models.URLField(
+        max_length=2000, validators=[validate_webhook_url], verbose_name=_("URL")
+    )
     secret = models.CharField(
         max_length=64,
         default=generate_secret,
         verbose_name=_("Secret"),
         help_text=_("Signs every request, so the receiver can verify it."),
     )
-    events = models.JSONField(
-        default=list,
-        blank=True,
-        validators=[validate_events],
+    events = MultipleChoiceField(
+        options=EVENT_OPTIONS,
         verbose_name=_("Events"),
         help_text=_("The changes that trigger the webhook; empty for all."),
     )
@@ -73,14 +86,6 @@ class Webhook(models.Model):
 
     def __str__(self):
         return self.name
-
-    def clean(self):
-        from .delivery import WebhookError, check_url
-
-        try:
-            check_url(self.url)
-        except WebhookError as exc:
-            raise ValidationError({"url": str(exc)})
 
     def matches(self, change, content_type_ids) -> bool:
         """Whether a change triggers the webhook; content_type_ids are

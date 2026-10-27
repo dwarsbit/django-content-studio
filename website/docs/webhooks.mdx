@@ -24,23 +24,19 @@ without a webhook.
    ```
 
 2. Run `manage.py migrate` to create its tables.
-3. Create a webhook with the URL to call. For example, in `manage.py shell`:
-
-   ```python
-   from content_studio.webhooks.models import Webhook
-
-   Webhook.objects.create(
-       name="Rebuild the blog",
-       url="https://api.netlify.com/build_hooks/5f3a9c0e2b1d4e0012345678",
-   )
-   ```
-
-4. Schedule the delivery command, which retries failed requests and removes
+3. Schedule the delivery command, which retries failed requests and removes
    old ones. For example, every minute from cron:
 
    ```text
    * * * * * /srv/mysite/venv/bin/python /srv/mysite/manage.py content_studio_deliver_webhooks
    ```
+
+4. In the admin, open **Webhooks** in the main menu and create a webhook
+   with a name and the URL to call, such as your hosting provider's build
+   hook.
+5. Copy the secret the admin shows after you create the webhook. It is
+   shown only this once; you need it to
+   [verify the signature](#verify-the-signature).
 
 From now on, every change an editor makes in the admin sends a `POST`
 request to the URL.
@@ -63,19 +59,46 @@ webhook, so a bulk delete of fifty articles starts one build, not fifty.
 Changes made outside the admin, such as in `manage.py shell`, a data import
 or your own views, do not trigger webhooks. Your own
 [bulk actions](/docs/content/registering-models#bulk-actions) only do when
-they record their changes with `record_change`.
+they record their changes with `record_change`. Changes to the webhooks
+themselves never trigger a webhook.
 
 ## Choose what triggers it
 
-By default a webhook fires on every change. Three fields narrow it down; an
-empty field matches everything:
+By default a webhook fires on every change. Three fields on the webhook
+narrow it down; an empty field matches everything:
 
-- `events`: a list of `"created"`, `"updated"`, `"deleted"`, `"restored"`
-  and `"reordered"`.
-- `content_types`: the models whose changes count.
-- `tenant`: with [multi-tenancy](/docs/multi-tenancy), the primary key of the
-  tenant whose changes count, as a string. Changes to models without a
-  tenant then do not count.
+- **Events**: created, updated, deleted, restored and reordered.
+- **Models**: the models whose changes count. You choose from the models
+  registered in the admin.
+- **Tenant**: with [multi-tenancy](/docs/multi-tenancy), the primary key of
+  the tenant whose changes count. Changes to models without a tenant then do
+  not count.
+
+Turn off **Active** to pause a webhook without deleting it.
+
+## Work with webhooks in the admin
+
+A webhook's edit page has two buttons in its header:
+
+- **Trigger now** sends a request without changes right away, with the
+  event `webhook.triggered`. Use it to start a build by hand, or to check
+  that the URL works: the admin tells you how the webhook responded.
+- **Regenerate secret** replaces the secret and shows the new one once.
+  Requests are signed with the new secret from then on, so update every
+  receiver that checks the signature.
+
+Under the fields, the delivery log lists the webhook's requests, newest
+first, with their status, attempts, response and error. Open a delivery to
+see what it sent and received. A failed delivery has a **Retry** button that
+sends it once more, right away.
+
+The webhook models follow Django's permissions, like any registered model.
+Viewing a webhook shows its delivery log; the buttons need change
+permission. Choosing models also needs view permission on content types
+(`contenttypes.view_contenttype`), which superusers have.
+
+To create webhooks in code instead, such as in a data migration, use the
+models directly:
 
 ```python
 from django.contrib.contenttypes.models import ContentType
@@ -92,8 +115,6 @@ webhook.content_types.set(
     ContentType.objects.get_for_models(Article, Category).values()
 )
 ```
-
-Set `is_active` to `False` to pause a webhook without deleting it.
 
 ## The request
 
@@ -120,6 +141,8 @@ Each request is a `POST` with a JSON body:
 ```
 
 - `version`: the format of the body; it only changes in a major release.
+- `event`: `content.changed` for changes in the admin, `webhook.triggered`
+  for a request sent with **Trigger now**, which has no changes.
 - `delivery`: the request's ID. A retry sends the same ID, so the receiver
   can skip a request it has already handled.
 - `changes`: the changes the webhook matches, each with its action, the
@@ -134,13 +157,14 @@ These headers come with it:
 
 | Header | Value |
 |--------|-------|
-| `X-Content-Studio-Event` | `content.changed` |
+| `X-Content-Studio-Event` | The event, as in the body. |
 | `X-Content-Studio-Delivery` | The request's ID, as in the body. |
 | `X-Content-Studio-Signature` | `t=<timestamp>,v1=<signature>`: see below. |
 
 ## Verify the signature
 
-Every webhook has a `secret`, generated when you create it. The signature is
+Every webhook has a secret, generated when you create it and shown once
+then, and again when you regenerate it. The signature is
 the HMAC-SHA256 of the timestamp, a period and the raw body, with the secret
 as the key. Check it before you trust a request, and refuse old timestamps
 so a recorded request cannot be replayed:
@@ -170,7 +194,8 @@ need to check the signature.
 ## Delivery and retries
 
 Each request is stored as a `WebhookDelivery`, with the response status,
-the start of the response body and any error.
+the start of the response body and any error; the webhook's delivery log
+shows them.
 
 Content Studio sends deliveries as [Django tasks](https://docs.djangoproject.com/en/stable/topics/tasks/),
 so the project's `TASKS` setting decides when they run. Without one,
@@ -183,7 +208,8 @@ A response with a 2xx status code counts as delivered. Anything else, such as
 a timeout or a 503, is retried by `content_studio_deliver_webhooks`, after 1,
 4, 16 and 64 minutes. After [`WEBHOOK_MAX_ATTEMPTS`](/docs/settings#webhook_max_attempts)
 attempts, the delivery is marked as failed and a warning is logged to the
-`content_studio.webhooks` logger. The same command removes finished
+`content_studio.webhooks` logger. **Retry** in the delivery log makes one
+more attempt. The same command removes finished
 deliveries after [`WEBHOOK_DELIVERY_RETENTION`](/docs/settings#webhook_delivery_retention)
 days.
 

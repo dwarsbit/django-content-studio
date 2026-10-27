@@ -48,6 +48,9 @@ logger = logging.getLogger("content_studio.webhooks")
 
 PAYLOAD_VERSION = 1
 EVENT = "content.changed"
+# Sent by "Trigger now" and the deploy button: no changes, only a
+# request to rebuild.
+TRIGGERED_EVENT = "webhook.triggered"
 
 # The part of a response body kept on the delivery.
 RESPONSE_BODY_LIMIT = 1000
@@ -66,10 +69,10 @@ def _iso(value):
     return value.isoformat() if value else None
 
 
-def build_payload(delivery_id, webhook, changes) -> dict:
+def build_payload(delivery_id, webhook, changes, event=EVENT) -> dict:
     return {
         "version": PAYLOAD_VERSION,
-        "event": EVENT,
+        "event": event,
         "delivery": str(delivery_id),
         "webhook": webhook.name,
         "timestamp": _iso(timezone.now()),
@@ -92,6 +95,15 @@ def create_deliveries(sender, changes, **kwargs):
     The content_changed receiver: one delivery per active webhook that
     matches any of the changes, carrying the changes it matches.
     """
+    # Configuring webhooks is not a content change: it would otherwise
+    # trigger every webhook.
+    changes = [
+        change for change in changes if change.model not in (Webhook, WebhookDelivery)
+    ]
+
+    if not changes:
+        return
+
     webhooks = Webhook.objects.filter(is_active=True).prefetch_related("content_types")
     deliveries = []
 
@@ -116,7 +128,38 @@ def create_deliveries(sender, changes, **kwargs):
     WebhookDelivery.objects.bulk_create(deliveries)
 
     for delivery in deliveries:
-        transaction.on_commit(lambda pk=str(delivery.pk): deliver_webhook.enqueue(pk))
+        enqueue(delivery)
+
+
+def trigger(webhook) -> WebhookDelivery:
+    """
+    Store a delivery that asks the webhook to rebuild without content
+    changes (event webhook.triggered). The caller sends it: right away
+    with deliver(), or later with enqueue().
+    """
+    delivery = WebhookDelivery(webhook=webhook, next_attempt_at=timezone.now())
+    delivery.payload = build_payload(delivery.pk, webhook, [], event=TRIGGERED_EVENT)
+    delivery.save()
+
+    return delivery
+
+
+def enqueue(delivery):
+    """Send a stored delivery as a task once the transaction commits."""
+    transaction.on_commit(lambda pk=str(delivery.pk): deliver_webhook.enqueue(pk))
+
+
+def retry(delivery) -> bool:
+    """
+    Make one more attempt at a failed delivery, right away: it is
+    delivered, or failed again whatever the number of attempts. Returns
+    whether this call made the attempt (another one may be running).
+    """
+    reopened = WebhookDelivery.objects.filter(
+        pk=delivery.pk, status=WebhookDelivery.Status.FAILED
+    ).update(status=WebhookDelivery.Status.PENDING, next_attempt_at=timezone.now())
+
+    return bool(reopened) and deliver(delivery.pk, last=True)
 
 
 def sign(secret: str, timestamp: int, body: bytes) -> str:
@@ -217,12 +260,14 @@ def backoff(attempts: int) -> timedelta:
     return min(BACKOFF_BASE * 4 ** (attempts - 1), MAX_BACKOFF)
 
 
-def deliver(delivery_id) -> bool:
+def deliver(delivery_id, last=False) -> bool:
     """
     Make one attempt at a pending delivery. The attempt is claimed with
     an atomic update first, so two workers never send the same attempt,
     and a worker that dies mid-request leaves the delivery due for a
-    retry. Returns whether this call made the attempt.
+    retry. A failed last attempt fails the delivery, whatever
+    WEBHOOK_MAX_ATTEMPTS says. Returns whether this call made the
+    attempt.
     """
     delivery = (
         WebhookDelivery.objects.select_related("webhook")
@@ -249,7 +294,7 @@ def deliver(delivery_id) -> bool:
     headers = {
         "Content-Type": "application/json",
         "User-Agent": f"Content-Studio-Webhooks/{VERSION}",
-        "X-Content-Studio-Event": EVENT,
+        "X-Content-Studio-Event": delivery.payload.get("event", EVENT),
         "X-Content-Studio-Delivery": str(delivery.pk),
         "X-Content-Studio-Signature": sign(webhook.secret, int(time.time()), body),
     }
@@ -276,7 +321,7 @@ def deliver(delivery_id) -> bool:
         fields["status"] = WebhookDelivery.Status.SUCCESS
         fields["delivered_at"] = timezone.now()
         fields["next_attempt_at"] = None
-    elif attempts >= cs_settings.WEBHOOK_MAX_ATTEMPTS or not webhook.is_active:
+    elif last or attempts >= cs_settings.WEBHOOK_MAX_ATTEMPTS or not webhook.is_active:
         fields["status"] = WebhookDelivery.Status.FAILED
         fields["next_attempt_at"] = None
         logger.warning(
