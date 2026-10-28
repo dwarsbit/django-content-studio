@@ -50,6 +50,38 @@ class DiscoverEndpointTests(TestCase):
         self.assertEqual(data["dashboard"], {"widgets": []})
         self.assertEqual(data["multitenancy"]["enabled"], False)
 
+    def test_discover_reports_model_groups(self):
+        """A model group carries its label, icon, models and collapsed state."""
+        from content_studio.admin import ModelGroup
+        from content_studio.settings import cs_settings
+
+        admin_site = cs_settings.ADMIN_SITE
+        models = list(admin_site._registry.keys())[:1]
+        original = getattr(admin_site, "model_groups", None)
+        admin_site.model_groups = [
+            ModelGroup(name="content", models=models),
+            ModelGroup(
+                name="archive",
+                label="Archive",
+                icon="ph-bold ph-archive",
+                collapsed=True,
+            ),
+        ]
+        try:
+            response = self.client.get("/api/discover")
+        finally:
+            admin_site.model_groups = original
+
+        self.assertEqual(response.status_code, 200)
+
+        groups = response.json()["model_groups"]
+        self.assertEqual([group["name"] for group in groups], ["content", "archive"])
+        self.assertEqual(groups[0]["label"], "Content")
+        self.assertEqual(groups[0]["collapsed"], False)
+        self.assertEqual(groups[0]["models"], [m._meta.label_lower for m in models])
+        self.assertEqual(groups[1]["icon"], "ph-bold ph-archive")
+        self.assertEqual(groups[1]["collapsed"], True)
+
     def test_discover_reports_configured_models(self):
         """Discover reports labels for configured media library models."""
 

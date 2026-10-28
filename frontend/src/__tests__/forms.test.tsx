@@ -1386,7 +1386,10 @@ describe("Edit header and read-only editors", () => {
       />,
     );
 
-    await screen.findByText("Existing title", { selector: "div" });
+    // The header names the object; the form shows it without an input.
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
+      "Existing title",
+    );
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.queryByRole("button", { name: "common.save" })).toBeNull();
     expect(

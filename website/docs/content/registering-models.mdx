@@ -558,3 +558,36 @@ CONTENT_STUDIO = {
     "ADMIN_SITE": "mysite.studio.admin_site",
 }
 ```
+
+### Model groups
+
+The main menu lists the registered models under one heading, "Content".
+Set `model_groups` on the site to arrange them in groups of your own, each a
+heading with its models under it:
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite, ModelGroup
+
+from blog.models import Article, Category, Redirect, SiteSettings
+
+
+class BlogStudioSite(ContentStudioSite):
+    model_groups = [
+        ModelGroup("content", icon="ph-bold ph-article", models=[Article, Category]),
+        ModelGroup(
+            "site",
+            label="Site",
+            icon="ph-bold ph-gear",
+            models=[SiteSettings, Redirect],
+            collapsed=True,
+        ),
+    ]
+
+
+admin_site = BlogStudioSite()
+```
+
+A group starts open; `collapsed=True` starts it closed, which suits groups
+editors rarely need. The group that holds the page you are on always
+opens. Editors open and close groups by clicking the heading.

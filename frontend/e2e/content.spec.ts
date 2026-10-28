@@ -7,8 +7,13 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("navigates to a model through the menu", async ({ page }) => {
+  // Groups start expanded; the heading collapses and expands them.
+  const articles = page.getByRole("link", { name: "articles" });
+  await expect(articles).toBeVisible();
   await page.getByRole("button", { name: "Content" }).click();
-  await page.getByRole("link", { name: "articles" }).click();
+  await expect(articles).toBeHidden();
+  await page.getByRole("button", { name: "Content" }).click();
+  await articles.click();
   await expect(page).toHaveURL(/\/content\/demo_blog\.article/);
   await expect(
     page.getByRole("columnheader", { name: "title", exact: true }),

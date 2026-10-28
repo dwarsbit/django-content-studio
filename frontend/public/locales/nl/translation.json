@@ -60,7 +60,10 @@
     "media_library": "Mediabibliotheek",
     "settings": "Instellingen",
     "log_out": "Uitloggen",
-    "theme": "Thema"
+    "theme": "Thema",
+    "collapse": "Menu inklappen",
+    "expand": "Menu uitklappen",
+    "title": "Hoofdmenu"
   },
   "editor": {
     "title_create": "Maak {{modelName}} aan",
@@ -247,7 +250,8 @@
   },
   "tenant": {
     "selector": {
-      "add": "Voeg nieuwe toe"
+      "add": "Voeg nieuwe toe",
+      "settings": "Instellingen"
     },
     "setup": {
       "title": "Eerste {{tenant}} aanmaken",

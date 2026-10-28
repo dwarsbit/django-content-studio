@@ -277,6 +277,7 @@ def get_model_groups():
             "icon": group.icon,
             "color": group.color,
             "label": group.label,
+            "collapsed": group.collapsed,
             "models": [m._meta.label_lower for m in group.models],
         }
         for group in model_groups

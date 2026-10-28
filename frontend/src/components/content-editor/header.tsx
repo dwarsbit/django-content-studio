@@ -4,6 +4,7 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { PiArrowLeftBold, PiDotsThreeBold } from "react-icons/pi";
 
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -78,18 +79,15 @@ export function Header({
   return (
     model && (
       <>
-        <DialogHeader className="items-center z-10">
-          <div className="flex items-center gap-3 px-4 pb-3 pt-6 w-full">
-            {model.admin.icon && (
-              <div className="size-6 flex items-center justify-center bg-muted rounded-md text-muted-foreground">
-                <span className={cn(model.admin.icon, "text-base")} />
-              </div>
-            )}
-            <div className="select-none flex items-center gap-1.5">
-              {!isSingleton && (
+        <DialogHeader className="z-10 block">
+          <PageHeader
+            heading={dialog ? "div" : "h1"}
+            back={
+              !isSingleton && (
                 <Button
-                  size="icon"
+                  size="icon-sm"
                   variant="ghost"
+                  className="-ml-2 text-muted-foreground"
                   disabled={isSaving}
                   aria-label={t("editor.back_to_list")}
                   onClick={async () => {
@@ -114,92 +112,112 @@ export function Header({
                 >
                   <PiArrowLeftBold />
                 </Button>
-              )}
-              {dialog ? (
-                <DialogTitle>{model.verbose_name_plural}</DialogTitle>
-              ) : (
-                <h2 className="text-sm leading-none font-semibold">
-                  {model.verbose_name_plural}
-                </h2>
-              )}
-              {resource && <div>{"/"}</div>}
-              <div className="text-sm font-medium text-accent-foreground">
-                {resource?.__str__}
-              </div>
-            </div>
-            <div className="flex-1 flex items-center justify-end gap-2">
-              {editedAt ? (
-                <div className="text-muted-foreground text-sm font-medium mr-4 select-none">
-                  {`${t("editor.last_edited")} ${dayjs(editedAt).fromNow()}`}
-                </div>
-              ) : null}
+              )
+            }
+            icon={model.admin.icon && <span className={model.admin.icon} />}
+            title={
+              <span className="flex items-center gap-1.5 min-w-0">
+                {dialog ? (
+                  <DialogTitle
+                    className={cn(
+                      "text-base leading-normal font-medium shrink-0 first-letter:uppercase",
+                      resource ? "text-muted-foreground" : "font-semibold",
+                    )}
+                  >
+                    {model.verbose_name_plural}
+                  </DialogTitle>
+                ) : (
+                  <span
+                    className={cn(
+                      "shrink-0 first-letter:uppercase",
+                      resource && "text-muted-foreground font-medium",
+                    )}
+                  >
+                    {model.verbose_name_plural}
+                  </span>
+                )}
+                {resource && (
+                  <>
+                    <span className="text-muted-foreground/50 shrink-0">/</span>
+                    <span className="truncate">{resource.__str__}</span>
+                  </>
+                )}
+              </span>
+            }
+            actions={
+              <>
+                {editedAt ? (
+                  <div className="hidden lg:block text-muted-foreground text-sm mr-2 select-none">
+                    {`${t("editor.last_edited")} ${dayjs(editedAt).fromNow()}`}
+                  </div>
+                ) : null}
+                {components.map((component) => (
+                  <ComponentRenderer
+                    key={component.component_id}
+                    formField={component}
+                    model={model}
+                  />
+                ))}
+                {!isSingleton && !isCreate && canDelete && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={t("editor.more_actions")}
+                      >
+                        <PiDotsThreeBold />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onSelect={async () => {
+                          const confirmed = await confirm({
+                            title: t("common.delete_confirm_title"),
+                            // With soft delete the object lands in the
+                            // trash and can be restored, which the
+                            // regular message denies.
+                            description: t(
+                              model.admin.list.trash
+                                ? "common.delete_to_trash_confirm_description"
+                                : "common.delete_confirm_description",
+                            ),
+                          });
 
-              {components.map((component) => (
-                <ComponentRenderer
-                  key={component.component_id}
-                  formField={component}
-                  model={model}
-                />
-              ))}
-
-              {!isSingleton && !isCreate && canDelete && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="rounded-full"
-                      aria-label={t("editor.more_actions")}
-                    >
-                      <PiDotsThreeBold />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onSelect={async () => {
-                        const confirmed = await confirm({
-                          title: t("common.delete_confirm_title"),
-                          // With soft delete the object lands in the
-                          // trash and can be restored, which the
-                          // regular message denies.
-                          description: t(
-                            model.admin.list.trash
-                              ? "common.delete_to_trash_confirm_description"
-                              : "common.delete_confirm_description",
-                          ),
-                        });
-                        if (confirmed) {
-                          await mutateAsync(resource!.id);
-                          onDelete?.();
-                        }
-                      }}
-                    >
-                      {t("common.delete")}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-
-              {!readOnly && (
-                <Button
-                  className="rounded-full px-6"
-                  onClick={async () => {
-                    try {
-                      await onSave();
-                    } catch {
-                      // Errors are already surfaced by the save flow.
-                    }
-                  }}
-                  isLoading={isSaving}
-                >
-                  {t(
-                    isCreate && !isSingleton ? "common.create" : "common.save",
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
+                          if (confirmed) {
+                            await mutateAsync(resource!.id);
+                            onDelete?.();
+                          }
+                        }}
+                      >
+                        {t("common.delete")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                {!readOnly && (
+                  <Button
+                    className="min-w-20"
+                    onClick={async () => {
+                      try {
+                        await onSave();
+                      } catch {
+                        // Errors are already surfaced by the save flow.
+                      }
+                    }}
+                    isLoading={isSaving}
+                  >
+                    {t(
+                      isCreate && !isSingleton
+                        ? "common.create"
+                        : "common.save",
+                    )}
+                  </Button>
+                )}
+              </>
+            }
+          />
         </DialogHeader>
       </>
     )
