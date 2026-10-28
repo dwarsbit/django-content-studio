@@ -15,22 +15,26 @@ export function FormSet({
 }) {
   return (
     <div>
-      <div className="mb-3 empty:hidden">
-        {formSet.title && (
-          <h4 className="font-semibold text-xl">{formSet.title}</h4>
-        )}
-        {formSet.description ? (
-          <div className="text-sm text-muted-foreground">
-            {formSet.description}
-          </div>
-        ) : null}
-      </div>
-      <div className="space-y-5">
+      {(formSet.title || formSet.description) && (
+        <div className="px-5 py-3 border-b">
+          {formSet.title && (
+            <h4 className="font-semibold first-letter:uppercase">
+              {formSet.title}
+            </h4>
+          )}
+          {formSet.description ? (
+            <div className="text-xs text-muted-foreground">
+              {formSet.description}
+            </div>
+          ) : null}
+        </div>
+      )}
+      <div className="p-5 space-y-5">
         {formSet.fields.map((formField, idx) =>
           R.has("fields", formField) ? (
             <div
               key={idx}
-              className="grid gap-3"
+              className="grid gap-4"
               style={{
                 gridTemplateColumns: `repeat(${formField.fields.length}, 1fr)`,
               }}

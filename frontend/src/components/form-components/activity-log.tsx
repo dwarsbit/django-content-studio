@@ -5,6 +5,7 @@ import * as R from "ramda";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { useHttp } from "@/hooks/use-http";
 import type { ActivityLogEntry, FormField, Model } from "@/types";
@@ -46,37 +47,34 @@ export function ActivityLog({
   return (
     !R.isNil(id) && (
       <div>
-        <h2 className="font-medium">{formField.title}</h2>
+        <h2 className="font-semibold">{formField.title}</h2>
         {!data ? (
           <div className="py-6 flex items-center justify-center">
             <Spinner />
           </div>
         ) : R.isEmpty(data) ? (
-          <div className="text-muted-foreground text-sm">
+          <div className="text-muted-foreground text-sm mt-1">
             {t("form_components.activity.empty")}
           </div>
         ) : (
-          <ul className="mt-3">
+          <ul className="mt-2 divide-y">
             {data.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-2 py-2 border-t first:border-t-0 first:pt-0 mt-2 first:mt-0"
-              >
-                <div className="shrink-0 rounded-full text-xs bg-accent size-6 flex items-center justify-center font-semibold uppercase select-none">
-                  {item.user?.__str__.slice(0, 2)}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex gap-1 flex-wrap">
-                    <div className="shrink-0 font-medium">
-                      {item.user?.__str__}
-                    </div>
-                    <div className="text-muted-foreground">
+              <li key={item.id} className="flex items-start gap-2.5 py-2.5">
+                <Avatar className="size-6 mt-0.5">
+                  <AvatarFallback className="text-[10px] font-semibold bg-secondary text-secondary-foreground uppercase">
+                    {item.user?.__str__.slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 text-sm">
+                  <div>
+                    <span className="font-medium">{item.user?.__str__}</span>{" "}
+                    <span className="text-muted-foreground">
                       {t(
                         `dashboard.widgets.activity_log.action_flags.${item.action_flag}`,
                       )}
-                    </div>
+                    </span>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     {dayjs(item.action_time).fromNow()}
                   </div>
                 </div>
