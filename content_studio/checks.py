@@ -14,6 +14,7 @@ from . import formats, widgets
 from .actions import (
     BULK_ACTION_PERMISSIONS,
     DELETE_ACTION_ID,
+    EXPORT_ACTION_ID,
     declared_bulk_actions,
 )
 from .admin import (
@@ -25,6 +26,7 @@ from .admin import (
     iter_components,
     resolve_table_display,
 )
+from .export import is_exportable
 from .form import Component, Field, TableColumn
 from .settings import cs_settings
 from .utils import flatten, get_tenant_field_name
@@ -280,17 +282,41 @@ def bulk_action_errors(studio) -> list[tuple[str, str]]:
             )
         )
 
+    exportable = is_exportable(studio)
+
+    if exportable and EXPORT_ACTION_ID in declared:
+        errors.append(
+            (
+                "content_studio.E007",
+                f"{studio.__class__.__name__}.bulk action "
+                f"{EXPORT_ACTION_ID!r} shadows the built-in export action; "
+                "give it another name.",
+            )
+        )
+
     if actions is not None:
         seen = set()
 
         for name in actions:
-            if name != DELETE_ACTION_ID and name not in declared:
+            if name == EXPORT_ACTION_ID and not exportable and name not in declared:
+                errors.append(
+                    (
+                        "content_studio.E007",
+                        f"{studio.__class__.__name__}.actions contains "
+                        f"{name!r}, but the studio offers no export; set "
+                        "export_fields or allow_export.",
+                    )
+                )
+            elif (
+                name not in (DELETE_ACTION_ID, EXPORT_ACTION_ID)
+                and name not in declared
+            ):
                 errors.append(
                     (
                         "content_studio.E007",
                         f"{studio.__class__.__name__}.actions contains "
                         f"{name!r}, which is not a @bulk_action method "
-                        "(or the built-in delete).",
+                        "(or the built-in delete or export).",
                     )
                 )
 
@@ -1011,6 +1037,130 @@ def duplication_warnings(studio) -> list[tuple[str, str]]:
     return []
 
 
+def export_errors(studio) -> list[tuple[str, str]]:
+    """
+    A misconfigured export_fields, as (check id, message) pairs: a list
+    of unique field names or TableColumn objects, each a forward model
+    field, __str__ or a method on the studio. allow_export exports the
+    table_display columns, which are checked as table_display (E006).
+    """
+    export_fields = getattr(studio, "export_fields", None)
+    name = config_name(studio)
+
+    if export_fields is None:
+        return []
+
+    if not isinstance(export_fields, (list, tuple)):
+        return [
+            (
+                "content_studio.E022",
+                f"{name}.export_fields must be a list of field names or "
+                "TableColumn objects.",
+            )
+        ]
+
+    errors = []
+    seen = set()
+    model = studio.model
+
+    for entry in export_fields:
+        if isinstance(entry, str):
+            column = TableColumn(field=entry)
+        elif isinstance(entry, TableColumn):
+            column = entry
+        else:
+            errors.append(
+                (
+                    "content_studio.E022",
+                    f"{name}.export_fields entries must be field names or "
+                    f"TableColumn objects; got {entry!r}.",
+                )
+            )
+            continue
+
+        if column.field in seen:
+            errors.append(
+                (
+                    "content_studio.E022",
+                    f"{name}.export_fields contains {column.field!r} more "
+                    "than once.",
+                )
+            )
+        seen.add(column.field)
+
+        if column.field == "__str__" or is_computed_column(studio, column):
+            continue
+
+        try:
+            field = model._meta.get_field(column.field)
+        except FieldDoesNotExist:
+            field = None
+
+        if field is None or (field.auto_created and not field.concrete):
+            errors.append(
+                (
+                    "content_studio.E022",
+                    f"{name}.export_fields entry {column.field!r} does not "
+                    "resolve to a model field, __str__ or a method on the "
+                    "studio.",
+                )
+            )
+
+    return errors
+
+
+def export_warnings(studio) -> list[tuple[str, str]]:
+    """
+    Export options without effect, as (check id, message) pairs:
+    singletons are never exported, an empty export_fields enables
+    nothing, and columns in exclude are left out of the export.
+    """
+    name = config_name(studio)
+    export_fields = getattr(studio, "export_fields", None)
+    enabled = bool(export_fields) or bool(getattr(studio, "allow_export", False))
+
+    if enabled and get_is_singleton(studio):
+        option = "export_fields" if export_fields else "allow_export"
+        return [
+            (
+                "content_studio.W015",
+                f"{name}.{option} has no effect: singletons cannot be " "exported.",
+            )
+        ]
+
+    if isinstance(export_fields, (list, tuple)) and not export_fields:
+        return [
+            (
+                "content_studio.W015",
+                f"{name}.export_fields is empty, which offers no export. "
+                "Remove it, or set allow_export to export the table_display "
+                "columns.",
+            )
+        ]
+
+    if not enabled or not isinstance(export_fields or [], (list, tuple)):
+        return []
+
+    excluded = set(getattr(studio, "exclude", None) or [])
+    entries = export_fields or resolve_table_display(studio)
+    option = "export_fields" if export_fields else "table_display"
+    warnings = []
+
+    for entry in entries:
+        field_name = entry.field if isinstance(entry, TableColumn) else entry
+
+        if isinstance(field_name, str) and field_name in excluded:
+            warnings.append(
+                (
+                    "content_studio.W015",
+                    f"{name}.{option} column {field_name!r} is in exclude "
+                    "and is left out of the export.",
+                )
+            )
+
+    return warnings
+
+
 # Fields a prepopulated value cannot go into, as in the classic admin.
 PREPOPULATED_TARGET_EXCLUDED = (
     models.DateTimeField,
@@ -1533,6 +1683,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         for check_id, error in duplication_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
+        for check_id, error in export_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
         for check_id, warning in edit_field_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
@@ -1555,6 +1708,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in duplication_warnings(studio):
+            messages.append(checks.Warning(warning, obj=obj, id=check_id))
+
+        for check_id, warning in export_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
     for check_id, error in duplicate_id_errors(site):

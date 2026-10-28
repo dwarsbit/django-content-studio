@@ -334,13 +334,17 @@ class DjangoContentStudioConfig(AppConfig):
                     self._check_parent_access(parent_id)
 
                 # Soft delete, when configured: the regular lists exclude
-                # trashed objects, the trash lists only those, and the
-                # restore/permanent-delete actions reach trashed
-                # objects unfiltered, as does the unique check (a
+                # trashed objects, the trash (and its export) lists only
+                # those, and the restore/permanent-delete actions reach
+                # trashed objects unfiltered, as does the unique check (a
                 # trashed object still occupies its unique values).
                 soft_delete_field = self._admin_model.soft_delete
+                in_trash = self.action == "trash" or (
+                    self.action == "export"
+                    and self.request.query_params.get("export_scope") == "trash"
+                )
                 if soft_delete_field:
-                    if self.action == "trash":
+                    if in_trash:
                         qs = qs.filter(**{f"{soft_delete_field}__isnull": False})
                     elif self.action not in (
                         "restore",
@@ -356,7 +360,7 @@ class DjangoContentStudioConfig(AppConfig):
                 reorder_field = self._admin_model.reorder_field
                 if self._admin_model.ordering:
                     ordering = self._admin_model.ordering
-                elif self.action == "trash" and soft_delete_field:
+                elif in_trash and soft_delete_field:
                     ordering = [f"-{soft_delete_field}"]
                 elif reorder_field:
                     ordering = [

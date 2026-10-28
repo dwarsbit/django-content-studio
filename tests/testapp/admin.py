@@ -7,6 +7,7 @@ from .models import (
     Article,
     Category,
     Edition,
+    Event,
     Label,
     LandingPage,
     Note,
@@ -147,3 +148,30 @@ class ProductAdmin(ModelStudio):
 class EditionAdmin(ModelStudio):
     table_display = ["title"]
     soft_delete = "removed_at"
+
+
+@register(Event)
+class EventAdmin(ModelStudio):
+    table_display = ["title", "status", "starts_at"]
+    list_filter = ["status"]
+    search_fields = ["title"]
+    exclude = ["secret"]
+    soft_delete = "removed_at"
+    export_fields = [
+        "title",
+        "status",
+        "category",
+        "tags",
+        "starts_at",
+        "day",
+        "price",
+        "attendees",
+        "is_public",
+        "notes",
+        "keywords",
+        "details",
+        TableColumn(field="get_summary", header="Summary"),
+    ]
+
+    def get_summary(self, obj, request):
+        return f"{obj.title} ({obj.attendees})"

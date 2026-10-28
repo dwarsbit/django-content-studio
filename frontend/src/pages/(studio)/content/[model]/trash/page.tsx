@@ -12,15 +12,18 @@ import { PiFileTextBold } from "react-icons/pi";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
+import { ExportMenu } from "@/components/export-menu";
 import { Button } from "@/components/ui/button";
 import { PageBody, PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useDiscover } from "@/hooks/use-discover";
+import { useExport } from "@/hooks/use-export";
 import { useHttp } from "@/hooks/use-http";
+import { getDownloadErrorMessage } from "@/lib/download";
 import { getErrorMessage } from "@/lib/utils";
-import type { Model, PaginatedResponse, Resource } from "@/types";
+import type { ExportFormat, Model, PaginatedResponse, Resource } from "@/types";
 
 import { ListTabs } from "../page";
 
@@ -112,6 +115,20 @@ function TrashView({ model }: { model: Model }) {
     }
   }
 
+  // The trash exports on its own: every trashed object.
+  const exportFormats = model.admin.list.export?.formats ?? [];
+  const { mutateAsync: runExport, isPending: isExporting } = useExport(
+    model.label,
+  );
+
+  async function onExport(format: ExportFormat) {
+    try {
+      await runExport({ format, trash: true });
+    } catch (e) {
+      toast.error(await getDownloadErrorMessage(e));
+    }
+  }
+
   const canRestore = model.admin.permissions.change_permission;
   const canDestroy = model.admin.permissions.delete_permission;
 
@@ -127,6 +144,16 @@ function TrashView({ model }: { model: Model }) {
         }
         title={model.verbose_name_plural}
         description={t("trash.subtitle")}
+        actions={
+          hasTrash &&
+          exportFormats.length > 0 && (
+            <ExportMenu
+              formats={exportFormats}
+              disabled={isExporting}
+              onExport={onExport}
+            />
+          )
+        }
       >
         {hasTrash && (
           <ListTabs

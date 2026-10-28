@@ -21,7 +21,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E004` | Two dashboard widgets with the same ID. Pass a `widget_id` to tell them apart. |
 | `content_studio.E005` | Two components with the same ID. Pass a `component_id` to tell them apart. |
 | `content_studio.E006` | `table_display` entries that are not field names or `TableColumn` objects, duplicate columns, columns that are not a model field, `__str__` or a studio method, and formats that are not `content_studio.formats` classes. Inlines are checked too. |
-| `content_studio.E007` | Bulk actions: an `actions` list with unknown or duplicate names, a `@bulk_action` that replaces the built-in delete, or an unknown permission. |
+| `content_studio.E007` | Bulk actions: an `actions` list with unknown or duplicate names, a `@bulk_action` that replaces the built-in delete or export, `"export"` in `actions` without export, or an unknown permission. |
 | `content_studio.E008` | `soft_delete` naming an unknown field, or a field that is not a nullable date or date and time. |
 | `content_studio.E009` | [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) without a `MEDIA_LIBRARY_MODEL`, or naming a field that is missing or not a `JSONField`. |
 | `content_studio.E010` | Edit page fields that are not model fields, which would show as empty read-only boxes, and `Field(widget=...)` values that are not `content_studio.widgets` classes. |
@@ -36,6 +36,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E019` | Webhook settings: a `WEBHOOK_ALLOWED_HOSTS` that is not a list of host names, a `WEBHOOK_MAX_ATTEMPTS` that is not a positive whole number, a `WEBHOOK_TIMEOUT` that is not a positive number of seconds, or a `WEBHOOK_DELIVERY_RETENTION` that is not `None` or a positive whole number of days. |
 | `content_studio.E020` | An `edit_header` that is not a list, or entries in it that are not components, such as fields. Inlines are checked too. |
 | `content_studio.E021` | A `duplicate_inlines` that is not a list, or entries in it that are not in the studio's `inlines`. |
+| `content_studio.E022` | An `export_fields` that is not a list, or entries in it that are not field names or `TableColumn` objects, that appear twice, or that do not resolve to a model field, `__str__` or a method on the studio. |
 
 ## Warnings
 
@@ -55,3 +56,4 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.W012` | A dashboard widget that does not subclass a built-in widget, which the admin cannot show. |
 | `content_studio.W013` | An `ordering` that does not start with the `reorder_field` (after any `reorder_scope` fields), so moves do not match the order of the list. Inlines are checked too. |
 | `content_studio.W014` | `allow_duplication` on a singleton, or `duplicate_inlines` without `allow_duplication`. Neither has an effect. |
+| `content_studio.W015` | `export_fields` or `allow_export` on a singleton, an empty `export_fields`, or exported columns that are in `exclude` and are left out. None of them has an effect. |

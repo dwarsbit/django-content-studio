@@ -115,6 +115,8 @@ export interface Model {
       sortable_by: string[] | null;
       // Whether the user may reorder the list (reorder_field is set).
       reorderable?: boolean;
+      // The formats the list can be exported in; null without export.
+      export?: { formats: ExportFormat[] } | null;
       actions: BulkAction[];
     };
     edit: {
@@ -173,7 +175,12 @@ export interface BulkAction {
   icon: string | null;
   confirm: string | null;
   destructive: boolean;
+  // The built-in export's formats: it downloads the selection instead
+  // of running on it.
+  formats?: ExportFormat[];
 }
+
+export type ExportFormat = "csv" | "xlsx";
 
 export interface UniqueSet {
   id: string;

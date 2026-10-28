@@ -138,6 +138,11 @@
     "select_all": "Select all",
     "select_row": "Select row"
   },
+  "export": {
+    "button": "Export",
+    "csv": "CSV",
+    "xlsx": "Excel (.xlsx)"
+  },
   "media_library": {
     "title": "Media library",
     "description": "Manage your media files here.",
