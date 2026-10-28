@@ -19,7 +19,8 @@
     "select_item": "Select item",
     "download": "Download",
     "done": "Done",
-    "copied_to_clipboard": "Copied to clipboard!"
+    "copied_to_clipboard": "Copied to clipboard!",
+    "close": "Close"
   },
   "app": {
     "copied_to_clipboard": "Copied to clipboard!",
@@ -154,7 +155,8 @@
     "filters": {
       "type": "Type",
       "tags": "Tags",
-      "no_tags": "No tags yet"
+      "no_tags": "No tags yet",
+      "folder": "Folder"
     },
     "columns": {
       "name": "Name",
@@ -167,6 +169,22 @@
       "title": "Focus point",
       "set": "Set focal point",
       "remove": "Remove focal point"
+    },
+    "folders": "Folders",
+    "folder_path": "Current folder",
+    "file_actions": "File actions",
+    "empty_title": "No files yet",
+    "empty_description": "Drop files here to upload them, or use the upload button.",
+    "no_results": "Try another search term, or clear the type and tag filters.",
+    "image_dialog_hint": "Changes are applied when you save the file.",
+    "moved": "Moved",
+    "collapse_folder": "Collapse {{name}}",
+    "expand_folder": "Expand {{name}}",
+    "fields": {
+      "name": "Name",
+      "alt_text": "Alt text",
+      "alt_text_hint": "Describes the image for people who cannot see it.",
+      "tags": "Tags"
     }
   },
   "widgets": {

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { TbCaretDownFilled, TbCaretUpFilled } from "react-icons/tb";
 
+import { Thumb } from "@/components/media-library/file-meta";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -63,16 +64,7 @@ export function TableView({
       sortable: true,
       render: (item) => (
         <span className="flex items-center gap-2.5 min-w-0">
-          {item.type === "image" && item.thumbnail ? (
-            <img
-              draggable={false}
-              src={item.thumbnail}
-              alt=""
-              className="size-7 rounded object-cover shrink-0"
-            />
-          ) : (
-            <span className="size-7 rounded bg-muted border shrink-0" />
-          )}
+          <Thumb item={item} className="size-7" />
           <span className="font-medium line-clamp-1 break-all">
             {item.name}
           </span>

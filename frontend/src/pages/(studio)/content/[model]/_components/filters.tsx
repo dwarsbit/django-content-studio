@@ -2,10 +2,9 @@ import { useTranslation } from "react-i18next";
 
 import { FilterRenderer } from "@/components/filters/renderer";
 import type { FilterValues } from "@/components/filters/types";
+import { Search } from "@/components/search";
 import { Button } from "@/components/ui/button";
 import type { Model } from "@/types";
-
-import { Search } from "./search";
 
 /**
  * Collects the remembered values of one filter field, keyed by lookup

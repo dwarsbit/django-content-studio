@@ -19,7 +19,8 @@
     "select_item": "Item selecteren",
     "download": "Downloaden",
     "done": "Klaar",
-    "copied_to_clipboard": "Gekopieerd naar het klembord!"
+    "copied_to_clipboard": "Gekopieerd naar het klembord!",
+    "close": "Sluiten"
   },
   "app": {
     "copied_to_clipboard": "Gekopieerd naar klembord",
@@ -153,7 +154,8 @@
     "filters": {
       "type": "Type",
       "tags": "Tags",
-      "no_tags": "Nog geen tags"
+      "no_tags": "Nog geen tags",
+      "folder": "Map"
     },
     "columns": {
       "name": "Naam",
@@ -166,6 +168,22 @@
       "title": "Focuspunt",
       "set": "Focuspunt instellen",
       "remove": "Focuspunt verwijderen"
+    },
+    "folders": "Mappen",
+    "folder_path": "Huidige map",
+    "file_actions": "Bestandsacties",
+    "empty_title": "Nog geen bestanden",
+    "empty_description": "Sleep bestanden hierheen om ze te uploaden, of gebruik de uploadknop.",
+    "no_results": "Probeer een andere zoekterm, of wis de type- en tagfilters.",
+    "image_dialog_hint": "Wijzigingen worden toegepast als je het bestand opslaat.",
+    "moved": "Verplaatst",
+    "collapse_folder": "{{name}} inklappen",
+    "expand_folder": "{{name}} uitklappen",
+    "fields": {
+      "name": "Naam",
+      "alt_text": "Alt-tekst",
+      "alt_text_hint": "Beschrijft de afbeelding voor mensen die haar niet kunnen zien.",
+      "tags": "Tags"
     }
   },
   "widgets": {

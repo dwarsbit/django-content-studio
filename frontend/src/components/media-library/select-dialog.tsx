@@ -21,9 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
+import { useDiscover } from "@/hooks/use-discover";
 import { useListMedia } from "@/hooks/use-list-media";
 import { useUpload } from "@/hooks/use-upload";
-import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/types";
 
 export function SelectDialog({
@@ -63,6 +63,8 @@ function SelectDialogContent({
   const [page, setPage] = useState(1);
   const [folder, setFolder] = useState<string | null>(null);
   const { data } = useListMedia({ folder, page, search });
+  const { data: discover } = useDiscover();
+  const hasFolders = discover?.media_library.folders ?? false;
   const pendingCount = useIsMutating({
     mutationKey: ["media-library", "items"],
   });
@@ -79,17 +81,7 @@ function SelectDialogContent({
         );
       }}
     >
-      <div className={cn("mb-2", { invisible: search })}>
-        <FolderPath
-          folder={folder}
-          onSelect={(folderId) => {
-            setPage(1);
-            setFolder(folderId);
-          }}
-        />
-      </div>
-
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-2">
         <DebouncedInput
           size="sm"
           placeholder={t("common.search")}
@@ -102,57 +94,72 @@ function SelectDialogContent({
         <UploadButton variant="outline" folder={folder} multiple={multiple} />
       </div>
 
-      <div className={cn("mb-2", { hidden: search })}>
-        <Folders
-          parent={folder}
-          onSelect={(folderId) => {
-            setPage(1);
-            setFolder(folderId);
-          }}
-        />
-      </div>
+      <div className="flex-1 min-h-0 flex items-start gap-4">
+        {hasFolders && !search && (
+          <div className="w-48 shrink-0 max-h-full overflow-y-auto scrollbar">
+            <Folders
+              current={folder}
+              onSelect={(folderId) => {
+                setPage(1);
+                setFolder(folderId);
+              }}
+            />
+          </div>
+        )}
 
-      <div className="flex-1 overflow-y-auto border rounded scrollbar">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 p-2">
-          {R.times(R.identity, pendingCount).map((i) => (
-            <div key={i} className="p-4 rounded border space-y-2">
-              <div className="aspect-square rounded-md bg-accent animate-pulse flex items-center justify-center">
-                <Spinner />
-              </div>
-              <div className="bg-accent animate-pulse rounded-md h-2.5" />
-            </div>
-          ))}
+        <div className="flex-1 min-w-0 h-full flex flex-col">
+          {hasFolders && !search && (
+            <FolderPath
+              className="mb-2"
+              folder={folder}
+              onSelect={(folderId) => {
+                setPage(1);
+                setFolder(folderId);
+              }}
+            />
+          )}
 
-          {data?.results.map((item) => {
-            const isSelected = selection.some(R.whereEq({ id: item.id }));
-
-            return (
-              <ItemCard
-                key={item.id}
-                item={item}
-                className={cn("relative", {
-                  "border-ring": isSelected,
-                })}
-                onClick={() => {
-                  if (multiple) {
-                    setSelection(
-                      !isSelected ? R.append(item) : R.without([item]),
-                    );
-                  } else {
-                    setSelection(isSelected ? [] : [item]);
-                  }
-                }}
-              >
-                {isSelected && (
-                  <div className="absolute left-0 top-0 right-0 bottom-0 bg-foreground/40 z-10">
-                    <div className="size-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center absolute z-10 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 shadow-sm">
-                      <PiCheckBold className="size-2.5" />
-                    </div>
+          <div className="flex-1 overflow-y-auto border rounded-lg scrollbar">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3 p-3">
+              {R.times(R.identity, pendingCount).map((i) => (
+                <div key={i} className="rounded-lg border overflow-hidden">
+                  <div className="aspect-[4/3] bg-muted animate-pulse flex items-center justify-center">
+                    <Spinner />
                   </div>
-                )}
-              </ItemCard>
-            );
-          })}
+                  <div className="p-3">
+                    <div className="bg-muted animate-pulse rounded-md h-2.5" />
+                  </div>
+                </div>
+              ))}
+
+              {data?.results.map((item) => {
+                const isSelected = selection.some(R.whereEq({ id: item.id }));
+
+                return (
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    selected={isSelected}
+                    onClick={() => {
+                      if (multiple) {
+                        setSelection(
+                          !isSelected ? R.append(item) : R.without([item]),
+                        );
+                      } else {
+                        setSelection(isSelected ? [] : [item]);
+                      }
+                    }}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-2 left-2 size-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm pointer-events-none">
+                        <PiCheckBold className="size-3" />
+                      </div>
+                    )}
+                  </ItemCard>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
