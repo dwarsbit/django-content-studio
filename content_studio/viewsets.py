@@ -1,3 +1,4 @@
+import json
 import operator
 import uuid
 from functools import reduce
@@ -26,6 +27,7 @@ from .permissions import ModelStudioPermissions
 from .reordering import get_reorder_scope
 from .serializers import RelatedItemSerializer
 from .settings import cs_settings
+from .uniqueness import find_duplicate, get_unique_sets
 from .signals import (
     CREATED,
     DELETED,
@@ -446,7 +448,14 @@ class BaseModelViewSet(ModelViewSet):
         list, but includes trashed objects: they still occupy the value
         in the database. The conflicting object is only described when
         the user may view it.
+
+        A combination of fields (unique_together or a UniqueConstraint
+        over several fields) is checked with ?set=<id>&values=<json>,
+        the values of the form by field name; see uniqueness.py.
         """
+        if "set" in request.query_params:
+            return self._unique_set_check(request)
+
         field_name = request.query_params.get("field", "")
         value = request.query_params.get("value", "")
         exclude = request.query_params.get("exclude")
@@ -484,8 +493,50 @@ class BaseModelViewSet(ModelViewSet):
             except DjangoValidationError:
                 pass
 
-        obj = qs.first()
+        return self._unique_check_response(request, qs.first())
 
+    def _unique_set_check(self, request):
+        set_id = request.query_params.get("set", "")
+        unique_set = next(
+            (s for s in get_unique_sets(self._model) if s.id == set_id), None
+        )
+
+        if unique_set is None:
+            raise ValidationError("Unknown unique set.")
+
+        try:
+            values = json.loads(request.query_params.get("values", "{}"))
+        except ValueError:
+            values = None
+
+        if not isinstance(values, dict):
+            raise ValidationError("The values must be a JSON object.")
+
+        # get_queryset scopes to the tenant and leaves trashed objects
+        # in for this action. The object being edited supplies the values
+        # the form does not hold.
+        qs = self.get_queryset()
+        instance = None
+        exclude = request.query_params.get("exclude")
+
+        if exclude:
+            try:
+                instance = qs.filter(pk=self._model._meta.pk.to_python(exclude)).first()
+            except DjangoValidationError:
+                pass
+
+        obj = find_duplicate(
+            unique_set,
+            self._model,
+            qs,
+            values,
+            instance=instance,
+            tenant=request.headers.get("x-dcs-tenant"),
+        )
+
+        return self._unique_check_response(request, obj)
+
+    def _unique_check_response(self, request, obj):
         if obj is None:
             return Response({"exists": False})
 

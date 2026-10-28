@@ -6,6 +6,7 @@ from content_studio.form import FormSet, TableColumn
 from .models import (
     Article,
     Category,
+    Edition,
     Label,
     LandingPage,
     Note,
@@ -113,3 +114,9 @@ class TrackAdmin(ModelStudio):
 @register(LandingPage)
 class LandingPageAdmin(ModelStudio):
     table_display = ["title"]
+
+
+@register(Edition)
+class EditionAdmin(ModelStudio):
+    table_display = ["title"]
+    soft_delete = "removed_at"

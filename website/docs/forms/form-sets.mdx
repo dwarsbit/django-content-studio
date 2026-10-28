@@ -154,11 +154,62 @@ still decides, and reports the error when you save. Objects in the
 [trash](/docs/content/registering-models#soft-delete-and-the-trash) count, because they still hold the value. The warning
 names the other object only if you may view it.
 
-Only single fields with `unique=True` are checked, not `unique_together` or
-a `UniqueConstraint` across several fields. On a model scoped to a tenant,
-only objects of the current tenant are compared; when the field must be
-unique per tenant, a `UniqueConstraint` on the field and the tenant field
-expresses that, and saving reports conflicts.
+On a model scoped to a tenant, only objects of the current tenant are
+compared.
+
+### Combinations of fields
+
+The same check covers combinations of fields: `Meta.unique_together` and
+every `UniqueConstraint` in `Meta.constraints` with more than one field.
+When the combination of values in the form matches another object, the
+warning shows under the field of the combination you edited last and names
+the other fields. Before you edit any of them, it shows under the
+combination's last field on the form.
+
+A review is a fragment of `blog/models.py`, next to the `Article` model
+above: each author may publish one review per article.
+
+```python
+# blog/models.py
+class Review(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    author = models.CharField(max_length=100)
+    text = models.TextField()
+    published = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["article", "author"],
+                condition=models.Q(published=True),
+                name="one_published_review_per_author",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.author} on {self.article}"
+```
+
+The edit page warns when the author already has a published review of the
+same article, and only while the review you are editing is marked as
+published: the constraint's `condition` applies to both reviews. A field of
+the combination that is not on the form takes the value stored on the object
+you are editing; a new object is only checked when every field of the
+combination is on the form. A field of the condition that is not on the
+form takes the stored value, or on a new object its default.
+
+The check only reports what the database would reject:
+
+- **Empty values** in the combination never clash. The exception is a null
+  value under a constraint with `nulls_distinct=False`, on a database that
+  supports it (PostgreSQL 15 or later).
+- **The tenant field** is left out of the combination, because only objects
+  of the current tenant are compared. A `UniqueConstraint` on a field and
+  the tenant field makes the field unique per tenant, and the warning
+  covers it.
+- **Functional constraints** (expressions such as `Lower("title")`) and
+  deferrable constraints are not checked. Saving still reports their
+  conflicts.
 
 ## Components
 
