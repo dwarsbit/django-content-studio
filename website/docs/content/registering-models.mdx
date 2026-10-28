@@ -40,6 +40,7 @@ own studio for it to change how it looks.
 | `list_description` | A description below the model's name on the list page |
 | `soft_delete` | The field that marks objects as trashed (see [below](#soft-delete-and-the-trash)) |
 | `reorder_field` | The field editors reorder objects by (see [below](#reordering)) |
+| `allow_duplication` | Whether editors can duplicate objects (see [below](#duplicating-objects)) |
 | `icon` | The model's icon in the main menu, such as `"ph-bold ph-article"` |
 
 When `ordering` is not set, objects are sorted by primary key, so pages stay
@@ -504,6 +505,93 @@ again. Set `order_scope` on the model to the fields that form a group, like
 System check `content_studio.E017` reports a reorder field that is missing
 or, without your own `reorder`, not a number field, and `reorder_scope`
 entries that are not model fields.
+
+## Duplicating objects
+
+To let editors start a new object from a copy of an existing one, set
+`allow_duplication` on the studio. List the inlines whose objects are copied
+along in `duplicate_inlines`:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import InlineModelStudio, ModelStudio
+
+from .models import Article, Review
+
+
+class ReviewInline(InlineModelStudio):
+    model = Review
+    table_display = ["text", "stars"]
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    inlines = [ReviewInline]
+    allow_duplication = True
+    duplicate_inlines = [ReviewInline]
+```
+
+The edit page then offers Duplicate in its actions menu. It opens the create
+form filled in with a copy of the object. Nothing is saved until the editor
+creates the object, so the copy is validated like any new object. Once it is
+saved, the objects of the inlines in `duplicate_inlines` are copied to it;
+the other inlines start empty.
+
+The copy takes over:
+
+- the values of the fields on the create form, including foreign keys,
+  media and block fields;
+- the selection of many-to-many fields, which editors can change before
+  saving.
+
+It leaves out the primary key, read-only and excluded fields, fields that
+are not editable, one-to-one fields and files. A many-to-many field with a
+`through` model is copied only when its through model is an inline listed in
+`duplicate_inlines`.
+
+Unique slugs and URL paths (`URLPathField`) get the first free number
+suffix, such as `spring-sale-2`. Like the
+[duplicate warnings](/docs/forms/form-sets#unique-fields) on the edit page,
+the suffix accounts for objects in the trash and, with
+[multi-tenancy](/docs/multi-tenancy), only looks within the selected tenant.
+Other unique fields start empty. Inline objects are copied with the same
+rules.
+
+Duplicating needs add permission on the model and view permission on the
+object. The objects of an inline are copied only when the editor has add
+permission on it. Duplication is not available for singletons. The new
+object's history records that it was duplicated, and the
+[`content_changed` signal](/docs/webhooks#react-in-python) reports it like
+any new object.
+
+To change what the copy starts with, override `get_duplicate_initial`. It
+returns the values by field name: related objects as model instances and
+many-to-many fields as lists of them. Only fields on the create form are
+used.
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    allow_duplication = True
+
+    def get_duplicate_initial(self, request, obj):
+        initial = super().get_duplicate_initial(request, obj)
+        initial["title"] = f"Copy of {obj.title}"
+        initial["status"] = Article.Status.DRAFT
+        initial["author"] = request.user
+        return initial
+```
+
+System check `content_studio.E021` reports `duplicate_inlines` entries that
+are not in `inlines`, and `content_studio.W014` options that have no effect.
 
 ## Object history
 

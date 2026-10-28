@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { TenantInfo } from "@/components/tenant-info";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Form } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
@@ -18,7 +19,13 @@ import { useHttp } from "@/hooks/use-http";
 import { useShowResult } from "@/hooks/use-show-result";
 import { type ServerErrors, setServerErrors } from "@/lib/server-errors";
 import { getErrorMessage } from "@/lib/utils";
-import type { ButtonResult, FormField, Model, Resource } from "@/types";
+import type {
+  ButtonResult,
+  DuplicateInitial,
+  FormField,
+  Model,
+  Resource,
+} from "@/types";
 
 import { Aside } from "./aside";
 import { EditorReadOnlyContext } from "./editor-read-only";
@@ -48,6 +55,12 @@ export function Editor({
   // Show the object without saving: every field read-only.
   readOnly?: boolean;
   canDelete?: boolean;
+  // Create a duplicate of this object: the create form starts with the
+  // object's copied values, and saving copies its inlines along.
+  duplicateOf?: string | null;
+  // Opens a duplicate of the object; the header offers Duplicate when
+  // the studio allows it.
+  onDuplicate?: (id: string) => void;
   onCreated?: (id: string) => void;
   onSave?: VoidFunction;
   onClose?: VoidFunction;
@@ -69,6 +82,8 @@ function EditorForm({
   headerComponents,
   readOnly = false,
   canDelete,
+  duplicateOf,
+  onDuplicate,
   onCreated,
   onDelete,
   onSave,
@@ -88,6 +103,12 @@ function EditorForm({
   // Show the object without saving: every field read-only.
   readOnly?: boolean;
   canDelete?: boolean;
+  // Create a duplicate of this object: the create form starts with the
+  // object's copied values, and saving copies its inlines along.
+  duplicateOf?: string | null;
+  // Opens a duplicate of the object; the header offers Duplicate when
+  // the studio allows it.
+  onDuplicate?: (id: string) => void;
   onCreated?: (id: string) => void;
   onSave?: VoidFunction;
   onClose?: VoidFunction;
@@ -105,8 +126,19 @@ function EditorForm({
   const resourcePath = inlineOf
     ? `/inlines/${inlineOf}/${modelLabel}`
     : `/content/${modelLabel}`;
-  const [initialized, setInitialized] = useState(R.isNil(id) && !isSingleton);
+  const isDuplicate = R.isNil(id) && !isSingleton && !R.isNil(duplicateOf);
+  const [initialized, setInitialized] = useState(
+    R.isNil(id) && !isSingleton && !isDuplicate,
+  );
   const hiddenFields = Object.keys(initialValues);
+  // Routed editors of studios that allow duplication offer Duplicate,
+  // which needs add permission.
+  const canDuplicate =
+    !dialog &&
+    !isSingleton &&
+    !!onDuplicate &&
+    !!model.admin.edit.duplicate &&
+    model.admin.permissions.add_permission;
   const defaultValues = Object.entries(model?.fields ?? {}).reduce(
     (defaults, [key, field]) => ({ ...defaults, [key]: field.default }),
     {
@@ -146,6 +178,37 @@ function EditorForm({
         }
         return data;
       } catch (e: unknown) {
+        throw new Error(getErrorMessage(e), { cause: e });
+      } finally {
+        setInitialized(true);
+      }
+    },
+  });
+
+  // A duplicate starts as a create form with the copied values; they
+  // count as changes, so leaving without saving asks first.
+  // eslint-disable-next-line @tanstack/query/exhaustive-deps -- as above, `initialized` only guards the one-time fill
+  const { data: duplicate } = useQuery({
+    enabled: isDuplicate,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    queryKey: ["resources", modelLabel, "duplicate", duplicateOf],
+    async queryFn() {
+      try {
+        const { data } = await http.get<DuplicateInitial>(
+          `${resourcePath}/${duplicateOf}/duplicate`,
+        );
+        if (!initialized) {
+          for (const [key, value] of Object.entries(data.initial)) {
+            form.setValue(key as Extract<keyof Resource, string>, value, {
+              shouldDirty: true,
+            });
+          }
+        }
+        return data;
+      } catch (e: unknown) {
+        toast.error(getErrorMessage(e));
         throw new Error(getErrorMessage(e), { cause: e });
       } finally {
         setInitialized(true);
@@ -215,8 +278,13 @@ function EditorForm({
 
   const { mutateAsync: save, isPending } = useMutation({
     async mutationFn(values: Partial<Resource>) {
+      // Saving a duplicate names its source, whose inlines are copied
+      // along.
+      const query = isDuplicate
+        ? `?duplicate_of=${encodeURIComponent(duplicateOf!)}`
+        : "";
       const { data } = await http[values.id ? "put" : "post"]<Resource>(
-        `${resourcePath}${values.id ? `/${values.id}` : ""}`,
+        `${resourcePath}${values.id ? `/${values.id}` : query}`,
         values,
       );
 
@@ -279,10 +347,16 @@ function EditorForm({
     <Form {...form}>
       <ResourcePathContext value={resourcePath}>
         <EditorReadOnlyContext value={readOnly}>
+          {/* A duplicate's slugs are copied with a free suffix, not
+              made from the copied sources again. */}
           <Prepopulate
             model={model}
             fields={
-              prepopulatedFields ?? model.admin?.edit.prepopulated_fields ?? {}
+              isDuplicate
+                ? {}
+                : (prepopulatedFields ??
+                  model.admin?.edit.prepopulated_fields ??
+                  {})
             }
           />
           <div className="flex-1 flex flex-col overflow-hidden w-full">
@@ -296,6 +370,11 @@ function EditorForm({
               components={headerComponents}
               readOnly={readOnly}
               canDelete={canDelete}
+              onDuplicate={
+                canDuplicate && resource?.id != null
+                  ? () => onDuplicate?.(String(resource.id))
+                  : undefined
+              }
               onSave={async () => {
                 await form.handleSubmit(onSubmit)();
                 onSave?.();
@@ -312,6 +391,15 @@ function EditorForm({
             <div className="flex flex-col items-center overflow-y-auto scrollbar">
               <div className="flex p-6 w-full max-w-[1280px] gap-6 justify-center">
                 <div className="flex-1">
+                  {isDuplicate && duplicate && !form.getValues("id") && (
+                    <Alert className="mb-6">
+                      <AlertDescription>
+                        {t("editor.duplicate_notice", {
+                          object: duplicate.source.__str__,
+                        })}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   <Main model={model} id={id} hiddenFields={hiddenFields} />
                 </div>
                 <div className="shrink-0 w-[320px] empty:hidden">

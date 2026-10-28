@@ -1,13 +1,14 @@
 import json
 import operator
 import uuid
+from contextlib import nullcontext
 from functools import reduce
 
 from django.contrib.admin.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework.decorators import action
@@ -19,8 +20,9 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from .actions import get_bulk_actions
-from .admin import get_relation_display_for
+from .admin import get_relation_display_for, is_duplicable
 from .dashboard.activity_log import LogEntrySerializer
+from .duplication import copy_inline_rows, represent_initial
 from .filters import LookupFilter
 from .form import Button, ButtonResult
 from .permissions import ModelStudioPermissions
@@ -99,8 +101,13 @@ class BaseModelViewSet(ModelViewSet):
             attrs[cs_settings.CREATED_BY_ATTR] = self.request.user
 
         instance = serializer.save(**attrs)
+        source = getattr(self, "_duplicate_source", None)
 
-        record_change(self.request, instance, CREATED)
+        if source is None:
+            record_change(self.request, instance, CREATED)
+        else:
+            record_change(self.request, instance, CREATED, f"Duplicated from {source}.")
+            self._copy_inline_rows(source, instance)
 
         self._created_result = self._admin_model.get_created_result(
             self.request, instance
@@ -112,7 +119,16 @@ class BaseModelViewSet(ModelViewSet):
         travels along under __result__, for the editor to show once.
         """
         self._created_result = None
-        response = super().create(request, *args, **kwargs)
+        self._duplicate_source = self._get_duplicate_source(request)
+
+        # A duplicate's inline rows are saved with it, or not at all.
+        with (
+            transaction.atomic()
+            if self._duplicate_source is not None
+            else nullcontext()
+        ):
+            response = super().create(request, *args, **kwargs)
+
         result = self._created_result
 
         if result is not None:
@@ -122,6 +138,78 @@ class BaseModelViewSet(ModelViewSet):
             response.data = {**response.data, "__result__": result.serialize()}
 
         return response
+
+    def _get_duplicate_source(self, request):
+        """
+        The object a create duplicates: ?duplicate_of=<id>, or None for
+        a regular create. The source must be visible to the request,
+        like the duplicate action that prefilled the form.
+        """
+        source_id = request.query_params.get("duplicate_of")
+
+        if source_id is None:
+            return None
+
+        if not is_duplicable(self._admin_model):
+            raise ValidationError("This model cannot be duplicated.")
+
+        try:
+            source = (
+                self.get_queryset()
+                .filter(pk=self._model._meta.pk.to_python(source_id))
+                .first()
+            )
+        except DjangoValidationError:
+            source = None
+
+        if source is None or not self._admin_model.has_view_permission(request, source):
+            raise ValidationError("Unknown object to duplicate.")
+
+        return source
+
+    def _copy_inline_rows(self, source, instance):
+        """Copy the duplicate_inlines' rows of source to instance."""
+        try:
+            with transaction.atomic():
+                copies = copy_inline_rows(
+                    self.request, self._admin_model, source, instance
+                )
+        except IntegrityError:
+            raise ValidationError(
+                "The inline rows could not be copied: a unique value is "
+                "already taken."
+            )
+
+        for row in copies:
+            record_change(self.request, row, CREATED, f"Duplicated with {instance}.")
+
+    @action(methods=["get"], detail=True, url_path="duplicate")
+    def duplicate(self, request, id):
+        """
+        The initial values of a duplicate of the object, for the create
+        form: the studio's get_duplicate_initial in the form's shape.
+        Saving goes through create with ?duplicate_of=<id>. Requires add
+        permission, and view permission on the object.
+        """
+        admin_model = self._admin_model
+
+        if not is_duplicable(admin_model):
+            raise NotFound("This model cannot be duplicated.")
+
+        obj = self.get_object()
+
+        if not admin_model.has_add_permission(request):
+            raise PermissionDenied("Add permission required.")
+
+        initial = admin_model.get_duplicate_initial(request, obj)
+        display = get_relation_display_for(self._model, obj, request)
+
+        return Response(
+            {
+                "initial": represent_initial(self.get_serializer(), initial),
+                "source": {"id": obj.pk, "__str__": display.title},
+            }
+        )
 
     def perform_update(self, serializer):
         instance = serializer.save()

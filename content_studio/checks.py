@@ -19,6 +19,7 @@ from .actions import (
 from .admin import (
     AdminSerializer,
     declares,
+    get_is_singleton,
     get_table_display_columns,
     is_computed_column,
     iter_components,
@@ -947,6 +948,69 @@ def edit_header_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def duplication_errors(studio) -> list[tuple[str, str]]:
+    """
+    A misconfigured duplicate_inlines, as (check id, message) pairs: it
+    must be a list of inlines from the studio's `inlines`; any other
+    entry would never be copied.
+    """
+    errors = []
+    duplicate_inlines = getattr(studio, "duplicate_inlines", None) or []
+    inlines = list(getattr(studio, "inlines", None) or [])
+    name = config_name(studio)
+
+    if not isinstance(duplicate_inlines, (list, tuple)):
+        return [
+            (
+                "content_studio.E021",
+                f"{name}.duplicate_inlines must be a list of inlines.",
+            )
+        ]
+
+    for entry in duplicate_inlines:
+        if entry not in inlines:
+            label = entry.__name__ if isinstance(entry, type) else repr(entry)
+            errors.append(
+                (
+                    "content_studio.E021",
+                    f"{name}.duplicate_inlines entry {label} is not one of "
+                    f"{name}.inlines.",
+                )
+            )
+
+    return errors
+
+
+def duplication_warnings(studio) -> list[tuple[str, str]]:
+    """
+    Duplication options without effect, as (check id, message) pairs:
+    singletons are never duplicated, and duplicate_inlines only applies
+    with allow_duplication.
+    """
+    name = config_name(studio)
+
+    if getattr(studio, "allow_duplication", False) and get_is_singleton(studio):
+        return [
+            (
+                "content_studio.W014",
+                f"{name}.allow_duplication has no effect: singletons cannot "
+                "be duplicated.",
+            )
+        ]
+
+    if getattr(studio, "duplicate_inlines", None) and not getattr(
+        studio, "allow_duplication", False
+    ):
+        return [
+            (
+                "content_studio.W014",
+                f"{name}.duplicate_inlines has no effect without " "allow_duplication.",
+            )
+        ]
+
+    return []
+
+
 # Fields a prepopulated value cannot go into, as in the classic admin.
 PREPOPULATED_TARGET_EXCLUDED = (
     models.DateTimeField,
@@ -1466,6 +1530,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         for check_id, error in edit_header_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
+        for check_id, error in duplication_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
         for check_id, warning in edit_field_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
@@ -1485,6 +1552,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in list_display_warnings(studio):
+            messages.append(checks.Warning(warning, obj=obj, id=check_id))
+
+        for check_id, warning in duplication_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
     for check_id, error in duplicate_id_errors(site):

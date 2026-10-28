@@ -11,6 +11,10 @@ from .models import (
     LandingPage,
     Note,
     Page,
+    Part,
+    Product,
+    ProductComment,
+    ProductSupplier,
     Review,
     SiteSettings,
     Step,
@@ -114,6 +118,29 @@ class TrackAdmin(ModelStudio):
 @register(LandingPage)
 class LandingPageAdmin(ModelStudio):
     table_display = ["title"]
+
+
+class PartInline(InlineModelStudio):
+    model = Part
+
+
+class ProductSupplierInline(InlineModelStudio):
+    model = ProductSupplier
+
+
+class ProductCommentInline(InlineModelStudio):
+    model = ProductComment
+
+
+@register(Product)
+class ProductAdmin(ModelStudio):
+    table_display = ["title"]
+    allow_duplication = True
+    inlines = [PartInline, ProductSupplierInline, ProductCommentInline]
+    duplicate_inlines = [PartInline, ProductSupplierInline]
+    readonly_fields = ["internal_note"]
+    exclude = ["secret"]
+    soft_delete = "removed_at"
 
 
 @register(Edition)

@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models.functions import Lower
 
 from content_studio.blocks import Block, BlockField
-from content_studio.fields import HTMLField
+from content_studio.fields import HTMLField, URLPathField
 from content_studio.models import ManualOrderModel
 
 
@@ -153,6 +153,59 @@ class LandingPage(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Product(models.Model):
+    # Duplication: see ProductAdmin.
+    title = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True, max_length=20)
+    path = URLPathField(blank=True, null=True)
+    sku = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    details = models.JSONField(default=dict, blank=True)
+    category = models.ForeignKey(
+        Category, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    tags = models.ManyToManyField(Category, blank=True, related_name="tagged")
+    suppliers = models.ManyToManyField(
+        Label, through="ProductSupplier", blank=True, related_name="products"
+    )
+    featured = models.OneToOneField(
+        Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    manual = models.FileField(blank=True)
+    internal_note = models.CharField(max_length=100, blank=True)
+    secret = models.CharField(max_length=100, blank=True)
+    imported_at = models.DateTimeField(null=True, blank=True, editable=False)
+    removed_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    def __str__(self):
+        return self.title
+
+
+class Part(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    code = models.SlugField(unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class ProductSupplier(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    label = models.ForeignKey(Label, on_delete=models.CASCADE)
+    note = models.CharField(max_length=100, blank=True)
+
+    def __str__(self):
+        return self.note
+
+
+class ProductComment(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    text = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.text
 
 
 class Edition(models.Model):

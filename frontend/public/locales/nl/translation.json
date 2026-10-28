@@ -84,7 +84,9 @@
     "unique_set_warning_trashed": "\"{{object}}\" ({{modelName}}, in de prullenbak) gebruikt deze {{fieldName}} al met dezelfde {{otherFields}}.",
     "unique_set_warning_hidden": "Een ander object gebruikt deze {{fieldName}} al met dezelfde {{otherFields}}.",
     "unique_set_warning_hint": "Opslaan mislukt tenzij je een ervan wijzigt.",
-    "unsaved_changes": "Niet-opgeslagen wijzigingen"
+    "unsaved_changes": "Niet-opgeslagen wijzigingen",
+    "duplicate": "Dupliceren",
+    "duplicate_notice": "Een kopie van \"{{object}}\". Er wordt niets opgeslagen totdat je het aanmaakt."
   },
   "list_view": {
     "table_view": "Tabelweergave",
