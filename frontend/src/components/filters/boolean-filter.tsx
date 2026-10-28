@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { PiCaretDownBold } from "react-icons/pi";
 
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { FilterTrigger } from "./filter-trigger";
 import type { FilterComponentProps } from "./types";
 
 /** The URL values of the tri-state options; "all" clears the filter. */
@@ -39,13 +38,11 @@ export function BooleanFilter({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
-          {field.verbose_name}
-          <span className="empty:hidden font-normal text-muted-foreground">
-            {value !== ALL ? label : ""}
-          </span>
-          <PiCaretDownBold className="size-4 opacity-50" />
-        </Button>
+        <FilterTrigger
+          label={field.verbose_name}
+          value={value !== ALL ? label : ""}
+          onClear={() => onChange({ "": null })}
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuRadioGroup

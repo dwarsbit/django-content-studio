@@ -1,6 +1,5 @@
 import * as R from "ramda";
 
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -8,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { FilterTrigger } from "./filter-trigger";
 import type { FilterComponentProps } from "./types";
 
 export function MultiSelectFilter({
@@ -22,12 +22,14 @@ export function MultiSelectFilter({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
-          {field.verbose_name}
-          <span className="empty:hidden font-normal text-muted-foreground">
-            {valueArray.map((value) => choices[value]).join(", ")}
-          </span>
-        </Button>
+        <FilterTrigger
+          label={field.verbose_name}
+          value={valueArray
+            .filter(Boolean)
+            .map((value) => choices[value])
+            .join(", ")}
+          onClear={() => onChange({ "": null })}
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         {field.choices?.map(([key, label]) => (

@@ -1,7 +1,9 @@
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 import { MoveMenu, Reorderable, RowDragHandle } from "@/components/reorderable";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useReorderableRow } from "@/hooks/use-reorderable-row";
 import { getEdges } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
@@ -18,12 +20,17 @@ import type { ReorderProps } from "./table-view";
 export function ListView({
   items,
   model,
+  selected,
+  onToggle,
   filtered,
   onClear,
   reorder,
 }: {
   items: Resource[];
   model: Model;
+  // The selected ids, when the model offers bulk actions.
+  selected?: Set<string>;
+  onToggle?: (id: string) => void;
   // Whether a search term or remembered filters narrow the list;
   // drives the empty state's no-results notice.
   filtered?: boolean;
@@ -51,12 +58,20 @@ export function ListView({
               edges={getEdges(index, items.length, reorder)}
               model={model}
               reorder={reorder}
+              selected={selected?.has(item.id)}
+              onToggle={onToggle}
             />
           ))}
         </Reorderable>
       ) : (
         items.map((item) => (
-          <ListViewRow key={item.id} item={item} model={model} />
+          <ListViewRow
+            key={item.id}
+            item={item}
+            model={model}
+            selected={selected?.has(item.id)}
+            onToggle={onToggle}
+          />
         ))
       )}
     </div>
@@ -79,18 +94,26 @@ function SortableListViewRow(
 function ListViewRow({
   item,
   model,
+  selected,
+  onToggle,
   reorder,
   sortable,
   edges,
 }: {
   item: Resource;
   model: Model;
+  // Defined when the model offers bulk actions: a checkbox appears on
+  // hover and stays while the row is selected.
+  selected?: boolean;
+  onToggle?: (id: string) => void;
   reorder?: ReorderProps;
   sortable?: ReturnType<typeof useReorderableRow>;
   edges?: ReturnType<typeof getEdges>;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const display = item.list_item_display;
+  const selectable = onToggle !== undefined;
 
   return (
     <div
@@ -98,9 +121,13 @@ function ListViewRow({
       style={sortable?.style}
       onClick={() => navigate(`/content/${model.label}/${item.id}`)}
       className={cn(
-        "flex items-center gap-4 px-8 py-3 border-b select-none bg-background",
+        "group flex items-center gap-3 px-4 py-3 border-b select-none bg-card",
         "hover:bg-muted cursor-pointer last:border-b-0",
-        { "pl-3 pr-4": reorder, "bg-muted shadow-sm": sortable?.isDragging },
+        {
+          "pl-3": reorder || selectable,
+          "bg-accent": selected,
+          "bg-muted shadow-sm": sortable?.isDragging,
+        },
       )}
     >
       {reorder && sortable && (
@@ -109,12 +136,29 @@ function ListViewRow({
           disabledReason={reorder.disabledReason}
         />
       )}
+      {selectable && (
+        <span
+          className={cn(
+            "flex items-center transition-opacity",
+            selected
+              ? "opacity-100"
+              : "opacity-0 group-hover:opacity-100 focus-within:opacity-100",
+          )}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Checkbox
+            checked={!!selected}
+            aria-label={t("bulk.select_row")}
+            onCheckedChange={() => onToggle(item.id)}
+          />
+        </span>
+      )}
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">
           {display?.title ?? item.__str__}
         </div>
         {display?.description ? (
-          <div className="text-sm text-muted-foreground line-clamp-1">
+          <div className="text-muted-foreground line-clamp-1">
             {display.description}
           </div>
         ) : null}

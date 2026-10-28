@@ -18,6 +18,14 @@
   in the text color instead of green and red circles; a user column
   shows the avatar with the name instead of the avatar alone. The media
   library's table uses the admin's checkboxes.
+- **The list page.** Search and filters sit in a toolbar under the page
+  header; a filter reads "Status is Published" once set, with an inline
+  clear. Selecting rows shows a floating bar with the bulk actions
+  instead of replacing the filters, in the list view as well as the
+  table. The footer counts the objects and the pages; the empty states
+  show an icon with the invitation to create or to clear the filters.
+  A model with a trash gets "All" and "Trash" tabs under its title,
+  with the number of objects in the trash, instead of a Trash button.
 
 ## 1.1.0 (2026-10-27)
 

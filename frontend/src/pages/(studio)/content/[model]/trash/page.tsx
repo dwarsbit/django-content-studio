@@ -8,19 +8,21 @@ import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
-import { PiArrowLeftBold } from "react-icons/pi";
-import { Link, useParams, useSearchParams } from "react-router";
+import { PiFileTextBold } from "react-icons/pi";
+import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { PageBody, PageHeader } from "@/components/page-header";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
-import { cn, getErrorMessage } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/utils";
 import type { Model, PaginatedResponse, Resource } from "@/types";
+
+import { ListTabs } from "../page";
 
 dayjs.extend(localizedFormat);
 
@@ -116,21 +118,24 @@ function TrashView({ model }: { model: Model }) {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <PageHeader
-        back={
-          <Link
-            to={`/content/${model.label}`}
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon-sm" }),
-              "-ml-2 text-muted-foreground",
-            )}
-            aria-label={t("editor.back_to_list")}
-          >
-            <PiArrowLeftBold />
-          </Link>
+        icon={
+          model.admin.icon ? (
+            <span className={model.admin.icon} />
+          ) : (
+            <PiFileTextBold />
+          )
         }
-        title={t("trash.title", { model: model.verbose_name_plural })}
+        title={model.verbose_name_plural}
         description={t("trash.subtitle")}
-      />
+      >
+        {hasTrash && (
+          <ListTabs
+            model={model}
+            current="trash"
+            count={data?.pagination.count ?? 0}
+          />
+        )}
+      </PageHeader>
 
       <PageBody className="space-y-4">
         {!hasTrash ? (

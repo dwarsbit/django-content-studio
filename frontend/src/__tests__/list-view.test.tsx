@@ -755,7 +755,7 @@ describe("ModelListPage", () => {
 
     // The trigger shows the selected relation, resolved from the API.
     expect(
-      await screen.findByRole("button", { name: /Author\s*John\s*Doe/ }),
+      await screen.findByRole("button", { name: /Author.*John\s*Doe/ }),
     ).toBeInTheDocument();
   });
 
@@ -835,7 +835,7 @@ describe("ModelListPage", () => {
     await screen.findByText("First Article");
 
     expect(
-      screen.getByRole("link", { name: "list_view.trash" }),
+      screen.getByRole("link", { name: /list_view.trash/ }),
     ).toHaveAttribute("href", "/content/testapp.article/trash");
   });
 

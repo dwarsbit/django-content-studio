@@ -97,8 +97,15 @@
       "yes": "Yes",
       "no": "No",
       "min": "Min",
-      "max": "Max"
-    }
+      "max": "Max",
+      "is": "is",
+      "clear": "Clear {{field}}"
+    },
+    "tabs_all": "All {{model}}",
+    "count_one": "{{count}} {{singular}}",
+    "count_other": "{{count}} {{plural}}",
+    "page_of": "Page {{current}} of {{pages}}",
+    "view": "View"
   },
   "reorder": {
     "drag": "Drag to reorder",
