@@ -56,6 +56,9 @@
   scheduled task's status is a badge with a dot, or a spinner while it
   runs. Wide widgets fill the row instead of overflowing it on narrow
   screens.
+- **Buttons** are lower and wider: 32px high with 14px of horizontal
+  padding (`sm` 28px, `xs` 24px, `lg` 36px, icon buttons 32px), so they
+  line up with the toolbar's controls.
 
 ## 1.1.0 (2026-10-27)
 

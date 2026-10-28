@@ -19,7 +19,7 @@ import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import { type FieldFormat, FieldType, type Id, type Model } from "@/types";
 
-import { EmptyState } from "./empty-state";
+import { ListEmptyState } from "./empty-state";
 
 type Row = { id: string; __str__?: string; [p: string]: unknown };
 
@@ -182,7 +182,7 @@ export function TableView({
                 }
                 className="text-center"
               >
-                <EmptyState
+                <ListEmptyState
                   model={model}
                   filtered={!!filtered}
                   onClear={onClear}

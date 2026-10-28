@@ -16,9 +16,9 @@ import { FolderPath } from "@/components/media-library/folder-path";
 import { FolderPicker } from "@/components/media-library/folder-picker";
 import { Folders } from "@/components/media-library/folders";
 import { ItemEdit } from "@/components/media-library/item-edit";
-import { PageBody, PageHeader, Toolbar } from "@/components/page-header";
 import { TenantInfo } from "@/components/tenant-info";
 import { Button } from "@/components/ui/button";
+import { PageBody, PageHeader, Toolbar } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/types";
 
 import { MediaBulkBar } from "./_components/bulk-bar";
-import { EmptyState } from "./_components/empty-state";
+import { MediaEmptyState } from "./_components/empty-state";
 import { Filters } from "./_components/filters";
 import { GridView } from "./_components/grid-view";
 import { ListView } from "./_components/list-view";
@@ -361,7 +361,7 @@ function MediaLibrary() {
             )}
 
             {data && items.length === 0 ? (
-              <EmptyState
+              <MediaEmptyState
                 filtered={filtered}
                 onClear={clearAll}
                 onUpload={openPicker}

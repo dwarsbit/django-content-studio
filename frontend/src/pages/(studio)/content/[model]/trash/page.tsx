@@ -12,8 +12,8 @@ import { PiFileTextBold } from "react-icons/pi";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-import { PageBody, PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { PageBody, PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";

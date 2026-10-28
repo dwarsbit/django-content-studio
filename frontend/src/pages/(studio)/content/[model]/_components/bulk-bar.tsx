@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { PiXBold } from "react-icons/pi";
 import { toast } from "sonner";
 
+import { BulkBar } from "@/components/ui/bulk-bar";
 import { Button } from "@/components/ui/button";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useHttp } from "@/hooks/use-http";
@@ -15,7 +15,7 @@ import type { BulkAction } from "@/types";
  * from the action itself (a server-side string), and the selection is
  * cleared after a successful action.
  */
-export function BulkBar({
+export function ContentBulkBar({
   modelLabel,
   actions,
   ids,
@@ -73,37 +73,27 @@ export function BulkBar({
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex justify-center px-6">
-      <div className="pointer-events-auto flex items-center gap-1 flex-wrap rounded-lg border bg-popover text-popover-foreground shadow-xl pl-3 pr-1.5 py-1.5">
-        <span className="select-none text-sm font-medium tabular-nums mr-2">
-          {t("bulk.selected", { count: ids.length })}
-        </span>
-        {actions.map((action) => (
-          <Button
-            key={action.id}
-            size="sm"
-            variant="ghost"
-            disabled={isPending}
-            className={cn({
-              "text-destructive hover:bg-destructive/10 hover:text-destructive":
-                action.destructive,
-            })}
-            onClick={() => runAction(action)}
-          >
-            {action.icon && <span className={cn(action.icon, "text-sm")} />}
-            {action.label}
-          </Button>
-        ))}
-        <div className="w-px h-5 bg-border mx-1" />
+    <BulkBar
+      label={t("bulk.selected", { count: ids.length })}
+      clearLabel={t("bulk.clear")}
+      onClear={onDone}
+    >
+      {actions.map((action) => (
         <Button
-          size="icon-sm"
+          key={action.id}
+          size="sm"
           variant="ghost"
-          aria-label={t("bulk.clear")}
-          onClick={onDone}
+          disabled={isPending}
+          className={cn({
+            "text-destructive hover:bg-destructive/10 hover:text-destructive":
+              action.destructive,
+          })}
+          onClick={() => runAction(action)}
         >
-          <PiXBold />
+          {action.icon && <span className={cn(action.icon, "text-sm")} />}
+          {action.label}
         </Button>
-      </div>
-    </div>
+      ))}
+    </BulkBar>
   );
 }

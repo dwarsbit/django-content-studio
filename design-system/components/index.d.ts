@@ -225,4 +225,24 @@ export declare const toast: ((message: React.ReactNode) => string | number) & {
   error(message: React.ReactNode): string | number;
 };
 
+/** The 56px bar at the top of every page: title left, actions right; rows under it (a Toolbar, scope tabs) as children. */
+export declare function PageHeader(props: {
+  back?: React.ReactNode; icon?: React.ReactNode; title: React.ReactNode; meta?: React.ReactNode;
+  description?: React.ReactNode; actions?: React.ReactNode; heading?: "h1" | "div"; children?: React.ReactNode;
+}): React.ReactElement;
+/** A row under the page header for search, filters and view toggles. */
+export declare function Toolbar(props: Div): React.ReactElement;
+/** The scrolling page body, capped at the content width. */
+export declare function PageBody(props: Div): React.ReactElement;
+
+/** An icon, a title, a line of explanation and one action, for an empty list or grid. */
+export declare function EmptyState(props: {
+  icon?: React.ReactNode; title?: React.ReactNode; description?: React.ReactNode; action?: React.ReactNode; className?: string;
+}): React.ReactElement;
+
+/** The pill floating at the foot of the page while rows are selected: the count, the actions (children) and a clear button. */
+export declare function BulkBar(props: {
+  label: React.ReactNode; clearLabel: string; onClear: () => void; children?: React.ReactNode; className?: string;
+}): React.ReactElement;
+
 declare global { interface Window { ContentStudio: Record<string, React.ComponentType<any>> } }

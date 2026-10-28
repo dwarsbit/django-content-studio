@@ -2,7 +2,8 @@ import { useTranslation } from "react-i18next";
 import { PiFileTextBold, PiFunnelBold } from "react-icons/pi";
 import { Link } from "react-router";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { Model } from "@/types";
 
 /**
@@ -10,7 +11,7 @@ import type { Model } from "@/types";
  * list invites creation; while search or filters are active the list
  * shows a no-results notice that offers clearing them.
  */
-export function EmptyState({
+export function ListEmptyState({
   model,
   filtered,
   onClear,
@@ -24,49 +25,34 @@ export function EmptyState({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center justify-center text-center py-16 px-6 font-normal whitespace-normal">
-      <div className="size-10 rounded-full bg-muted border flex items-center justify-center text-muted-foreground [&_svg]:size-5 [&_span]:text-xl mb-3">
-        {filtered ? (
+    <EmptyState
+      icon={
+        filtered ? (
           <PiFunnelBold />
         ) : model.admin.icon ? (
           <span className={model.admin.icon} />
         ) : (
           <PiFileTextBold />
-        )}
-      </div>
-      {filtered ? (
-        <>
-          <div className="text-muted-foreground max-w-sm">
-            {t("list_view.no_results")}
-          </div>
-          {onClear && (
-            <button
-              type="button"
-              onClick={onClear}
-              className={buttonVariants({
-                variant: "outline",
-                className: "mt-4",
-              })}
-            >
-              {t("list_view.clear_all_filters")}
-            </button>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="text-muted-foreground max-w-sm">
-            {t("list_view.empty_state")}
-          </div>
-          {model.admin.permissions.add_permission && (
-            <Link
-              to={`/content/${model.label}/new`}
-              className={buttonVariants({ className: "mt-4" })}
-            >
-              {t("common.create")}
-            </Link>
-          )}
-        </>
-      )}
-    </div>
+        )
+      }
+      description={
+        filtered ? t("list_view.no_results") : t("list_view.empty_state")
+      }
+      action={
+        filtered
+          ? onClear && (
+              <Button variant="outline" onClick={onClear}>
+                {t("list_view.clear_all_filters")}
+              </Button>
+            )
+          : model.admin.permissions.add_permission && (
+              <Button asChild>
+                <Link to={`/content/${model.label}/new`}>
+                  {t("common.create")}
+                </Link>
+              </Button>
+            )
+      }
+    />
   );
 }

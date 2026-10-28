@@ -2,13 +2,14 @@ import { useTranslation } from "react-i18next";
 import { PiFunnelBold, PiUploadSimpleBold } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 /**
  * The empty state of the files: a dashed drop zone inviting the first
  * upload, or — while search or filters narrow the library — a
  * no-results notice that offers clearing them.
  */
-export function EmptyState({
+export function MediaEmptyState({
   filtered,
   onClear,
   onUpload,
@@ -23,32 +24,29 @@ export function EmptyState({
   const { t } = useTranslation();
 
   return (
-    <div className="rounded-lg border-2 border-dashed py-16 px-6 flex flex-col items-center text-center">
-      <div className="size-10 rounded-full bg-muted border flex items-center justify-center text-muted-foreground [&_svg]:size-5 mb-3">
-        {filtered ? <PiFunnelBold /> : <PiUploadSimpleBold />}
-      </div>
-      {filtered ? (
-        <>
-          <div className="font-medium">{t("list_view.no_results")}</div>
-          <div className="text-muted-foreground text-sm max-w-sm mt-1">
-            {t("media_library.no_results")}
-          </div>
-          <Button variant="outline" className="mt-4" onClick={onClear}>
+    <EmptyState
+      className="rounded-lg border-2 border-dashed"
+      icon={filtered ? <PiFunnelBold /> : <PiUploadSimpleBold />}
+      title={
+        filtered ? t("list_view.no_results") : t("media_library.empty_title")
+      }
+      description={
+        filtered
+          ? t("media_library.no_results")
+          : t("media_library.empty_description")
+      }
+      action={
+        filtered ? (
+          <Button variant="outline" onClick={onClear}>
             {t("list_view.clear_all_filters")}
           </Button>
-        </>
-      ) : (
-        <>
-          <div className="font-medium">{t("media_library.empty_title")}</div>
-          <div className="text-muted-foreground text-sm max-w-sm mt-1">
-            {t("media_library.empty_description")}
-          </div>
-          <Button className="mt-4" onClick={onUpload}>
+        ) : (
+          <Button onClick={onUpload}>
             <PiUploadSimpleBold />
             {t("widgets.media_widget.upload_label")}
           </Button>
-        </>
-      )}
-    </div>
+        )
+      }
+    />
   );
 }

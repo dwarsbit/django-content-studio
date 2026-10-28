@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { PiFolderBold, PiTrashBold, PiXBold } from "react-icons/pi";
+import { PiFolderBold, PiTrashBold } from "react-icons/pi";
 import { toast } from "sonner";
 
 import { FolderPicker } from "@/components/media-library/folder-picker";
+import { BulkBar } from "@/components/ui/bulk-bar";
 import { Button } from "@/components/ui/button";
 import { useBulkMedia } from "@/hooks/use-bulk-media";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
@@ -56,42 +57,32 @@ export function MediaBulkBar({
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex justify-center px-6">
-      <div className="pointer-events-auto flex items-center gap-1 flex-wrap rounded-lg border bg-popover text-popover-foreground shadow-xl pl-3 pr-1.5 py-1.5">
-        <span className="select-none text-sm font-medium tabular-nums mr-2">
-          {t("bulk.selected", { count: ids.length })}
-        </span>
-        {folders && (
-          <FolderPicker
-            trigger={
-              <Button size="sm" variant="ghost" disabled={isPending}>
-                <PiFolderBold />
-                {t("common.move")}
-              </Button>
-            }
-            onSelect={(folder) => moveSelection(folder)}
-          />
-        )}
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={isPending}
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-          onClick={deleteSelection}
-        >
-          <PiTrashBold />
-          {t("common.delete")}
-        </Button>
-        <div className="w-px h-5 bg-border mx-1" />
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label={t("bulk.clear")}
-          onClick={onDone}
-        >
-          <PiXBold />
-        </Button>
-      </div>
-    </div>
+    <BulkBar
+      label={t("bulk.selected", { count: ids.length })}
+      clearLabel={t("bulk.clear")}
+      onClear={onDone}
+    >
+      {folders && (
+        <FolderPicker
+          trigger={
+            <Button size="sm" variant="ghost" disabled={isPending}>
+              <PiFolderBold />
+              {t("common.move")}
+            </Button>
+          }
+          onSelect={(folder) => moveSelection(folder)}
+        />
+      )}
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={isPending}
+        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+        onClick={deleteSelection}
+      >
+        <PiTrashBold />
+        {t("common.delete")}
+      </Button>
+    </BulkBar>
   );
 }

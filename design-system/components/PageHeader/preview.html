@@ -1,0 +1,27 @@
+<!-- @dsCard group="Navigation" height=200 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>PageHeader preview</title>
+<style>body{margin:0;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+#root{display:flex;flex-direction:column;height:200px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(h(React.Fragment, null,
+  h(C.PageHeader, {
+    title: "articles",
+    meta: h("span", { style: { color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" } }, "128 articles"),
+    actions: h(C.Button, null, "Create")
+  },
+    h(C.Toolbar, null,
+      h(C.Input, { size: "sm", placeholder: "Search", style: { width: 220 } }),
+      h(C.Button, { variant: "outline", size: "sm" }, "Status"),
+      h("div", { style: { marginLeft: "auto" } },
+        h(C.ToggleGroup, { type: "single", size: "sm", variant: "outline", defaultValue: "table" },
+          h(C.ToggleGroupItem, { value: "table", "aria-label": "Table view" }, "Table"),
+          h(C.ToggleGroupItem, { value: "list", "aria-label": "List view" }, "List"))))),
+  h(C.PageBody, null, h("div", { style: { color: "var(--muted-foreground)" } }, "The page's content, capped at 1280px."))));
+</script>
+</body>
+</html>

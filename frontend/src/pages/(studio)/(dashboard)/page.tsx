@@ -1,7 +1,7 @@
 import { type ComponentType, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { PageBody } from "@/components/page-header";
+import { PageBody } from "@/components/ui/page-header";
 import { useDiscover } from "@/hooks/use-discover";
 import { useMe } from "@/hooks/use-me";
 import { cn, getTimeOfDay } from "@/lib/utils";

@@ -9,7 +9,7 @@ import { getEdges } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type { Model, Resource } from "@/types";
 
-import { EmptyState } from "./empty-state";
+import { ListEmptyState } from "./empty-state";
 import type { ReorderProps } from "./table-view";
 
 /**
@@ -41,7 +41,7 @@ export function ListView({
   return (
     <div className="w-full flex-1 border rounded-lg overflow-hidden">
       {items.length === 0 && (
-        <EmptyState model={model} filtered={!!filtered} onClear={onClear} />
+        <ListEmptyState model={model} filtered={!!filtered} onClear={onClear} />
       )}
       {reorder ? (
         <Reorderable
