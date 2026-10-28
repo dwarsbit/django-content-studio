@@ -69,6 +69,7 @@ export {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+export { EmptyState } from "@/components/ui/empty-state";
 export {
   Form,
   FormControl,
@@ -78,7 +79,6 @@ export {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-export { EmptyState } from "@/components/ui/empty-state";
 export { Input } from "@/components/ui/input";
 export {
   InputGroup,
