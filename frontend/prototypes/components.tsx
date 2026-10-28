@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- prototype helpers, not an app module */
 // Shared prototype pieces: the patterns that recur on more than one screen.
 // Each is a candidate for src/components once the design settles.
 import { Tabs as TabsPrimitive } from "radix-ui";
@@ -6,6 +7,7 @@ import { type ReactNode, useState } from "react";
 import {
   PiCaretDownBold,
   PiCheckBold,
+  PiInfoBold,
   PiMagnifyingGlassBold,
   PiMinusBold,
   PiXBold,
@@ -182,42 +184,58 @@ export function SearchInput({
 
 /**
  * A filter chip: closed it names the field, open it lists the options;
- * with a value it reads "Field: value" and offers clearing.
+ * with a value it reads "Field is value" and offers clearing. A chip
+ * with `multiple` reads "Field is a, b".
  */
 export function FilterChip({
   label,
   value,
   options = [],
-  onClear,
+  multiple,
+  onChange,
 }: {
   label: string;
-  value?: string;
+  value: string[];
   options?: string[];
-  onClear?(): void;
+  multiple?: boolean;
+  onChange(next: string[]): void;
 }) {
+  const active = value.length > 0;
+  const toggle = (option: string) => {
+    if (multiple) {
+      onChange(
+        value.includes(option)
+          ? value.filter((current) => current !== option)
+          : [...value, option],
+      );
+    } else {
+      onChange(value.includes(option) ? [] : [option]);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
           "h-8 px-2.5 inline-flex items-center gap-1.5 rounded-lg border text-sm font-medium whitespace-nowrap cursor-pointer select-none",
           "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring",
-          value
+          active
             ? "bg-accent border-transparent text-foreground"
             : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50 shadow-xs",
         )}
       >
         <span className="first-letter:uppercase">{label}</span>
-        {value ? (
+        {active ? (
           <>
             <span className="text-muted-foreground">is</span>
-            <span>{value}</span>
+            <span>{value.join(", ")}</span>
             <span
               role="button"
               aria-label={`Clear ${label}`}
               className="-mr-1 ml-0.5 size-4 rounded-sm inline-flex items-center justify-center hover:bg-foreground/10"
               onClick={(event) => {
                 event.stopPropagation();
-                onClear?.();
+                onChange([]);
               }}
             >
               <PiXBold className="size-3" />
@@ -231,8 +249,11 @@ export function FilterChip({
         {options.map((option) => (
           <DropdownMenuCheckboxItem
             key={option}
-            checked={option === value}
-            onSelect={(event) => event.preventDefault()}
+            checked={value.includes(option)}
+            onSelect={(event) => {
+              event.preventDefault();
+              toggle(option);
+            }}
           >
             {option}
           </DropdownMenuCheckboxItem>
@@ -241,6 +262,36 @@ export function FilterChip({
     </DropdownMenu>
   );
 }
+
+/** The filters of a list, keyed by field label. */
+export type FilterValues = Record<string, string[]>;
+
+export function hasFilters(filters: FilterValues) {
+  return Object.values(filters).some((value) => value.length > 0);
+}
+
+/**
+ * The notice on a model that is shared between tenants: the banner
+ * above the page header, in the mist family with a word, not amber.
+ */
+export function SharedBanner({ noun }: { noun: string }) {
+  return (
+    <div className="shrink-0 bg-muted border-b px-6 py-2 text-sm text-muted-foreground flex items-center gap-2">
+      <PiInfoBold className="size-4 shrink-0" />
+      <span>
+        <span className="inline-block first-letter:uppercase">{noun}</span> are
+        shared between all tenants. Changes here apply to every tenant.
+      </span>
+    </div>
+  );
+}
+
+// The table primitives pad the first and last columns by 32px and set
+// the first column semibold; the lists keep a 16px gutter and one weight.
+export const TABLE_HEAD =
+  "first-of-type:[&_div]:pl-4 last-of-type:[&_div]:pr-4 [&_div]:h-10";
+export const TABLE_CELL =
+  "first-of-type:pl-4 last-of-type:pr-4 first-of-type:font-medium py-0 h-11";
 
 export function ViewToggle<T extends string>({
   value,

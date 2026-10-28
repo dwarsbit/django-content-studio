@@ -37,32 +37,68 @@ import {
   BulkBar,
   EmptyState,
   FilterChip,
+  type FilterValues,
+  hasFilters,
   HeaderTabs,
   PageBody,
   PageHeader,
   SearchInput,
+  SharedBanner,
   StatusBadge,
+  TABLE_CELL,
+  TABLE_HEAD,
   Toolbar,
   UserAvatar,
   ViewToggle,
 } from "../components";
-import { type Article, articles } from "../data";
+import { type Article, articles, STATUS_LABELS } from "../data";
+
+const FILTERS: { label: string; options: string[]; multiple?: boolean }[] = [
+  { label: "Status", options: Object.values(STATUS_LABELS) },
+  { label: "Featured", options: ["Yes", "No"] },
+  { label: "Author", options: ["Leon", "Eva", "Noah"], multiple: true },
+  { label: "Published at", options: ["Last week", "Last month", "This year"] },
+  {
+    label: "Categories",
+    options: ["General", "Guides", "Opinion", "Updates"],
+    multiple: true,
+  },
+];
+
+/** The scope tabs of the articles list, shared with the trash page. */
+export function ArticleTabs({ current }: { current: "list" | "trash" }) {
+  return (
+    <HeaderTabs
+      current={
+        current === "list" ? "#/content/articles" : "#/content/articles/trash"
+      }
+      tabs={[
+        { label: "All articles", href: "#/content/articles" },
+        { label: "Trash", count: 3, href: "#/content/articles/trash" },
+      ]}
+    />
+  );
+}
 
 export function ContentListScreen() {
   const { settings, update } = usePrototype();
   const { listView, listState } = settings;
-  const filtered = listState === "filtered";
-  const rows =
-    listState === "empty"
-      ? []
-      : filtered
-        ? articles.filter((article) => article.status === "published")
-        : articles;
-  // The "selected" state preselects two rows (the screen remounts per
-  // list state, see app.tsx).
+  // The "filtered" and "selected" states preset the filters and the
+  // selection (the screen remounts per list state, see app.tsx).
+  const [filters, setFilters] = useState<FilterValues>((): FilterValues =>
+    listState === "filtered" ? { Status: ["Published"] } : {},
+  );
   const [selected, setSelected] = useState<Set<string>>(() =>
     listState === "selected" ? new Set(["1", "4"]) : new Set(),
   );
+  const filtered = hasFilters(filters);
+  const status = filters.Status?.[0];
+  const rows =
+    listState === "empty"
+      ? []
+      : status
+        ? articles.filter((article) => STATUS_LABELS[article.status] === status)
+        : articles;
 
   const toggle = (id: string) =>
     setSelected((previous) => {
@@ -81,6 +117,7 @@ export function ContentListScreen() {
 
   return (
     <>
+      {settings.tenant && <SharedBanner noun="articles" />}
       <PageHeader
         icon={<span className="ph-bold ph-article" />}
         title="Articles"
@@ -91,44 +128,34 @@ export function ContentListScreen() {
         }
         actions={
           <Button
-            onClick={() => (window.location.hash = "#/content/articles/1")}
+            onClick={() => (window.location.hash = "#/content/articles/new")}
           >
             <PiPlusBold />
             Create
           </Button>
         }
       >
-        <HeaderTabs
-          current="#/content/articles"
-          tabs={[
-            { label: "All articles", href: "#/content/articles" },
-            { label: "Trash", count: 3, href: "#/content/articles?trash" },
-          ]}
-        />
+        <ArticleTabs current="list" />
         <Toolbar>
           <SearchInput placeholder="Search articles" />
-          <FilterChip
-            label="Status"
-            value={filtered ? "Published" : undefined}
-            options={["Published", "In review", "Draft"]}
-            onClear={() => update({ listState: "default" })}
-          />
-          <FilterChip label="Featured" options={["Yes", "No"]} />
-          <FilterChip label="Author" options={["Leon", "Eva", "Noah"]} />
-          <FilterChip
-            label="Published at"
-            options={["Last week", "Last month", "This year"]}
-          />
-          <FilterChip
-            label="Categories"
-            options={["General", "Guides", "Opinion", "Updates"]}
-          />
+          {FILTERS.map((filter) => (
+            <FilterChip
+              key={filter.label}
+              label={filter.label}
+              options={filter.options}
+              multiple={filter.multiple}
+              value={filters[filter.label] ?? []}
+              onChange={(next) =>
+                setFilters({ ...filters, [filter.label]: next })
+              }
+            />
+          ))}
           {filtered && (
             <Button
               variant="ghost"
               size="sm"
               className="text-muted-foreground"
-              onClick={() => update({ listState: "default" })}
+              onClick={() => setFilters({})}
             >
               Clear filters
             </Button>
@@ -148,19 +175,36 @@ export function ContentListScreen() {
       </PageHeader>
 
       <PageBody>
-        <div className="rounded-lg border bg-card overflow-hidden">
+        <div className="rounded-lg border bg-card overflow-x-auto scrollbar">
           {rows.length === 0 ? (
-            <EmptyState
-              icon={<span className="ph-bold ph-article" />}
-              title="No articles yet"
-              description="Articles you create appear here. Deleted articles are kept in the trash for 30 days."
-              action={
-                <Button>
-                  <PiPlusBold />
-                  Create
-                </Button>
-              }
-            />
+            filtered ? (
+              <EmptyState
+                icon={<span className="ph-bold ph-funnel" />}
+                title="No articles match"
+                description="No article matches the current filters."
+                action={
+                  <Button variant="outline" onClick={() => setFilters({})}>
+                    Clear filters
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={<span className="ph-bold ph-article" />}
+                title="No articles yet"
+                description="Articles you create appear here. Deleted articles are kept in the trash for 30 days."
+                action={
+                  <Button
+                    onClick={() =>
+                      (window.location.hash = "#/content/articles/new")
+                    }
+                  >
+                    <PiPlusBold />
+                    Create
+                  </Button>
+                }
+              />
+            )
           ) : listView === "table" ? (
             <ArticlesTable
               rows={rows}
@@ -174,29 +218,12 @@ export function ContentListScreen() {
           )}
         </div>
         {rows.length > 0 && (
-          <div className="flex items-center justify-between gap-4 pt-3 text-sm text-muted-foreground">
-            <span className="tabular-nums">
-              {filtered ? `${rows.length} articles` : "1–8 of 128 articles"}
-            </span>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Previous page"
-                disabled
-              >
-                <PiArrowLeftBold />
-              </Button>
-              <PageButton page={1} active />
-              <PageButton page={2} />
-              <PageButton page={3} />
-              <span className="px-1">…</span>
-              <PageButton page={16} />
-              <Button variant="ghost" size="icon-sm" aria-label="Next page">
-                <PiArrowRightBold />
-              </Button>
-            </div>
-          </div>
+          <ListFooter
+            summary={
+              filtered ? `${rows.length} articles` : "1–8 of 128 articles"
+            }
+            pages={filtered ? 1 : 16}
+          />
         )}
       </PageBody>
 
@@ -217,13 +244,48 @@ export function ContentListScreen() {
                 className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 <PiTrashBold />
-                Delete
+                Move to trash
               </Button>
             </>
           }
         />
       )}
     </>
+  );
+}
+
+/** The count and the pagination under a list. */
+export function ListFooter({
+  summary,
+  pages,
+}: {
+  summary: string;
+  pages: number;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 pt-3 text-sm text-muted-foreground">
+      <span className="tabular-nums">{summary}</span>
+      {pages > 1 && (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Previous page"
+            disabled
+          >
+            <PiArrowLeftBold />
+          </Button>
+          <PageButton page={1} active />
+          <PageButton page={2} />
+          <PageButton page={3} />
+          <span className="px-1">…</span>
+          <PageButton page={pages} />
+          <Button variant="ghost" size="icon-sm" aria-label="Next page">
+            <PiArrowRightBold />
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -274,13 +336,6 @@ function SortMenu() {
   );
 }
 
-// The table primitives pad the first and last columns by 32px and set
-// the first column semibold; the list keeps a 16px gutter and one weight.
-const HEAD =
-  "first-of-type:[&_div]:pl-4 last-of-type:[&_div]:pr-4 [&_div]:h-10";
-const CELL =
-  "first-of-type:pl-4 last-of-type:pr-4 first-of-type:font-medium py-0 h-11";
-
 function ArticlesTable({
   rows,
   selected,
@@ -298,23 +353,23 @@ function ArticlesTable({
     <Table>
       <TableHeader className="bg-muted/60">
         <TableRow>
-          <TableHead className={cn(HEAD, "w-10")}>
+          <TableHead className={cn(TABLE_HEAD, "w-10")}>
             <Checkbox
               checked={allSelected}
               aria-label="Select all"
               onCheckedChange={onToggleAll}
             />
           </TableHead>
-          <TableHead className={HEAD}>
+          <TableHead className={TABLE_HEAD}>
             <SortableHead label="Title" />
           </TableHead>
-          <TableHead className={HEAD}>Status</TableHead>
-          <TableHead className={HEAD}>Featured</TableHead>
-          <TableHead className={cn(HEAD, "[&_div]:justify-end")}>
+          <TableHead className={TABLE_HEAD}>Status</TableHead>
+          <TableHead className={TABLE_HEAD}>Featured</TableHead>
+          <TableHead className={cn(TABLE_HEAD, "[&_div]:justify-end")}>
             <SortableHead label="Views" active direction="desc" />
           </TableHead>
-          <TableHead className={HEAD}>Author</TableHead>
-          <TableHead className={HEAD}>Published</TableHead>
+          <TableHead className={TABLE_HEAD}>Author</TableHead>
+          <TableHead className={TABLE_HEAD}>Published</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -327,7 +382,7 @@ function ArticlesTable({
               onClick={() => (window.location.hash = "#/content/articles/1")}
             >
               <TableCell
-                className={cn(CELL, "w-10")}
+                className={cn(TABLE_CELL, "w-10")}
                 onClick={(event) => event.stopPropagation()}
               >
                 <Checkbox
@@ -336,26 +391,26 @@ function ArticlesTable({
                   onCheckedChange={() => onToggle(article.id)}
                 />
               </TableCell>
-              <TableCell className={cn(CELL, "max-w-md truncate")}>
+              <TableCell className={cn(TABLE_CELL, "max-w-md truncate")}>
                 {article.title}
               </TableCell>
-              <TableCell className={CELL}>
+              <TableCell className={TABLE_CELL}>
                 <StatusBadge status={article.status} />
               </TableCell>
-              <TableCell className={CELL}>
+              <TableCell className={TABLE_CELL}>
                 <BoolMark value={article.featured} />
               </TableCell>
-              <TableCell className={cn(CELL, "text-right tabular-nums")}>
+              <TableCell className={cn(TABLE_CELL, "text-right tabular-nums")}>
                 {article.views.toLocaleString("en")}
               </TableCell>
-              <TableCell className={CELL}>
+              <TableCell className={TABLE_CELL}>
                 <span className="inline-flex items-center gap-2">
                   <UserAvatar user={article.author} />
                   <span>{article.author.name.split(" ")[0]}</span>
                 </span>
               </TableCell>
               <TableCell
-                className={cn(CELL, "text-muted-foreground font-normal")}
+                className={cn(TABLE_CELL, "text-muted-foreground font-normal")}
               >
                 {article.publishedAt ?? "—"}
               </TableCell>
@@ -367,7 +422,7 @@ function ArticlesTable({
   );
 }
 
-function SortableHead({
+export function SortableHead({
   label,
   active,
   direction = "asc",
