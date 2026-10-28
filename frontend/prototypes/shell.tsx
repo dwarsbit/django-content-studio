@@ -52,49 +52,25 @@ import { Kbd } from "./components";
 import { me, type MenuGroup, menuGroups, tenants } from "./data";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { settings } = usePrototype();
-  const floating = settings.sidebarStyle === "floating";
-
   return (
-    <div
-      className={cn(
-        "h-full flex items-stretch",
-        floating ? "bg-sidebar p-3 gap-3" : "bg-background",
-      )}
-    >
+    <div className="h-full flex items-stretch bg-background">
       <MainMenu />
-      <main
-        className={cn(
-          "relative flex-1 min-w-0 flex flex-col overflow-hidden bg-background",
-          floating && "rounded-xl border shadow-xs",
-        )}
-      >
+      <main className="relative flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
         {children}
       </main>
     </div>
   );
 }
 
-// The tinted variant colors the group's icons; the mist variant leaves
-// them in the text color.
-const TINTS: Record<MenuGroup["color"], string> = {
-  blue: "text-blue-600 dark:text-blue-400",
-  amber: "text-amber-600 dark:text-amber-400",
-  emerald: "text-emerald-600 dark:text-emerald-400",
-  violet: "text-violet-600 dark:text-violet-400",
-};
-
 function MainMenu() {
   const { settings, update, screen } = usePrototype();
   const collapsed = settings.menu === "collapsed";
-  const floating = settings.sidebarStyle === "floating";
 
   return (
     <nav
       aria-label="Main menu"
       className={cn(
-        "shrink-0 flex flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 select-none",
-        floating ? "rounded-xl border" : "border-r border-sidebar-border",
+        "shrink-0 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 select-none",
         collapsed ? "w-14" : "w-60",
       )}
     >
@@ -159,9 +135,6 @@ function MainMenu() {
             key={group.label}
             group={group}
             collapsed={collapsed}
-            tint={
-              settings.iconColor === "tinted" ? TINTS[group.color] : undefined
-            }
             activeHref={
               screen === "list" || screen === "edit"
                 ? "#/content/articles"
@@ -291,15 +264,14 @@ function SearchTrigger({ collapsed }: { collapsed: boolean }) {
 function MenuSection({
   group,
   collapsed,
-  tint,
   activeHref,
 }: {
   group: MenuGroup;
   collapsed: boolean;
-  tint?: string;
   activeHref: string | null;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  // A group can be configured to start collapsed (see data.ts).
+  const [expanded, setExpanded] = useState(!group.collapsed);
 
   if (collapsed) {
     return (
@@ -308,7 +280,6 @@ function MenuSection({
           <MenuItem
             key={model.label}
             icon={<span className={model.icon} />}
-            iconClassName={tint}
             label={model.label}
             href={model.href}
             active={model.href === activeHref}
@@ -341,7 +312,6 @@ function MenuSection({
             <MenuItem
               key={model.label}
               icon={<span className={model.icon} />}
-              iconClassName={tint}
               label={model.label}
               href={model.href}
               active={model.href === activeHref}
@@ -489,8 +459,8 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <PiSignOutBold />
               Log out
+              <PiSignOutBold />
             </DropdownMenuItem>
           </div>
           <div className="px-3 py-2 bg-muted border-t text-xs text-muted-foreground flex items-center justify-between">

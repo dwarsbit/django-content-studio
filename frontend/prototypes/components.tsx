@@ -76,6 +76,49 @@ export function PageHeader({
   );
 }
 
+/**
+ * Scope tabs under the page title: the places a list can be, such as
+ * the list itself and its trash. Navigation, not an action, so it is
+ * not a button next to "Create".
+ */
+export function HeaderTabs({
+  tabs,
+  current,
+}: {
+  tabs: { label: string; count?: number; href: string }[];
+  current: string;
+}) {
+  return (
+    <nav aria-label="Scope" className="border-b">
+      <div className="px-6 flex items-center gap-5 max-w-[1280px] mx-auto w-full">
+        {tabs.map((tab) => {
+          const active = tab.href === current;
+          return (
+            <a
+              key={tab.href}
+              href={tab.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "inline-flex items-center gap-1.5 h-9 -mb-px border-b-2 px-0.5 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring rounded-t-sm",
+                active
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {tab.label}
+              {tab.count != null && (
+                <span className="rounded-sm bg-muted px-1.5 text-xs tabular-nums text-muted-foreground">
+                  {tab.count}
+                </span>
+              )}
+            </a>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 /** A toolbar row under the page header: search, filters, view toggles. */
 export function Toolbar({
   children,

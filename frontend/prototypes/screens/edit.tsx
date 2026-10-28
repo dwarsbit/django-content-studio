@@ -119,8 +119,8 @@ export function EditScreen() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>Duplicate</DropdownMenuItem>
                 <DropdownMenuItem>
-                  <PiClockCounterClockwiseBold />
                   History
+                  <PiClockCounterClockwiseBold />
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive">
