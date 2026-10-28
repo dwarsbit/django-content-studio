@@ -3,10 +3,15 @@ import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
-import { Spinner } from "@/components/ui/spinner";
 import { useHttp } from "@/hooks/use-http";
 import { type DashboardWidget } from "@/types";
 
+import { ViewAll, Widget, WidgetEmpty, WidgetLoading } from "./widget";
+
+/**
+ * A list of links to content. When every item belongs to one model,
+ * the header offers "View all" to that model's list.
+ */
 export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
   const { t } = useTranslation();
   const http = useHttp();
@@ -18,7 +23,7 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
     async queryFn() {
       const { data } = await http.get<{
         title: string;
-        description: number;
+        description: string;
         content: {
           id: string;
           model: string;
@@ -31,39 +36,40 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
     },
   });
 
-  return !data ? (
-    <div className="py-24 flex items-center justify-center">
-      <Spinner />
-    </div>
-  ) : (
-    <div>
-      <div className="p-4 leading-tight">
-        <h2 className="font-medium text-foreground">{data.title}</h2>
-        {data.description && (
-          <div className="text-muted-foreground">{data.description}</div>
-        )}
-      </div>
-      {R.isEmpty(data.content) ? (
-        <div className="text-center py-12 border-t text-muted-foreground select-none">
+  const models = R.uniq((data?.content ?? []).map((item) => item.model));
+  const model = models.length === 1 ? models[0] : null;
+
+  return (
+    <Widget
+      title={data?.title ?? widget.name}
+      description={data?.description}
+      action={model && <ViewAll to={`/content/${model}`} />}
+    >
+      {!data ? (
+        <WidgetLoading />
+      ) : R.isEmpty(data.content) ? (
+        <WidgetEmpty>
           {t("dashboard.widgets.content_list.empty_state")}
-        </div>
+        </WidgetEmpty>
       ) : (
         <ul>
           {data.content.map(({ id, model, title, description }) => (
-            <li key={id}>
+            <li key={`${model}-${id}`}>
               <Link
                 to={`/content/${model}/${id}`}
-                className="block px-4 py-2 border-t hover:bg-accent"
+                className="block px-4 py-2.5 border-t hover:bg-accent"
               >
-                <div className="text-foreground">{title}</div>
-                <div className="text-muted-foreground text-sm">
-                  {description}
-                </div>
+                <div className="font-medium truncate">{title}</div>
+                {description ? (
+                  <div className="text-xs text-muted-foreground truncate">
+                    {description}
+                  </div>
+                ) : null}
               </Link>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </Widget>
   );
 }
