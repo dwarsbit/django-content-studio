@@ -32,10 +32,12 @@ export function Main({
     <div>
       <Tabs defaultValue={groups[0]?.label || "default"}>
         {showGroups && (
-          <TabsList className="w-full border">
+          <TabsList variant="line" className="mb-5">
             {groups.map((formSetGroup, idx) => (
               <TabsTrigger key={idx} value={formSetGroup.label}>
-                {formSetGroup.label}
+                <span className="first-letter:uppercase">
+                  {formSetGroup.label}
+                </span>
               </TabsTrigger>
             ))}
             {R.isEmpty(groups) && !R.isEmpty(inlines) && (
@@ -44,10 +46,13 @@ export function Main({
             {id
               ? inlines.map((inline) => (
                   <TabsTrigger key={inline.model} value={inline.model}>
-                    {
-                      discover?.models.find(R.whereEq({ label: inline.model }))
-                        ?.verbose_name_plural
-                    }
+                    <span className="first-letter:uppercase">
+                      {
+                        discover?.models.find(
+                          R.whereEq({ label: inline.model }),
+                        )?.verbose_name_plural
+                      }
+                    </span>
                   </TabsTrigger>
                 ))
               : null}
@@ -57,12 +62,12 @@ export function Main({
           <TabsContent
             key={idx}
             value={formSetGroup.label || "default"}
-            className="space-y-4"
+            className="space-y-5"
           >
             {formSetGroup.formsets.map((formSet, idx) => (
               <section
                 key={idx}
-                className="border p-4 bg-card rounded-lg w-full"
+                className="rounded-lg border bg-card shadow-xs w-full"
               >
                 <FormSet
                   model={model}

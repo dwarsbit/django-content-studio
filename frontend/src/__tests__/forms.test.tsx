@@ -1167,7 +1167,11 @@ describe("Editor", () => {
     expect(
       await screen.findByText("An article with this title already exists."),
     ).toBeInTheDocument();
-    expect(screen.getByText("Title")).toHaveAttribute("data-error", "true");
+    // The label (around the capitalized text) carries the error state.
+    expect(screen.getByText("Title").closest("label")).toHaveAttribute(
+      "data-error",
+      "true",
+    );
     expect(toastErrorMock).toHaveBeenCalledTimes(1);
     expect(onSave).not.toHaveBeenCalled();
     expect(httpMock.put).not.toHaveBeenCalled();

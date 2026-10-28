@@ -146,7 +146,12 @@ export function Header({
             }
             actions={
               <>
-                {editedAt ? (
+                {isDirty && !readOnly ? (
+                  <div className="hidden lg:flex items-center gap-1.5 text-muted-foreground text-sm mr-2 select-none">
+                    <span className="size-1.5 rounded-full bg-warning" />
+                    {t("editor.unsaved_changes")}
+                  </div>
+                ) : editedAt ? (
                   <div className="hidden lg:block text-muted-foreground text-sm mr-2 select-none">
                     {`${t("editor.last_edited")} ${dayjs(editedAt).fromNow()}`}
                   </div>

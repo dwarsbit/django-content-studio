@@ -151,110 +151,119 @@ export function Inline({
           />
         </DialogContent>
       </Dialog>
-      <div className="border rounded-lg scrollbar bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {onMove && (
-                <TableHead className="w-8">
-                  <span className="sr-only">{t("reorder.drag")}</span>
-                </TableHead>
-              )}
-              {adminModel.table_display?.map(({ name, header }) => (
-                <TableHead key={name}>
-                  {header ?? model.fields[name]?.verbose_name}
-                </TableHead>
-              ))}
-              {onMove && (
-                <TableHead className="w-10">
-                  <span className="sr-only">{t("reorder.menu")}</span>
-                </TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={columns}>
-                  <div className="flex justify-center py-24">
-                    <Spinner />
-                  </div>
-                </td>
-              </tr>
-            ) : R.isEmpty(data?.results) ? (
-              <tr>
-                <td colSpan={columns}>
-                  <div className="text-center py-12 text-muted-foreground select-none">
-                    {t("editor.empty_state")}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              data &&
-              (onMove ? (
-                <Reorderable
-                  ids={data.results.map((resource) => resource.id)}
-                  getLabel={(id) =>
-                    data.results.find(
-                      (resource) => String(resource.id) === String(id),
-                    )?.__str__ ?? id
-                  }
-                  onMove={onMove}
-                >
-                  {data.results.map((resource, index) => (
-                    <SortableInlineRow
+      <div className="rounded-lg border bg-card shadow-xs overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-3 border-b">
+          <h2 className="flex-1 min-w-0 font-semibold truncate first-letter:uppercase">
+            {model.verbose_name_plural}
+            {data?.pagination && (
+              <span className="ml-2 text-muted-foreground font-normal tabular-nums">
+                {data.pagination.count}
+              </span>
+            )}
+          </h2>
+          {canAdd && (
+            <Button size="sm" variant="outline" onClick={() => setCreate(true)}>
+              <PiPlus />
+              {t("common.create")}
+            </Button>
+          )}
+        </div>
+        <div className="overflow-x-auto scrollbar">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {onMove && (
+                  <TableHead className="w-8">
+                    <span className="sr-only">{t("reorder.drag")}</span>
+                  </TableHead>
+                )}
+                {adminModel.table_display?.map(({ name, header }) => (
+                  <TableHead key={name}>
+                    {header ?? model.fields[name]?.verbose_name}
+                  </TableHead>
+                ))}
+                {onMove && (
+                  <TableHead className="w-10">
+                    <span className="sr-only">{t("reorder.menu")}</span>
+                  </TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={columns}>
+                    <div className="flex justify-center py-24">
+                      <Spinner />
+                    </div>
+                  </td>
+                </tr>
+              ) : R.isEmpty(data?.results) ? (
+                <tr>
+                  <td colSpan={columns}>
+                    <div className="text-center py-12 text-muted-foreground select-none">
+                      {t("editor.empty_state")}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                data &&
+                (onMove ? (
+                  <Reorderable
+                    ids={data.results.map((resource) => resource.id)}
+                    getLabel={(id) =>
+                      data.results.find(
+                        (resource) => String(resource.id) === String(id),
+                      )?.__str__ ?? id
+                    }
+                    onMove={onMove}
+                  >
+                    {data.results.map((resource, index) => (
+                      <SortableInlineRow
+                        key={resource.id}
+                        resource={resource}
+                        edges={getEdges(index, data.results.length, {
+                          isFirstPage: data.pagination.current <= 1,
+                          isLastPage:
+                            data.pagination.current >= data.pagination.pages,
+                        })}
+                        model={model}
+                        adminModel={adminModel}
+                        relModel={relModel}
+                        relId={relId}
+                        relName={relName}
+                        readOnly={readOnly}
+                        onMove={onMove}
+                      />
+                    ))}
+                  </Reorderable>
+                ) : (
+                  data.results.map((resource) => (
+                    <InlineRow
                       key={resource.id}
                       resource={resource}
-                      edges={getEdges(index, data.results.length, {
-                        isFirstPage: data.pagination.current <= 1,
-                        isLastPage:
-                          data.pagination.current >= data.pagination.pages,
-                      })}
                       model={model}
                       adminModel={adminModel}
                       relModel={relModel}
                       relId={relId}
                       relName={relName}
                       readOnly={readOnly}
-                      onMove={onMove}
                     />
-                  ))}
-                </Reorderable>
-              ) : (
-                data.results.map((resource) => (
-                  <InlineRow
-                    key={resource.id}
-                    resource={resource}
-                    model={model}
-                    adminModel={adminModel}
-                    relModel={relModel}
-                    relId={relId}
-                    relName={relName}
-                    readOnly={readOnly}
-                  />
+                  ))
                 ))
-              ))
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {data?.pagination && (
-        <div className="flex justify-center">
+        <div className="flex justify-end">
           <Pagination
             current={data.pagination.current}
             pages={data.pagination.pages}
             onPageChange={setPage}
           />
-        </div>
-      )}
-
-      {canAdd && (
-        <div className="flex justify-center">
-          <Button size="sm" variant="outline" onClick={() => setCreate(true)}>
-            <PiPlus />
-            {t("common.create")}
-          </Button>
         </div>
       )}
     </div>

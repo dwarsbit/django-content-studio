@@ -78,7 +78,8 @@
     "unique_warning": "\"{{object}}\" ({{modelName}}) already uses this {{fieldName}}.",
     "unique_warning_trashed": "\"{{object}}\" ({{modelName}}, in the trash) already uses this {{fieldName}}.",
     "unique_warning_hidden": "Another object already uses this {{fieldName}}.",
-    "unique_warning_hint": "Saving will fail unless you change it."
+    "unique_warning_hint": "Saving will fail unless you change it.",
+    "unsaved_changes": "Unsaved changes"
   },
   "list_view": {
     "table_view": "Table view",
@@ -187,7 +188,10 @@
       "select_media": "Select media",
       "select_n_media": "Select {{n}} media",
       "dialog_title": "Select media",
-      "upload_label": "Upload media"
+      "upload_label": "Upload media",
+      "replace": "Replace",
+      "remove": "Remove",
+      "empty": "No file chosen yet."
     },
     "tag_widget": {
       "placeholder": "Add a tag..."

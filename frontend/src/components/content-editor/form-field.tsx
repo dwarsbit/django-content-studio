@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { WidgetRenderer } from "@/components/widgets/renderer";
 import { useAdminInfo } from "@/hooks/use-admin-info";
+import { cn } from "@/lib/utils";
 import { FieldWidget, type FormField as IFormField, type Model } from "@/types";
 
 import { EditorReadOnlyContext } from "./editor-read-only";
@@ -83,8 +84,23 @@ export function FormField({
           control={form.control}
           name={formField.name}
           render={({ field }) => {
+            // The label's text, capitalized; a required field gets a mark
+            // through CSS so the label's text stays the field's name.
+            const labelText = (
+              <span
+                className={cn(
+                  "first-letter:uppercase",
+                  !isReadonly &&
+                    !labelToggles &&
+                    modelField?.required &&
+                    "after:content-['_*'] after:text-muted-foreground after:font-normal",
+                )}
+              >
+                {label}
+              </span>
+            );
             const control = isReadonly ? (
-              <div className="min-h-8 flex items-center pl-3 bg-accent rounded-md cursor-default">
+              <div className="min-h-9 flex items-center px-3 rounded-md border border-dashed bg-muted/40 text-muted-foreground cursor-default">
                 <FormatRenderer value={field.value} field={modelField} />
               </div>
             ) : (
@@ -100,16 +116,29 @@ export function FormField({
             return (
               <FormItem className={isCheckbox ? "gap-1" : undefined}>
                 {isCheckbox ? (
-                  <div className="flex items-center gap-2">
+                  // The box, then the label with the help text under it.
+                  <div className="flex items-start gap-2.5 [&>[role=checkbox]]:mt-0.5">
                     {control}
-                    <FormLabel className="cursor-pointer">{label}</FormLabel>
+                    <div className="min-w-0">
+                      <FormLabel className="cursor-pointer text-foreground">
+                        {labelText}
+                      </FormLabel>
+                      {modelField?.help_text && (
+                        <FormDescription className="mt-0.5 text-xs">
+                          {modelField.help_text}
+                        </FormDescription>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <>
                     <FormLabel
-                      className={labelToggles ? "cursor-pointer" : undefined}
+                      className={cn(
+                        "text-foreground",
+                        labelToggles && "cursor-pointer",
+                      )}
                     >
-                      {label}
+                      {labelText}
                     </FormLabel>
                     {control}
                   </>
@@ -117,8 +146,10 @@ export function FormField({
                 {!isReadonly && modelField?.unique && (
                   <UniqueWarning model={model} name={formField.name} />
                 )}
-                {modelField?.help_text && (
-                  <FormDescription>{modelField.help_text}</FormDescription>
+                {!isCheckbox && modelField?.help_text && (
+                  <FormDescription className="text-xs">
+                    {modelField.help_text}
+                  </FormDescription>
                 )}
                 <FormMessage />
               </FormItem>

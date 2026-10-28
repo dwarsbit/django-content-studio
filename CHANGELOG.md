@@ -26,6 +26,15 @@
   show an icon with the invitation to create or to clear the filters.
   A model with a trash gets "All" and "Trash" tabs under its title,
   with the number of objects in the trash, instead of a Trash button.
+- **The edit page.** Form groups and inlines switch through line tabs
+  instead of the pill list. Form sets are cards with a small header
+  row; labels are capitalized, required fields carry a mark, help text
+  sits under the control, read-only fields render as a dashed box, and
+  a checkbox field shows its help text under its label. The header says
+  "Unsaved changes" while the form is dirty. Inlines sit in a card with
+  the title, the count and the add button in its header. The media
+  picker is a row with the file, its type and size, and replace and
+  remove buttons, instead of a large preview with buttons on hover.
 
 ## 1.1.0 (2026-10-27)
 
