@@ -10,6 +10,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, models, transaction
 from django.db.models import Q
+from django.http import HttpResponseBase
 from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -19,10 +20,11 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from .actions import get_bulk_actions
+from .actions import EXPORT_ACTION_ID, get_bulk_actions
 from .admin import get_relation_display_for, is_duplicable
 from .dashboard.activity_log import LogEntrySerializer
 from .duplication import copy_inline_rows, represent_initial
+from .export import export_response, get_export_formats, is_exportable
 from .filters import LookupFilter
 from .form import Button, ButtonResult
 from .permissions import ModelStudioPermissions
@@ -264,6 +266,38 @@ class BaseModelViewSet(ModelViewSet):
             raise NotFound("This model has no trash.")
 
         return self.list(request)
+
+    @action(methods=["get"], detail=False, url_path="export")
+    def export(self, request):
+        """
+        The list as a download: ?export_format=csv|xlsx, with the list's
+        search, filters and ordering, every page. ?export_scope=trash
+        exports the trash instead. Only exists when the studio offers
+        export; gated by view permission like the list.
+        """
+        if not is_exportable(self._admin_model):
+            raise NotFound("This model cannot be exported.")
+
+        export_format = self._get_export_format(request.query_params)
+
+        if request.query_params.get("export_scope") == "trash" and (
+            not self._admin_model.soft_delete
+        ):
+            raise NotFound("This model has no trash.")
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        return export_response(self._admin_model, request, queryset, export_format)
+
+    def _get_export_format(self, params):
+        export_format = params.get("export_format") or "csv"
+
+        if export_format not in get_export_formats():
+            raise ValidationError(
+                f"Unknown or unavailable export format {export_format!r}."
+            )
+
+        return export_format
 
     @action(methods=["post"], detail=True, url_path="restore")
     def restore(self, request, id):
@@ -598,9 +632,21 @@ class BaseModelViewSet(ModelViewSet):
         except DjangoValidationError:
             raise ValidationError("The ids must be primary keys of this model.")
 
-        queryset = get_tenant_scoped_queryset(request, self._model).filter(pk__in=ids)
+        if action.id == EXPORT_ACTION_ID and action.formats is not None:
+            # The export writes the selected rows as the list shows them:
+            # not trashed, in the list's (or the requested) order.
+            self._get_export_format(request.data)
+            queryset = self.filter_queryset(self.get_queryset()).filter(pk__in=ids)
+        else:
+            queryset = get_tenant_scoped_queryset(request, self._model).filter(
+                pk__in=ids
+            )
 
         result = action.handler(request, queryset)
+
+        # A response, such as the export's download, is returned as is.
+        if isinstance(result, HttpResponseBase):
+            return result
 
         if isinstance(result, str):
             return Response({"message": result})

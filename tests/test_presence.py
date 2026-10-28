@@ -384,7 +384,7 @@ class CheckTests(TestCase):
                 "PRESENCE_CACHE": "missing",
             }
         ):
-            self.assertIn("content_studio.E022", check_ids(check_content_studio()))
+            self.assertIn("content_studio.E023", check_ids(check_content_studio()))
 
     def test_dummy_cache(self):
         with override_settings(
@@ -392,7 +392,7 @@ class CheckTests(TestCase):
                 "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}
             }
         ):
-            self.assertIn("content_studio.W015", check_ids(check_content_studio()))
+            self.assertIn("content_studio.W016", check_ids(check_content_studio()))
 
         with override_settings(
             CACHES={
@@ -403,7 +403,7 @@ class CheckTests(TestCase):
                 "PRESENCE": False,
             },
         ):
-            self.assertNotIn("content_studio.W015", check_ids(check_content_studio()))
+            self.assertNotIn("content_studio.W016", check_ids(check_content_studio()))
 
     def test_local_memory_cache_is_a_deployment_warning(self):
         with override_settings(
@@ -412,15 +412,15 @@ class CheckTests(TestCase):
             }
         ):
             self.assertEqual(
-                check_ids(check_presence_deployment()), ["content_studio.W016"]
+                check_ids(check_presence_deployment()), ["content_studio.W017"]
             )
             # Not part of the regular checks.
-            self.assertNotIn("content_studio.W016", check_ids(check_content_studio()))
+            self.assertNotIn("content_studio.W017", check_ids(check_content_studio()))
             self.assertIn(
-                "content_studio.W016",
+                "content_studio.W017",
                 check_ids(checks.run_checks(include_deployment_checks=True)),
             )
-            self.assertNotIn("content_studio.W016", check_ids(checks.run_checks()))
+            self.assertNotIn("content_studio.W017", check_ids(checks.run_checks()))
 
     def test_shared_cache_passes(self):
         with override_settings(
@@ -436,7 +436,7 @@ class CheckTests(TestCase):
                 [
                     message
                     for message in check_ids(check_content_studio())
-                    if message in ("content_studio.E022", "content_studio.W015")
+                    if message in ("content_studio.E023", "content_studio.W016")
                 ],
                 [],
             )

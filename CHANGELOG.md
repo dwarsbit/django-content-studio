@@ -20,6 +20,27 @@
   `content_studio.E021` (a `duplicate_inlines` entry that is not in
   `inlines`) and `content_studio.W014` (duplication options without
   effect) report misconfiguration.
+- **Export.** A studio with `export_fields` (the columns, like
+  `table_display`) or `allow_export = True` (the `table_display` columns)
+  offers Export in the list page's toolbar. It downloads every object
+  that matches the current search and filters, on all pages, in the
+  current order; in the trash, it downloads the trash. The built-in
+  Export bulk action, next to Delete, downloads the selected objects
+  only. Exports are CSV files, streamed; with the new `excel` extra
+  (`pip install "django-content-studio[excel]"`, which installs openpyxl)
+  Excel files (`.xlsx`) are offered as well. Headers are the capitalized
+  verbose names (or the `TableColumn` header); cells hold the displayed
+  values: choice labels, the names of related objects, dates in ISO
+  format, Yes or No, rich text without markup. Exporting needs view
+  permission and respects the tenant, the trash and `exclude`. Values
+  starting with `=`, `+`, `-` or `@` get a leading apostrophe against
+  formula injection. Not available for singletons. `"export"` names the
+  built-in in an explicit `actions` list. System checks
+  `content_studio.E022` (`export_fields` entries that do not resolve) and
+  `content_studio.W015` (export options without effect) report
+  misconfiguration; `content_studio.E007` also reports a `@bulk_action`
+  named `export` that shadows the built-in, and `"export"` in `actions`
+  without export.
 - **Duplicate warnings for combinations of fields.** The duplicate warning
   on the edit page now also covers `Meta.unique_together` and
   `UniqueConstraint`s over several fields. When the combination of values
@@ -48,9 +69,9 @@
   everywhere with the `PRESENCE` setting or per studio with
   `presence = False`, and stored in the cache named by `PRESENCE_CACHE`
   (default `"default"`). It locks nothing and checks nothing on save.
-  System checks `content_studio.E022` (a `PRESENCE_CACHE` that is not in
-  `CACHES`), `content_studio.W015` (a `DummyCache`) and, with
-  `manage.py check --deploy`, `content_studio.W016` (a per-process
+  System checks `content_studio.E023` (a `PRESENCE_CACHE` that is not in
+  `CACHES`), `content_studio.W016` (a `DummyCache`) and, with
+  `manage.py check --deploy`, `content_studio.W017` (a per-process
   `LocMemCache`) report caches presence cannot work with. A new
   `UserAvatar` component in the design system shows editors in the user
   menu, the activity logs and presence.

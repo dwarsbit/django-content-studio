@@ -334,13 +334,16 @@ class ArticleStudio(ModelStudio):
 The studio's `actions` attribute chooses which actions are offered:
 
 ```python
-actions = None                   # the default: delete and every @bulk_action
+actions = None                   # the default: delete, export and every @bulk_action
 actions = []                     # no bulk actions
 actions = ["publish", "delete"]  # exactly these, in this order
 ```
 
+`"export"` names the built-in export, which is offered when the studio
+[exports its list](#exporting-the-list).
+
 System check `content_studio.E007` reports unknown or duplicate names and
-an action that would replace the built-in delete.
+an action that would replace the built-in delete or export.
 
 ## Soft delete and the trash
 
@@ -593,6 +596,83 @@ class ArticleStudio(ModelStudio):
 
 System check `content_studio.E021` reports `duplicate_inlines` entries that
 are not in `inlines`, and `content_studio.W014` options that have no effect.
+
+## Exporting the list
+
+To let editors download the list as a spreadsheet, list the columns to
+export in `export_fields`. Like `table_display`, it takes field names,
+`__str__`, methods on the studio and `TableColumn` objects for a custom
+header:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import TableColumn
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    table_display = ["title", "status", "published_at"]
+    list_filter = ["status"]
+    search_fields = ["title"]
+    export_fields = [
+        "title",
+        "status",
+        "author",
+        "published_at",
+        TableColumn(field="word_count", header="Words"),
+    ]
+
+    def word_count(self, obj, request):
+        return len(obj.body.split())
+```
+
+To export the table's columns instead, set `allow_export = True` and leave
+`export_fields` out.
+
+The list page then offers Export in its toolbar. It downloads every object
+that matches the current search and filters, on all pages, in the list's
+current order. In the trash, Export downloads the objects in the trash. The
+built-in Export bulk action, next to Delete, downloads only the selected
+objects.
+
+Exports are CSV files. To offer Excel files (`.xlsx`) as well, install
+Content Studio with the `excel` extra, which adds
+[openpyxl](https://openpyxl.readthedocs.io/):
+
+```bash
+pip install "django-content-studio[excel]"
+```
+
+Each column's header is the field's verbose name, capitalized, or the
+`TableColumn` header. The cells hold the values as the admin shows them:
+
+- the label of a choice, such as `Published`;
+- the name of a related object, and the names of many-to-many objects
+  separated by commas;
+- dates and times in ISO format, such as `2026-04-01T18:30:00+02:00`, in
+  the current time zone;
+- `Yes` or `No` for booleans, and rich text without its markup.
+
+In Excel files, numbers and dates are real numbers and dates, shown in ISO
+format.
+
+Exporting needs view permission on the model. An export holds the objects
+of the selected tenant only, with [multi-tenancy](/docs/multi-tenancy), and
+leaves out objects in the trash (except when exporting the trash) and the
+fields in the studio's `exclude`. A value that a spreadsheet application
+would read as a formula, because it starts with `=`, `+`, `-` or `@`, gets a
+leading apostrophe so it stays text. Export is not available for
+singletons.
+
+To offer export in the toolbar only, leave `"export"` out of an explicit
+[`actions`](#bulk-actions) list.
+
+System check `content_studio.E022` reports `export_fields` entries that do
+not resolve, and `content_studio.W015` options that have no effect.
 
 ## Object history
 

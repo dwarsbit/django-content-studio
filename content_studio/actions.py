@@ -2,10 +2,11 @@
 Bulk actions: batch operations the table view offers on selected rows.
 
 A model studio declares custom actions with the @bulk_action decorator;
-the built-in delete action is offered by default. The actions available
-to a request (permissions included) serialize into the admin payload,
-and the bulk endpoint dispatches to the decorated method with a
-tenant-scoped queryset of the selected rows.
+the built-in delete action is offered by default, the built-in export
+when the studio offers export. The actions available to a request
+(permissions included) serialize into the admin payload, and the bulk
+endpoint dispatches to the decorated method with a tenant-scoped
+queryset of the selected rows.
 """
 
 from dataclasses import dataclass
@@ -25,6 +26,9 @@ __all__ = [
 
 # The id of the built-in delete action.
 DELETE_ACTION_ID = "delete"
+
+# The id of the built-in export action.
+EXPORT_ACTION_ID = "export"
 
 # The permission names an action may list in allowed_permissions,
 # mirroring the classic admin.
@@ -99,14 +103,23 @@ class BulkAction:
 
         return capfirst(self.handler.__name__.replace("_", " "))
 
+    # The formats the built-in export offers; None for other actions.
+    formats: Optional[tuple[str, ...]] = None
+
     def serialize(self):
-        return {
+        data = {
             "id": self.id,
             "label": str(self.label),
             "icon": self.meta.icon,
             "confirm": str(self.meta.confirm) if self.meta.confirm else None,
             "destructive": self.meta.destructive,
         }
+
+        # The export downloads a file instead of returning a result.
+        if self.formats is not None:
+            data["formats"] = list(self.formats)
+
+        return data
 
 
 def delete_action(request, queryset):
@@ -171,6 +184,30 @@ def _soft_delete_action(field):
     return handler
 
 
+_EXPORT_META = BulkActionMeta(
+    label=_("Export"),
+    icon="ph-bold ph-download-simple",
+    confirm=None,
+    allowed_permissions=("view",),
+    destructive=False,
+)
+
+
+def _export_action(studio):
+    """
+    The built-in export: the selected rows as a download, in the format
+    the request names under export_format (CSV by default).
+    """
+    from .export import export_response
+
+    def handler(request, queryset):
+        return export_response(
+            studio, request, queryset, request.data.get("export_format")
+        )
+
+    return handler
+
+
 def declared_bulk_actions(studio) -> dict[str, Callable]:
     """
     The @bulk_action methods of a studio, in definition order. Base
@@ -194,21 +231,42 @@ def get_bulk_actions(studio, request=None) -> list[BulkAction]:
     The bulk actions offered to the request, in the configured order.
 
     The studio's actions attribute selects them: None (the default)
-    offers the built-in delete plus every declared action, an empty list
-    disables bulk actions entirely, and an explicit list offers exactly
-    those names (with "delete" naming the built-in). Actions the user
-    lacks permission for are left out.
+    offers the built-in delete, the built-in export (when the studio
+    offers export) and every declared action, an empty list disables
+    bulk actions entirely, and an explicit list offers exactly those
+    names (with "delete" and "export" naming the built-ins). Actions the
+    user lacks permission for are left out.
     """
+    from .export import get_export_formats, is_exportable
+
     declared = declared_bulk_actions(studio)
+    exportable = is_exportable(studio)
 
     names = getattr(studio, "actions", None)
     if names is None:
-        names = [DELETE_ACTION_ID, *declared.keys()]
+        names = [
+            DELETE_ACTION_ID,
+            *([EXPORT_ACTION_ID] if exportable else []),
+            # A declared "export" gives way to the built-in, like the
+            # system checks report.
+            *(
+                name
+                for name in declared.keys()
+                if not (exportable and name == EXPORT_ACTION_ID)
+            ),
+        ]
 
     actions = []
 
     for name in names:
-        if name == DELETE_ACTION_ID:
+        if name == EXPORT_ACTION_ID and exportable:
+            action = BulkAction(
+                id=name,
+                handler=_export_action(studio),
+                meta=_EXPORT_META,
+                formats=tuple(get_export_formats()),
+            )
+        elif name == DELETE_ACTION_ID:
             # The built-in delete honors a configured soft_delete: it
             # moves the selection to the trash instead of removing it.
             if getattr(studio, "soft_delete", ""):

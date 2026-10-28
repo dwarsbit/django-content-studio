@@ -10,6 +10,7 @@ from rest_framework.request import HttpRequest
 from . import widgets, formats, fields, blocks
 from .actions import get_bulk_actions
 from .exceptions import AlreadyRegistered, NotRegistered
+from .export import get_export_formats, is_exportable
 from .form import FormSet, FormSetGroup, Field, Component, TableColumn
 from .login_backends import LoginBackendManager
 from .media_library import fields as ml_fields
@@ -335,6 +336,13 @@ class ModelStudio(BaseStudio[T]):
     # The inlines (entries of `inlines`) whose rows are copied along
     # when the duplicate is saved. Inlines left out start empty.
     duplicate_inlines: list[Type["InlineModelStudio"]] = []
+
+    # Export, as an opt-in: the list page offers to download the list as
+    # CSV (and Excel when openpyxl is installed). export_fields names the
+    # columns, like table_display; allow_export exports the
+    # table_display columns. Never offered for singletons.
+    export_fields: Optional[list[Union[str, "TableColumn"]]] = None
+    allow_export: bool = False
 
     # Whether the edit and list pages show which other users have an
     # object open (when the PRESENCE setting is on).
@@ -977,6 +985,13 @@ class AdminSerializer:
                 "trash": bool(admin_class.soft_delete),
                 "sortable_by": admin_class.sortable_by,
                 "reorderable": is_reorderable(admin_class, request),
+                # The formats the list can be exported in, or None when
+                # the studio offers no export.
+                "export": (
+                    {"formats": get_export_formats()}
+                    if is_exportable(admin_class)
+                    else None
+                ),
                 "actions": [
                     action.serialize()
                     for action in get_bulk_actions(admin_class, request)

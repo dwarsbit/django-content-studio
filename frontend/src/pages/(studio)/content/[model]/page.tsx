@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PiFileTextBold, PiRowsBold, PiTableBold } from "react-icons/pi";
 import { Link, useParams, useSearchParams } from "react-router";
+import { toast } from "sonner";
 
+import { ExportMenu } from "@/components/export-menu";
 import { HeaderTabs } from "@/components/header-tabs";
 import { buttonVariants } from "@/components/ui/button";
 import { PageBody, PageHeader, Toolbar } from "@/components/ui/page-header";
@@ -12,10 +14,12 @@ import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useDiscover } from "@/hooks/use-discover";
+import { useExport } from "@/hooks/use-export";
 import { useHttp } from "@/hooks/use-http";
 import { useMoveResource } from "@/hooks/use-move-resource";
 import { usePresenceList } from "@/hooks/use-presence";
-import type { Model, PaginatedResponse, Resource } from "@/types";
+import { getDownloadErrorMessage } from "@/lib/download";
+import type { ExportFormat, Model, PaginatedResponse, Resource } from "@/types";
 
 import { ContentBulkBar } from "./_components/bulk-bar";
 import { Filters } from "./_components/filters";
@@ -212,6 +216,27 @@ export function ModelListPage() {
   const clearSelection = () => setSelected(new Set());
   const actions = model?.admin.list.actions ?? [];
 
+  // Export writes every object matching the search and filters, in the
+  // list's ordering: all pages, not only the current one.
+  const exportFormats = model?.admin.list.export?.formats ?? [];
+  const { mutateAsync: runExport, isPending: isExporting } = useExport(
+    appLabel ?? "",
+  );
+  const exportList = async (format: ExportFormat) => {
+    try {
+      await runExport({
+        format,
+        params: {
+          ...filters,
+          search: search || undefined,
+          ordering: effectiveOrdering,
+        },
+      });
+    } catch (e) {
+      toast.error(await getDownloadErrorMessage(e));
+    }
+  };
+
   const queryKey = [
     "resources",
     appLabel,
@@ -300,6 +325,13 @@ export function ModelListPage() {
         <Toolbar>
           <Filters model={model} values={filters} onValuesChange={setFilters} />
           <div className="ml-auto flex items-center gap-2">
+            {exportFormats.length > 0 && (
+              <ExportMenu
+                formats={exportFormats}
+                disabled={isExporting}
+                onExport={exportList}
+              />
+            )}
             {view === "list" && !R.isNil(sortableBy) && (
               <SortSelect
                 model={model}
@@ -399,6 +431,7 @@ export function ModelListPage() {
           modelLabel={model.label}
           actions={actions}
           ids={Array.from(selected)}
+          ordering={effectiveOrdering}
           onDone={clearSelection}
         />
       )}

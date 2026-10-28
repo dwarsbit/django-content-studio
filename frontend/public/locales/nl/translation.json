@@ -137,6 +137,11 @@
     "select_all": "Alles selecteren",
     "select_row": "Rij selecteren"
   },
+  "export": {
+    "button": "Exporteren",
+    "csv": "CSV",
+    "xlsx": "Excel (.xlsx)"
+  },
   "media_library": {
     "title": "Mediabibliotheek",
     "description": "Beheer je media-bestanden hier.",

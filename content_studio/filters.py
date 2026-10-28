@@ -19,7 +19,14 @@ class LookupFilter(BaseFilterBackend):
 
     EXCLUDE_SYMBOL = "~"
 
-    NON_FILTER_FIELDS = ["search", "limit", "page", "ordering"]
+    NON_FILTER_FIELDS = [
+        "search",
+        "limit",
+        "page",
+        "ordering",
+        "export_format",
+        "export_scope",
+    ]
 
     def get_allowed_fields(self, view):
         """
@@ -46,10 +53,11 @@ class LookupFilter(BaseFilterBackend):
         """
         Build the queryset based on the query params and the view's model.
         Only apply filters in list endpoints (and moves, whose up and
-        down steps follow the filtered list), and only on the fields the
-        model admin declared in list_filter.
+        down steps follow the filtered list, and exports, which write
+        the filtered list), and only on the fields the model admin
+        declared in list_filter.
         """
-        if getattr(view, "action", None) in ("list", "move"):
+        if getattr(view, "action", None) in ("list", "move", "export"):
             try:
                 filter_kwargs, exclude_kwargs = self.get_filter_kwargs(
                     model_class=view.queryset.model,
