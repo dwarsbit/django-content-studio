@@ -96,7 +96,11 @@ columns it spans.
 - **`ScheduledTasksWidget`**: the status of scheduled tasks, from your task
   runner. `get_data` returns `tasks`: items with a `title`, `last_run_at`,
   `next_run_at`, `duration` and a `status` (`"RUNNING"`,
-  `"SCHEDULED"`, `"SUCCESS"` or `"FAILURE"`).
+  `"SCHEDULED"`, `"SUCCESS"` or `"FAILURE"`), and optionally a
+  `description` and an `error_message`. Times and durations that are `None`
+  are left out.
+- **`WebhookDeliveriesWidget`**: each webhook with its latest delivery, from
+  the [webhooks app](/docs/webhooks#a-deploy-button-and-a-dashboard-widget).
 - **`SpacingWidget(col_span)`**: empty space, to align the grid.
 
 Your own widgets subclass one of these: the admin can only show the built-in

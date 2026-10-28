@@ -1,26 +1,24 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FaPhotoVideo } from "react-icons/fa";
 import { useSearchParams } from "react-router";
-import { useDebounce } from "react-use";
 
+import { FilterTrigger } from "@/components/filters/filter-trigger";
+import { Search } from "@/components/search";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { Toggle } from "@/components/ui/toggle";
 import { useMediaTags } from "@/hooks/use-media-tags";
-import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/types";
 
 /**
- * The media library's filters: a debounced search and — with folders —
- * whether the search stays in the current folder (both in the URL),
- * plus the remembered file types (any-of) and tags (any-of,
- * comma-separated).
+ * The media library's filters, in the toolbar: a debounced search and —
+ * with folders — whether the search stays in the current folder (both
+ * in the URL), plus the remembered file types (any-of, a filter chip)
+ * and tags (any-of, comma-separated, a searchable select).
  */
 export function Filters({
   folders,
@@ -43,31 +41,7 @@ export function Filters({
   const search = searchParams.get("search") ?? "";
   const types = (type ?? "").split(",").filter(Boolean);
   const searchInFolder = searchParams.get("searchInFolder") === "true";
-
-  const [searchLocal, setSearchLocal] = useState(search);
   const { data: mediaTags } = useMediaTags();
-
-  useDebounce(
-    () => {
-      if ((searchParams.get("search") ?? "") === searchLocal) {
-        return;
-      }
-
-      // A new term strands the current page, so searching returns to
-      // the first page.
-      setSearchParams((searchParams) => {
-        if (searchLocal) {
-          searchParams.set("search", searchLocal);
-        } else {
-          searchParams.delete("search");
-        }
-        searchParams.delete("page");
-        return searchParams;
-      });
-    },
-    300,
-    [searchLocal, searchParams, setSearchParams],
-  );
 
   const toggleType = (type: string) => {
     const next = types.includes(type)
@@ -78,47 +52,42 @@ export function Filters({
   };
 
   return (
-    <div className="flex flex-1 items-center gap-2 flex-wrap">
-      <Input
-        className="w-[260px] shrink-0 max-w-full"
-        placeholder={t("common.search")}
-        value={searchLocal}
-        onChange={(e) => setSearchLocal(e.target.value)}
-      />
+    <>
+      <Search />
 
-      <div className="w-[240px] max-w-full">
-        <MultiSelect
-          options={(mediaTags ?? []).map((tag) => ({ value: tag, label: tag }))}
-          value={(tags ?? "")
-            .split(",")
-            .filter(Boolean)
-            .map((tag) => ({ value: tag, label: tag }))}
-          onChange={(options) =>
-            onTagsChange(
-              options.length
-                ? options.map((option) => option.value).join(",")
-                : undefined,
-            )
+      {folders && search && (
+        <Toggle
+          variant="outline"
+          pressed={searchInFolder}
+          className="h-8 px-2.5 rounded-lg font-medium text-muted-foreground data-[state=on]:text-foreground"
+          onPressedChange={(pressed) =>
+            setSearchParams((searchParams) => {
+              if (pressed) {
+                searchParams.set("searchInFolder", "true");
+              } else {
+                searchParams.delete("searchInFolder");
+              }
+              return searchParams;
+            })
           }
-          placeholder={t("media_library.filters.tags")}
-          emptyIndicator={t("media_library.filters.no_tags")}
-          hidePlaceholderWhenSelected
-        />
-      </div>
+        >
+          {t("media_library.within_folder")}
+        </Toggle>
+      )}
 
       <DropdownMenu>
-        <DropdownMenuTrigger
-          className={cn(
-            "h-8 px-3 inline-flex items-center gap-1.5 rounded-md border bg-background text-sm font-medium whitespace-nowrap cursor-pointer hover:bg-accent",
-            types.length > 0 && "bg-accent",
-          )}
-        >
-          <FaPhotoVideo />
-          {types.length
-            ? types
-                .map((type) => t(`media_library.file_types.${type}`))
-                .join(", ")
-            : t("media_library.filters.type")}
+        <DropdownMenuTrigger asChild>
+          <FilterTrigger
+            label={t("media_library.filters.type")}
+            value={
+              types.length
+                ? types
+                    .map((type) => t(`media_library.file_types.${type}`))
+                    .join(", ")
+                : undefined
+            }
+            onClear={() => onTypeChange(undefined)}
+          />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           {typeOptions.map((type) => (
@@ -136,27 +105,27 @@ export function Filters({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {folders && search && (
-        <button
-          type="button"
-          className={cn(
-            "h-8 px-3 rounded-md border bg-background text-sm font-medium whitespace-nowrap cursor-pointer hover:bg-accent",
-            searchInFolder && "bg-accent",
-          )}
-          onClick={() =>
-            setSearchParams((searchParams) => {
-              if (searchInFolder) {
-                searchParams.delete("searchInFolder");
-              } else {
-                searchParams.set("searchInFolder", "true");
-              }
-              return searchParams;
-            })
+      <div className="w-56 max-w-full">
+        <MultiSelect
+          options={(mediaTags ?? []).map((tag) => ({ value: tag, label: tag }))}
+          value={(tags ?? "")
+            .split(",")
+            .filter(Boolean)
+            .map((tag) => ({ value: tag, label: tag }))}
+          onChange={(options) =>
+            onTagsChange(
+              options.length
+                ? options.map((option) => option.value).join(",")
+                : undefined,
+            )
           }
-        >
-          {t("media_library.within_folder")}
-        </button>
-      )}
-    </div>
+          placeholder={t("media_library.filters.tags")}
+          emptyIndicator={t("media_library.filters.no_tags")}
+          hidePlaceholderWhenSelected
+          className="min-h-8 py-0.5 rounded-lg shadow-xs text-sm"
+          commandProps={{ className: "min-h-8" }}
+        />
+      </div>
+    </>
   );
 }

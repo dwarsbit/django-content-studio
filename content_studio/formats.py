@@ -1,5 +1,6 @@
 __all__ = [
     "BaseFormat",
+    "BlockFormat",
     "BooleanFormat",
     "DateFormat",
     "DateTimeFormat",
@@ -76,4 +77,8 @@ class TagFormat(BaseFormat):
 
 
 class JSONFormat(BaseFormat):
+    pass
+
+
+class BlockFormat(BaseFormat):
     pass

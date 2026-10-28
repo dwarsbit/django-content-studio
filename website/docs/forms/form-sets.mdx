@@ -162,8 +162,8 @@ expresses that, and saving reports conflicts.
 
 ## Components
 
-Besides fields, the edit page can show components: links, and the object's
-activity log.
+Besides fields, the edit page can show components: links, buttons that run
+your code, and the object's activity log.
 
 ```python
 # blog/admin.py
@@ -191,11 +191,130 @@ class ArticleStudio(ModelStudio):
   returns.
 - **`ButtonLink`**: the same as a button, with an optional `icon`. Set
   `copy = True` to add a button that copies the URL.
+- **`Button`**: a button that runs your code on the object; see below.
 - **`ActivityLog`**: the changes made to the object, newest first, under the
   title "Activity" or the `title` you pass.
 
 Only these components are supported; other component types are not. Links
-appear once the object is saved.
+and buttons appear once the object is saved.
+
+### Buttons
+
+A `Button` runs its `handle(obj, request)` method for the object being
+edited. What it returns is shown to the editor: a string as a notification,
+or a `ButtonResult` with a `message` and a `value`. The `value` appears once
+in a dialog with a copy button, for something the editor must copy, such as
+a generated key.
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import ActivityLog, Button
+from content_studio.signals import record_change
+
+from .models import Article
+
+
+class PublishButton(Button):
+    label = "Publish"
+    icon = "ph-bold ph-paper-plane-tilt"
+    confirm = "Publish this article?"
+    allowed_permissions = ["change"]
+
+    def is_visible(self, obj, request):
+        return obj.status != Article.Status.PUBLISHED
+
+    def handle(self, obj, request):
+        obj.status = Article.Status.PUBLISHED
+        obj.save(update_fields=["status"])
+        record_change(request, obj, "updated", "Published.")
+        return "Published."
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_sidebar = ["published_at", "author", PublishButton(), ActivityLog()]
+```
+
+- `label` and `icon`: the button's text and an icon class, like the studio's
+  `icon`.
+- `confirm`: a question to confirm before the button runs.
+- `destructive`: shows the button in the style for changes that cannot be
+  undone.
+- `allowed_permissions`: the studio permissions that allow the button, such
+  as `["change"]`, checked for the object; any one of them is enough.
+  Without it, everyone who can view the object can use the button.
+- `is_visible(obj, request)`: hide the button for some objects, such as
+  articles that are already published.
+
+The button checks the permissions and `is_visible` again when it runs. After
+it runs, the edit page shows the object's new values and loads its inlines
+again. Unsaved changes on the edit page are kept: the new values then appear
+after you save or reload. Record the changes your button makes with
+`record_change`, so they appear in the object's history.
+
+### The header
+
+Components in `edit_header` appear in the edit page's header, next to the
+save button. Use it for buttons that act on the whole object:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import Button
+
+from .models import Article
+
+
+class PublishButton(Button):
+    label = "Publish"
+    allowed_permissions = ["change"]
+
+    def handle(self, obj, request):
+        obj.status = Article.Status.PUBLISHED
+        obj.save(update_fields=["status"])
+        return "Published."
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_header = [PublishButton()]
+```
+
+An [inline studio](/docs/content/registering-models#inlines) takes
+`edit_header` too: its components appear in the header of the dialog in
+which an editor opens one of the inline's objects. That dialog shows the
+fields and components of the inline model's own studio, when it has one, and
+its links and buttons work there too. The inline studio's permissions decide
+who may use them. `edit_header` only takes
+components; system check `content_studio.E020` reports anything else.
+
+### After creating an object
+
+To tell editors something once they create an object, return it from the
+studio's `get_created_result(request, obj)`: a message, or a `ButtonResult`
+whose `value` appears once in a dialog with a copy button. This suits a value
+the admin never shows again, such as a generated key:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import ButtonResult
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    def get_created_result(self, request, obj):
+        return ButtonResult(
+            message="The article was created.",
+            value=obj.get_absolute_url(),
+        )
+```
 
 Each component gets an ID from its class and its label, so every worker of a
 deployment agrees on it. Two components of the same class with the same

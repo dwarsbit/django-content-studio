@@ -64,13 +64,25 @@ class ManualOrderModel(models.Model):
     # The order key determines the relative position of the object. Objects are ordered by ascending key.
     order_key = models.IntegerField(default=0, verbose_name=_("Order key"))
 
+    # Fields whose values partition the order, e.g. ["book"]: objects
+    # are only ordered among those sharing them.
+    order_scope: list[str] = []
+
     def reorder(self):
-        qs = type(self)._default_manager.all().order_by("order_key")
-        idx = 1
-        for obj in qs:
-            obj.order_key = idx
-            obj.save()
-            idx += 1
+        """
+        Renumber the order keys of this object's list from 1, keeping
+        the current order. Only the objects sharing this object's
+        order_scope values are renumbered, in one query.
+        """
+        from .reordering import renumber
+
+        opts = self._meta
+        scope = {
+            opts.get_field(name).attname: getattr(self, opts.get_field(name).attname)
+            for name in self.order_scope
+        }
+
+        renumber(type(self)._base_manager.filter(**scope), "order_key")
 
 
 class SoftDeletableModel(models.Model):

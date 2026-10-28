@@ -45,10 +45,11 @@ class LookupFilter(BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         """
         Build the queryset based on the query params and the view's model.
-        Only apply filters in list endpoints, and only on the fields the
+        Only apply filters in list endpoints (and moves, whose up and
+        down steps follow the filtered list), and only on the fields the
         model admin declared in list_filter.
         """
-        if getattr(view, "action", None) == "list":
+        if getattr(view, "action", None) in ("list", "move"):
             try:
                 filter_kwargs, exclude_kwargs = self.get_filter_kwargs(
                     model_class=view.queryset.model,

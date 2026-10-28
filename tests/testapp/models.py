@@ -1,5 +1,9 @@
 from django.db import models
 
+from content_studio.blocks import Block, BlockField
+from content_studio.fields import HTMLField
+from content_studio.models import ManualOrderModel
+
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
@@ -98,3 +102,53 @@ class Label(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Track(models.Model):
+    title = models.CharField(max_length=100)
+    # The manual order, per category; see TrackAdmin.reorder_field.
+    position = models.IntegerField(default=0)
+    category = models.ForeignKey(
+        Category, null=True, blank=True, on_delete=models.CASCADE
+    )
+    removed_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    def __str__(self):
+        return self.title
+
+
+class Step(ManualOrderModel):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    text = models.CharField(max_length=100)
+
+    order_scope = ["article"]
+
+    def __str__(self):
+        return self.text
+
+
+class TextBlock(Block):
+    heading = models.CharField(max_length=50, blank=True)
+    body = HTMLField()
+
+    class Meta:
+        description = "Rich text"
+        icon = "ph-bold ph-text-t"
+
+
+class CategoryLinkBlock(Block):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    published = models.DateField(null=True, blank=True)
+
+
+class ColumnsBlock(Block):
+    left = BlockField(blocks=[TextBlock, CategoryLinkBlock], blank=True, max_num=2)
+    right = BlockField(blocks=[TextBlock, CategoryLinkBlock], blank=True, max_num=2)
+
+
+class LandingPage(models.Model):
+    title = models.CharField(max_length=100)
+    body = BlockField(blocks=[TextBlock, CategoryLinkBlock, ColumnsBlock], max_num=3)
+
+    def __str__(self):
+        return self.title

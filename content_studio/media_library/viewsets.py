@@ -1,6 +1,4 @@
-from django.contrib.admin.models import LogEntry, DELETION
-from django.contrib.contenttypes.models import ContentType
-from django.db import router
+from django.db import router, transaction
 from django.db.models import Q
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models.deletion import Collector
@@ -17,6 +15,13 @@ from rest_framework.viewsets import ModelViewSet
 from content_studio.paginators import ContentPagination
 from content_studio.exceptions import NotConfigured
 from content_studio.settings import cs_settings
+from content_studio.signals import (
+    CREATED,
+    DELETED,
+    UPDATED,
+    collect_changes,
+    record_change,
+)
 from .serializers import build_media_folder_serializer, build_media_item_serializer
 
 # The bulk actions offered on the items endpoint.
@@ -98,6 +103,11 @@ class MediaLibraryViewSet(ModelViewSet):
             admin_site.token_backend.active_backend.authentication_class
         ]
 
+    def dispatch(self, request, *args, **kwargs):
+        # The request's changes are sent as one content_changed signal.
+        with collect_changes(request):
+            return super().dispatch(request, *args, **kwargs)
+
     def get_media_model(self):
         if not self._media_model:
             self._media_model = cs_settings.MEDIA_LIBRARY_MODEL
@@ -153,6 +163,20 @@ class MediaLibraryViewSet(ModelViewSet):
             return build_media_item_serializer(self._media_model)
 
         raise NotConfigured("The media library model is not defined.")
+
+    def perform_create(self, serializer):
+        record_change(self.request, serializer.save(), CREATED)
+
+    def perform_update(self, serializer):
+        record_change(self.request, serializer.save(), UPDATED)
+
+    def perform_destroy(self, instance):
+        using = router.db_for_write(type(instance))
+
+        # Logged first, as deleting clears the pk.
+        with transaction.atomic(using=using):
+            record_change(self.request, instance, DELETED)
+            instance.delete()
 
     def get_list_param(self, name):
         """A comma-separated query parameter as a list of values."""
@@ -224,6 +248,7 @@ class MediaLibraryViewSet(ModelViewSet):
 
         obj = self.get_object()
         crop_image(obj, crop_info)
+        record_change(request, obj, UPDATED, "Cropped.")
 
         return Response(self.get_serializer(obj).data)
 
@@ -283,27 +308,41 @@ class MediaLibraryViewSet(ModelViewSet):
 
             model.objects.filter(pk__in=ids).update(folder_id=folder_id)
 
+            for obj in objects:
+                record_change(request, obj, UPDATED, "Moved.")
+
             return Response({"count": len(objects)})
 
         # Deleting through the collector fires deletion signals, like
-        # the content bulk delete.
-        collector = Collector(using=router.db_for_write(model))
-        collector.collect(objects)
-        collector.delete()
+        # the content bulk delete; logged first, as deleting clears the
+        # objects' pks.
+        using = router.db_for_write(model)
 
-        content_type = ContentType.objects.get_for_model(model)
+        with transaction.atomic(using=using):
+            for obj in objects:
+                record_change(request, obj, DELETED)
 
-        for obj in objects:
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=DELETION,
-                content_type=content_type,
-                object_id=obj.pk,
-                object_repr=str(obj)[:200],
-                change_message="",
-            )
+            collector = Collector(using=using)
+            collector.collect(objects)
+            collector.delete()
 
         return Response({"count": len(objects)})
+
+
+def _collected(collector, models):
+    """The instances of the given models a collector will delete,
+    including the ones it deletes in bulk, ordered per model by pk."""
+    objects = []
+
+    for model, instances in collector.data.items():
+        if model in models:
+            objects.extend(sorted(instances, key=lambda obj: obj.pk))
+
+    for queryset in collector.fast_deletes:
+        if queryset.model in models:
+            objects.extend(queryset.order_by("pk"))
+
+    return objects
 
 
 class MediaFolderPermissions(DjangoModelPermissions):
@@ -347,6 +386,41 @@ class MediaFolderViewSet(ModelViewSet):
         self.authentication_classes = [
             admin_site.token_backend.active_backend.authentication_class
         ]
+
+    def dispatch(self, request, *args, **kwargs):
+        # The request's changes are sent as one content_changed signal.
+        with collect_changes(request):
+            return super().dispatch(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        record_change(self.request, serializer.save(), CREATED)
+
+    def perform_update(self, serializer):
+        record_change(self.request, serializer.save(), UPDATED)
+
+    def perform_destroy(self, instance):
+        """
+        Delete a folder with what cascades from it. The subfolders and
+        media items deleted with it are recorded too, so their deletion
+        reaches the history and content_changed; all of it is logged
+        first, as deleting clears the pks.
+        """
+        using = router.db_for_write(type(instance))
+        recorded = {type(instance), cs_settings.MEDIA_LIBRARY_MODEL}
+
+        with transaction.atomic(using=using):
+            collector = Collector(using=using)
+            collector.collect([instance])
+
+            record_change(self.request, instance, DELETED)
+
+            for obj in _collected(collector, recorded):
+                if obj != instance:
+                    record_change(
+                        self.request, obj, DELETED, "Deleted with its folder."
+                    )
+
+            collector.delete()
 
     def get_queryset(self):
         if not self._folder_model:

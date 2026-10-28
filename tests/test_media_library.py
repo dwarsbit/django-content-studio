@@ -3,6 +3,7 @@ Tests for the media library viewsets.
 """
 
 import pytest
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth import models as auth_models
 from django.core.files.base import ContentFile
 from django.test import override_settings
@@ -253,6 +254,8 @@ def test_bulk_delete_removes_items_and_logs(media_settings):
     assert response.status_code == 200
     assert response.json()["count"] == 1
     assert list(ItemModel.objects.values_list("pk", flat=True)) == [keep.pk]
+    # Logged with the pk the deletion clears.
+    assert LogEntry.objects.get().object_id == str(gone.pk)
 
 
 @pytest.mark.django_db
@@ -682,3 +685,134 @@ def test_bulk_move_without_folder_model_is_a_client_error():
 
     assert response.status_code == 400
     assert ItemModel.objects.get(pk=item.pk).folder_id is None
+
+
+def log_entries():
+    return list(
+        LogEntry.objects.order_by("pk").values_list(
+            "action_flag", "object_id", "change_message"
+        )
+    )
+
+
+@pytest.mark.django_db
+def test_uploading_editing_and_deleting_an_item_are_logged(media_root):
+    from django.contrib.admin.models import ADDITION, CHANGE, DELETION
+
+    user = make_superuser()
+    pk = upload(user, "photo.png", PNG_BYTES).json()["id"]
+
+    with override_settings(CONTENT_STUDIO=MEDIA_SETTINGS):
+        client = media_client(user)
+        client.patch(f"/api/media-library/items/{pk}", {"name": "x"}, format="json")
+        client.delete(f"/api/media-library/items/{pk}")
+
+    assert log_entries() == [
+        (ADDITION, str(pk), ""),
+        (CHANGE, str(pk), ""),
+        (DELETION, str(pk), ""),
+    ]
+
+
+@pytest.mark.django_db
+def test_bulk_move_and_crop_are_logged(media_settings, media_root):
+    from django.contrib.admin.models import CHANGE
+
+    from content_studio.admin import admin_site
+
+    folder = FolderModel.objects.create(name="target")
+    item = ItemModel.objects.create(
+        name="one", type="image", file=ContentFile(b"image", name="one.png")
+    )
+    client = media_client(make_superuser())
+    admin_site.crop_image = lambda obj, crop_info: None
+
+    try:
+        client.post(
+            "/api/media-library/items/bulk",
+            {"action": "move", "ids": [item.pk], "folder": folder.pk},
+            format="json",
+        )
+        client.post(
+            f"/api/media-library/items/{item.pk}/crop",
+            {"crop": CROP_INFO},
+            format="json",
+        )
+    finally:
+        del admin_site.crop_image
+
+    assert log_entries() == [
+        (CHANGE, str(item.pk), "Moved."),
+        (CHANGE, str(item.pk), "Cropped."),
+    ]
+
+
+@pytest.mark.django_db
+def test_creating_renaming_and_deleting_a_folder_are_logged(media_settings):
+    from django.contrib.admin.models import ADDITION, CHANGE, DELETION
+
+    client = media_client(make_superuser())
+    response = client.post("/api/media-library/folders", {"name": "one"}, format="json")
+    pk = response.json()["id"]
+    client.patch(f"/api/media-library/folders/{pk}", {"name": "two"}, format="json")
+    client.delete(f"/api/media-library/folders/{pk}")
+
+    assert log_entries() == [
+        (ADDITION, str(pk), ""),
+        (CHANGE, str(pk), ""),
+        (DELETION, str(pk), ""),
+    ]
+
+
+@pytest.mark.django_db
+def test_deleting_a_folder_logs_the_subfolders_deleted_with_it(media_settings):
+    from django.contrib.admin.models import DELETION
+
+    parent = FolderModel.objects.create(name="parent")
+    child = FolderModel.objects.create(name="child", parent=parent)
+    grandchild = FolderModel.objects.create(name="grandchild", parent=child)
+    # The test item model keeps its items (SET_NULL): nothing to log.
+    item = ItemModel.objects.create(name="kept", type="file", folder=child)
+
+    media_client(make_superuser()).delete(f"/api/media-library/folders/{parent.pk}")
+
+    assert log_entries() == [
+        (DELETION, str(parent.pk), ""),
+        (DELETION, str(child.pk), "Deleted with its folder."),
+        (DELETION, str(grandchild.pk), "Deleted with its folder."),
+    ]
+    assert not FolderModel.objects.exists()
+    item.refresh_from_db()
+    assert item.folder is None
+
+
+@pytest.mark.django_db
+def test_deleting_a_folder_logs_the_media_deleted_with_it(media_root):
+    from django.contrib.admin.models import DELETION
+
+    from content_studio.media_library.models import Folder, Media
+
+    folder = Folder.objects.create(name="photos")
+    media = [
+        Media.objects.create(
+            name=name, folder=folder, file=ContentFile(b"x", name=f"{name}.png")
+        )
+        for name in ("one", "two")
+    ]
+
+    with override_settings(
+        CONTENT_STUDIO={
+            "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Media",
+            "MEDIA_LIBRARY_FOLDER_MODEL": "content_studio.media_library.models.Folder",
+        }
+    ):
+        response = media_client(make_superuser()).delete(
+            f"/api/media-library/folders/{folder.pk}"
+        )
+
+    assert response.status_code == 204
+    assert not Media.objects.exists()
+    assert sorted(log_entries()) == sorted(
+        [(DELETION, str(folder.pk), "")]
+        + [(DELETION, str(obj.pk), "Deleted with its folder.") for obj in media]
+    )

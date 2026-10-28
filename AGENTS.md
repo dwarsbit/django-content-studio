@@ -8,7 +8,7 @@
 - **Package**: https://pypi.org/project/django-content-studio/
 - **License**: MIT
 - **Author**: Leon van der Grient (leon@dwarsbit.nl)
-- **Version**: 1.0.0-rc.1
+- **Version**: 1.1.0
 
 ### Design Principles
 
@@ -37,14 +37,16 @@ content_studio/
 ├── paginators.py        # Custom pagination classes
 ├── form.py              # Form and field definitions
 ├── fields.py            # Optional content fields (HTMLField, TagField, FlexField, ...)
+├── blocks.py            # BlockField and Block: an ordered list of content blocks
 ├── managers.py          # Managers for the base models (SingletonManager, SoftDeletableManager)
 ├── sanitizers.py        # HTML sanitizer (allowlist based on nh3)
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E016, W001-W012)
+├── checks.py            # System checks (content_studio.E001-E020, W001-W013)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
+├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions
 ├── dashboard/
@@ -193,6 +195,14 @@ locked Python dependencies, `npm audit --omit=dev` on the frontend runtime
 dependencies), and a packaging job that builds the wheel and verifies the
 compiled assets and translations on a fresh install.
 
+Releases: run the **Release** workflow (`release.yml`) from `main` with the
+version (`X.Y.Z` or `X.Y.Z-rc.N`). It requires green CI on `main` and a
+`## X.Y.Z (unreleased)` heading in the changelog, sets the version with
+`scripts/bump_version.py`, builds the package, commits and pushes the tag
+`vX.Y.Z`, publishes to PyPI (trusted publishing, environment `pypi`) and
+creates the GitHub Release. Its pushes use `GITHUB_TOKEN` and trigger no
+other workflows, so anything a release needs is a job in `release.yml`.
+
 ---
 
 ## Public API
@@ -275,6 +285,7 @@ Content Studio uses a widget system to render fields. Default mappings are defin
 - `JSONField` → `JSONWidget`
 - `HTMLField` → `RichTextWidget` (built into Content Studio)
 - `TagField` → `TagWidget` (built into Content Studio)
+- `BlockField` → `BlockWidget` (built into Content Studio; blocks declare plain model fields and are not models)
 - `FlexField` → `JSONSchemaWidget`, `MultipleChoiceField` → `MultiSelectWidget`, `URLPathField` → `URLPathWidget` (built into Content Studio)
 - `MediaField` / `ManyMediaField` → media picker widgets (built into the optional `content_studio.media_library` app)
 

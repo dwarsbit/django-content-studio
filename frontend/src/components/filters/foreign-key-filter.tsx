@@ -2,9 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import * as R from "ramda";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FiChevronDown } from "react-icons/fi";
 
-import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandGroup,
@@ -23,6 +21,7 @@ import { RelationOption } from "@/components/widgets/relation-option";
 import { useHttp } from "@/hooks/use-http";
 import type { Resource } from "@/types";
 
+import { FilterTrigger } from "./filter-trigger";
 import type { FilterComponentProps } from "./types";
 
 /**
@@ -74,23 +73,26 @@ export function ForeignKeyFilter({
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="h-8 font-medium text-foreground gap-2"
-        >
-          {field.verbose_name}
-          <span className="flex-1 flex items-center gap-2 min-w-0 empty:hidden font-normal text-muted-foreground">
-            <RelationGlyph
-              avatar={selected?.avatar}
-              initials={selected?.initials}
-              icon={selected?.icon}
-              size="size-4"
-              text="text-[9px]"
-            />
-            <span className="line-clamp-1">{selected?.__str__ ?? value}</span>
-          </span>
-          <FiChevronDown className="size-4 opacity-50" />
-        </Button>
+        <FilterTrigger
+          label={field.verbose_name}
+          value={
+            value ? (
+              <span className="inline-flex items-center gap-1.5 min-w-0">
+                <RelationGlyph
+                  avatar={selected?.avatar}
+                  initials={selected?.initials}
+                  icon={selected?.icon}
+                  size="size-4"
+                  text="text-[9px]"
+                />
+                <span className="truncate">{selected?.__str__ ?? value}</span>
+              </span>
+            ) : (
+              ""
+            )
+          }
+          onClear={() => onChange({ "": null })}
+        />
       </PopoverTrigger>
       <PopoverContent
         className="max-h-[400px] w-[var(--radix-popover-trigger-width)] overflow-hidden p-0 flex flex-col"

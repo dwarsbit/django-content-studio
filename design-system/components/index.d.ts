@@ -41,6 +41,8 @@ export interface CheckboxProps {
 }
 export declare function Checkbox(props: CheckboxProps): React.ReactElement;
 
+export declare function DragHandle(props: React.ButtonHTMLAttributes<HTMLButtonElement> & { disabled?: boolean }): React.ReactElement;
+
 export interface SwitchProps {
   checked?: boolean; defaultChecked?: boolean; onCheckedChange?: (checked: boolean) => void;
   disabled?: boolean; id?: string;

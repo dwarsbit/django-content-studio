@@ -7,17 +7,22 @@ media library models follow the documented model contract (``name``,
 library with a custom model instead of a framework-provided one.
 
 At the bottom of this module a model built on the built-in ``HTMLField``
-registers itself, so the rich text widget and formats are exercised too.
+and ``BlockField`` registers itself, so the rich text and block widgets
+and formats are exercised too.
 """
 
 from django.conf import settings
 from django.db import models
 
+from content_studio.blocks import Block, BlockField
 from content_studio.fields import HTMLField
+from content_studio.media_library.fields import MediaField
 
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
+    # The manual order; see CategoryStudio.reorder_field.
+    position = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = "category"
@@ -133,6 +138,8 @@ class Review(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     text = models.TextField()
     stars = models.PositiveIntegerField(default=5)
+    # The manual order per article; see ReviewInline.reorder_field.
+    position = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = "review"
@@ -154,9 +161,38 @@ class SiteSettings(models.Model):
         return self.site_name
 
 
+class TextBlock(Block):
+    body = HTMLField()
+
+    class Meta:
+        description = "Rich text with headings and lists"
+        icon = "ph-bold ph-text-t"
+
+
+class ImageBlock(Block):
+    image = MediaField("demo_blog.MediaItem", blank=False)
+    caption = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        description = "An image from the media library"
+        icon = "ph-bold ph-image"
+
+
+class ColumnsBlock(Block):
+    left = BlockField(blocks=[TextBlock, ImageBlock], blank=True, max_num=4)
+    right = BlockField(blocks=[TextBlock, ImageBlock], blank=True, max_num=4)
+
+    class Meta:
+        description = "Two columns of blocks"
+        icon = "ph-bold ph-columns"
+
+
 class LandingPage(models.Model):
     title = models.CharField(max_length=200)
     body = HTMLField(blank=True)
+    sections = BlockField(
+        blocks=[TextBlock, ImageBlock, ColumnsBlock], blank=True, max_num=20
+    )
 
     class Meta:
         verbose_name = "landing page"

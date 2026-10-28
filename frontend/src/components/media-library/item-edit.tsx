@@ -2,22 +2,52 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { type Resolver, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import {
+  PiCropBold,
+  PiCrosshairBold,
+  PiDownloadSimpleBold,
+  PiLinkBold,
+  PiTrashBold,
+  PiXBold,
+} from "react-icons/pi";
+import { useCopyToClipboard } from "react-use";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { CropField } from "@/components/media-library/crop-field";
+import { describeFile, FileIcon } from "@/components/media-library/file-meta";
 import { FocalPointField } from "@/components/media-library/focus-point-field";
+import { FolderPicker } from "@/components/media-library/folder-picker";
+import { useDeleteItem } from "@/components/media-library/item-card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TagInput } from "@/components/ui/tag-input";
@@ -28,6 +58,12 @@ import { useUpdateMedia } from "@/hooks/use-update-media";
 import { getErrorMessage } from "@/lib/utils";
 import type { CropValue, FocalPointValue, MediaItem } from "@/types";
 
+/**
+ * A file's details, in a sheet from the right: the preview, the quick
+ * actions, the editable name, alt text and tags, and Delete in the
+ * footer. Crop and focal point open in their own dialog from the
+ * sheet; their changes are applied when the file is saved.
+ */
 export function ItemEdit({
   itemId,
   open,
@@ -38,11 +74,11 @@ export function ItemEdit({
   onClose: VoidFunction;
 }) {
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[800px] p-0" showCloseButton={false}>
+    <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <SheetContent className="w-[400px] sm:max-w-[400px] gap-0 p-0">
         <ItemEditContent itemId={itemId} onClose={onClose} />
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -53,24 +89,41 @@ function ItemEditContent({
   itemId: string;
   onClose: VoidFunction;
 }) {
+  const { t } = useTranslation();
   const { data } = useRetrieveMedia(itemId);
 
   return data ? (
-    <EditForm data={data} onSave={onClose} />
+    <EditForm data={data} onClose={onClose} />
   ) : (
-    <div className="flex items-center justify-center h-full py-12 sm:py-24">
-      <Spinner />
-    </div>
+    <>
+      <SheetHeader className="sr-only">
+        <SheetTitle>{t("media_library.title")}</SheetTitle>
+      </SheetHeader>
+      <div className="flex items-center justify-center h-full py-12 sm:py-24">
+        <Spinner />
+      </div>
+    </>
   );
 }
 
-function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
+type ImageTab = "crop" | "focus";
+
+function EditForm({
+  data,
+  onClose,
+}: {
+  data: MediaItem;
+  onClose: VoidFunction;
+}) {
   const { t } = useTranslation();
   const { data: discover } = useDiscover();
   const { mutateAsync } = useUpdateMedia();
   const { mutateAsync: cropMedia } = useCropMedia();
+  const { remove, isPending: isDeleting } = useDeleteItem();
+  const [, copy] = useCopyToClipboard();
 
   const mediaLibrary = discover?.media_library;
+  const hasFolders = mediaLibrary?.folders ?? false;
 
   // Crop and focal point only apply to images.
   const isImage = data.type === "image";
@@ -82,7 +135,8 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
       ] ?? null)
     : null;
 
-  const [tab, setTab] = useState<"crop" | "focus">("crop");
+  // The image dialog, opened on the crop or the focal point tab.
+  const [imageTab, setImageTab] = useState<ImageTab | null>(null);
   // A crop selection is not stored on the item: undefined means no crop
   // is sent. The focal point lives on the item's focal point attribute.
   const [crop, setCrop] = useState<CropValue | undefined>(undefined);
@@ -119,7 +173,7 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
 
       // The crop is applied after the update: it goes through the
       // site's crop_image hook rather than the item's own fields. A
-      // failed crop keeps the dialog open, so it can be retried.
+      // failed crop keeps the sheet open, so it can be retried.
       if (cropEnabled && crop) {
         try {
           await cropMedia({ id: data.id, crop });
@@ -129,21 +183,194 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
         }
       }
 
-      onSave();
+      onClose();
     } catch (e: unknown) {
       toast.error(getErrorMessage(e));
     }
   };
 
+  const typeLabel = t(`media_library.file_types.${data.type}`);
+
   return (
     <Form {...form}>
-      <div className="flex">
-        {isImage && (
-          <div className="w-96 p-6 bg-muted rounded-l-lg flex items-center">
+      <SheetHeader className="border-b pr-12 relative">
+        <SheetTitle className="truncate">{data.name}</SheetTitle>
+        <SheetDescription>{describeFile(data, typeLabel)}</SheetDescription>
+        <SheetClose asChild>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t("common.close")}
+            className="absolute top-3.5 right-3 text-muted-foreground"
+          >
+            <PiXBold />
+          </Button>
+        </SheetClose>
+      </SheetHeader>
+
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar">
+        <div className="aspect-[4/3] bg-muted border-b flex items-center justify-center">
+          {isImage ? (
+            <img
+              alt={data.alt_text}
+              src={data.thumbnail}
+              className="size-full object-contain"
+            />
+          ) : (
+            <FileIcon item={data} className="size-10 text-muted-foreground" />
+          )}
+        </div>
+
+        <div className="p-4 flex items-center gap-2 flex-wrap border-b">
+          {cropEnabled && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImageTab("crop")}
+            >
+              <PiCropBold />
+              {t("media_library.crop")}
+            </Button>
+          )}
+          {focalPointAttr && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImageTab("focus")}
+            >
+              <PiCrosshairBold />
+              {t("media_library.focal_point.title")}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              copy(data.file);
+              toast.success(t("common.copied_to_clipboard"));
+            }}
+          >
+            <PiLinkBold />
+            {t("media_library.copy_url")}
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <a href={data.file} download>
+              <PiDownloadSimpleBold />
+              {t("common.download")}
+            </a>
+          </Button>
+          {hasFolders && (
+            <FolderPicker
+              label={t("common.move")}
+              onSelect={async (folder) => {
+                try {
+                  await mutateAsync({ ...data, folder });
+                  toast.success(t("media_library.moved"));
+                } catch (e: unknown) {
+                  toast.error(getErrorMessage(e));
+                }
+              }}
+            />
+          )}
+        </div>
+
+        <div className="p-4 space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("media_library.fields.name")}</FormLabel>
+                <FormControl>
+                  <Input
+                    value={field.value}
+                    onChange={(e) => field.onChange(e.target.value)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="alt_text"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("media_library.fields.alt_text")}</FormLabel>
+                <FormControl>
+                  <Input
+                    value={field.value}
+                    onChange={(e) => field.onChange(e.target.value)}
+                  />
+                </FormControl>
+                {isImage && (
+                  <FormDescription>
+                    {t("media_library.fields.alt_text_hint")}
+                  </FormDescription>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="tags"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("media_library.fields.tags")}</FormLabel>
+                <FormControl>
+                  <TagInput {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
+
+      <SheetFooter className="border-t flex-row items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isDeleting}
+          className="mr-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={async () => {
+            if (await remove(data)) {
+              onClose();
+            }
+          }}
+        >
+          <PiTrashBold />
+          {t("common.delete")}
+        </Button>
+        <SheetClose asChild>
+          <Button variant="outline">{t("common.cancel")}</Button>
+        </SheetClose>
+        <Button onClick={(e) => form.handleSubmit(onSubmit)(e)}>
+          {t("common.save")}
+        </Button>
+      </SheetFooter>
+
+      <Dialog
+        open={imageTab !== null}
+        onOpenChange={(isOpen) => !isOpen && setImageTab(null)}
+      >
+        <DialogContent className="sm:max-w-[720px]">
+          <DialogHeader>
+            <DialogTitle>
+              {imageTab === "focus"
+                ? t("media_library.focal_point.title")
+                : t("media_library.crop")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("media_library.image_dialog_hint")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted rounded-lg p-4 flex items-center justify-center">
             {cropEnabled && focalPointAttr ? (
               <Tabs
-                value={tab}
-                onValueChange={(value) => setTab(value as "crop" | "focus")}
+                value={imageTab ?? "crop"}
+                onValueChange={(value) => setImageTab(value as ImageTab)}
                 className="w-full"
               >
                 <TabsList className="mb-3">
@@ -183,75 +410,15 @@ function EditForm({ data, onSave }: { data: MediaItem; onSave: VoidFunction }) {
                 onChange={setFocalPoint}
                 image={data.thumbnail}
               />
-            ) : (
-              <img
-                alt={data.alt_text}
-                src={data.thumbnail}
-                className="w-full rounded"
-              />
-            )}
+            ) : null}
           </div>
-        )}
-
-        <div className="flex-1 flex flex-col p-6">
-          <div className="space-y-3 flex-1">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="alt_text"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Alt text</FormLabel>
-                  <FormControl>
-                    <Input
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="tags"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tags</FormLabel>
-                  <FormControl>
-                    <TagInput {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="flex justify-end items-center gap-3 mt-12">
+          <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">{t("common.cancel")}</Button>
+              <Button>{t("common.done")}</Button>
             </DialogClose>
-            <Button onClick={(e) => form.handleSubmit(onSubmit)(e)}>
-              {t("common.save")}
-            </Button>
-          </div>
-        </div>
-      </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Form>
   );
 }

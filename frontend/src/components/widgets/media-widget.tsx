@@ -1,3 +1,4 @@
+import bytes from "bytes";
 import * as R from "ramda";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -42,55 +43,77 @@ function SingleMedia({
   onChange: (value: MediaItem | null) => void;
 }) {
   const { t } = useTranslation();
+  const chooser = (
+    <SelectDialog
+      multiple={!!field.multiple}
+      onSelect={(v) => onChange?.(Array.isArray(v) ? (v[0] ?? null) : v)}
+    >
+      <Button variant="outline" size="sm" type="button">
+        {value ? (
+          t("widgets.media_widget.replace")
+        ) : (
+          <>
+            <PiImage />
+            {t("widgets.media_widget.select_media")}
+          </>
+        )}
+      </Button>
+    </SelectDialog>
+  );
+
+  if (!value) {
+    return (
+      <div className="flex items-center gap-3 rounded-md border border-dashed bg-background p-2 pr-3">
+        <span className="size-14 shrink-0 rounded bg-muted flex items-center justify-center text-muted-foreground">
+          <PiImage className="size-5" />
+        </span>
+        <div className="flex-1 min-w-0 text-sm text-muted-foreground">
+          {t("widgets.media_widget.empty")}
+        </div>
+        {!field.readonly && chooser}
+      </div>
+    );
+  }
 
   return (
-    <div className="group relative">
-      {value ? (
-        value.type === "image" ? (
-          <Avatar className="w-full h-64 rounded-md">
-            <AvatarImage
-              src={value.thumbnail}
-              alt=""
-              className="object-cover"
-            />
-          </Avatar>
-        ) : (
-          <div className="w-full h-64 rounded-md bg-accent flex items-center justify-center">
-            <PiFileBold size={24} />
-          </div>
-        )
-      ) : (
+    <div className="flex items-center gap-3 rounded-md border bg-background p-2 pr-3">
+      {value.type === "image" && value.thumbnail ? (
         <img
-          src={`${R.propOr("/", "DCS_STATIC_PREFIX", window)}img/media_placeholder.svg`}
+          src={value.thumbnail}
           alt=""
-          className="w-full h-64 object-cover rounded-md"
+          draggable={false}
+          className="size-14 shrink-0 rounded object-cover"
         />
+      ) : (
+        <span className="size-14 shrink-0 rounded bg-muted border flex items-center justify-center text-muted-foreground">
+          <PiFileBold className="size-5" />
+        </span>
       )}
-
-      <div className="absolute invisible group-hover:visible top-0 bottom-0 left-0 right-0 bg-gray-950/40  rounded-md flex items-center justify-center">
-        <div className="flex gap-2">
-          <SelectDialog
-            multiple={!!field.multiple}
-            onSelect={(v) => onChange?.(Array.isArray(v) ? (v[0] ?? null) : v)}
-          >
-            <Button variant="outline">
-              {t("widgets.media_widget.select_media")}
-            </Button>
-          </SelectDialog>
-          {!field.required && !field.readonly && !R.isNil(value) && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.preventDefault();
-                onChange?.(null);
-              }}
-            >
-              <PiXBold className="size-3.5" />
-            </Button>
-          )}
+      <div className="flex-1 min-w-0">
+        <div className="font-medium truncate">{value.name}</div>
+        <div className="text-xs text-muted-foreground">
+          {t(`media_library.file_types.${value.type}`)}
+          {!R.isNil(value.size) && value.size > 0
+            ? ` · ${bytes(value.size * 1000)}`
+            : ""}
         </div>
       </div>
+      {!field.readonly && chooser}
+      {!field.required && !field.readonly && (
+        <Button
+          variant="ghost"
+          size="sm"
+          type="button"
+          className="text-muted-foreground"
+          onClick={(e) => {
+            e.preventDefault();
+            onChange?.(null);
+          }}
+        >
+          <PiXBold />
+          {t("widgets.media_widget.remove")}
+        </Button>
+      )}
     </div>
   );
 }

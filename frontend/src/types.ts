@@ -80,9 +80,13 @@ export interface SessionUser {
 export interface ModelGroup {
   models: string[];
   name: string;
-  icon: null;
-  color: TailwindColor;
+  icon: string | null;
+  // Accepted for compatibility; the main menu no longer shows it.
+  color: TailwindColor | null;
   label: string;
+  // Starts collapsed in the main menu; the group holding the current
+  // model is always expanded.
+  collapsed?: boolean;
 }
 
 export interface Model {
@@ -106,9 +110,13 @@ export interface Model {
       filter: string[];
       trash?: boolean;
       sortable_by: string[] | null;
+      // Whether the user may reorder the list (reorder_field is set).
+      reorderable?: boolean;
       actions: BulkAction[];
     };
     edit: {
+      // Components in the edit page's header, next to the save button.
+      header?: FormField[];
       main: FormSetGroup[];
       sidebar: FormSet[];
       // The create form's read-only fields (get_readonly_fields without
@@ -126,16 +134,24 @@ export interface Model {
           header: string | null;
           format: string | null;
         }[];
+        reorderable?: boolean;
+        // Components in the header of an inline row's editor.
+        header?: FormField[];
+        // The inline studio's permissions; unset grants everything the
+        // inline endpoints allow.
+        permissions?: Permissions;
       }[];
     };
-    permissions: {
-      add_permission: boolean;
-      change_permission: boolean;
-      delete_permission: boolean;
-      view_permission: boolean;
-    };
+    permissions: Permissions;
   };
   fields: Record<string, ModelField>;
+}
+
+export interface Permissions {
+  add_permission: boolean;
+  change_permission: boolean;
+  delete_permission: boolean;
+  view_permission: boolean;
 }
 
 export interface BulkAction {
@@ -163,6 +179,24 @@ export interface ModelField {
   related_model?: string;
   json_schema?: Record<string, unknown>;
   multiple?: boolean;
+  // BlockField: the block types and the limits on the number of blocks.
+  blocks?: BlockDefinition[];
+  min_num?: number | null;
+  max_num?: number | null;
+}
+
+export interface BlockDefinition {
+  name: string;
+  verbose_name: string;
+  description: string;
+  icon: string | null;
+  fields: Record<string, ModelField>;
+}
+
+export interface BlockValue {
+  id: string;
+  type: string;
+  data: Record<string, unknown>;
 }
 
 /**
@@ -222,13 +256,24 @@ export interface FormField {
   // model field's default widget when null.
   widget: FieldWidget | null;
   component_id: string;
-  component_type: "Link" | "LinkButton" | "ActivityLog";
+  component_type: "Link" | "LinkButton" | "Button" | "ActivityLog";
   copy: boolean;
   icon: string;
   title?: string | null;
+  // Button: a question to confirm first, and the destructive style.
+  confirm?: string | null;
+  destructive?: boolean;
+}
+
+// What a server-side button reports back: a message, and optionally a
+// value shown once (such as a generated secret).
+export interface ButtonResult {
+  message: string | null;
+  value: string | null;
 }
 
 export enum FieldType {
+  BlockField = "BlockField",
   BooleanField = "BooleanField",
   CharField = "CharField",
   DateField = "DateField",
@@ -247,6 +292,7 @@ export enum FieldType {
 }
 
 export enum FieldFormat {
+  BlockFormat = "BlockFormat",
   BooleanFormat = "BooleanFormat",
   DateFormat = "DateFormat",
   DateTimeFormat = "DateTimeFormat",
@@ -263,6 +309,7 @@ export enum FieldFormat {
 }
 
 export enum FieldWidget {
+  BlockWidget = "BlockWidget",
   CheckboxWidget = "CheckboxWidget",
   DateTimeWidget = "DateTimeWidget",
   DateWidget = "DateWidget",
@@ -366,6 +413,16 @@ export interface MainMenuLinkConfig {
   icon: string | null;
   color: TailwindColor | null;
   label: string;
+  // The position among the menu's links and buttons: lower first.
+  weight?: number;
+}
+
+export interface MainMenuButtonConfig {
+  label: string;
+  icon: string | null;
+  color: TailwindColor | null;
+  confirm: string | null;
+  weight?: number;
 }
 
 export interface IFramePageConfig {
@@ -385,9 +442,17 @@ export interface IFramePageExtension {
   config: IFramePageConfig;
 }
 
-export type Extension = MainMenuLinkExtension | IFramePageExtension;
+export interface MainMenuButtonExtension {
+  extension_id: string;
+  extension_type: ExtensionType.MainMenuButton;
+  config: MainMenuButtonConfig;
+}
+
+export type Extension =
+  MainMenuLinkExtension | MainMenuButtonExtension | IFramePageExtension;
 
 export enum ExtensionType {
   MainMenuLink = "MainMenuLink",
+  MainMenuButton = "MainMenuButton",
   IFramePage = "IFramePage",
 }

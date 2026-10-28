@@ -1,11 +1,6 @@
 import * as R from "ramda";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { RelationGlyph } from "@/components/widgets/relation-glyph";
 import { useDiscover } from "@/hooks/use-discover";
 import { cn } from "@/lib/utils";
@@ -43,18 +38,16 @@ export function ForeignKeyFormat({
 
   if (isUser && !hasDisplayGlyph) {
     return (
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         {Boolean(value) && (
-          <Tooltip>
-            <TooltipContent>{label}</TooltipContent>
-            <TooltipTrigger asChild>
-              <Avatar className="size-6">
-                <AvatarFallback className="text-xs">
-                  {(label ?? "").slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </TooltipTrigger>
-          </Tooltip>
+          <>
+            <Avatar className="size-6">
+              <AvatarFallback className="text-[10px] font-semibold bg-secondary text-secondary-foreground">
+                {(label ?? "").slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="truncate">{label}</span>
+          </>
         )}
       </div>
     );

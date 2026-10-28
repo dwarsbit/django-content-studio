@@ -2,8 +2,19 @@ import bytes from "bytes";
 import * as R from "ramda";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { PiCaretUpDownBold } from "react-icons/pi";
+import { TbCaretDownFilled, TbCaretUpFilled } from "react-icons/tb";
 
+import { Thumb } from "@/components/media-library/file-meta";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/types";
 
@@ -40,27 +51,20 @@ export function TableView({
   const columns: {
     name: string;
     label: string;
-    /** The API's ordering field; null for unsortable columns. */
+    /** Whether the API orders by this column. */
     sortable: boolean;
     render(item: MediaItem): ReactNode;
+    /** Classes of the header and the cells. */
     className?: string;
+    numeric?: boolean;
   }[] = [
     {
       name: "name",
       label: t("media_library.columns.name"),
       sortable: true,
       render: (item) => (
-        <span className="flex items-center gap-3 min-w-0">
-          {item.type === "image" && item.thumbnail ? (
-            <img
-              draggable={false}
-              src={item.thumbnail}
-              alt=""
-              className="size-8 rounded object-cover shrink-0"
-            />
-          ) : (
-            <span className="size-8 rounded bg-muted shrink-0" />
-          )}
+        <span className="flex items-center gap-2.5 min-w-0">
+          <Thumb item={item} className="size-7" />
           <span className="font-medium line-clamp-1 break-all">
             {item.name}
           </span>
@@ -71,12 +75,17 @@ export function TableView({
       name: "type",
       label: t("media_library.columns.type"),
       sortable: true,
-      render: (item) => t(`media_library.file_types.${item.type}`),
+      render: (item) => (
+        <span className="text-muted-foreground">
+          {t(`media_library.file_types.${item.type}`)}
+        </span>
+      ),
     },
     {
       name: "size",
       label: t("media_library.columns.size"),
       sortable: true,
+      numeric: true,
       render: (item) =>
         !R.isNil(item.size) && item.size > 0 ? bytes(item.size * 1000) : "",
       className: "hidden md:table-cell",
@@ -85,7 +94,19 @@ export function TableView({
       name: "tags",
       label: t("media_library.columns.tags"),
       sortable: false,
-      render: (item) => item.tags.join(", "),
+      render: (item) => (
+        <span className="flex items-center gap-1">
+          {item.tags.map((tag) => (
+            <Badge
+              key={tag}
+              variant="outline"
+              className="text-muted-foreground"
+            >
+              {tag}
+            </Badge>
+          ))}
+        </span>
+      ),
       className: "hidden lg:table-cell",
     },
   ];
@@ -101,88 +122,104 @@ export function TableView({
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-accent">
-            <th className="w-10 px-3 py-2">
-              <input
-                type="checkbox"
+    <div className="overflow-hidden rounded-lg border bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-10">
+              <Checkbox
                 aria-label={t("bulk.select_all")}
                 checked={allSelected}
-                onChange={() =>
+                onCheckedChange={() =>
                   onToggleAll(items.map((item) => String(item.id)))
                 }
-                className="size-4 accent-primary cursor-pointer"
               />
-            </th>
-            {columns.map((column) => (
-              <th
-                key={column.name}
-                aria-sort={
-                  column.sortable
-                    ? ordering === column.name
-                      ? "ascending"
-                      : ordering === `-${column.name}`
-                        ? "descending"
-                        : "none"
-                    : undefined
-                }
-                className={cn("px-3 py-2 text-left", column.className)}
-              >
-                {column.sortable ? (
-                  <button
-                    type="button"
-                    onClick={() => cycleOrdering(column.name)}
-                    className={cn(
-                      "flex items-center gap-1 cursor-pointer hover:text-foreground outline-none",
-                      "focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
-                    )}
-                  >
-                    {column.label}
-                    {ordering === column.name ||
-                    ordering === `-${column.name}` ? (
-                      <PiCaretUpDownBold className="size-3" />
-                    ) : (
-                      <PiCaretUpDownBold className="size-3 opacity-30" />
-                    )}
-                  </button>
-                ) : (
-                  column.label
-                )}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr
-              key={item.id}
-              className="border-b last:border-b-0 cursor-pointer hover:bg-accent"
-              onClick={() => onOpen(String(item.id))}
-            >
-              <td className="px-3 py-2">
-                <input
-                  type="checkbox"
-                  aria-label={t("common.select_item")}
-                  checked={selectedIds.has(String(item.id))}
-                  onChange={() => onToggleSelect(String(item.id))}
-                  onClick={(e) => e.stopPropagation()}
-                  className="size-4 accent-primary cursor-pointer"
-                />
-              </td>
-              {columns.map((column) => (
-                <td
+            </TableHead>
+            {columns.map((column) => {
+              const active =
+                ordering === column.name || ordering === `-${column.name}`;
+              const descending = ordering === `-${column.name}`;
+
+              return (
+                <TableHead
                   key={column.name}
-                  className={cn("px-3 py-2", column.className)}
+                  aria-sort={
+                    column.sortable
+                      ? active
+                        ? descending
+                          ? "descending"
+                          : "ascending"
+                        : "none"
+                      : undefined
+                  }
+                  className={cn(column.className, {
+                    "[&_div]:justify-end": column.numeric,
+                  })}
                 >
-                  {column.render(item)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  {column.sortable ? (
+                    <button
+                      type="button"
+                      onClick={() => cycleOrdering(column.name)}
+                      className={cn(
+                        "group inline-flex items-center gap-1 cursor-pointer rounded-sm hover:text-foreground outline-none",
+                        "focus-visible:ring-2 focus-visible:ring-ring",
+                        { "text-foreground": active },
+                      )}
+                    >
+                      <span className="first-letter:uppercase">
+                        {column.label}
+                      </span>
+                      <span className={cn({ invisible: !active })}>
+                        {descending ? (
+                          <TbCaretUpFilled />
+                        ) : (
+                          <TbCaretDownFilled />
+                        )}
+                      </span>
+                    </button>
+                  ) : (
+                    column.label
+                  )}
+                </TableHead>
+              );
+            })}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => {
+            const selected = selectedIds.has(String(item.id));
+
+            return (
+              <TableRow
+                key={item.id}
+                data-state={selected ? "selected" : undefined}
+                onClick={() => onOpen(String(item.id))}
+              >
+                <TableCell
+                  className="w-10"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <Checkbox
+                    aria-label={t("common.select_item")}
+                    checked={selected}
+                    onCheckedChange={() => onToggleSelect(String(item.id))}
+                  />
+                </TableCell>
+                {columns.map((column) => (
+                  <TableCell
+                    key={column.name}
+                    className={cn(column.className, {
+                      "text-right tabular-nums": column.numeric,
+                    })}
+                  >
+                    {column.render(item)}
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

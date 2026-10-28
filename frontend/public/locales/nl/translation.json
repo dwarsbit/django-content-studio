@@ -19,7 +19,8 @@
     "select_item": "Item selecteren",
     "download": "Downloaden",
     "done": "Klaar",
-    "copied_to_clipboard": "Gekopieerd naar het klembord!"
+    "copied_to_clipboard": "Gekopieerd naar het klembord!",
+    "close": "Sluiten"
   },
   "app": {
     "copied_to_clipboard": "Gekopieerd naar klembord",
@@ -60,7 +61,10 @@
     "media_library": "Mediabibliotheek",
     "settings": "Instellingen",
     "log_out": "Uitloggen",
-    "theme": "Thema"
+    "theme": "Thema",
+    "collapse": "Menu inklappen",
+    "expand": "Menu uitklappen",
+    "title": "Hoofdmenu"
   },
   "editor": {
     "title_create": "Maak {{modelName}} aan",
@@ -75,7 +79,8 @@
     "unique_warning": "\"{{object}}\" ({{modelName}}) gebruikt deze {{fieldName}} al.",
     "unique_warning_trashed": "\"{{object}}\" ({{modelName}}, in de prullenbak) gebruikt deze {{fieldName}} al.",
     "unique_warning_hidden": "Een ander object gebruikt deze {{fieldName}} al.",
-    "unique_warning_hint": "Opslaan mislukt tenzij je dit wijzigt."
+    "unique_warning_hint": "Opslaan mislukt tenzij je dit wijzigt.",
+    "unsaved_changes": "Niet-opgeslagen wijzigingen"
   },
   "list_view": {
     "table_view": "Tabelweergave",
@@ -93,8 +98,30 @@
       "yes": "Ja",
       "no": "Nee",
       "min": "Min",
-      "max": "Max"
-    }
+      "max": "Max",
+      "is": "is",
+      "clear": "{{field}} wissen"
+    },
+    "tabs_all": "Alle {{model}}",
+    "count_one": "{{count}} {{singular}}",
+    "count_other": "{{count}} {{plural}}",
+    "page_of": "Pagina {{current}} van {{pages}}",
+    "view": "Weergave"
+  },
+  "reorder": {
+    "drag": "Sleep om te herschikken",
+    "menu": "Verplaatsen",
+    "move_up": "Omhoog verplaatsen",
+    "move_down": "Omlaag verplaatsen",
+    "move_first": "Naar boven verplaatsen",
+    "move_last": "Naar beneden verplaatsen",
+    "disabled_ordering": "Kies de standaardvolgorde om te herschikken",
+    "disabled_search": "Wis de zoekopdracht om te herschikken",
+    "instructions": "Druk op spatie of enter om een item op te pakken. Verplaats het met de pijltjestoetsen, druk nogmaals op spatie of enter om het neer te zetten, of op escape om te annuleren.",
+    "picked_up": "{{item}} opgepakt.",
+    "over": "{{item}} staat boven {{over}}.",
+    "dropped": "{{item}} neergezet.",
+    "cancelled": "Verplaatsen van {{item}} geannuleerd."
   },
   "bulk": {
     "selected": "{{count}} geselecteerd",
@@ -127,7 +154,8 @@
     "filters": {
       "type": "Type",
       "tags": "Tags",
-      "no_tags": "Nog geen tags"
+      "no_tags": "Nog geen tags",
+      "folder": "Map"
     },
     "columns": {
       "name": "Naam",
@@ -140,6 +168,22 @@
       "title": "Focuspunt",
       "set": "Focuspunt instellen",
       "remove": "Focuspunt verwijderen"
+    },
+    "folders": "Mappen",
+    "folder_path": "Huidige map",
+    "file_actions": "Bestandsacties",
+    "empty_title": "Nog geen bestanden",
+    "empty_description": "Sleep bestanden hierheen om ze te uploaden, of gebruik de uploadknop.",
+    "no_results": "Probeer een andere zoekterm, of wis de type- en tagfilters.",
+    "image_dialog_hint": "Wijzigingen worden toegepast als je het bestand opslaat.",
+    "moved": "Verplaatst",
+    "collapse_folder": "{{name}} inklappen",
+    "expand_folder": "{{name}} uitklappen",
+    "fields": {
+      "name": "Naam",
+      "alt_text": "Alt-tekst",
+      "alt_text_hint": "Beschrijft de afbeelding voor mensen die haar niet kunnen zien.",
+      "tags": "Tags"
     }
   },
   "widgets": {
@@ -161,7 +205,10 @@
       "select_media": "Selecteer media",
       "select_n_media": "Selecteer {{n}} media",
       "dialog_title": "Selecteer media",
-      "upload_label": "Upload media"
+      "upload_label": "Upload media",
+      "replace": "Vervangen",
+      "remove": "Verwijderen",
+      "empty": "Nog geen bestand gekozen."
     },
     "tag_widget": {
       "placeholder": "Voeg een tag toe..."
@@ -175,6 +222,28 @@
     },
     "date_picker": {
       "placeholder": "Selecteer een datum"
+    },
+    "block_widget": {
+      "add_block": "Blok toevoegen",
+      "search": "Blokken zoeken",
+      "no_results": "Geen blokken gevonden",
+      "empty": "Nog geen blokken",
+      "count": "{{count}} van {{max}} blokken",
+      "max_reached": "Dit veld bevat maximaal {{max}} blokken.",
+      "expand": "{{block}} uitklappen",
+      "collapse": "{{block}} inklappen",
+      "move_up": "{{block}} omhoog verplaatsen",
+      "move_down": "{{block}} omlaag verplaatsen",
+      "more_actions": "Meer acties voor {{block}}",
+      "duplicate": "Dupliceren",
+      "remove": "Verwijderen",
+      "unknown_type": "Onbekend bloktype: {{type}}",
+      "insert": "Blok hier toevoegen",
+      "drag": "{{block}} verslepen om te ordenen"
+    },
+    "block_format": {
+      "count_one": "{{count}} blok",
+      "count_other": "{{count}} blokken"
     }
   },
   "dashboard": {
@@ -191,7 +260,8 @@
           "1": "voegde toe",
           "2": "bewerkte",
           "3": "verwijderde"
-        }
+        },
+        "empty": "Nog geen wijzigingen"
       },
       "scheduled_tasks": {
         "empty": "Geen geplande taken",
@@ -206,11 +276,13 @@
       "content_list": {
         "empty_state": "Geen items"
       }
-    }
+    },
+    "view_all": "Alles bekijken"
   },
   "tenant": {
     "selector": {
-      "add": "Voeg nieuwe toe"
+      "add": "Voeg nieuwe toe",
+      "settings": "Instellingen"
     },
     "setup": {
       "title": "Eerste {{tenant}} aanmaken",
@@ -250,5 +322,12 @@
     "theme_system": "Systeem",
     "logout": "Uitloggen",
     "empty": "Geen resultaten."
+  },
+  "button": {
+    "done": "Klaar.",
+    "value_title": "Kopieer deze waarde",
+    "value_description": "Deze wordt maar één keer getoond. Kopieer hem nu en bewaar hem op een veilige plek.",
+    "copy": "Kopiëren",
+    "close": "Sluiten"
   }
 }

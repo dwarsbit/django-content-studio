@@ -101,6 +101,11 @@ describe("ItemEdit", () => {
     discoverWith({ crop: true, focal_point: "focal_point" }, makeMediaItem());
     renderEdit();
 
+    // The image dialog opens from the sheet's Crop button.
+    fireEvent.click(
+      await screen.findByRole("button", { name: "media_library.crop" }),
+    );
+
     await waitFor(() =>
       expect(
         screen.getByRole("tab", { name: "media_library.crop" }),
@@ -116,6 +121,12 @@ describe("ItemEdit", () => {
     discoverWith({ crop: false, focal_point: "focal_point" }, makeMediaItem());
     renderEdit();
 
+    // The focal point is set in the image dialog, opened from the sheet.
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "media_library.focal_point.title",
+      }),
+    );
     const overlay = await screen.findByLabelText(
       "media_library.focal_point.set",
     );
@@ -127,7 +138,9 @@ describe("ItemEdit", () => {
 
     fireEvent.click(overlay, { clientX: 50, clientY: 50 });
 
-    fireEvent.click(screen.getByRole("button", { name: "common.save" }));
+    // Closing the dialog keeps the point; saving the sheet sends it.
+    fireEvent.click(screen.getByRole("button", { name: "common.done" }));
+    fireEvent.click(await screen.findByRole("button", { name: "common.save" }));
 
     await waitFor(() => expect(httpMock.patch).toHaveBeenCalled());
 
@@ -145,11 +158,17 @@ describe("ItemEdit", () => {
 
     fireEvent.click(
       await screen.findByRole("button", {
+        name: "media_library.focal_point.title",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", {
         name: "media_library.focal_point.remove",
       }),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "common.save" }));
+    fireEvent.click(screen.getByRole("button", { name: "common.done" }));
+    fireEvent.click(await screen.findByRole("button", { name: "common.save" }));
 
     await waitFor(() => expect(httpMock.patch).toHaveBeenCalled());
 

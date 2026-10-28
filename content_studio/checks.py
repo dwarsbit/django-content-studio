@@ -24,7 +24,7 @@ from .admin import (
     iter_components,
     resolve_table_display,
 )
-from .form import Field, TableColumn
+from .form import Component, Field, TableColumn
 from .settings import cs_settings
 from .utils import flatten, get_tenant_field_name
 
@@ -398,7 +398,11 @@ def duplicate_id_errors(site) -> list[tuple[str, str]]:
 
     seen = {}
     for model, studio in site._registry.items():
-        for component in iter_components(studio):
+        components = list(iter_components(studio))
+        for inline in studio.inlines:
+            components.extend(iter_components(inline))
+
+        for component in components:
             key = str(component.component_id)
             if key in seen:
                 errors.append(
@@ -451,6 +455,68 @@ def soft_delete_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def reorder_errors(studio) -> list[tuple[str, str]]:
+    """
+    A misconfigured reorder_field or reorder_scope, as (check id,
+    message) pairs. The field must exist and, unless the studio
+    overrides reorder, be numeric: the built-in implementation rewrites
+    it. Scope entries must be concrete fields. Inlines are checked too.
+    """
+    from .admin import BaseStudio
+    from .reordering import NUMERIC_FIELDS
+
+    errors = []
+
+    def error(owner, message):
+        errors.append(("content_studio.E017", f"{config_name(owner)}.{message}"))
+
+    def validate(owner, model):
+        field_name = getattr(owner, "reorder_field", None)
+
+        if model is None or not field_name:
+            return
+
+        try:
+            field = model._meta.get_field(field_name)
+        except (FieldDoesNotExist, TypeError):
+            error(
+                owner,
+                f"reorder_field refers to {field_name!r}, which is not a "
+                f"field of {model._meta.label_lower}.",
+            )
+            return
+
+        cls = owner if isinstance(owner, type) else type(owner)
+        overridden = getattr(cls, "reorder", None) is not BaseStudio.reorder
+
+        if not overridden and not isinstance(field, NUMERIC_FIELDS):
+            error(
+                owner,
+                f"reorder_field must name a numeric field; {field_name!r} is "
+                "not. Override reorder() for another ordering implementation.",
+            )
+
+        for name in getattr(owner, "reorder_scope", None) or []:
+            try:
+                scope_field = model._meta.get_field(name)
+            except (FieldDoesNotExist, TypeError):
+                scope_field = None
+
+            if scope_field is None or not getattr(scope_field, "concrete", False):
+                error(
+                    owner,
+                    f"reorder_scope contains {name!r}, which is not a field "
+                    f"of {model._meta.label_lower}.",
+                )
+
+    validate(studio, getattr(studio, "model", None))
+
+    for inline in getattr(studio, "inlines", None) or []:
+        validate(inline, getattr(inline, "model", None))
+
+    return errors
+
+
 def media_upload_errors() -> list[tuple[str, str]]:
     """
     Malformed media library upload settings, as (check id, message)
@@ -484,6 +550,63 @@ def media_upload_errors() -> list[tuple[str, str]]:
                 "content_studio.E014",
                 "MEDIA_LIBRARY_MAX_UPLOAD_SIZE must be None or a positive "
                 "number of bytes.",
+            )
+        )
+
+    return errors
+
+
+def _is_positive_number(value, integer=False) -> bool:
+    types = int if integer else (int, float)
+    return not isinstance(value, bool) and isinstance(value, types) and value > 0
+
+
+def webhook_setting_errors() -> list[tuple[str, str]]:
+    """
+    Malformed webhook settings, as (check id, message) pairs: the
+    allowed hosts must be a list of host names, the attempts and the
+    retention positive whole numbers, the timeout a positive number.
+    """
+    errors = []
+    hosts = cs_settings.WEBHOOK_ALLOWED_HOSTS
+
+    if (
+        isinstance(hosts, str)
+        or not isinstance(hosts, (list, tuple, set))
+        or not all(isinstance(host, str) and host for host in hosts)
+    ):
+        errors.append(
+            (
+                "content_studio.E019",
+                "WEBHOOK_ALLOWED_HOSTS must be a list of host names, like "
+                "['build.internal'].",
+            )
+        )
+
+    if not _is_positive_number(cs_settings.WEBHOOK_MAX_ATTEMPTS, integer=True):
+        errors.append(
+            (
+                "content_studio.E019",
+                "WEBHOOK_MAX_ATTEMPTS must be a positive whole number.",
+            )
+        )
+
+    if not _is_positive_number(cs_settings.WEBHOOK_TIMEOUT):
+        errors.append(
+            (
+                "content_studio.E019",
+                "WEBHOOK_TIMEOUT must be a positive number of seconds.",
+            )
+        )
+
+    retention = cs_settings.WEBHOOK_DELIVERY_RETENTION
+
+    if retention is not None and not _is_positive_number(retention, integer=True):
+        errors.append(
+            (
+                "content_studio.E019",
+                "WEBHOOK_DELIVERY_RETENTION must be None or a positive whole "
+                "number of days.",
             )
         )
 
@@ -783,6 +906,47 @@ def readonly_fields_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def edit_header_errors(studio) -> list[tuple[str, str]]:
+    """
+    edit_header entries that are not components, as (check id,
+    message) pairs: the header only shows components, so fields and
+    other values would be silently dropped. Inlines are checked too.
+    """
+    errors = []
+
+    def validate(owner):
+        header = getattr(owner, "edit_header", None) or []
+
+        if isinstance(header, (str, Component)) or not isinstance(
+            header, (list, tuple)
+        ):
+            errors.append(
+                (
+                    "content_studio.E020",
+                    f"{config_name(owner)}.edit_header must be a list of "
+                    "components.",
+                )
+            )
+            return
+
+        for entry in header:
+            if not isinstance(entry, Component):
+                errors.append(
+                    (
+                        "content_studio.E020",
+                        f"{config_name(owner)}.edit_header entry {entry!r} is "
+                        "not a component, such as a Button.",
+                    )
+                )
+
+    validate(studio)
+
+    for inline in getattr(studio, "inlines", None) or []:
+        validate(inline)
+
+    return errors
+
+
 # Fields a prepopulated value cannot go into, as in the classic admin.
 PREPOPULATED_TARGET_EXCLUDED = (
     models.DateTimeField,
@@ -1020,6 +1184,45 @@ def sortable_by_warnings(studio) -> list[tuple[str, str]]:
     return warnings
 
 
+def reorder_ordering_warnings(studio) -> list[tuple[str, str]]:
+    """
+    An ordering that contradicts reorder_field, as (check id, message)
+    pairs. A reorderable list must be ordered by its reorder field
+    (after any reorder_scope fields), or moves land somewhere other
+    than where they were dropped. Inlines are checked too.
+    """
+    warnings = []
+
+    def validate(owner):
+        field_name = getattr(owner, "reorder_field", None)
+        ordering = list(getattr(owner, "ordering", None) or [])
+
+        if not field_name or not ordering:
+            return
+
+        scope = set(getattr(owner, "reorder_scope", None) or [])
+        rest = list(ordering)
+        while rest and rest[0] in scope:
+            rest.pop(0)
+
+        if not rest or rest[0] != field_name:
+            warnings.append(
+                (
+                    "content_studio.W013",
+                    f"{config_name(owner)}.ordering does not start with its "
+                    f"reorder_field {field_name!r}, so reordering does not "
+                    "match the order of the list.",
+                )
+            )
+
+    validate(studio)
+
+    for inline in getattr(studio, "inlines", None) or []:
+        validate(inline)
+
+    return warnings
+
+
 def list_filter_entry_warnings(studio) -> list[tuple[str, str]]:
     """
     Non-string list_filter entries, as (check id, message) pairs.
@@ -1242,6 +1445,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         for check_id, error in soft_delete_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
+        for check_id, error in reorder_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
         for check_id, error in edit_form_config_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
@@ -1257,6 +1463,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         for check_id, error in prepopulated_fields_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
+        for check_id, error in edit_header_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
         for check_id, warning in edit_field_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
@@ -1267,6 +1476,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in sortable_by_warnings(studio):
+            messages.append(checks.Warning(warning, obj=obj, id=check_id))
+
+        for check_id, warning in reorder_ordering_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in list_filter_entry_warnings(studio):
@@ -1285,6 +1497,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in media_upload_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in webhook_setting_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, warning in dashboard_widget_warnings(site):

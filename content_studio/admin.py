@@ -7,7 +7,7 @@ from django.db.models import Model
 from django.utils.translation import gettext_lazy as _
 from rest_framework.request import HttpRequest
 
-from . import widgets, formats, fields
+from . import widgets, formats, fields, blocks
 from .actions import get_bulk_actions
 from .exceptions import AlreadyRegistered, NotRegistered
 from .form import FormSet, FormSetGroup, Field, Component, TableColumn
@@ -30,11 +30,18 @@ __all__ = [
 
 
 class ModelGroup:
+    """
+    A group of models in the main menu: a heading with the models listed
+    under it. A group starts collapsed when `collapsed` is set; the group
+    holding the current model is always expanded.
+    """
+
     name: str
     label: str
     icon: Optional[str]
     color: Optional[str]
     models: list[Type[Model]]
+    collapsed: bool
 
     def __init__(
         self,
@@ -43,12 +50,14 @@ class ModelGroup:
         icon: Optional[str] = None,
         color: Optional[str] = None,
         models: Optional[list[Type[Model]]] = None,
+        collapsed: bool = False,
     ):
         self.name = name
         self.label = label or name.capitalize()
         self.icon = icon
         self.color = color
         self.models = models or []
+        self.collapsed = collapsed
 
 
 class RelationDisplay:
@@ -122,9 +131,44 @@ class BaseStudio(Generic[T]):
     # classic admin's prepopulated_fields: {"slug": ("title",)}.
     prepopulated_fields: dict[str, Sequence[str]] = {}
 
+    # Reordering, as an opt-in: the name of the field the list is
+    # ordered by. Empty, the default, offers no reordering. The built-in
+    # implementation rewrites a numeric field; override reorder() for
+    # any other ordering implementation.
+    reorder_field: str = ""
+
+    # Fields whose values partition the order, e.g. ["book"]: objects
+    # are only ordered among those sharing them. Inlines are always
+    # ordered per parent.
+    reorder_scope: list[str] = []
+
+    # Components shown in the edit page's header, next to the save
+    # button, such as buttons. On an inline, they show in the header of
+    # the inline row's editor.
+    edit_header: list[Component] = []
+
     def __init__(self, model: Type[T], admin_site: "ContentStudioSite"):
         self.model = model
         self.admin_site = admin_site
+
+    def get_created_result(self, request: HttpRequest, obj: T):
+        """
+        What the editor sees after creating obj in the admin: None (the
+        default), a message, or a ButtonResult whose value is shown once
+        in a dialog with a copy button, such as a generated secret.
+        """
+        return None
+
+    def get_component(self, component_id) -> Optional[Component]:
+        """
+        Retrieves a component from the edit_header, edit_main or
+        edit_sidebar attributes by ID.
+        """
+        for component in iter_components(self):
+            if component.component_id == component_id:
+                return component
+
+        return None
 
     def get_fields(self, request: HttpRequest, obj: Optional[T] = None) -> list[str]:
         """
@@ -159,6 +203,33 @@ class BaseStudio(Generic[T]):
         objects are never prepopulated.
         """
         return dict(self.prepopulated_fields)
+
+    def reorder(
+        self,
+        request: HttpRequest,
+        obj: T,
+        *,
+        after: Optional[T] = None,
+        before: Optional[T] = None,
+    ) -> Optional[bool]:
+        """
+        Move obj directly after `after` or directly before `before`;
+        exactly one is given, and it is an object in obj's list. The
+        built-in implementation rewrites the numeric reorder_field of
+        the objects in between. Override to use another ordering
+        implementation, e.g. django-ordered-model's obj.above(before).
+        Returning False reports that nothing moved, so no change is
+        logged.
+        """
+        from .reordering import get_scope_queryset, move
+
+        return move(
+            get_scope_queryset(self, obj),
+            obj,
+            self.reorder_field,
+            after=after,
+            before=before,
+        )
 
     def _has_model_perm(self, request: HttpRequest, action: str) -> bool:
         opts = self.model._meta
@@ -306,16 +377,6 @@ class ModelStudio(BaseStudio[T]):
 
         return super().has_delete_permission(request, obj)
 
-    def get_component(self, component_id) -> Optional[Component]:
-        """
-        Retrieves a component from the edit_main or edit_sidebar attributes by ID.
-        """
-        for component in iter_components(self):
-            if component.component_id == component_id:
-                return component
-
-        return None
-
 
 class InlineModelStudio(BaseStudio[T]):
     """
@@ -398,6 +459,7 @@ class ContentStudioSite:
         fields.HTMLField: widgets.RichTextWidget,
         fields.TagField: widgets.TagWidget,
         fields.FlexField: widgets.JSONSchemaWidget,
+        blocks.BlockField: widgets.BlockWidget,
         fields.MultipleChoiceField: widgets.MultiSelectWidget,
         fields.URLPathField: widgets.URLPathWidget,
         ml_fields.MediaField: widgets.MediaWidget,
@@ -430,6 +492,7 @@ class ContentStudioSite:
         fields.HTMLField: formats.HtmlFormat,
         fields.TagField: formats.TagFormat,
         fields.FlexField: formats.JSONFormat,
+        blocks.BlockField: formats.BlockFormat,
         fields.MultipleChoiceField: formats.TextFormat,
         fields.URLPathField: formats.TextFormat,
         ml_fields.MediaField: formats.MediaFormat,
@@ -598,13 +661,41 @@ def register(*models, site: ContentStudioSite = None):
     return _model_studio_wrapper
 
 
+def _header_entries(studio) -> list:
+    """A studio's edit_header as a list; anything but a list or tuple
+    counts as empty (system check E020 reports it)."""
+    header = getattr(studio, "edit_header", None)
+
+    return list(header) if isinstance(header, (list, tuple)) else []
+
+
+def serialize_edit_header(studio) -> list[dict[str, Any]]:
+    """The serialized components of a studio's edit_header."""
+    return [
+        component.serialize()
+        for component in _header_entries(studio)
+        if isinstance(component, Component)
+    ]
+
+
+def serialize_permissions(studio, request) -> dict[str, bool]:
+    return {
+        "add_permission": studio.has_add_permission(request),
+        "delete_permission": studio.has_delete_permission(request),
+        "change_permission": studio.has_change_permission(request),
+        "view_permission": studio.has_view_permission(request),
+    }
+
+
 def iter_components(admin_class):
     """
-    Yield the components configured in a model studio's edit_main and
-    edit_sidebar.
+    Yield the components configured in a studio's edit_header,
+    edit_main and edit_sidebar.
     """
-    all_fields = getattr(admin_class, "edit_main", []) + getattr(
-        admin_class, "edit_sidebar", []
+    all_fields = (
+        _header_entries(admin_class)
+        + list(getattr(admin_class, "edit_main", None) or [])
+        + list(getattr(admin_class, "edit_sidebar", None) or [])
     )
 
     flat_fields = flatten(
@@ -751,6 +842,14 @@ def get_is_singleton(admin_class) -> bool:
     return bool(getattr(model, "is_singleton", False))
 
 
+def is_reorderable(studio, request: HttpRequest) -> bool:
+    """
+    Whether the request may reorder a studio's list: reordering is
+    configured and moving an object is a change.
+    """
+    return bool(studio.reorder_field) and studio.has_change_permission(request)
+
+
 def get_relation_display_for(
     model: Type[models.Model], obj: models.Model, request: HttpRequest
 ) -> "RelationDisplay":
@@ -782,6 +881,7 @@ class AdminSerializer:
             "icon": admin_class.icon,
             "is_singleton": get_is_singleton(admin_class),
             "edit": {
+                "header": serialize_edit_header(admin_class),
                 "main": self.serialize_edit_main(request),
                 "sidebar": self.serialize_edit_sidebar(request),
                 # The create form's read-only fields; saved objects
@@ -807,6 +907,15 @@ class AdminSerializer:
                             column.serialize()
                             for column in get_table_display_columns(inline)
                         ],
+                        "reorderable": is_reorderable(
+                            inline(admin_class.model, admin_class.admin_site),
+                            request,
+                        ),
+                        "header": serialize_edit_header(inline),
+                        "permissions": serialize_permissions(
+                            inline(admin_class.model, admin_class.admin_site),
+                            request,
+                        ),
                     }
                     for inline in admin_class.inlines
                 ],
@@ -820,17 +929,13 @@ class AdminSerializer:
                 "filter": admin_class.list_filter,
                 "trash": bool(admin_class.soft_delete),
                 "sortable_by": admin_class.sortable_by,
+                "reorderable": is_reorderable(admin_class, request),
                 "actions": [
                     action.serialize()
                     for action in get_bulk_actions(admin_class, request)
                 ],
             },
-            "permissions": {
-                "add_permission": admin_class.has_add_permission(request),
-                "delete_permission": admin_class.has_delete_permission(request),
-                "change_permission": admin_class.has_change_permission(request),
-                "view_permission": admin_class.has_view_permission(request),
-            },
+            "permissions": serialize_permissions(admin_class, request),
         }
 
     def serialize_edit_main(self, request: HttpRequest) -> list[dict[str, Any]]:

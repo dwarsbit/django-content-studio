@@ -1,16 +1,13 @@
-import { PiCheckBold, PiXBold } from "react-icons/pi";
+import { PiCheckBold, PiMinusBold } from "react-icons/pi";
 
-import { cn } from "@/lib/utils";
-
+/**
+ * A boolean in a table: a check or a dash, in the text color. Green and
+ * red mean status in the admin, and a tick without a word is not one.
+ */
 export function BooleanFormat({ value }: { value: unknown }) {
-  return (
-    <div
-      className={cn(
-        "size-4 rounded-full flex items-center justify-center text-xs",
-        value ? "bg-emerald-100 text-emerald-500" : "bg-rose-100 text-rose-500",
-      )}
-    >
-      {value ? <PiCheckBold /> : <PiXBold />}
-    </div>
+  return value ? (
+    <PiCheckBold className="size-4" aria-label="✓" />
+  ) : (
+    <PiMinusBold className="size-4 text-muted-foreground/60" aria-label="–" />
   );
 }

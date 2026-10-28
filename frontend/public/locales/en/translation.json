@@ -19,7 +19,8 @@
     "select_item": "Select item",
     "download": "Download",
     "done": "Done",
-    "copied_to_clipboard": "Copied to clipboard!"
+    "copied_to_clipboard": "Copied to clipboard!",
+    "close": "Close"
   },
   "app": {
     "copied_to_clipboard": "Copied to clipboard!",
@@ -60,7 +61,10 @@
     "media_library": "Media library",
     "settings": "Settings",
     "log_out": "Log out",
-    "theme": "Theme"
+    "theme": "Theme",
+    "collapse": "Collapse menu",
+    "expand": "Expand menu",
+    "title": "Main menu"
   },
   "editor": {
     "title_create": "Create {{modelName}}",
@@ -75,7 +79,8 @@
     "unique_warning": "\"{{object}}\" ({{modelName}}) already uses this {{fieldName}}.",
     "unique_warning_trashed": "\"{{object}}\" ({{modelName}}, in the trash) already uses this {{fieldName}}.",
     "unique_warning_hidden": "Another object already uses this {{fieldName}}.",
-    "unique_warning_hint": "Saving will fail unless you change it."
+    "unique_warning_hint": "Saving will fail unless you change it.",
+    "unsaved_changes": "Unsaved changes"
   },
   "list_view": {
     "table_view": "Table view",
@@ -94,8 +99,30 @@
       "yes": "Yes",
       "no": "No",
       "min": "Min",
-      "max": "Max"
-    }
+      "max": "Max",
+      "is": "is",
+      "clear": "Clear {{field}}"
+    },
+    "tabs_all": "All {{model}}",
+    "count_one": "{{count}} {{singular}}",
+    "count_other": "{{count}} {{plural}}",
+    "page_of": "Page {{current}} of {{pages}}",
+    "view": "View"
+  },
+  "reorder": {
+    "drag": "Drag to reorder",
+    "menu": "Move",
+    "move_up": "Move up",
+    "move_down": "Move down",
+    "move_first": "Move to top",
+    "move_last": "Move to bottom",
+    "disabled_ordering": "Switch to the default ordering to reorder",
+    "disabled_search": "Clear the search to reorder",
+    "instructions": "To pick up an item, press space or enter. Use the arrow keys to move it, press space or enter again to drop it, or escape to cancel.",
+    "picked_up": "Picked up {{item}}.",
+    "over": "{{item}} is over {{over}}.",
+    "dropped": "Dropped {{item}}.",
+    "cancelled": "Moving {{item}} was cancelled."
   },
   "bulk": {
     "selected": "{{count}} selected",
@@ -128,7 +155,8 @@
     "filters": {
       "type": "Type",
       "tags": "Tags",
-      "no_tags": "No tags yet"
+      "no_tags": "No tags yet",
+      "folder": "Folder"
     },
     "columns": {
       "name": "Name",
@@ -141,6 +169,22 @@
       "title": "Focus point",
       "set": "Set focal point",
       "remove": "Remove focal point"
+    },
+    "folders": "Folders",
+    "folder_path": "Current folder",
+    "file_actions": "File actions",
+    "empty_title": "No files yet",
+    "empty_description": "Drop files here to upload them, or use the upload button.",
+    "no_results": "Try another search term, or clear the type and tag filters.",
+    "image_dialog_hint": "Changes are applied when you save the file.",
+    "moved": "Moved",
+    "collapse_folder": "Collapse {{name}}",
+    "expand_folder": "Expand {{name}}",
+    "fields": {
+      "name": "Name",
+      "alt_text": "Alt text",
+      "alt_text_hint": "Describes the image for people who cannot see it.",
+      "tags": "Tags"
     }
   },
   "widgets": {
@@ -162,7 +206,10 @@
       "select_media": "Select media",
       "select_n_media": "Select {{n}} media",
       "dialog_title": "Select media",
-      "upload_label": "Upload media"
+      "upload_label": "Upload media",
+      "replace": "Replace",
+      "remove": "Remove",
+      "empty": "No file chosen yet."
     },
     "tag_widget": {
       "placeholder": "Add a tag..."
@@ -176,6 +223,28 @@
     },
     "date_picker": {
       "placeholder": "Select a date"
+    },
+    "block_widget": {
+      "add_block": "Add block",
+      "search": "Search blocks",
+      "no_results": "No blocks found",
+      "empty": "No blocks yet",
+      "count": "{{count}} of {{max}} blocks",
+      "max_reached": "This field holds at most {{max}} blocks.",
+      "expand": "Expand {{block}}",
+      "collapse": "Collapse {{block}}",
+      "move_up": "Move {{block}} up",
+      "move_down": "Move {{block}} down",
+      "more_actions": "More actions for {{block}}",
+      "duplicate": "Duplicate",
+      "remove": "Remove",
+      "unknown_type": "Unknown block type: {{type}}",
+      "insert": "Add block here",
+      "drag": "Drag {{block}} to reorder"
+    },
+    "block_format": {
+      "count_one": "{{count}} block",
+      "count_other": "{{count}} blocks"
     }
   },
   "dashboard": {
@@ -192,7 +261,8 @@
           "1": "added",
           "2": "edited",
           "3": "deleted"
-        }
+        },
+        "empty": "No changes yet"
       },
       "scheduled_tasks": {
         "empty": "No scheduled tasks",
@@ -207,11 +277,13 @@
       "content_list": {
         "empty_state": "No items"
       }
-    }
+    },
+    "view_all": "View all"
   },
   "tenant": {
     "selector": {
-      "add": "Add new"
+      "add": "Add new",
+      "settings": "Settings"
     },
     "setup": {
       "title": "Create your first {{tenant}}",
@@ -251,5 +323,12 @@
     "theme_system": "System",
     "logout": "Log out",
     "empty": "No results."
+  },
+  "button": {
+    "done": "Done.",
+    "value_title": "Copy this value",
+    "value_description": "It is shown only once. Copy it now and store it somewhere safe.",
+    "copy": "Copy",
+    "close": "Close"
   }
 }

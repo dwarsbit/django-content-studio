@@ -617,6 +617,50 @@ def test_empty_login_backends_surfaces_as_warning():
     assert "LOGIN_BACKENDS" in str(warning)
 
 
+# --- E019: webhook settings --------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"WEBHOOK_ALLOWED_HOSTS": "build.internal"},
+        {"WEBHOOK_ALLOWED_HOSTS": [""]},
+        {"WEBHOOK_MAX_ATTEMPTS": 0},
+        {"WEBHOOK_MAX_ATTEMPTS": 2.5},
+        {"WEBHOOK_TIMEOUT": "5"},
+        {"WEBHOOK_TIMEOUT": True},
+        {"WEBHOOK_DELIVERY_RETENTION": -1},
+    ],
+)
+def test_malformed_webhook_settings_surface_as_system_error(overrides):
+    from django.test import override_settings
+
+    with override_settings(
+        CONTENT_STUDIO={"ADMIN_SITE": "content_studio.admin.admin_site", **overrides}
+    ):
+        messages = check_content_studio()
+
+    assert [m.id for m in messages if m.id == "content_studio.E019"] == [
+        "content_studio.E019"
+    ]
+
+
+def test_valid_webhook_settings_pass():
+    from django.test import override_settings
+
+    with override_settings(
+        CONTENT_STUDIO={
+            "ADMIN_SITE": "content_studio.admin.admin_site",
+            "WEBHOOK_ALLOWED_HOSTS": ["build.internal"],
+            "WEBHOOK_TIMEOUT": 2.5,
+            "WEBHOOK_DELIVERY_RETENTION": None,
+        }
+    ):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.E019"]
+
+
 # --- E014: media library upload settings -------------------------------------
 
 

@@ -56,6 +56,7 @@ export {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+export { DragHandle } from "@/components/ui/drag-handle";
 export {
   DropdownMenu,
   DropdownMenuCheckboxItem,

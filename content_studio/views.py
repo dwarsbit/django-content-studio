@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
 from django.utils.decorators import method_decorator
@@ -6,6 +8,7 @@ from django.views.decorators.cache import never_cache
 from django.views.generic import TemplateView
 from rest_framework import serializers
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -14,9 +17,11 @@ from rest_framework.viewsets import ViewSet
 from . import __version__
 from .admin import AdminSerializer, ModelStudio, ModelGroup
 from .exceptions import NotConfigured
+from .extensions import MainMenuButton
 from .permissions import IsActiveStaff
 from .serializers import ModelSerializer, get_session_user_serializer
 from .settings import cs_settings
+from .signals import collect_changes
 
 
 @method_decorator(never_cache, name="dispatch")
@@ -98,6 +103,45 @@ class AdminApiViewSet(ViewSet):
         return Response(data=data)
 
     @action(
+        methods=["post"],
+        detail=False,
+        url_path="extensions/(?P<extension_id>[^/.]+)/run",
+    )
+    def run_extension(self, request, extension_id):
+        """
+        Run a main menu button. Signing in as staff is the gate here;
+        the button decides with is_visible who may run it.
+        """
+        try:
+            extension_uuid = uuid.UUID(extension_id)
+        except ValueError:
+            raise NotFound()
+
+        button = next(
+            (
+                extension
+                for extension in getattr(cs_settings.ADMIN_SITE, "extensions", None)
+                or []
+                if isinstance(extension, MainMenuButton)
+                and extension.extension_id == extension_uuid
+            ),
+            None,
+        )
+
+        if button is None:
+            raise NotFound()
+
+        if not button.is_visible(request):
+            raise PermissionDenied()
+
+        # Changes the button records are sent as one content_changed
+        # signal, like those of any request in the admin.
+        with collect_changes(request):
+            result = button.run(request)
+
+        return Response(result.serialize())
+
+    @action(
         methods=["get"],
         detail=False,
         url_path="discover",
@@ -114,7 +158,7 @@ class AdminApiViewSet(ViewSet):
             "models": get_models(request),
             "model_groups": get_model_groups(),
             "user_model": settings.AUTH_USER_MODEL,
-            "extensions": get_extensions(),
+            "extensions": get_extensions(request),
         }
 
         media_model = cs_settings.MEDIA_LIBRARY_MODEL
@@ -233,6 +277,7 @@ def get_model_groups():
             "icon": group.icon,
             "color": group.color,
             "label": group.label,
+            "collapsed": group.collapsed,
             "models": [m._meta.label_lower for m in group.models],
         }
         for group in model_groups
@@ -255,7 +300,13 @@ def get_health_check_path():
         return None
 
 
-def get_extensions():
+def get_extensions(request):
+    """The site's extensions, without the buttons the request may not
+    see."""
     admin_site = cs_settings.ADMIN_SITE
 
-    return [i.serialize() for i in getattr(admin_site, "extensions", None) or []]
+    return [
+        extension.serialize()
+        for extension in getattr(admin_site, "extensions", None) or []
+        if not isinstance(extension, MainMenuButton) or extension.is_visible(request)
+    ]

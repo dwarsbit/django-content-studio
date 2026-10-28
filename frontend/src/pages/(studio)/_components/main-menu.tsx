@@ -1,22 +1,16 @@
 import * as R from "ramda";
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LuMonitorCog, LuMoon, LuSun } from "react-icons/lu";
 import {
   PiCaretDownBold,
-  PiCaretLeftBold,
   PiCaretRightBold,
+  PiCaretUpDownBold,
   PiFileTextBold,
   PiHouseSimpleBold,
   PiImageBold,
   PiMagnifyingGlassBold,
+  PiSidebarSimpleBold,
   PiSignOutBold,
 } from "react-icons/pi";
 import { TbCommand } from "react-icons/tb";
@@ -30,15 +24,16 @@ import {
 
 import { useAuth } from "@/auth";
 import { type Theme, useTheme } from "@/components/theme-provider";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
@@ -47,331 +42,436 @@ import {
 } from "@/components/ui/tooltip";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import { useDiscover } from "@/hooks/use-discover";
+import { useHttp } from "@/hooks/use-http";
 import { useMe } from "@/hooks/use-me";
+import { NARROW_QUERY, useMediaQuery } from "@/hooks/use-media-query";
+import { useRunButton } from "@/hooks/use-run-button";
 import { cn } from "@/lib/utils";
 import { useTenant } from "@/tenant";
-import { ExtensionType, type TailwindColor } from "@/types";
+import {
+  type ButtonResult,
+  ExtensionType,
+  type MainMenuButtonExtension,
+  type ModelGroup,
+} from "@/types";
 
 import { TenantSelector } from "./tenant-selector";
 
-const CollapsedContext = createContext(false);
-const ExpandedContext = createContext<{
-  expandedItem: string | null;
-  toggleGroup: (label: string, isExpanded: boolean) => void;
-}>({ expandedItem: null, toggleGroup: () => {} });
-
+/**
+ * The main menu: the site (or the tenant), the search trigger, the
+ * pages and extensions, the model groups as headings with their models
+ * listed under them, and the user menu. Collapsed, or below 1024px, it
+ * is a rail of icons with tooltips.
+ */
 export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
   const { t } = useTranslation();
   const { data: adminInfo } = useAdminInfo();
   const { data: discover } = useDiscover();
   const { enabled: tenant } = useTenant();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(
+  const narrow = useMediaQuery(NARROW_QUERY);
+  const [collapsedByUser, setCollapsedByUser] = useState(
     () => localStorage.getItem("main-menu-collapsed") === "true",
   );
-  // The group the user opened or closed by hand; the last one wins.
-  const [manualExpanded, setManualExpanded] = useState<string | null>(null);
-  const [collapsedActiveGroup, setCollapsedActiveGroup] = useState<
-    string | null
-  >(null);
-
-  const linkExtensions =
-    discover?.extensions.filter(
-      (extension) => extension.extension_type === ExtensionType.MainMenuLink,
-    ) ?? [];
+  const collapsed = narrow || collapsedByUser;
 
   useEffect(() => {
-    localStorage.setItem("main-menu-collapsed", String(collapsed));
-  }, [collapsed]);
+    localStorage.setItem("main-menu-collapsed", String(collapsedByUser));
+  }, [collapsedByUser]);
 
-  // The group holding the active model's route is expanded by default, so a
-  // deep link into /content/<model> (or a refresh on such a page) doesn't
-  // start with every group collapsed. Collapsing it by hand keeps it closed
-  // until the user reopens it.
-  const activeGroupLabel = useMemo(() => {
-    const label = /^\/content\/([^/]+)/.exec(location.pathname)?.[1];
+  // Links and buttons share one list, ordered by weight (lower first);
+  // equal weights keep the order of the site's extensions.
+  const menuExtensions = R.sortBy(
+    (extension) => extension.config.weight ?? 0,
+    discover?.extensions.filter(
+      (extension) =>
+        extension.extension_type === ExtensionType.MainMenuLink ||
+        extension.extension_type === ExtensionType.MainMenuButton,
+    ) ?? [],
+  );
 
-    if (!label || !discover?.model_groups) {
-      return null;
-    }
-
-    return (
-      discover.model_groups.find((group) => group.models.includes(label))
-        ?.label ?? null
-    );
-  }, [discover, location.pathname]);
-
-  const expandedItem =
-    manualExpanded ??
-    (activeGroupLabel && activeGroupLabel !== collapsedActiveGroup
-      ? activeGroupLabel
-      : null);
-
-  const toggleGroup = useCallback((label: string, isExpanded: boolean) => {
-    if (isExpanded) {
-      setManualExpanded((previous) => (previous === label ? null : previous));
-      setCollapsedActiveGroup((previous) =>
-        previous === label ? null : label,
-      );
-    } else {
-      setManualExpanded(label);
-      setCollapsedActiveGroup((previous) =>
-        previous === label ? null : previous,
-      );
-    }
-  }, []);
+  // The group holding the current model: /content/<model>. It is open
+  // whatever its configuration, until the user closes it by hand.
+  const activeModel = /^\/content\/([^/]+)/.exec(location.pathname)?.[1];
+  const activeGroup =
+    (activeModel &&
+      discover?.model_groups.find((group) => group.models.includes(activeModel))
+        ?.name) ||
+    null;
 
   return (
-    <ExpandedContext value={{ expandedItem, toggleGroup }}>
-      <CollapsedContext value={collapsed}>
-        <div className="p-4 flex flex-col">
-          <nav
-            className={cn(
-              "shrink-0 flex-1 flex flex-col bg-muted rounded-xl transition-[width] duration-200",
-              collapsed ? "w-14" : "w-[240px]",
-            )}
-          >
-            <div
-              className={cn(
-                "flex items-center py-3 select-none",
-                collapsed ? "justify-center px-2" : "gap-2 px-4",
-              )}
-            >
-              {!collapsed && adminInfo && !tenant && (
-                <>
-                  <div className="bg-gradient-to-tl from-gray-900 to-gray-600 size-5 rounded flex items-center justify-center text-gray-50 font-black shrink-0">
-                    {adminInfo.site_header[0]}
-                  </div>
-                  <h2 className="line-clamp-1 break-all text-base font-semibold text-foreground flex-1">
-                    {adminInfo.site_header}
-                  </h2>
-                </>
-              )}
-              {!collapsed && tenant && (
-                <div className="flex-1">
-                  <TenantSelector />
-                </div>
-              )}
+    <nav
+      aria-label={t("main_menu.title")}
+      className={cn(
+        "shrink-0 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 select-none",
+        collapsed ? "w-14" : "w-60",
+      )}
+    >
+      <div
+        className={cn(
+          "h-14 shrink-0 flex items-center",
+          collapsed ? "justify-center" : "pl-4 pr-2 gap-2",
+        )}
+      >
+        {tenant ? (
+          <TenantSelector collapsed={collapsed} />
+        ) : (
+          <Brand
+            collapsed={collapsed}
+            name={adminInfo?.site_header ?? ""}
+            onExpand={narrow ? undefined : () => setCollapsedByUser(false)}
+          />
+        )}
+        {!collapsed && (
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                size="icon"
-                className="shrink-0 size-7"
-                onClick={() => setCollapsed(!collapsed)}
+                size="icon-xs"
+                className="text-muted-foreground"
+                aria-label={t("main_menu.collapse")}
+                onClick={() => setCollapsedByUser(true)}
               >
-                {collapsed ? <PiCaretRightBold /> : <PiCaretLeftBold />}
+                <PiSidebarSimpleBold />
               </Button>
-            </div>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {t("main_menu.collapse")}
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
 
-            <div className="flex-1 px-2 pb-2 pt-2 space-y-1 overflow-y-auto scrollbar">
-              <button
-                type="button"
-                onClick={onOpenPalette}
-                title={t("palette.open")}
-                className={cn(
-                  "w-full flex items-center gap-2 rounded-md border shadow-sm bg-background h-8 px-3 text-sm text-muted-foreground hover:border-ring hover:text-foreground cursor-pointer select-none",
-                  collapsed && "justify-center px-0",
-                )}
-              >
-                <PiMagnifyingGlassBold className="shrink-0" />
-                {!collapsed && (
-                  <>
-                    <span className="flex-1 text-left line-clamp-1">
-                      {t("palette.open")}
-                    </span>
-                    <kbd className="shrink-0 text-xs font-medium">
-                      {navigator.platform.toUpperCase().includes("MAC") ? (
-                        <div className="inline-flex items-center gap-0.5">
-                          <TbCommand />
-                          <span>K</span>
-                        </div>
-                      ) : (
-                        "Ctrl K"
-                      )}
-                    </kbd>
-                  </>
-                )}
-              </button>
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar px-2 pb-2 space-y-0.5">
+        <SearchTrigger collapsed={collapsed} onClick={onOpenPalette} />
+        <div className="h-2" />
+        <MenuItem
+          collapsed={collapsed}
+          to="/"
+          icon={<PiHouseSimpleBold />}
+          label={t("main_menu.dashboard")}
+        />
+        {discover?.media_library.enabled && (
+          <MenuItem
+            collapsed={collapsed}
+            to="/media-library"
+            icon={<PiImageBold />}
+            label={t("main_menu.media_library")}
+          />
+        )}
+        {menuExtensions.map((extension) =>
+          extension.extension_type === ExtensionType.MainMenuLink ? (
+            <MenuItem
+              key={extension.extension_id}
+              collapsed={collapsed}
+              to={extension.config.url}
+              icon={<span className={extension.config.icon ?? undefined} />}
+              label={extension.config.label}
+            />
+          ) : (
+            <MenuButton
+              key={extension.extension_id}
+              collapsed={collapsed}
+              extension={extension}
+            />
+          ),
+        )}
 
-              <div className="h-3" />
-              <MenuItem
-                to="/"
-                color="slate"
-                icon={<PiHouseSimpleBold />}
-                label={t("main_menu.dashboard")}
-              />
-              {discover?.media_library.enabled && (
-                <MenuItem
-                  to="/media-library"
-                  color="pink"
-                  icon={<PiImageBold />}
-                  label={t("main_menu.media_library")}
-                />
-              )}
+        {discover?.model_groups.map((group) => (
+          <MenuSection
+            key={group.name}
+            group={group}
+            collapsed={collapsed}
+            active={group.name === activeGroup}
+          >
+            {group.models
+              .map((label) => {
+                const model = discover.models.find(R.whereEq({ label }));
 
-              {linkExtensions.map(({ extension_id, config }) => (
-                <MenuItem
-                  key={extension_id}
-                  to={config.url}
-                  color={config.color ?? undefined}
-                  icon={<span className={config.icon ?? undefined} />}
-                  label={config.label}
-                />
-              ))}
+                return model ? (
+                  <MenuItem
+                    key={label}
+                    collapsed={collapsed}
+                    to={`/content/${model.label}`}
+                    label={model.verbose_name_plural}
+                    icon={model.admin.icon ?? <PiFileTextBold />}
+                  />
+                ) : null;
+              })
+              .filter((el) => !R.isNil(el))}
+          </MenuSection>
+        ))}
+      </div>
 
-              <div className="h-4" role="separator" />
-
-              {discover?.model_groups.map((group) => (
-                <MenuItem
-                  key={group.name}
-                  color={group.color ?? "blue"}
-                  icon={group.icon ?? <PiFileTextBold />}
-                  label={group.label}
-                >
-                  {group.models
-                    .map((label) => {
-                      const model = discover.models.find(R.whereEq({ label }));
-
-                      return model ? (
-                        <MenuItem
-                          key={label}
-                          isSubItem
-                          to={`/content/${model.label}`}
-                          label={model.verbose_name_plural}
-                          icon={model.admin.icon ?? <PiFileTextBold />}
-                        />
-                      ) : null;
-                    })
-                    .filter((el) => !R.isNil(el))}
-                </MenuItem>
-              ))}
-            </div>
-            <UserMenu />
-          </nav>
-        </div>
-      </CollapsedContext>
-    </ExpandedContext>
+      <UserMenu collapsed={collapsed} />
+    </nav>
   );
 }
 
-const COLORS: Record<TailwindColor, string> = {
-  slate: "bg-slate-200 text-slate-600",
-  gray: "bg-muted text-muted-foreground",
-  zinc: "bg-zinc-200 text-zinc-600",
-  neutral: "bg-neutral-200 text-neutral-600",
-  stone: "bg-stone-200 text-stone-600",
-  red: "bg-red-100 text-red-600",
-  orange: "bg-orange-100 text-orange-600",
-  amber: "bg-amber-100 text-amber-600",
-  yellow: "bg-yellow-100 text-yellow-600",
-  lime: "bg-lime-100 text-lime-600",
-  green: "bg-green-100 text-green-600",
-  emerald: "bg-emerald-100 text-emerald-600",
-  teal: "bg-teal-100 text-teal-600",
-  cyan: "bg-cyan-100 text-cyan-600",
-  sky: "bg-sky-100 text-sky-600",
-  blue: "bg-blue-100 text-blue-600",
-  indigo: "bg-indigo-100 text-indigo-600",
-  violet: "bg-violet-100 text-violet-600",
-  purple: "bg-purple-100 text-purple-600",
-  fuchsia: "bg-fuchsia-100 text-fuchsia-600",
-  pink: "bg-pink-100 text-pink-600",
-  rose: "bg-rose-100 text-rose-600",
-  mauve: "bg-mauve-100 text-mauve-600",
-  olive: "bg-olive-100 text-olive-600",
-  mist: "bg-mist-100 text-mist-600",
-  taupe: "bg-taupe-100 text-taupe-600",
-};
+/** The site: its mark and its name; collapsed, the mark expands the menu. */
+function Brand({
+  collapsed,
+  name,
+  onExpand,
+}: {
+  collapsed: boolean;
+  name: string;
+  // Absent on narrow screens, where the menu cannot expand.
+  onExpand?: () => void;
+}) {
+  const { t } = useTranslation();
+  const mark = (
+    <div className="size-6 shrink-0 rounded-md bg-gradient-to-tl from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 text-gray-50 dark:text-gray-900 flex items-center justify-center text-xs font-black">
+      {name[0]}
+    </div>
+  );
+
+  if (collapsed && onExpand) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label={t("main_menu.expand")}
+            className="rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring cursor-pointer"
+            onClick={onExpand}
+          >
+            {mark}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right">{t("main_menu.expand")}</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  if (collapsed) {
+    return mark;
+  }
+
+  return (
+    <div className="flex-1 min-w-0 flex items-center gap-2">
+      {mark}
+      <h2 className="font-semibold text-base truncate">{name}</h2>
+    </div>
+  );
+}
+
+function SearchTrigger({
+  collapsed,
+  onClick,
+}: {
+  collapsed: boolean;
+  onClick(): void;
+}) {
+  const { t } = useTranslation();
+  const isMac = navigator.platform.toUpperCase().includes("MAC");
+
+  if (collapsed) {
+    return (
+      <MenuItem
+        collapsed
+        icon={<PiMagnifyingGlassBold />}
+        label={t("palette.open")}
+        title={t("palette.open")}
+        onClick={onClick}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      title={t("palette.open")}
+      onClick={onClick}
+      className="w-full h-8 flex items-center gap-2 rounded-md border bg-background shadow-xs px-2.5 text-sm text-muted-foreground hover:border-ring hover:text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring cursor-pointer"
+    >
+      <PiMagnifyingGlassBold className="shrink-0" />
+      <span className="flex-1 text-left truncate">{t("palette.open")}</span>
+      <kbd className="inline-flex items-center gap-0.5 rounded-sm border bg-background px-1 font-sans text-[11px] font-medium text-muted-foreground">
+        {isMac ? (
+          <>
+            <TbCommand />
+            <span>K</span>
+          </>
+        ) : (
+          "Ctrl K"
+        )}
+      </kbd>
+    </button>
+  );
+}
+
+/**
+ * A model group: a heading with the models under it. It starts open
+ * unless configured collapsed, and the group of the current model opens
+ * whenever that model changes; a click on the heading toggles it.
+ */
+function MenuSection({
+  group,
+  collapsed,
+  active,
+  children,
+}: {
+  group: ModelGroup;
+  collapsed: boolean;
+  active: boolean;
+  children: React.ReactElement[];
+}) {
+  const [expandedByUser, setExpandedByUser] = useState<boolean | null>(null);
+  // Becoming the active group reopens it, also after a manual close:
+  // state adjusted during render, as React advises for derived resets.
+  const [wasActive, setWasActive] = useState(active);
+
+  if (active !== wasActive) {
+    setWasActive(active);
+
+    if (active) {
+      setExpandedByUser(null);
+    }
+  }
+
+  const expanded = expandedByUser ?? (active || !group.collapsed);
+
+  if (collapsed) {
+    return (
+      <div className="pt-2 mt-2 border-t border-sidebar-border space-y-0.5">
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-3">
+      <button
+        type="button"
+        className="group/heading w-full h-7 px-2 flex items-center gap-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring cursor-pointer"
+        aria-expanded={expanded}
+        onClick={() => setExpandedByUser(!expanded)}
+      >
+        <span className="flex-1 text-left truncate first-letter:uppercase">
+          {group.label}
+        </span>
+        {expanded ? (
+          <PiCaretDownBold className="size-3 opacity-0 group-hover/heading:opacity-100 group-focus-visible/heading:opacity-100 transition-opacity" />
+        ) : (
+          <PiCaretRightBold className="size-3" />
+        )}
+      </button>
+      {expanded && <div className="space-y-0.5">{children}</div>}
+    </div>
+  );
+}
+
+/**
+ * A MainMenuButton extension: runs the button's handle() on the server,
+ * confirming first when it asks to, and shows its result.
+ */
+function MenuButton({
+  extension,
+  collapsed,
+}: {
+  extension: MainMenuButtonExtension;
+  collapsed: boolean;
+}) {
+  const http = useHttp();
+  const { extension_id, config } = extension;
+  const run = useCallback(async () => {
+    const { data } = await http.post<ButtonResult>(
+      `/extensions/${extension_id}/run`,
+    );
+
+    return data;
+  }, [http, extension_id]);
+  const { trigger, isPending } = useRunButton({ confirm: config.confirm, run });
+
+  return (
+    <MenuItem
+      collapsed={collapsed}
+      icon={
+        isPending ? (
+          <Spinner className="size-3" />
+        ) : (
+          <span className={config.icon ?? undefined} />
+        )
+      }
+      label={config.label}
+      disabled={isPending}
+      onClick={trigger}
+    />
+  );
+}
 
 function MenuItem({
   label,
   icon,
   to,
-  color,
-  children,
-  isSubItem,
+  collapsed,
+  disabled,
+  title,
+  onClick,
 }: {
   label: string;
-  isSubItem?: boolean;
   icon?: React.ReactNode | string;
   to?: Partial<Path> | string;
-  color?: TailwindColor;
-  children?: React.ReactElement[];
+  collapsed: boolean;
+  disabled?: boolean;
+  title?: string;
+  onClick?(): void;
 }) {
   const Comp = to ? Link : "button";
   const match = useMatch(`${to ?? ""}`);
-  const menuCollapsed = useContext(CollapsedContext);
-  const { expandedItem, toggleGroup } = useContext(ExpandedContext);
-  const expanded = expandedItem === label;
+  const active = !R.isNil(to) && !!match;
 
   const item = (
     <Comp
       // @ts-expect-error due to mixed component
       to={to ?? undefined}
+      type={to ? undefined : "button"}
+      title={title}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "relative group flex items-center w-full font-medium gap-2.5 h-8 px-2 hover:bg-accent rounded-md hover:cursor-pointer",
-        {
-          "bg-accent": !R.isNil(to) && match,
-          "justify-center": menuCollapsed,
-        },
+        "relative flex items-center h-8 rounded-md text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring cursor-pointer disabled:opacity-50",
+        active
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
+        collapsed ? "w-9 mx-auto justify-center" : "w-full px-2 gap-2.5",
       )}
-      onClick={() => {
-        if (children) {
-          toggleGroup(label, expanded);
-        }
-      }}
+      disabled={disabled}
+      onClick={onClick}
     >
       {icon && (
         <span
           className={cn(
-            "size-5 rounded flex items-center justify-center shrink-0",
-            color ? COLORS[color] : "text-muted-foreground",
+            "shrink-0 flex items-center justify-center size-4 [&_svg]:size-4 text-base leading-none",
+            active ? "text-foreground" : "text-muted-foreground",
           )}
         >
           {typeof icon === "string" ? <span className={cn(icon)} /> : icon}
         </span>
       )}
-      {!menuCollapsed && (
-        <span
-          className={cn(
-            "flex items-center justify-between flex-1",
-            isSubItem ? "text-accent-foreground" : "text-secondary-foreground",
-          )}
-        >
-          <span className="first-letter:uppercase line-clamp-1 break-all">
-            {label}
-          </span>
-          {children ? (
-            <div className="group-hover:bg-accent p-1 rounded">
-              {expanded ? <PiCaretDownBold /> : <PiCaretRightBold />}
-            </div>
-          ) : null}
+      {!collapsed && (
+        <span className="flex-1 truncate text-left first-letter:uppercase">
+          {label}
         </span>
       )}
     </Comp>
   );
 
+  if (!collapsed) {
+    return item;
+  }
+
   return (
-    <>
-      {menuCollapsed ? (
-        <Tooltip>
-          <TooltipTrigger asChild>{item}</TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8}>
-            <span className="first-letter:uppercase">{label}</span>
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        item
-      )}
-      {children && expanded ? (
-        <div className={cn({ "pl-3 space-y-1": !menuCollapsed })}>
-          {children}
-        </div>
-      ) : null}
-    </>
+    <Tooltip>
+      <TooltipTrigger asChild>{item}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        <span className="first-letter:uppercase">{label}</span>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
-function UserMenu() {
+function UserMenu({ collapsed }: { collapsed: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -379,104 +479,119 @@ function UserMenu() {
   const { data: adminInfo } = useAdminInfo();
   const { data: discover } = useDiscover();
   const { theme, setTheme } = useTheme();
-  const menuCollapsed = useContext(CollapsedContext);
+
+  if (!me) {
+    return null;
+  }
+
+  const name = `${me.first_name ?? ""} ${me.last_name ?? ""}`.trim();
+  const initials =
+    `${me.first_name ?? ""}${me.last_name ?? ""}${me.username ?? ""}`
+      .trim()
+      .replace(/\s/g, "")
+      .slice(0, 2)
+      .toUpperCase();
 
   return (
-    <div className="p-2">
-      {me && (
-        <DropdownMenu>
-          <DropdownMenuContent
-            side="top"
-            align="start"
-            className={cn(
-              "p-0",
-              !menuCollapsed && "w-(--radix-dropdown-menu-trigger-width)",
-            )}
-          >
-            <div className="px-4 py-2 border-b leading-tight">
-              <div className="text-foreground font-semibold">
-                {`${me.first_name ?? ""} ${me.last_name ?? ""}`.trim()}
-              </div>
-              <div className="text-xs text-muted-foreground font-medium">
-                {me.username}
-              </div>
-            </div>
-            <div className="p-1.5">
-              <DropdownMenuGroup>
-                <div className="flex items-center justify-between pl-2">
-                  <span>{t("main_menu.theme")}</span>
-                  <ToggleGroup
-                    type="single"
-                    value={theme}
-                    size="sm"
-                    variant="outline"
-                    onValueChange={(value) => {
-                      if (value) {
-                        setTheme(value as Theme);
-                      }
-                    }}
-                  >
-                    <ToggleGroupItem value="system">
-                      <LuMonitorCog />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="light">
-                      <LuSun />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="dark">
-                      <LuMoon />
-                    </ToggleGroupItem>
-                  </ToggleGroup>
+    <div className="p-2 border-t border-sidebar-border">
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className={cn(
+            "flex items-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring cursor-pointer hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent",
+            collapsed
+              ? "size-9 mx-auto justify-center"
+              : "w-full gap-2.5 h-10 px-2 text-left",
+          )}
+          aria-label={collapsed ? name || me.username : undefined}
+        >
+          <Avatar className="size-7">
+            <AvatarFallback className="text-[11px] font-semibold bg-secondary text-secondary-foreground">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate leading-tight">
+                  {name || me.username}
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    logout();
-                    navigate("/login");
-                  }}
-                >
-                  {t("main_menu.log_out")}
-                  <PiSignOutBold />
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </div>
-            {adminInfo && (
-              <div className="px-4 py-2 bg-accent border-t cursor-default">
-                <div className="text-xs font-medium text-foreground text-center">
-                  {adminInfo.site_title}
-                </div>
-                {discover?.version && (
-                  <div className="text-xs font-medium text-muted-foreground text-center">{`v${discover.version}`}</div>
+                {name && (
+                  <div className="text-[11px] text-muted-foreground truncate leading-tight">
+                    {me.username}
+                  </div>
                 )}
               </div>
+              <PiCaretUpDownBold className="size-3.5 text-muted-foreground shrink-0" />
+            </>
+          )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="top"
+          align="start"
+          className={cn(
+            "p-0",
+            !collapsed && "w-(--radix-dropdown-menu-trigger-width)",
+          )}
+        >
+          <div className="px-3 py-2.5 border-b leading-tight">
+            <div className="font-semibold">{name || me.username}</div>
+            {name && (
+              <div className="text-xs text-muted-foreground">{me.username}</div>
             )}
-          </DropdownMenuContent>
-          <DropdownMenuTrigger
-            className={cn(
-              "flex items-center text-left w-full hover:bg-foreground/5 data-[state=open]:bg-foreground/5 p-2 rounded-md select-none hover:cursor-pointer",
-              menuCollapsed ? "justify-center" : "gap-3",
-            )}
-          >
-            <div className="relative rounded-full size-8 bg-indigo-500 text-indigo-100 flex items-center justify-center font-bold shrink-0 text-xs">
-              {`${me.first_name ?? ""}${me.last_name ?? ""}${me.username ?? ""}`
-                .trim()
-                .replace(/\s/g, "")
-                .slice(0, 2)
-                .toUpperCase()}
-              <div className="bg-emerald-500 size-2 rounded-full absolute bottom-px right-px" />
+          </div>
+          <div className="p-1">
+            <div className="flex items-center justify-between gap-2 pl-2 pr-1 py-1 text-sm">
+              <span>{t("main_menu.theme")}</span>
+              <ToggleGroup
+                type="single"
+                value={theme}
+                size="sm"
+                variant="outline"
+                onValueChange={(value) => {
+                  if (value) {
+                    setTheme(value as Theme);
+                  }
+                }}
+              >
+                <ToggleGroupItem
+                  value="system"
+                  aria-label={t("palette.theme_system")}
+                >
+                  <LuMonitorCog />
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="light"
+                  aria-label={t("palette.theme_light")}
+                >
+                  <LuSun />
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="dark"
+                  aria-label={t("palette.theme_dark")}
+                >
+                  <LuMoon />
+                </ToggleGroupItem>
+              </ToggleGroup>
             </div>
-            {!menuCollapsed && (
-              <div>
-                <div className="text-foreground truncate text-sm/tight font-medium">
-                  {`${me.first_name ?? ""} ${me.last_name ?? ""}`.trim()}
-                </div>
-                <div className="text-xs/tight text-muted-foreground">
-                  {me.username}
-                </div>
-              </div>
-            )}
-          </DropdownMenuTrigger>
-        </DropdownMenu>
-      )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+            >
+              {t("main_menu.log_out")}
+              <PiSignOutBold />
+            </DropdownMenuItem>
+          </div>
+          {adminInfo && (
+            <div className="px-3 py-2 bg-muted border-t text-xs text-muted-foreground flex items-center justify-between gap-2 cursor-default">
+              <span className="truncate">{adminInfo.site_title}</span>
+              {discover?.version && <span>{`v${discover.version}`}</span>}
+            </div>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

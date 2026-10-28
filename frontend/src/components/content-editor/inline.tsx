@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { PiPlus } from "react-icons/pi";
 
 import { FormatRenderer } from "@/components/formats/renderer";
+import { MoveMenu, Reorderable, RowDragHandle } from "@/components/reorderable";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Pagination } from "@/components/ui/pagination";
@@ -23,12 +24,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useHttp } from "@/hooks/use-http";
+import { useMoveResource } from "@/hooks/use-move-resource";
+import { useReorderableRow } from "@/hooks/use-reorderable-row";
+import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type {
   FieldFormat,
+  FormField,
   Id,
   Model,
   PaginatedResponse,
+  Permissions,
   Resource,
 } from "@/types";
 
@@ -52,6 +58,9 @@ export function Inline({
     readonly_fields?: string[];
     prepopulated_fields?: Record<string, string[]>;
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
+    reorderable?: boolean;
+    header?: FormField[];
+    permissions?: Permissions;
   };
 }) {
   const { t } = useTranslation();
@@ -60,7 +69,17 @@ export function Inline({
   const [create, setCreate] = useState(false);
   const [page, setPage] = useState(1);
   const readOnly = !model.admin;
+  // Without add permission there is nothing to create; rows still open
+  // read-only for editors who may only view them.
+  const canAdd = !readOnly && (adminModel.permissions?.add_permission ?? true);
   const relName = useWatch({ name: "__str__" });
+  const listKey = [
+    "resources",
+    relModel,
+    model.label,
+    adminModel.fk_name,
+    relId,
+  ];
   const { data, isLoading } = useQuery({
     retry: false,
     refetchOnWindowFocus: true,
@@ -85,6 +104,18 @@ export function Inline({
     },
   });
 
+  const { mutate: move } = useMoveResource({
+    endpoint: `/inlines/${relModel}/${model.label}`,
+    queryKey: [...listKey, page],
+    invalidateKey: listKey,
+  });
+  // Inline rows are always in their manual order: no search or
+  // ordering can turn reordering off.
+  const onMove = adminModel.reorderable
+    ? (id: Id, next: Move) => move({ id, move: next })
+    : undefined;
+  const columns = (adminModel.table_display?.length ?? 0) + (onMove ? 2 : 0);
+
   return (
     <div className="space-y-4">
       <Dialog open={create} onOpenChange={setCreate}>
@@ -96,6 +127,7 @@ export function Inline({
             dialog
             modelLabel={model.label}
             inlineOf={relModel}
+            headerComponents={adminModel.header}
             initialValues={{
               [adminModel.fk_name]: { id: relId, __str__: relName },
               // The inline studio decides what is read-only, not the
@@ -119,56 +151,114 @@ export function Inline({
           />
         </DialogContent>
       </Dialog>
-      <div className="border rounded-lg scrollbar bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {adminModel.table_display?.map(({ name, header }) => (
-                <TableHead key={name}>
-                  <div className="flex items-center">
-                    {header ?? model.fields[name]?.verbose_name}
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={adminModel.table_display?.length}>
-                  <div className="flex justify-center py-24">
-                    <Spinner />
-                  </div>
-                </td>
-              </tr>
-            ) : R.isEmpty(data?.results) ? (
-              <tr>
-                <td colSpan={adminModel.table_display?.length}>
-                  <div className="text-center py-12 text-muted-foreground select-none">
-                    {t("editor.empty_state")}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              data?.results.map((resource) => (
-                <InlineRow
-                  key={resource.id}
-                  resource={resource}
-                  model={model}
-                  adminModel={adminModel}
-                  relModel={relModel}
-                  relId={relId}
-                  relName={relName}
-                  readOnly={readOnly}
-                />
-              ))
+      <div className="rounded-lg border bg-card shadow-xs overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-3 border-b">
+          <h2 className="flex-1 min-w-0 font-semibold truncate first-letter:uppercase">
+            {model.verbose_name_plural}
+            {data?.pagination && (
+              <span className="ml-2 text-muted-foreground font-normal tabular-nums">
+                {data.pagination.count}
+              </span>
             )}
-          </TableBody>
-        </Table>
+          </h2>
+          {canAdd && (
+            <Button size="sm" variant="outline" onClick={() => setCreate(true)}>
+              <PiPlus />
+              {t("common.create")}
+            </Button>
+          )}
+        </div>
+        <div className="overflow-x-auto scrollbar">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {onMove && (
+                  <TableHead className="w-8">
+                    <span className="sr-only">{t("reorder.drag")}</span>
+                  </TableHead>
+                )}
+                {adminModel.table_display?.map(({ name, header }) => (
+                  <TableHead key={name}>
+                    {header ?? model.fields[name]?.verbose_name}
+                  </TableHead>
+                ))}
+                {onMove && (
+                  <TableHead className="w-10">
+                    <span className="sr-only">{t("reorder.menu")}</span>
+                  </TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={columns}>
+                    <div className="flex justify-center py-24">
+                      <Spinner />
+                    </div>
+                  </td>
+                </tr>
+              ) : R.isEmpty(data?.results) ? (
+                <tr>
+                  <td colSpan={columns}>
+                    <div className="text-center py-12 text-muted-foreground select-none">
+                      {t("editor.empty_state")}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                data &&
+                (onMove ? (
+                  <Reorderable
+                    ids={data.results.map((resource) => resource.id)}
+                    getLabel={(id) =>
+                      data.results.find(
+                        (resource) => String(resource.id) === String(id),
+                      )?.__str__ ?? id
+                    }
+                    onMove={onMove}
+                  >
+                    {data.results.map((resource, index) => (
+                      <SortableInlineRow
+                        key={resource.id}
+                        resource={resource}
+                        edges={getEdges(index, data.results.length, {
+                          isFirstPage: data.pagination.current <= 1,
+                          isLastPage:
+                            data.pagination.current >= data.pagination.pages,
+                        })}
+                        model={model}
+                        adminModel={adminModel}
+                        relModel={relModel}
+                        relId={relId}
+                        relName={relName}
+                        readOnly={readOnly}
+                        onMove={onMove}
+                      />
+                    ))}
+                  </Reorderable>
+                ) : (
+                  data.results.map((resource) => (
+                    <InlineRow
+                      key={resource.id}
+                      resource={resource}
+                      model={model}
+                      adminModel={adminModel}
+                      relModel={relModel}
+                      relId={relId}
+                      relName={relName}
+                      readOnly={readOnly}
+                    />
+                  ))
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {data?.pagination && (
-        <div className="flex justify-center">
+        <div className="flex justify-end">
           <Pagination
             current={data.pagination.current}
             pages={data.pagination.pages}
@@ -176,15 +266,16 @@ export function Inline({
           />
         </div>
       )}
-
-      <div className="flex justify-center">
-        <Button size="sm" variant="outline" onClick={() => setCreate(true)}>
-          <PiPlus />
-          {t("common.create")}
-        </Button>
-      </div>
     </div>
   );
+}
+
+function SortableInlineRow(
+  props: Omit<Parameters<typeof InlineRow>[0], "sortable">,
+) {
+  const sortable = useReorderableRow(props.resource.id);
+
+  return <InlineRow {...props} sortable={sortable} />;
 }
 
 function InlineRow({
@@ -195,6 +286,9 @@ function InlineRow({
   adminModel,
   relId,
   relName,
+  onMove,
+  sortable,
+  edges,
 }: {
   relId: Id;
   relName: string;
@@ -207,10 +301,17 @@ function InlineRow({
     readonly_fields?: string[];
     prepopulated_fields?: Record<string, string[]>;
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
+    reorderable?: boolean;
+    header?: FormField[];
+    permissions?: Permissions;
   };
+  onMove?: (id: Id, move: Move) => void;
+  sortable?: ReturnType<typeof useReorderableRow>;
+  edges?: ReturnType<typeof getEdges>;
 }) {
   const [edit, setEdit] = useState(false);
   const queryClient = useQueryClient();
+  const canChange = adminModel.permissions?.change_permission ?? true;
 
   return (
     <>
@@ -224,6 +325,9 @@ function InlineRow({
               modelLabel={model.label}
               inlineOf={relModel}
               id={resource.id}
+              headerComponents={adminModel.header}
+              readOnly={!canChange}
+              canDelete={adminModel.permissions?.delete_permission ?? true}
               initialValues={{
                 [adminModel.fk_name]: { id: relId, __str__: relName },
               }}
@@ -246,13 +350,21 @@ function InlineRow({
         )}
       </Dialog>
       <TableRow
+        ref={sortable?.ref}
+        style={sortable?.style}
         onClick={() => !readOnly && setEdit(true)}
         className={cn({
           "hover:bg-transparent": readOnly,
+          "bg-muted shadow-sm": sortable?.isDragging,
         })}
       >
-        {adminModel.table_display?.map(({ name, format }) => (
-          <TableCell key={name}>
+        {sortable && (
+          <TableCell className="w-8 pr-0">
+            <RowDragHandle handleProps={sortable.handleProps} />
+          </TableCell>
+        )}
+        {adminModel.table_display?.map(({ name, format }, index) => (
+          <TableCell key={name} className={cn({ "font-medium": index === 0 })}>
             <FormatRenderer
               value={resource[name]}
               field={model.fields[name]}
@@ -260,6 +372,14 @@ function InlineRow({
             />
           </TableCell>
         ))}
+        {onMove && (
+          <TableCell
+            className="w-10"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <MoveMenu onMove={(move) => onMove(resource.id, move)} {...edges} />
+          </TableCell>
+        )}
       </TableRow>
     </>
   );

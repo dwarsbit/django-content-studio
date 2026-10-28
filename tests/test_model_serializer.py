@@ -44,3 +44,17 @@ def test_flex_field_sends_its_schema():
     data = ModelSerializer(auth_models.User).get_field(field)
 
     assert data["json_schema"] == schema
+
+
+def test_multiple_choice_options_are_the_choices():
+    from content_studio.webhooks.models import Webhook
+
+    fields = ModelSerializer(Webhook).serialize()["fields"]
+
+    assert fields["events"]["choices"] == [
+        ("created", "Created"),
+        ("updated", "Updated"),
+        ("deleted", "Deleted"),
+        ("restored", "Restored"),
+        ("reordered", "Reordered"),
+    ]

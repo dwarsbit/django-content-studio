@@ -161,6 +161,10 @@ class MultipleChoiceField(models.JSONField):
         kwargs["options"] = self.options
         return name, path, args, kwargs
 
+    def cs_get_field_attributes(self):
+        # The options are the multi-select's choices in the admin.
+        return {"choices": [(value, str(label)) for value, label in self.options]}
+
 
 class TagField(models.JSONField):
     description = "A field for storing tags as a JSON array."

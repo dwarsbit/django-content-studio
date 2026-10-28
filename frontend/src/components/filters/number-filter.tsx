@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PiCaretDownBold } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+import { FilterTrigger } from "./filter-trigger";
 import type { FilterComponentProps } from "./types";
 
 /**
@@ -52,13 +52,15 @@ export function NumberFilter({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline">
-          {field.verbose_name}
-          <span className="empty:hidden font-normal text-muted-foreground">
-            {range}
-          </span>
-          <PiCaretDownBold className="size-4 opacity-50" />
-        </Button>
+        <FilterTrigger
+          label={field.verbose_name}
+          value={range}
+          onClear={() => {
+            setMin("");
+            setMax("");
+            onChange({ gte: null, lte: null });
+          }}
+        />
       </PopoverTrigger>
       <PopoverContent className="w-56 p-3 flex flex-col gap-3" align="start">
         <label className="flex flex-col gap-1 text-sm text-muted-foreground">

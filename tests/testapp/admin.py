@@ -3,11 +3,28 @@ from content_studio.actions import bulk_action
 from content_studio.admin import InlineModelStudio, ModelStudio
 from content_studio.form import FormSet, TableColumn
 
-from .models import Article, Category, Label, Note, Page, Review, SiteSettings
+from .models import (
+    Article,
+    Category,
+    Label,
+    LandingPage,
+    Note,
+    Page,
+    Review,
+    SiteSettings,
+    Step,
+    Track,
+)
 
 
 class ReviewInline(InlineModelStudio):
     model = Review
+
+
+class StepInline(InlineModelStudio):
+    model = Step
+    table_display = ["text"]
+    reorder_field = "order_key"
 
 
 @register(Category)
@@ -34,7 +51,7 @@ class ArticleAdmin(ModelStudio):
     }
     list_filter = ["status", "published_at"]
     search_fields = ["title"]
-    inlines = [ReviewInline]
+    inlines = [ReviewInline, StepInline]
     edit_main = [
         FormSet(
             title="Content",
@@ -81,3 +98,18 @@ class PageAdmin(ModelStudio):
 class LabelAdmin(ModelStudio):
     table_display = ["code", "name"]
     search_fields = ["name"]
+
+
+@register(Track)
+class TrackAdmin(ModelStudio):
+    table_display = ["id", "title", "position"]
+    list_filter = ["category", "title"]
+    search_fields = ["title"]
+    soft_delete = "removed_at"
+    reorder_field = "position"
+    reorder_scope = ["category"]
+
+
+@register(LandingPage)
+class LandingPageAdmin(ModelStudio):
+    table_display = ["title"]

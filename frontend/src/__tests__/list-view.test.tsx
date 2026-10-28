@@ -755,7 +755,7 @@ describe("ModelListPage", () => {
 
     // The trigger shows the selected relation, resolved from the API.
     expect(
-      await screen.findByRole("button", { name: /Author\s*John\s*Doe/ }),
+      await screen.findByRole("button", { name: /Author.*John\s*Doe/ }),
     ).toBeInTheDocument();
   });
 
@@ -835,7 +835,7 @@ describe("ModelListPage", () => {
     await screen.findByText("First Article");
 
     expect(
-      screen.getByRole("link", { name: "list_view.trash" }),
+      screen.getByRole("link", { name: /list_view.trash/ }),
     ).toHaveAttribute("href", "/content/testapp.article/trash");
   });
 
@@ -1138,5 +1138,192 @@ describe("bulk actions", () => {
       .map((checkbox) => (checkbox as HTMLInputElement).dataset.state);
 
     expect(checked).toEqual(["checked", "checked", "checked"]);
+  });
+});
+
+describe("ModelListPage reordering", () => {
+  beforeEach(() => {
+    httpGetMock.mockReset();
+    httpPostMock.mockReset();
+    httpGetMock.mockResolvedValue({ data: makePaginated(articles) });
+    useAdminInfoMock.mockReturnValue({ data: undefined });
+    localStorage.clear();
+  });
+
+  const rowTitles = () =>
+    screen
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => row.textContent);
+
+  it("offers no handles on lists that cannot be reordered", async () => {
+    renderListPage(makeModel());
+
+    await screen.findByText("First Article");
+
+    expect(
+      screen.queryByRole("button", { name: "reorder.drag" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "reorder.menu" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers a handle and a move menu per row", async () => {
+    renderListPage(makeModel({ list: { reorderable: true } }));
+
+    await screen.findByText("First Article");
+
+    const handles = screen.getAllByRole("button", { name: "reorder.drag" });
+    expect(handles).toHaveLength(2);
+    expect(handles[0]).not.toHaveAttribute("aria-disabled");
+    expect(
+      screen.getAllByRole("button", { name: "reorder.menu" }),
+    ).toHaveLength(2);
+  });
+
+  it("turns reordering off while another ordering is active", async () => {
+    localStorage.setItem("__dcs_list_ordering__:testapp.article", "title");
+    renderListPage(makeModel({ list: { reorderable: true } }));
+
+    await screen.findByText("First Article");
+
+    const handles = screen.getAllByRole("button", {
+      name: "reorder.disabled_ordering",
+    });
+    expect(handles[0]).toHaveAttribute("aria-disabled", "true");
+    expect(
+      screen.getAllByRole("button", { name: "reorder.menu" })[0],
+    ).toBeDisabled();
+  });
+
+  it("turns reordering off during a search but not with filters", async () => {
+    localStorage.setItem(
+      "__dcs_list_filters__:testapp.article",
+      JSON.stringify({ status: "published" }),
+    );
+    const model = makeModel({
+      list: { reorderable: true, filter: ["status"] },
+      fields: filteredArticleFields,
+    });
+    const { unmount } = renderListPage(model);
+
+    await screen.findByText("First Article");
+    expect(
+      screen.getAllByRole("button", { name: "reorder.drag" })[0],
+    ).not.toHaveAttribute("aria-disabled");
+    unmount();
+
+    renderListPage(model, "/content/testapp.article?search=first");
+
+    await screen.findByText("First Article");
+    expect(
+      screen.getAllByRole("button", { name: "reorder.disabled_search" })[0],
+    ).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("moves a row to the top right away and posts the move", async () => {
+    const user = userEvent.setup();
+    let resolve: (value: unknown) => void = () => {};
+    httpPostMock.mockReturnValue(new Promise((r) => (resolve = r)));
+    renderListPage(makeModel({ list: { reorderable: true } }));
+
+    await screen.findByText("First Article");
+    await user.click(
+      screen.getAllByRole("button", { name: "reorder.menu" })[1],
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: "reorder.move_first" }),
+    );
+
+    expect(httpPostMock).toHaveBeenCalledWith(
+      "/content/testapp.article/2/move",
+      { position: "first" },
+      { params: {} },
+    );
+    // The optimistic update, before the server answers.
+    await waitFor(() => expect(rowTitles()[0]).toContain("Second Article"));
+    // Moving never opens the editor.
+    expect(screen.getByTestId("location-pathname")).toHaveTextContent(
+      "/content/testapp.article",
+    );
+    expect(screen.getByTestId("location-pathname")).not.toHaveTextContent(
+      "/content/testapp.article/2",
+    );
+
+    resolve({ data: {} });
+    // The refetch afterwards shows the server's order.
+    await waitFor(() => expect(rowTitles()[0]).toContain("First Article"));
+  });
+
+  it("moves a row one step and sends the list's filters along", async () => {
+    const user = userEvent.setup();
+    httpPostMock.mockResolvedValue({ data: {} });
+    localStorage.setItem(
+      "__dcs_list_filters__:testapp.article",
+      JSON.stringify({ status: "published" }),
+    );
+    renderListPage(
+      makeModel({
+        list: { reorderable: true, filter: ["status"] },
+        fields: filteredArticleFields,
+      }),
+    );
+
+    await screen.findByText("First Article");
+    await user.click(
+      screen.getAllByRole("button", { name: "reorder.menu" })[0],
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: "reorder.move_down" }),
+    );
+
+    expect(httpPostMock).toHaveBeenCalledWith(
+      "/content/testapp.article/1/move",
+      { position: "down" },
+      { params: { status: "published" } },
+    );
+  });
+
+  it("offers no moves past the ends of the list", async () => {
+    const user = userEvent.setup();
+    renderListPage(makeModel({ list: { reorderable: true } }));
+
+    await screen.findByText("First Article");
+    await user.click(
+      screen.getAllByRole("button", { name: "reorder.menu" })[0],
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "reorder.move_up" }),
+    ).toHaveAttribute("data-disabled");
+    expect(
+      screen.getByRole("menuitem", { name: "reorder.move_first" }),
+    ).toHaveAttribute("data-disabled");
+    expect(
+      screen.getByRole("menuitem", { name: "reorder.move_down" }),
+    ).not.toHaveAttribute("data-disabled");
+  });
+
+  it("rolls the row back when the move fails", async () => {
+    const user = userEvent.setup();
+    let reject: (reason: unknown) => void = () => {};
+    httpPostMock.mockReturnValue(new Promise((_, r) => (reject = r)));
+    renderListPage(makeModel({ list: { reorderable: true } }));
+
+    await screen.findByText("First Article");
+    await user.click(
+      screen.getAllByRole("button", { name: "reorder.menu" })[0],
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: "reorder.move_last" }),
+    );
+
+    await waitFor(() => expect(rowTitles()[0]).toContain("Second Article"));
+
+    httpGetMock.mockClear();
+    reject({ response: { data: ["The target is not in this list."] } });
+
+    await waitFor(() => expect(rowTitles()[0]).toContain("First Article"));
   });
 });

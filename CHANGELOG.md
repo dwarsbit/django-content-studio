@@ -1,7 +1,84 @@
 # Changelog
 
-## 1.1.0 (unreleased)
+## 1.2.0 (unreleased)
 
+- **The app shell and the main menu.** Every page shares one header: the
+  title on the left, the page's actions on the right and, where a page
+  has them, a toolbar row underneath. The main menu sits flush against
+  the page, lists the model groups as headings with their models visible,
+  and becomes a rail of icons when collapsed or on narrow screens. Icons
+  are in the gray family; the `color` of a `ModelGroup` or a
+  `MainMenuLink` is no longer shown. `ModelGroup(collapsed=True)` starts
+  a group collapsed; the group of the current model always opens.
+- **Tables.** The list page's table, inlines and the media library's
+  table share one shape: a 40px header on the gray family with
+  capitalized labels, 44px rows with a 16px gutter, the object's name
+  as the only medium-weight column, numbers right-aligned in tabular
+  figures, selected rows on `accent`. Booleans show a check or a dash
+  in the text color instead of green and red circles; a user column
+  shows the avatar with the name instead of the avatar alone. The media
+  library's table uses the admin's checkboxes.
+- **The list page.** Search and filters sit in a toolbar under the page
+  header; a filter reads "Status is Published" once set, with an inline
+  clear. Selecting rows shows a floating bar with the bulk actions
+  instead of replacing the filters, in the list view as well as the
+  table. The footer counts the objects and the pages; the empty states
+  show an icon with the invitation to create or to clear the filters.
+  A model with a trash gets "All" and "Trash" tabs under its title,
+  with the number of objects in the trash, instead of a Trash button.
+- **The edit page.** Form groups and inlines switch through line tabs
+  instead of the pill list. Form sets are cards with a small header
+  row; labels are capitalized, required fields carry a mark, help text
+  sits under the control, read-only fields render as a dashed box, and
+  a checkbox field shows its help text under its label. The header says
+  "Unsaved changes" while the form is dirty. Inlines sit in a card with
+  the title, the count and the add button in its header. The media
+  picker is a row with the file, its type and size, and replace and
+  remove buttons, instead of a large preview with buttons on hover.
+- **The media library.** Folders are a tree on the left, with their
+  counts, nested folders behind carets and "New folder" at its foot; a
+  breadcrumb above the files repeats the path. Files are cards with the
+  thumbnail, or the type icon and extension, on the gray family; a
+  checkbox on hover selects a card or a list row for the floating bulk
+  bar (move, delete), and a more button holds the file's actions. A
+  file opens in a sheet from the right with its preview, Copy URL,
+  Download and Move, the name, alt text and tags, and Delete in the
+  footer; crop and focal point open in their own dialog from the sheet.
+  An empty folder is a dashed drop zone inviting the first upload. The
+  media picker in the editor shares the tree and the cards.
+- **The dashboard.** The greeting is the page's title, with today's
+  date under it. Every widget shares one card anatomy: a header row
+  with the title, a muted description and, for a content list of one
+  model, "View all"; rows separated by hairlines. The statistic shows
+  its trend as a signed percentage colored by sentiment (a negative
+  trend is shown too); the activity log shows an avatar, the editor,
+  the action and the object with the model and the time under it; a
+  scheduled task's status is a badge with a dot, or a spinner while it
+  runs. Wide widgets fill the row instead of overflowing it on narrow
+  screens.
+
+- **`FlexField` shows its inputs.** The edit page never received the
+  field's schema, so a `FlexField` showed a warning instead of an input
+  per property. Inputs are labeled with the property's `title`, or its
+  name when it has none.
+
+## 1.1.0 (2026-10-27)
+
+- **Block fields.** `BlockField` stores an ordered list of content
+  blocks that editors add (also between two blocks), reorder by dragging
+  or with the keyboard, duplicate and remove in the admin, to
+  build a page body from predefined blocks such as text and images.
+  Define a block as a `Block` subclass with plain model fields, which
+  pick the widgets and validate the block's data; blocks are not models
+  and need no migrations. `max_num` and `min_num` limit the number of
+  blocks, relations in blocks (such as `MediaField`) are stored as
+  primary keys and scoped to the tenant, and HTML in blocks is sanitized
+  on save. In templates, `{% render_blocks page.sections %}` (from the
+  `content_studio` template library) renders each block with its own
+  template, with related objects loaded in one query per model. A block
+  can have block fields of its own, one level deep, for layouts such as
+  columns; editors drag blocks between those lists and the page's own.
+  System check `content_studio.E018` reports misconfigured block fields.
 - **Read-only fields on the studio.** `readonly_fields` and
   `get_readonly_fields(request, obj=None)` work like the classic Django
   admin's, on studios and inlines: the edit page shows the fields
@@ -26,9 +103,109 @@
   Objects in the trash count, and on tenant-scoped models only the
   current tenant's objects are compared. `unique_together` and
   multi-field `UniqueConstraint`s are not checked.
+- **Reordering.** Set `reorder_field` to a number field on a studio or
+  inline and editors drag rows into their own order in the table view,
+  the list view and inlines, with the pointer or the keyboard. A row menu
+  moves an object one step up or down, or to the top or the bottom of the
+  list, also across pages. `reorder_scope` orders objects within a group (inlines are
+  always ordered per parent, tenant-scoped models per tenant), and
+  overriding `reorder()` on the studio plugs in any other ordering
+  implementation. Reordering needs change permission, is recorded in the
+  object's history and is off while the list is sorted by a column or
+  searched. System checks `content_studio.E017` and `content_studio.W013`
+  report misconfigurations.
+- **`ManualOrderModel.reorder()` is scoped and fast.** It renumbers only
+  the objects that share the model's new `order_scope` fields, in a single
+  update query, instead of saving every object of the model one by one.
 - **`Field(readonly=True)` is enforced on save.** The edit page already
   showed these fields without an input; saving now ignores any value
   sent for them as well.
+- **Buttons on the edit page.** The new `Button` component runs your
+  code for the object being edited: subclass it and implement
+  `handle(obj, request)`. It takes a `label`, an `icon`, a `confirm`
+  question, a `destructive` style and `allowed_permissions`, and
+  `is_visible(obj, request)` hides it per object. The editor sees the
+  returned message as a notification; a `ButtonResult` can also carry a
+  value shown once in a dialog with a copy button.
+- **Webhooks in the admin.** The webhooks app registers its own studio:
+  editors create webhooks, choosing events and models from lists, and
+  copy the secret, which is shown once after creating and after
+  **Regenerate secret**. **Trigger now** sends a request without changes
+  (event `webhook.triggered`) and reports how the webhook responded. Each
+  webhook shows its delivery log, read-only, with **Retry** on failed
+  deliveries for one more attempt. Unsafe URLs are refused on save, and
+  changes to webhooks themselves never trigger a webhook.
+- **A deploy button and a webhooks widget.** `DeployButton`, a
+  `MainMenuButton`, triggers the active webhooks (or the ones named in
+  `webhooks`) from the main menu, for editors who may change webhooks;
+  with multi-tenancy, the current tenant's and the global ones.
+  `WebhookDeliveriesWidget` shows each webhook's latest delivery on the
+  dashboard. Neither is added to the site by itself.
+- **The scheduled tasks widget shows missing values and errors properly.**
+  Tasks without a last run, a duration or a next run showed "null" or
+  an invalid date; those values are now left out. A failed task shows
+  its `error_message`, and the widget no longer depends on another
+  widget to format its times.
+- **`MultipleChoiceField` shows its options.** The admin's multi-select
+  for a `MultipleChoiceField` had no options to choose from: the field's
+  `options` were never sent to the admin.
+- **Excluded fields stay out of the admin.** Fields in a studio's
+  `exclude` are no longer sent to the admin read-only: they are left out
+  of the edit page's data entirely.
+- **Buttons in the main menu.** The new `MainMenuButton` extension runs
+  your code from the admin's main menu: subclass it and implement
+  `handle(request)`. It takes a `label`, an `icon`, a `color`, a
+  `weight` and a `confirm` question, and `is_visible(request)` decides
+  who sees and runs it. Its result is shown like a `Button`'s.
+- **Components in the edit page's header.** `edit_header` on a studio
+  places components, such as buttons, next to the save button; on an
+  inline studio, in the header of the inline object's editor. System
+  check `content_studio.E020` reports entries that are not components.
+- **`MainMenuLink(weight=...)` orders the menu.** The weight was accepted
+  but ignored; the main menu now orders its links and buttons by weight,
+  lowest first, keeping equal weights in the order of `extensions`.
+- **Components work in inline objects' editors.** Links and buttons of an
+  inline model's own studio failed in the dialog in which an editor opens
+  one of the inline's objects; they now work there, gated by the inline
+  studio's permissions.
+- **Read-only inlines.** Inlines follow their studio's permissions in the
+  admin: without add permission there is no create button, and without
+  change permission objects open read-only, deletable only with delete
+  permission.
+- **A message after creating.** A studio's
+  `get_created_result(request, obj)` returns a message or a
+  `ButtonResult` the editor sees after creating an object, with a value
+  shown once in a dialog with a copy button.
+- **The `content_changed` signal.** `content_studio.signals.content_changed`
+  is sent after changes made in the admin are committed: creating,
+  editing, deleting, restoring and reordering objects, including the
+  built-in bulk delete and the media library. One request sends one
+  signal with all its changes, each a `Change` with the action, the
+  model, the object's pk and label, the tenant, the user and a
+  timestamp. Changes that are rolled back are not sent. Custom bulk
+  actions record their changes with `record_change`.
+- **Webhooks.** The optional `content_studio.webhooks` app sends a
+  signed POST request to a URL after changes made in the admin, for
+  example to rebuild a static site. A `Webhook` chooses the events, the
+  models and the tenant it fires on; one request in the admin makes one
+  delivery per webhook, with all its matching changes. Deliveries are
+  sent as Django tasks (directly on Django 5.2 without django-tasks),
+  stored as `WebhookDelivery` with their outcome, and retried with a
+  growing wait by the `content_studio_deliver_webhooks` command.
+  Webhooks only reach public addresses over HTTPS and never follow
+  redirects, unless the host is in the new `WEBHOOK_ALLOWED_HOSTS`
+  setting. The same command removes finished deliveries after
+  `WEBHOOK_DELIVERY_RETENTION` days (30 by default). New settings
+  `WEBHOOK_MAX_ATTEMPTS` and `WEBHOOK_TIMEOUT`; system check
+  `content_studio.E019` reports malformed webhook settings.
+- **Media library changes are recorded in the history.** Uploading,
+  editing, deleting, cropping and moving media items are logged in the
+  activity log, like changes to content, and so are creating, renaming,
+  moving and deleting folders. Deleting a folder also records the
+  subfolders and media items deleted with it.
+- **Bulk deletes are logged with the object's pk.** The built-in bulk
+  delete and the media library's bulk delete recorded their history
+  entries without the deleted object's pk.
 
 ## Unreleased
 
@@ -50,10 +227,6 @@
   password reset and media library apps now pin it, and a test checks
   the shipped migrations against both settings.
 
-- **`FlexField` shows its inputs.** The edit page never received the
-  field's schema, so a `FlexField` showed a warning instead of an input
-  per property. Inputs are labeled with the property's `title`, or its
-  name when it has none.
 - **`Link` components render.** A `Link` on the edit page showed
   nothing; it is now a text link to the URL from `get_url`, next to the
   `ButtonLink` button.

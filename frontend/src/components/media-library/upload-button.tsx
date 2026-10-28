@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { PiUpload } from "react-icons/pi";
+import { PiUploadSimpleBold } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
 import { useUpload } from "@/hooks/use-upload";
@@ -30,7 +30,7 @@ export function UploadButton({
         className="select-none text-sm font-medium"
         onClick={() => inputRef.current?.click()}
       >
-        <PiUpload />
+        <PiUploadSimpleBold />
         {t("widgets.media_widget.upload_label")}
       </Button>
       <input

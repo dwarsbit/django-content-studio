@@ -27,13 +27,18 @@ PUBLIC_MODULES = [
     "content_studio.widgets",
     "content_studio.formats",
     "content_studio.fields",
+    "content_studio.blocks",
     "content_studio.models",
     "content_studio.managers",
+    "content_studio.signals",
     "content_studio.validators",
     "content_studio.sanitizers",
     "content_studio.exceptions",
     "content_studio.media_library.fields",
     "content_studio.media_library.models",
+    "content_studio.webhooks.models",
+    "content_studio.webhooks.dashboard",
+    "content_studio.webhooks.extensions",
 ]
 
 

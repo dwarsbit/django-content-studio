@@ -33,6 +33,11 @@ class ModelStudioPermissions(BasePermission):
         if request.method in SAFE_METHODS:
             return admin_model.has_view_permission(request)
 
+        if getattr(view, "action", None) == "run_component":
+            # Buttons enforce their own allowed_permissions on the
+            # object (see form.Button); seeing it is the only gate here.
+            return admin_model.has_view_permission(request)
+
         if getattr(view, "action", None) == "bulk":
             # The bulk endpoint enforces its own per-action permissions
             # (see actions.get_bulk_actions); seeing the list is the
@@ -48,9 +53,9 @@ class ModelStudioPermissions(BasePermission):
                 request
             ) or admin_model.has_add_permission(request)
 
-        if getattr(view, "action", None) == "restore":
-            # Restoring a trashed object is a change, whatever the
-            # HTTP method.
+        if getattr(view, "action", None) in ("restore", "move"):
+            # Restoring a trashed object and moving one to another
+            # position are changes, whatever the HTTP method.
             return admin_model.has_change_permission(request)
 
         if request.method == "POST":
@@ -73,11 +78,13 @@ class ModelStudioPermissions(BasePermission):
         if request.method in SAFE_METHODS:
             return admin_model.has_view_permission(request, obj)
 
-        if (
-            getattr(request, "method", None) == "POST"
-            and getattr(view, "action", None) == "restore"
-        ):
+        if getattr(request, "method", None) == "POST" and getattr(
+            view, "action", None
+        ) in ("restore", "move"):
             return admin_model.has_change_permission(request, obj)
+
+        if getattr(view, "action", None) == "run_component":
+            return admin_model.has_view_permission(request, obj)
 
         if request.method in ("PUT", "PATCH"):
             return admin_model.has_change_permission(request, obj)

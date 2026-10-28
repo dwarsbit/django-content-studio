@@ -11,13 +11,13 @@ tenant-scoped queryset of the selected rows.
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from django.contrib.admin.models import DELETION, LogEntry
-from django.contrib.contenttypes.models import ContentType
-from django.db import router
+from django.db import router, transaction
 from django.db.models.deletion import Collector
 from django.utils import timezone
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
+
+from .signals import DELETED, record_change
 
 __all__ = [
     "bulk_action",
@@ -112,26 +112,21 @@ class BulkAction:
 def delete_action(request, queryset):
     """
     The built-in delete: it collects related rows and fires deletion
-    signals like the classic admin, and logs one LogEntry per object.
+    signals like the classic admin, and records one change per object.
     Returns the number of deleted objects.
     """
     objects = list(queryset)
+    using = router.db_for_write(queryset.model)
 
-    collector = Collector(using=router.db_for_write(queryset.model))
-    collector.collect(objects)
-    collector.delete()
+    # Logged before deleting, which clears the objects' pks; the
+    # transaction keeps the log and the deletion together.
+    with transaction.atomic(using=using):
+        for obj in objects:
+            record_change(request, obj, DELETED)
 
-    content_type = ContentType.objects.get_for_model(queryset.model)
-
-    for obj in objects:
-        LogEntry.objects.create(
-            user=request.user,
-            action_flag=DELETION,
-            content_type=content_type,
-            object_id=obj.pk,
-            object_repr=str(obj)[:200],
-            change_message="",
-        )
+        collector = Collector(using=using)
+        collector.collect(objects)
+        collector.delete()
 
     return len(objects)
 
@@ -160,7 +155,7 @@ def _soft_delete_action(field):
     """
     The built-in delete for studios that configure soft_delete: it
     stamps the soft delete field instead of removing the rows, moving
-    the selected objects to the trash, and logs one LogEntry per
+    the selected objects to the trash, and records one change per
     object. Returns the number of trashed objects.
     """
 
@@ -168,17 +163,8 @@ def _soft_delete_action(field):
         objects = list(queryset)
         queryset.update(**{field: timezone.now()})
 
-        content_type = ContentType.objects.get_for_model(queryset.model)
-
         for obj in objects:
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=DELETION,
-                content_type=content_type,
-                object_id=obj.pk,
-                object_repr=str(obj)[:200],
-                change_message="",
-            )
+            record_change(request, obj, DELETED)
 
         return len(objects)
 

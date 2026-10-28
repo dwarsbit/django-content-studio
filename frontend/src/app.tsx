@@ -14,6 +14,7 @@ import { Outlet } from "react-router";
 import { ConfirmDialogProvider } from "@/components/confirm-dialog-provider";
 import { LoadingBar } from "@/components/loading-bar";
 import { Toaster } from "@/components/ui/sonner";
+import { ValueDialogProvider } from "@/components/value-dialog-provider";
 import { Error } from "@/error";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 
@@ -29,7 +30,9 @@ export function App() {
     <>
       <LoadingBar />
       <ConfirmDialogProvider>
-        {isError ? <Error error={error} /> : <Outlet />}
+        <ValueDialogProvider>
+          {isError ? <Error error={error} /> : <Outlet />}
+        </ValueDialogProvider>
       </ConfirmDialogProvider>
       <Toaster />
     </>
