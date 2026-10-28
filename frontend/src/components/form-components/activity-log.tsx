@@ -5,8 +5,8 @@ import * as R from "ramda";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useHttp } from "@/hooks/use-http";
 import type { ActivityLogEntry, FormField, Model } from "@/types";
 
@@ -60,11 +60,11 @@ export function ActivityLog({
           <ul className="mt-2 divide-y">
             {data.map((item) => (
               <li key={item.id} className="flex items-start gap-2.5 py-2.5">
-                <Avatar className="size-6 mt-0.5">
-                  <AvatarFallback className="text-[10px] font-semibold bg-secondary text-secondary-foreground uppercase">
-                    {item.user?.__str__.slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  name={item.user?.__str__ ?? ""}
+                  initials={item.user?.__str__.slice(0, 2)}
+                  className="mt-0.5"
+                />
                 <div className="min-w-0 text-sm">
                   <div>
                     <span className="font-medium">{item.user?.__str__}</span>{" "}

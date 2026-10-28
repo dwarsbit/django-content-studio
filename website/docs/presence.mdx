@@ -1,0 +1,128 @@
+---
+sidebar_position: 13.2
+---
+
+# 👥 Presence
+
+Presence shows editors who else has an object open. On the edit page, the
+avatars of the other editors appear in the header; on the list page, a row
+shows the avatars of the editors who have that object open. It helps editors
+notice that a colleague is working on the same object before their changes
+cross.
+
+## What editors see
+
+- **On the edit page**, the header shows an avatar for each other editor
+  who has the object open. The tooltip names the editor and says whether
+  they are viewing the object or editing it. An editor counts as editing
+  once their form has unsaved changes; their avatar then gets a ring in the
+  color of unsaved changes.
+- **On the list page**, the table view and the list view mark the rows of
+  objects another editor has open, with the same avatars and tooltip.
+
+Editors do not see themselves. An editor with the same object open in two
+browser tabs appears once, as editing when either tab has unsaved changes.
+
+The admin refreshes presence about every 15 seconds while the page is
+visible, and pauses while the browser tab is in the background. Leaving the
+edit page removes the editor right away; an editor whose browser closes
+without leaving the page disappears within a minute.
+
+Presence is informational. It does not lock objects and does not stop
+anyone from saving: like the classic Django admin, the last save wins.
+
+## Who sees what
+
+Presence follows the same rules as the objects themselves:
+
+- Editors only see presence for objects they may view: the studio's
+  `has_view_permission` decides, per object, as on the list page. See
+  [Access control](/docs/permissions).
+- With [multi-tenancy](/docs/multi-tenancy), presence is kept per tenant for
+  tenant-scoped models.
+- Objects in the trash have no presence.
+- Inlines are part of their parent's edit page and have no presence of their
+  own.
+
+The avatars show the editor's full name, or the username when the name is
+empty. The picture or initials come from the user model's relation display:
+override `get_relation_display` on the user model's studio to set them.
+
+```python
+# blog/admin.py
+from django.contrib.auth import get_user_model
+
+from content_studio import register
+from content_studio.admin import ModelStudio, RelationDisplay
+
+
+@register(get_user_model())
+class UserStudio(ModelStudio):
+    table_display = ["username", "first_name", "last_name"]
+
+    def get_relation_display(self, obj, request):
+        return RelationDisplay(
+            title=obj.get_full_name() or obj.get_username(),
+            initials=f"{obj.first_name[:1]}{obj.last_name[:1]}",
+        )
+```
+
+## Configure a shared cache
+
+Presence is kept in Django's cache. With the default per-process cache
+(`LocMemCache`), every worker process keeps its own presence, and editors
+only see the colleagues who happen to be served by the same process. That
+works with the development server, which runs a single process, but not in a
+deployment with several workers or servers.
+
+Configure a shared cache, such as Redis, Memcached or the
+[database cache](https://docs.djangoproject.com/en/stable/topics/cache/#database-caching):
+
+```python
+# mysite/settings.py
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+    }
+}
+```
+
+`manage.py check --deploy` reports presence in a per-process cache as
+`content_studio.W016`. To keep presence apart from your other cached data,
+point [`PRESENCE_CACHE`](/docs/settings#presence_cache) at another cache in
+`CACHES`.
+
+## Turn presence off
+
+Presence is on for every registered model. Set `presence = False` on a
+studio to turn it off for that model:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Category
+
+
+@register(Category)
+class CategoryStudio(ModelStudio):
+    presence = False
+```
+
+To turn it off everywhere, set [`PRESENCE`](/docs/settings#presence) to
+`False`:
+
+```python
+# mysite/settings.py
+CONTENT_STUDIO = {
+    "PRESENCE": False,
+}
+```
+
+## Related pages
+
+- [Settings reference](/docs/settings#presence)
+- [System checks](/docs/system-checks)
+- [Access control](/docs/permissions)

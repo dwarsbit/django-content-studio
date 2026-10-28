@@ -4,7 +4,7 @@ import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
 import { type ActivityLogEntry, type DashboardWidget } from "@/types";
@@ -56,11 +56,11 @@ export function ActivityLogWidget({ widget }: { widget: DashboardWidget }) {
                 key={item.id}
                 className="flex items-center gap-3 border-t px-4 py-2.5"
               >
-                <Avatar className="size-7">
-                  <AvatarFallback className="text-[10px] font-semibold bg-secondary text-secondary-foreground uppercase">
-                    {user.slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  name={user}
+                  initials={user.slice(0, 2)}
+                  className="size-7"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="truncate">
                     <span className="font-medium">{user}</span>{" "}

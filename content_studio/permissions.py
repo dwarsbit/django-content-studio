@@ -38,6 +38,11 @@ class ModelStudioPermissions(BasePermission):
             # object (see form.Button); seeing it is the only gate here.
             return admin_model.has_view_permission(request)
 
+        if getattr(view, "action", None) == "presence":
+            # Announcing that the user has an object open, or left it,
+            # is part of viewing it.
+            return admin_model.has_view_permission(request)
+
         if getattr(view, "action", None) == "bulk":
             # The bulk endpoint enforces its own per-action permissions
             # (see actions.get_bulk_actions); seeing the list is the
@@ -83,7 +88,7 @@ class ModelStudioPermissions(BasePermission):
         ) in ("restore", "move"):
             return admin_model.has_change_permission(request, obj)
 
-        if getattr(view, "action", None) == "run_component":
+        if getattr(view, "action", None) in ("run_component", "presence"):
             return admin_model.has_view_permission(request, obj)
 
         if request.method in ("PUT", "PATCH"):

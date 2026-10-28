@@ -39,6 +39,7 @@ deployment has to take care of.
 - **Configure a shared cache**, such as Redis, Memcached or the database
   cache. The login and password reset limits are counted in the cache; with
   the default per-process cache, every worker counts separately.
+  [Presence](/docs/presence) is kept in the cache too.
 - **Pass on the client's IP address.** The limits count per IP address.
   Behind a proxy, set `NUM_PROXIES` in the
   [Django REST Framework settings](https://www.django-rest-framework.org/api-guide/settings/#num_proxies)

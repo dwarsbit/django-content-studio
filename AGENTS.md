@@ -44,10 +44,11 @@ content_studio/
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E020, W001-W013)
+├── checks.py            # System checks (content_studio.E001-E022, W001-W016)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
+├── presence.py          # Presence: who has an object open, kept in Django's cache (PRESENCE, PRESENCE_CACHE)
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions
 ├── dashboard/
@@ -132,6 +133,8 @@ CONTENT_STUDIO = {
     'MEDIA_LIBRARY_MAX_UPLOAD_SIZE': 50 * 1024 * 1024,
     'HTML_SANITIZER': None,
     'TENANT_MODEL': None,
+    'PRESENCE': True,  # who has an object open; a studio opts out with presence = False
+    'PRESENCE_CACHE': 'default',  # must be a shared cache across processes
     'PASSWORD_RESET_EXPIRATION_TIME': 10,
     'PASSWORD_RESET_THROTTLE_RATE': '10/hour',  # per IP; None disables it
     'LOGIN_THROTTLE_RATE': '10/min',  # per IP; None disables login throttling

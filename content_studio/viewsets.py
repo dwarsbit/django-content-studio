@@ -26,6 +26,15 @@ from .duplication import copy_inline_rows, represent_initial
 from .filters import LookupFilter
 from .form import Button, ButtonResult
 from .permissions import ModelStudioPermissions
+from .presence import (
+    MAX_OBJECTS,
+    MAX_SESSION_LENGTH,
+    STATES,
+    get_presence,
+    heartbeat,
+    is_presence_enabled,
+    leave,
+)
 from .reordering import get_reorder_scope
 from .serializers import RelatedItemSerializer
 from .settings import cs_settings
@@ -484,6 +493,80 @@ class BaseModelViewSet(ModelViewSet):
         )
 
         return Response(LogEntrySerializer(entries, many=True).data)
+
+    @action(methods=["get"], detail=False, url_path="presence")
+    def presence_list(self, request):
+        """
+        Who else has the listed objects open: ?id=1&id=2, answered as
+        {"<id>": [users]} for the objects someone else has open. Only
+        objects the user may view, in the list's tenant, are answered;
+        the others are left out.
+        """
+        self._check_presence_enabled()
+
+        pks = []
+
+        for raw in request.query_params.getlist("id")[:MAX_OBJECTS]:
+            try:
+                pks.append(self._model._meta.pk.to_python(raw))
+            except DjangoValidationError:
+                continue
+
+        found = get_presence(request, self._model, [str(pk) for pk in pks])
+
+        if not found:
+            return Response({})
+
+        presence = {}
+
+        for obj in self.get_queryset().filter(pk__in=pks):
+            users = found.get(str(obj.pk))
+
+            if users and self._admin_model.has_view_permission(request, obj):
+                presence[str(obj.pk)] = users
+
+        return Response(presence)
+
+    @action(methods=["post", "delete"], detail=True, url_path="presence")
+    def presence(self, request, id):
+        """
+        The edit page's heartbeat: POST {"session": ..., "state":
+        "viewing" | "editing"} records that the user has the object open
+        and answers who else does ({"users": [...]}); DELETE
+        ?session=... records that the page was left.
+        """
+        self._check_presence_enabled()
+
+        obj = self.get_object()
+        source = request.data if request.method == "POST" else request.query_params
+        session = source.get("session")
+
+        if (
+            not isinstance(session, str)
+            or not session
+            or len(session) > MAX_SESSION_LENGTH
+        ):
+            raise ValidationError("A session id is required.")
+
+        if request.method == "DELETE":
+            leave(request, obj, session)
+
+            return Response(status=204)
+
+        state = request.data.get("state")
+
+        if state not in STATES:
+            raise ValidationError(f"The state must be one of {', '.join(STATES)}.")
+
+        return Response({"users": heartbeat(request, obj, session, state)})
+
+    def _check_presence_enabled(self):
+        # Inline viewsets carry their parent: inline objects are edited
+        # on the parent's edit page.
+        if getattr(self, "parent_model", None) is not None or not is_presence_enabled(
+            self._admin_model
+        ):
+            raise NotFound()
 
     @action(methods=["post"], detail=False, url_path="bulk")
     def bulk(self, request):

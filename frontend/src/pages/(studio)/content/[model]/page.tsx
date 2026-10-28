@@ -14,6 +14,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
 import { useMoveResource } from "@/hooks/use-move-resource";
+import { usePresenceList } from "@/hooks/use-presence";
 import type { Model, PaginatedResponse, Resource } from "@/types";
 
 import { ContentBulkBar } from "./_components/bulk-bar";
@@ -239,6 +240,12 @@ export function ModelListPage() {
     },
   });
 
+  // Who else has the objects of this page open.
+  const presence = usePresenceList(
+    model,
+    (data?.results ?? []).map((item) => item.id),
+  );
+
   // Reordering follows the manual order, so it is off while another
   // ordering or a search (ranked results) decides the order; filters
   // only narrow the list and keep it on.
@@ -345,6 +352,7 @@ export function ModelListPage() {
             filtered={filtered}
             onClear={clearContext}
             reorder={reorder}
+            presence={presence}
           />
         ) : (
           <TableView
@@ -358,6 +366,7 @@ export function ModelListPage() {
             filtered={filtered}
             onClear={clearContext}
             reorder={reorder}
+            presence={presence}
           />
         )}
         {data.results.length > 0 && (

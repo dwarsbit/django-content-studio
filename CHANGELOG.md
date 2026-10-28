@@ -33,6 +33,28 @@
   not checked, and an empty value only clashes when the constraint sets
   `nulls_distinct=False` and the database supports it.
 
+- **Presence.** The edit page's header shows the avatars of the other
+  editors who have the object open, with a tooltip naming each and
+  whether they are viewing or editing it (their form has unsaved
+  changes); an editing editor's avatar gets a ring in the warning color.
+  The table view and the list view mark the rows of objects someone else
+  has open. The admin sends a heartbeat about every 15 seconds while an
+  edit page is visible and pauses while the tab is hidden; the list page
+  asks for its visible page in one request on the same interval. Leaving
+  the page removes the editor; otherwise the entry expires after 45
+  seconds. Editors only see presence for objects they may view, within
+  the tenant for tenant-scoped models; trashed objects and inlines have
+  none. Presence is kept in Django's cache: on by default, turned off
+  everywhere with the `PRESENCE` setting or per studio with
+  `presence = False`, and stored in the cache named by `PRESENCE_CACHE`
+  (default `"default"`). It locks nothing and checks nothing on save.
+  System checks `content_studio.E022` (a `PRESENCE_CACHE` that is not in
+  `CACHES`), `content_studio.W015` (a `DummyCache`) and, with
+  `manage.py check --deploy`, `content_studio.W016` (a per-process
+  `LocMemCache`) report caches presence cannot work with. A new
+  `UserAvatar` component in the design system shows editors in the user
+  menu, the activity logs and presence.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the

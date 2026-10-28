@@ -100,6 +100,8 @@ export interface Model {
   admin: {
     is_singleton: boolean;
     icon: string | null;
+    // Whether the edit and list pages show who else has an object open.
+    presence?: boolean;
     list: {
       per_page: number;
       description: string;
@@ -151,6 +153,18 @@ export interface Model {
     permissions: Permissions;
   };
   fields: Record<string, ModelField>;
+}
+
+export type PresenceState = "viewing" | "editing";
+
+// Another user who has an object open: viewing it, or editing it (their
+// form has unsaved changes).
+export interface PresenceUser {
+  id: Id;
+  name: string;
+  initials: string;
+  avatar: string | null;
+  state: PresenceState;
 }
 
 // A duplicate's starting point: the copied values, in the form's

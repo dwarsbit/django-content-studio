@@ -5,6 +5,7 @@ Django's check framework runs (`manage.py check`, runserver startup,
 `makemigrations` and CI).
 """
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import checks
 from django.core.exceptions import FieldDoesNotExist
@@ -1488,6 +1489,86 @@ def login_backend_warnings() -> list[tuple[str, str]]:
     return []
 
 
+def presence_cache_backend() -> str:
+    """
+    The dotted path of the cache backend presence is stored in, or an
+    empty string when presence is off or the alias is not configured.
+    """
+    if not cs_settings.PRESENCE:
+        return ""
+
+    config = getattr(settings, "CACHES", {}).get(cs_settings.PRESENCE_CACHE)
+
+    return (config or {}).get("BACKEND", "")
+
+
+def presence_errors() -> list[tuple[str, str]]:
+    """
+    A PRESENCE_CACHE that names no configured cache, as (check id,
+    message) pairs: every heartbeat would fail.
+    """
+    if not cs_settings.PRESENCE:
+        return []
+
+    alias = cs_settings.PRESENCE_CACHE
+
+    if not isinstance(alias, str) or alias not in getattr(settings, "CACHES", {}):
+        return [
+            (
+                "content_studio.E022",
+                f"PRESENCE_CACHE is {alias!r}, which is not a cache in the "
+                "CACHES setting; name a configured cache or set PRESENCE to "
+                "False.",
+            )
+        ]
+
+    return []
+
+
+def presence_warnings() -> list[tuple[str, str]]:
+    """
+    Presence stored in the dummy cache, as (check id, message) pairs:
+    the cache keeps nothing, so nobody is ever shown.
+    """
+    if presence_cache_backend() == "django.core.cache.backends.dummy.DummyCache":
+        return [
+            (
+                "content_studio.W015",
+                "Presence is stored in a DummyCache, which keeps nothing, so "
+                "the admin never shows who has an object open; configure "
+                "another cache in PRESENCE_CACHE or set PRESENCE to False.",
+            )
+        ]
+
+    return []
+
+
+@checks.register(checks.Tags.caches, deploy=True)
+def check_presence_deployment(app_configs=None, **kwargs) -> list[checks.CheckMessage]:
+    """
+    Presence in a per-process cache, a deployment check: with several
+    worker processes or servers, each keeps its own entries and editors
+    only see the users served by the same process. The development
+    server runs one process, where the default local-memory cache works.
+    """
+    backend = presence_cache_backend()
+
+    if backend == "django.core.cache.backends.locmem.LocMemCache":
+        return [
+            checks.Warning(
+                "Presence is stored in a LocMemCache, which each process "
+                "keeps for itself; with several worker processes or servers, "
+                "editors only see the users served by the same process.",
+                hint="Configure a shared cache (Redis, Memcached or the "
+                "database cache) in PRESENCE_CACHE, or set PRESENCE to False.",
+                obj=cs_settings.ADMIN_SITE.__class__.__name__,
+                id="content_studio.W016",
+            )
+        ]
+
+    return []
+
+
 @checks.register()
 def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage]:
     site = cs_settings.ADMIN_SITE
@@ -1572,6 +1653,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
     for check_id, error in webhook_setting_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
+    for check_id, error in presence_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
     for check_id, warning in dashboard_widget_warnings(site):
         messages.append(
             checks.Warning(warning, obj=site.__class__.__name__, id=check_id)
@@ -1593,6 +1677,11 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         )
 
     for check_id, warning in login_backend_warnings():
+        messages.append(
+            checks.Warning(warning, obj=site.__class__.__name__, id=check_id)
+        )
+
+    for check_id, warning in presence_warnings():
         messages.append(
             checks.Warning(warning, obj=site.__class__.__name__, id=check_id)
         )

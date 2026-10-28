@@ -147,5 +147,6 @@ export {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+export { UserAvatar } from "@/components/ui/user-avatar";
 export { useForm } from "react-hook-form";
 export { toast } from "sonner";
