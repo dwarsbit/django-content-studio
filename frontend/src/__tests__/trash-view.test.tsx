@@ -121,7 +121,7 @@ describe("ContentTrashPage", () => {
 
     expect(await screen.findByText("First note")).toBeInTheDocument();
     expect(screen.getByText("Second note")).toBeInTheDocument();
-    expect(screen.getByText("trash.title:Notes")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Notes" })).toBeInTheDocument();
     expect(
       screen.getAllByRole("button", { name: "trash.restore" }),
     ).toHaveLength(2);

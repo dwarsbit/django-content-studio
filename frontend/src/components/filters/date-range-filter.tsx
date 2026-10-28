@@ -1,7 +1,6 @@
 import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import { useTranslation } from "react-i18next";
-import { PiCaretDownBold } from "react-icons/pi";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { FieldType } from "@/types";
 
+import { FilterTrigger } from "./filter-trigger";
 import type { FilterComponentProps } from "./types";
 
 dayjs.extend(localizedFormat);
@@ -43,13 +43,11 @@ export function DateRangeFilter({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline">
-          {field.verbose_name}
-          <span className="empty:hidden font-normal text-muted-foreground">
-            {range}
-          </span>
-          <PiCaretDownBold className="size-4 opacity-50" />
-        </Button>
+        <FilterTrigger
+          label={field.verbose_name}
+          value={range}
+          onClear={() => onChange({ gte: null, lte: null })}
+        />
       </PopoverTrigger>
       <PopoverContent className="w-auto overflow-hidden p-0" align="start">
         <Calendar

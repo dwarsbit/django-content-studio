@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PiMagnifyingGlassBold } from "react-icons/pi";
 import { useSearchParams } from "react-router";
 import { useDebounce } from "react-use";
 
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 export function Search() {
   const { t } = useTranslation();
@@ -37,13 +42,17 @@ export function Search() {
   );
 
   return (
-    <Input
-      className="w-[260px] shrink-0 max-w-full"
-      placeholder={t("common.search")}
-      value={local}
-      onChange={(e) => {
-        setLocal(e.target.value);
-      }}
-    />
+    <InputGroup className="h-8 w-64 max-w-full shrink-0">
+      <InputGroupAddon>
+        <PiMagnifyingGlassBold className="text-muted-foreground" />
+      </InputGroupAddon>
+      <InputGroupInput
+        placeholder={t("common.search")}
+        value={local}
+        onChange={(e) => {
+          setLocal(e.target.value);
+        }}
+      />
+    </InputGroup>
   );
 }

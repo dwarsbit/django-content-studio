@@ -5,15 +5,20 @@ import { useTranslation } from "react-i18next";
 import { PiFileTextBold, PiRowsBold, PiTableBold } from "react-icons/pi";
 import { Link, useParams, useSearchParams } from "react-router";
 
-import { PageBody, PageHeader } from "@/components/page-header";
+import {
+  HeaderTabs,
+  PageBody,
+  PageHeader,
+  Toolbar,
+} from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
 import { useMoveResource } from "@/hooks/use-move-resource";
-import { cn } from "@/lib/utils";
-import type { PaginatedResponse, Resource } from "@/types";
+import type { Model, PaginatedResponse, Resource } from "@/types";
 
 import { BulkBar } from "./_components/bulk-bar";
 import { Filters } from "./_components/filters";
@@ -271,97 +276,76 @@ export function ModelListPage() {
           )
         }
         title={model.verbose_name_plural}
+        meta={
+          <span className="text-muted-foreground text-sm tabular-nums">
+            {data.pagination.count}
+          </span>
+        }
         description={model.admin.list.description}
         actions={
-          <>
-            {model.admin.list.trash && (
-              <Link
-                to={`/content/${model.label}/trash`}
-                className={buttonVariants({ variant: "outline" })}
-              >
-                {t("list_view.trash")}
-              </Link>
-            )}
-            {model.admin.permissions.add_permission && (
-              <Link
-                to={`/content/${model.label}/new`}
-                className={buttonVariants()}
-              >
-                {t("common.create")}
-              </Link>
-            )}
-          </>
+          model.admin.permissions.add_permission && (
+            <Link
+              to={`/content/${model.label}/new`}
+              className={buttonVariants()}
+            >
+              {t("common.create")}
+            </Link>
+          )
         }
-      />
-
-      <PageBody className="space-y-4">
-        <div className="flex gap-3 items-center justify-between">
-          {view === "table" && selected.size > 0 && actions.length > 0 ? (
-            <BulkBar
-              modelLabel={model.label}
-              actions={actions}
-              ids={Array.from(selected)}
-              onDone={clearSelection}
-            />
-          ) : (
-            <>
-              <Filters
+      >
+        {model.admin.list.trash && <ListTabs model={model} current="list" />}
+        <Toolbar>
+          <Filters model={model} values={filters} onValuesChange={setFilters} />
+          <div className="ml-auto flex items-center gap-2">
+            {view === "list" && !R.isNil(sortableBy) && (
+              <SortSelect
                 model={model}
-                values={filters}
-                onValuesChange={setFilters}
+                ordering={ordering}
+                onOrderingChange={setOrdering}
               />
-              <div className="flex items-center gap-2">
-                {view === "list" && !R.isNil(sortableBy) && (
-                  <SortSelect
-                    model={model}
-                    ordering={ordering}
-                    onOrderingChange={setOrdering}
-                  />
+            )}
+            {views.length > 1 && (
+              <ToggleGroup
+                type="single"
+                size="sm"
+                variant="outline"
+                value={view}
+                onValueChange={(next) => next && setView(next)}
+                aria-label={t("list_view.view")}
+              >
+                {views.includes("table") && (
+                  <ToggleGroupItem
+                    value="table"
+                    title={t("list_view.table_view")}
+                    aria-label={t("list_view.table_view")}
+                    className="min-w-8"
+                  >
+                    <PiTableBold />
+                  </ToggleGroupItem>
                 )}
-                {views.length > 1 && (
-                  <div className="flex items-center gap-1 rounded-lg border p-1">
-                    {views.includes("table") && (
-                      <button
-                        type="button"
-                        title={t("list_view.table_view")}
-                        onClick={() => setView("table")}
-                        className={cn(
-                          "flex items-center justify-center size-6 rounded-md cursor-pointer outline-none",
-                          "focus-visible:ring-2 focus-visible:ring-ring",
-                          view === "table"
-                            ? "bg-foreground/10"
-                            : "hover:bg-foreground/5 text-muted-foreground",
-                        )}
-                      >
-                        <PiTableBold />
-                      </button>
-                    )}
-                    {views.includes("list") && (
-                      <button
-                        type="button"
-                        title={t("list_view.list_view")}
-                        onClick={() => setView("list")}
-                        className={cn(
-                          "flex items-center justify-center size-6 rounded-md cursor-pointer outline-none",
-                          "focus-visible:ring-2 focus-visible:ring-ring",
-                          view === "list"
-                            ? "bg-foreground/10"
-                            : "hover:bg-foreground/5 text-muted-foreground",
-                        )}
-                      >
-                        <PiRowsBold />
-                      </button>
-                    )}
-                  </div>
+                {views.includes("list") && (
+                  <ToggleGroupItem
+                    value="list"
+                    title={t("list_view.list_view")}
+                    aria-label={t("list_view.list_view")}
+                    className="min-w-8"
+                  >
+                    <PiRowsBold />
+                  </ToggleGroupItem>
                 )}
-              </div>
-            </>
-          )}
-        </div>
+              </ToggleGroup>
+            )}
+          </div>
+        </Toolbar>
+      </PageHeader>
+
+      <PageBody className="space-y-3">
         {view === "list" ? (
           <ListView
             items={data.results}
             model={model}
+            selected={actions.length > 0 ? selected : undefined}
+            onToggle={actions.length > 0 ? toggle : undefined}
             filtered={filtered}
             onClear={clearContext}
             reorder={reorder}
@@ -380,24 +364,97 @@ export function ModelListPage() {
             reorder={reorder}
           />
         )}
-        <div className="flex items-center justify-center">
-          <Pagination
-            current={data.pagination.current}
-            pages={data.pagination.pages}
-            onPageChange={(page) =>
-              setSearchParams((searchParams) => {
-                searchParams.set("page", `${page}`);
-                return searchParams;
-              })
-            }
-          />
-        </div>
+        {data.results.length > 0 && (
+          <div className="flex items-center justify-between gap-4 text-sm text-muted-foreground">
+            <span className="tabular-nums select-none">
+              {t("list_view.count", {
+                count: data.pagination.count,
+                singular: model.verbose_name,
+                plural: model.verbose_name_plural,
+              })}
+              {data.pagination.pages > 1 &&
+                ` · ${t("list_view.page_of", data.pagination)}`}
+            </span>
+            <Pagination
+              current={data.pagination.current}
+              pages={data.pagination.pages}
+              onPageChange={(page) =>
+                setSearchParams((searchParams) => {
+                  searchParams.set("page", `${page}`);
+                  return searchParams;
+                })
+              }
+            />
+          </div>
+        )}
       </PageBody>
+
+      {selected.size > 0 && actions.length > 0 && (
+        <BulkBar
+          modelLabel={model.label}
+          actions={actions}
+          ids={Array.from(selected)}
+          onDone={clearSelection}
+        />
+      )}
     </div>
   ) : (
     <div className="flex-1 flex items-center justify-center">
       <Spinner />
     </div>
+  );
+}
+
+/**
+ * The scope tabs of a model with a trash: the list and the trash, with
+ * the number of objects in the trash.
+ */
+export function ListTabs({
+  model,
+  current,
+  count,
+}: {
+  model: Model;
+  current: "list" | "trash";
+  // The number of objects in the trash, when the caller has it; the
+  // list page fetches it.
+  count?: number;
+}) {
+  const { t } = useTranslation();
+  const http = useHttp();
+  const { data: fetched } = useQuery({
+    retry: false,
+    enabled: count === undefined,
+    queryKey: ["trash", model.label, "count"],
+    async queryFn() {
+      const { data } = await http.get<PaginatedResponse<Resource>>(
+        `/content/${model.label}/trash`,
+        { params: { page: 1 } },
+      );
+
+      return data.pagination.count;
+    },
+  });
+
+  return (
+    <HeaderTabs
+      current={
+        current === "list"
+          ? `/content/${model.label}`
+          : `/content/${model.label}/trash`
+      }
+      tabs={[
+        {
+          label: t("list_view.tabs_all", { model: model.verbose_name_plural }),
+          to: `/content/${model.label}`,
+        },
+        {
+          label: t("list_view.trash"),
+          count: count ?? fetched,
+          to: `/content/${model.label}/trash`,
+        },
+      ]}
+    />
   );
 }
 
