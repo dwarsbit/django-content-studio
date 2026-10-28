@@ -23,6 +23,7 @@ import {
   PiUploadSimpleBold,
 } from "react-icons/pi";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -33,6 +34,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
 import { usePrototype } from "../app";
@@ -41,9 +50,12 @@ import {
   EmptyState,
   Field,
   FilterChip,
+  type FilterValues,
   PageBody,
   PageHeader,
   SearchInput,
+  TABLE_CELL,
+  TABLE_HEAD,
   TextInput,
   Toolbar,
   ViewToggle,
@@ -69,7 +81,22 @@ function FileIcon({
 export function MediaLibraryScreen() {
   const { settings } = usePrototype();
   const empty = settings.mediaState === "empty";
-  const items = empty ? [] : mediaItems;
+  const [filters, setFilters] = useState<FilterValues>({});
+  const TYPE_FILTER: Record<string, MediaItem["type"]> = {
+    Images: "image",
+    Video: "video",
+    Audio: "audio",
+    Files: "file",
+  };
+  const types = (filters.Type ?? []).map((label) => TYPE_FILTER[label]);
+  const tags = filters.Tags ?? [];
+  const items = empty
+    ? []
+    : mediaItems.filter(
+        (item) =>
+          (types.length === 0 || types.includes(item.type)) &&
+          (tags.length === 0 || item.tags.some((tag) => tags.includes(tag))),
+      );
   const [view, setView] = useState<"grid" | "list" | "table">("grid");
   const [folder, setFolder] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
@@ -123,10 +150,14 @@ export function MediaLibraryScreen() {
           <SearchInput placeholder="Search files" />
           <FilterChip
             label="Type"
+            multiple
             options={["Images", "Video", "Audio", "Files"]}
+            value={filters.Type ?? []}
+            onChange={(next) => setFilters({ ...filters, Type: next })}
           />
           <FilterChip
             label="Tags"
+            multiple
             options={[
               "brand",
               "marketing",
@@ -135,7 +166,24 @@ export function MediaLibraryScreen() {
               "team",
               "travel",
             ]}
+            value={filters.Tags ?? []}
+            onChange={(next) => setFilters({ ...filters, Tags: next })}
           />
+          <span className="md:hidden">
+            <FilterChip
+              label="Folder"
+              options={["Brand", "Blog covers", "Documents", "Uploads 2026"]}
+              value={folder ? [findPath(folders, folder).at(-1)!.name] : []}
+              onChange={(next) =>
+                setFolder(
+                  next[0]
+                    ? (folders.find((entry) => entry.name === next[0])?.id ??
+                        null)
+                    : null,
+                )
+              }
+            />
+          </span>
           <div className="ml-auto flex items-center gap-2">
             <ViewToggle<"grid" | "list" | "table">
               value={view}
@@ -156,7 +204,7 @@ export function MediaLibraryScreen() {
 
       <PageBody>
         <div className="flex gap-6 items-start">
-          <aside className="w-52 shrink-0 sticky top-0 space-y-0.5">
+          <aside className="hidden md:block w-52 shrink-0 sticky top-0 space-y-0.5">
             <FolderRow
               icon={<PiListBulletsBold />}
               label="All files"
@@ -245,67 +293,32 @@ export function MediaLibraryScreen() {
                   />
                 ))}
               </div>
-            ) : (
+            ) : view === "list" ? (
               <div className="rounded-lg border bg-card divide-y overflow-hidden">
-                {items.map((item) => {
-                  const isSelected = selected.has(item.id);
-                  return (
-                    <div
-                      key={item.id}
-                      className={cn(
-                        "group flex items-center gap-3 pl-3 pr-3 py-2 cursor-pointer hover:bg-muted",
-                        isSelected && "bg-accent",
-                      )}
-                      onClick={() => setOpen(item)}
-                    >
-                      <span onClick={(event) => event.stopPropagation()}>
-                        <Checkbox
-                          checked={isSelected}
-                          aria-label="Select file"
-                          onCheckedChange={() => toggle(item.id)}
-                        />
-                      </span>
-                      {item.thumbnail ? (
-                        <img
-                          src={item.thumbnail}
-                          alt=""
-                          className="size-9 rounded object-cover shrink-0"
-                        />
-                      ) : (
-                        <span className="size-9 rounded bg-muted border flex items-center justify-center text-muted-foreground shrink-0">
-                          <FileIcon item={item} className="size-4" />
-                        </span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {item.extension} · {item.size}
-                          {item.dimensions ? ` · ${item.dimensions}` : ""}
-                        </div>
-                      </div>
-                      {view === "table" && (
-                        <>
-                          <span className="hidden md:inline text-xs text-muted-foreground w-28">
-                            {item.tags.join(", ")}
-                          </span>
-                          <span className="hidden md:inline text-xs text-muted-foreground w-24">
-                            {item.uploadedAt}
-                          </span>
-                        </>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label="File actions"
-                        className="text-muted-foreground opacity-0 group-hover:opacity-100"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <PiDotsThreeBold />
-                      </Button>
-                    </div>
-                  );
-                })}
+                {items.map((item) => (
+                  <MediaRow
+                    key={item.id}
+                    item={item}
+                    selected={selected.has(item.id)}
+                    onToggle={() => toggle(item.id)}
+                    onOpen={() => setOpen(item)}
+                  />
+                ))}
               </div>
+            ) : (
+              <MediaTable
+                items={items}
+                selected={selected}
+                onToggle={toggle}
+                onToggleAll={() =>
+                  setSelected(
+                    items.every((item) => selected.has(item.id))
+                      ? new Set()
+                      : new Set(items.map((item) => item.id)),
+                  )
+                }
+                onOpen={setOpen}
+              />
             )}
           </div>
         </div>
@@ -461,6 +474,200 @@ function FolderNode({
           />
         ))}
     </>
+  );
+}
+
+function MediaRow({
+  item,
+  selected,
+  onToggle,
+  onOpen,
+}: {
+  item: MediaItem;
+  selected: boolean;
+  onToggle(): void;
+  onOpen(): void;
+}) {
+  return (
+    <div
+      className={cn(
+        "group flex items-center gap-3 pl-3 pr-3 py-2 cursor-pointer hover:bg-muted",
+        selected && "bg-accent",
+      )}
+      onClick={onOpen}
+    >
+      <span onClick={(event) => event.stopPropagation()}>
+        <Checkbox
+          checked={selected}
+          aria-label={`Select ${item.name}`}
+          onCheckedChange={onToggle}
+        />
+      </span>
+      <Thumb item={item} className="size-10" />
+      <div className="flex-1 min-w-0">
+        <div className="font-medium truncate">{item.name}</div>
+        <div className="text-xs text-muted-foreground truncate">
+          {item.extension} · {item.size}
+          {item.dimensions ? ` · ${item.dimensions}` : ""}
+        </div>
+      </div>
+      <span className="hidden md:flex items-center gap-1">
+        {item.tags.map((tag) => (
+          <Badge key={tag} variant="outline" className="text-muted-foreground">
+            {tag}
+          </Badge>
+        ))}
+      </span>
+      <span className="hidden sm:inline text-xs text-muted-foreground w-24 text-right">
+        {item.uploadedAt}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        aria-label="File actions"
+        className="text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <PiDotsThreeBold />
+      </Button>
+    </div>
+  );
+}
+
+function MediaTable({
+  items,
+  selected,
+  onToggle,
+  onToggleAll,
+  onOpen,
+}: {
+  items: MediaItem[];
+  selected: Set<string>;
+  onToggle(id: string): void;
+  onToggleAll(): void;
+  onOpen(item: MediaItem): void;
+}) {
+  const allSelected = items.every((item) => selected.has(item.id));
+
+  return (
+    <div className="rounded-lg border bg-card overflow-x-auto scrollbar">
+      <Table>
+        <TableHeader className="bg-muted/60">
+          <TableRow>
+            <TableHead className={cn(TABLE_HEAD, "w-10")}>
+              <Checkbox
+                checked={allSelected}
+                aria-label="Select all"
+                onCheckedChange={onToggleAll}
+              />
+            </TableHead>
+            <TableHead className={TABLE_HEAD}>Name</TableHead>
+            <TableHead className={TABLE_HEAD}>Type</TableHead>
+            <TableHead className={cn(TABLE_HEAD, "[&_div]:justify-end")}>
+              Size
+            </TableHead>
+            <TableHead className={TABLE_HEAD}>Dimensions</TableHead>
+            <TableHead className={TABLE_HEAD}>Tags</TableHead>
+            <TableHead className={TABLE_HEAD}>Uploaded</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => {
+            const isSelected = selected.has(item.id);
+            return (
+              <TableRow
+                key={item.id}
+                data-state={isSelected ? "selected" : undefined}
+                onClick={() => onOpen(item)}
+              >
+                <TableCell
+                  className={cn(TABLE_CELL, "w-10")}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    aria-label={`Select ${item.name}`}
+                    onCheckedChange={() => onToggle(item.id)}
+                  />
+                </TableCell>
+                <TableCell className={cn(TABLE_CELL, "max-w-xs")}>
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <Thumb item={item} className="size-7" />
+                    <span className="truncate">{item.name}</span>
+                  </span>
+                </TableCell>
+                <TableCell
+                  className={cn(
+                    TABLE_CELL,
+                    "text-muted-foreground font-normal",
+                  )}
+                >
+                  {item.extension}
+                </TableCell>
+                <TableCell
+                  className={cn(
+                    TABLE_CELL,
+                    "text-right tabular-nums font-normal",
+                  )}
+                >
+                  {item.size}
+                </TableCell>
+                <TableCell
+                  className={cn(
+                    TABLE_CELL,
+                    "text-muted-foreground font-normal tabular-nums",
+                  )}
+                >
+                  {item.dimensions ?? "—"}
+                </TableCell>
+                <TableCell className={cn(TABLE_CELL, "font-normal")}>
+                  <span className="flex items-center gap-1">
+                    {item.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="text-muted-foreground"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </span>
+                </TableCell>
+                <TableCell
+                  className={cn(
+                    TABLE_CELL,
+                    "text-muted-foreground font-normal",
+                  )}
+                >
+                  {item.uploadedAt}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+/** A file's thumbnail, or its type icon on a mist tile. */
+function Thumb({ item, className }: { item: MediaItem; className: string }) {
+  return item.thumbnail ? (
+    <img
+      src={item.thumbnail}
+      alt=""
+      draggable={false}
+      className={cn("rounded object-cover shrink-0", className)}
+    />
+  ) : (
+    <span
+      className={cn(
+        "rounded bg-muted border flex items-center justify-center text-muted-foreground shrink-0",
+        className,
+      )}
+    >
+      <FileIcon item={item} className="size-4" />
+    </span>
   );
 }
 

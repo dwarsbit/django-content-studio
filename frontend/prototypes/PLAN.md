@@ -217,6 +217,25 @@ Files: `pages/(studio)/media-library/[model]/page.tsx` and
 
 Files: `pages/(studio)/(dashboard)/page.tsx` and `_components/*`.
 
+## What the prototypes cover
+
+- The app shell and main menu, expanded, collapsed and as the rail below
+  1024px; single site and multi-tenant (the tenant switch and the
+  shared-model banner); a group that starts collapsed.
+- The content list as a table and as rows, with live filter chips,
+  selection and the bulk bar, filtered and empty states, and the scope
+  tabs to the trash.
+- The trash: restore per row or in bulk, delete permanently, empty
+  trash, empty state.
+- The edit page, the create form (empty fields, "Create", no inlines
+  yet) and the inline row editor in a dialog, with the sidebar stacked
+  under the form below 1024px.
+- The media library as a grid, a list and a table, with folders (a
+  chip replaces the tree below 768px), type and tag filters, selection,
+  the details sheet and the empty drop zone.
+- The dashboard with every widget type.
+- Light and dark, at 1440px and 900px.
+
 ## Shared pieces the prototypes introduce
 
 `prototypes/components.tsx` holds the candidates for `src/components`:

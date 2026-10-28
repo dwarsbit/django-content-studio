@@ -194,6 +194,59 @@ export const menuGroups: MenuGroup[] = [
       { label: "Users", icon: "ph-bold ph-users", href: "#/content/users" },
     ],
   },
+  {
+    label: "Newsletter",
+    icon: "ph-bold ph-envelope",
+    collapsed: true,
+    models: [
+      {
+        label: "Campaigns",
+        icon: "ph-bold ph-paper-plane-tilt",
+        href: "#/content/campaigns",
+      },
+      {
+        label: "Subscribers",
+        icon: "ph-bold ph-address-book",
+        href: "#/content/subscribers",
+      },
+    ],
+  },
+];
+
+export interface TrashedArticle {
+  id: string;
+  title: string;
+  status: ArticleStatus;
+  deletedAt: string;
+  deletedBy: User;
+  expiresIn: string;
+}
+
+export const trashedArticles: TrashedArticle[] = [
+  {
+    id: "t1",
+    title: "Untitled draft",
+    status: "draft",
+    deletedAt: "Yesterday",
+    deletedBy: users.eva,
+    expiresIn: "29 days",
+  },
+  {
+    id: "t2",
+    title: "Old pricing page copy",
+    status: "published",
+    deletedAt: "2 weeks ago",
+    deletedBy: users.leon,
+    expiresIn: "16 days",
+  },
+  {
+    id: "t3",
+    title: "Interview notes (do not publish)",
+    status: "draft",
+    deletedAt: "3 weeks ago",
+    deletedBy: users.noah,
+    expiresIn: "9 days",
+  },
 ];
 
 export const tenants = ["Dwarsbit", "Studio blog", "Client site"];

@@ -16,9 +16,11 @@ import { DashboardScreen } from "./screens/dashboard";
 import { EditScreen } from "./screens/edit";
 import { ContentListScreen } from "./screens/list";
 import { MediaLibraryScreen } from "./screens/media";
+import { TrashScreen } from "./screens/trash";
 import { AppShell } from "./shell";
 
-export type Screen = "dashboard" | "list" | "edit" | "media";
+export type Screen =
+  "dashboard" | "list" | "trash" | "create" | "edit" | "media";
 
 export interface Settings {
   theme: "light" | "dark";
@@ -51,11 +53,15 @@ const DEFAULTS: Settings = {
 export const ROUTES: Record<Screen, string> = {
   dashboard: "#/",
   list: "#/content/articles",
+  trash: "#/content/articles/trash",
+  create: "#/content/articles/new",
   edit: "#/content/articles/1",
   media: "#/media-library",
 };
 
 function screenFromHash(hash: string): Screen {
+  if (hash.startsWith("#/content/articles/trash")) return "trash";
+  if (hash.startsWith("#/content/articles/new")) return "create";
   if (hash.startsWith("#/content/articles/")) return "edit";
   if (hash.startsWith("#/content/")) return "list";
   if (hash.startsWith("#/media-library")) return "media";
@@ -75,6 +81,22 @@ const PrototypeContext = createContext<{
 });
 
 export const usePrototype = () => useContext(PrototypeContext);
+
+const NARROW = "(max-width: 1023px)";
+
+/** Whether the viewport is narrower than the two-column layouts need. */
+export function useNarrow() {
+  const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW).matches);
+
+  useEffect(() => {
+    const query = window.matchMedia(NARROW);
+    const onChange = () => setNarrow(query.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+
+  return narrow;
+}
 
 export function PrototypeApp() {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
@@ -106,7 +128,9 @@ export function PrototypeApp() {
       <AppShell>
         {screen === "dashboard" && <DashboardScreen />}
         {screen === "list" && <ContentListScreen key={settings.listState} />}
-        {screen === "edit" && <EditScreen />}
+        {screen === "trash" && <TrashScreen key={settings.listState} />}
+        {screen === "create" && <EditScreen key="create" create />}
+        {screen === "edit" && <EditScreen key="edit" />}
         {screen === "media" && <MediaLibraryScreen key={settings.mediaState} />}
       </AppShell>
       <Controls />
@@ -144,6 +168,8 @@ function Controls() {
               options={[
                 ["dashboard", "Dashboard"],
                 ["list", "List"],
+                ["trash", "Trash"],
+                ["create", "Create"],
                 ["edit", "Edit"],
                 ["media", "Media"],
               ]}
@@ -181,38 +207,47 @@ function Controls() {
               ]}
             />
           </Control>
-          {screen === "list" && (
+          {(screen === "list" || screen === "trash") && (
             <>
-              <Control label="List view">
-                <Segmented
-                  value={settings.listView}
-                  onChange={(listView) =>
-                    update({ listView: listView as Settings["listView"] })
-                  }
-                  options={[
-                    ["table", "Table"],
-                    ["list", "List"],
-                  ]}
-                />
-              </Control>
+              {screen === "list" && (
+                <Control label="List view">
+                  <Segmented
+                    value={settings.listView}
+                    onChange={(listView) =>
+                      update({ listView: listView as Settings["listView"] })
+                    }
+                    options={[
+                      ["table", "Table"],
+                      ["list", "List"],
+                    ]}
+                  />
+                </Control>
+              )}
               <Control label="List state">
                 <Segmented
                   value={settings.listState}
                   onChange={(listState) =>
                     update({ listState: listState as Settings["listState"] })
                   }
-                  options={[
-                    ["default", "Default"],
-                    ["selected", "Selected"],
-                    ["filtered", "Filtered"],
-                    ["empty", "Empty"],
-                  ]}
+                  options={
+                    screen === "trash"
+                      ? [
+                          ["default", "Default"],
+                          ["empty", "Empty"],
+                        ]
+                      : [
+                          ["default", "Default"],
+                          ["selected", "Selected"],
+                          ["filtered", "Filtered"],
+                          ["empty", "Empty"],
+                        ]
+                  }
                 />
               </Control>
             </>
           )}
           {screen === "media" && (
-            <Control label="Library state">
+            <Control label="Media library">
               <Segmented
                 value={settings.mediaState}
                 onChange={(mediaState) =>
@@ -226,7 +261,7 @@ function Controls() {
             </Control>
           )}
           {screen === "edit" && (
-            <Control label="Form">
+            <Control label="Edit page">
               <Segmented
                 value={settings.editDirty ? "dirty" : "clean"}
                 onChange={(value) => update({ editDirty: value === "dirty" })}

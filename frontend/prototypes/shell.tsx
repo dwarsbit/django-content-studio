@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import { usePrototype } from "./app";
+import { useNarrow, usePrototype } from "./app";
 import { Kbd } from "./components";
 import { me, type MenuGroup, menuGroups, tenants } from "./data";
 
@@ -64,7 +64,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function MainMenu() {
   const { settings, update, screen } = usePrototype();
-  const collapsed = settings.menu === "collapsed";
+  // Narrow viewports always get the rail; the toggle applies above.
+  const narrow = useNarrow();
+  const collapsed = narrow || settings.menu === "collapsed";
 
   return (
     <nav
@@ -85,7 +87,7 @@ function MainMenu() {
         ) : (
           <Brand collapsed={collapsed} />
         )}
-        {!collapsed && (
+        {!collapsed && !narrow && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -111,24 +113,31 @@ function MainMenu() {
         <SearchTrigger collapsed={collapsed} />
         <div className="h-2" />
         <MenuItem
+          collapsed={collapsed}
           icon={<PiHouseSimpleBold />}
           label="Dashboard"
           href="#/"
           active={screen === "dashboard"}
         />
         <MenuItem
+          collapsed={collapsed}
           icon={<PiImageBold />}
           label="Media library"
           href="#/media-library"
           active={screen === "media"}
         />
         <MenuItem
+          collapsed={collapsed}
           icon={<PiArrowSquareOutBold />}
           label="View site"
           href="#/"
           trailing={<span className="sr-only">Opens in a new tab</span>}
         />
-        <MenuItem icon={<PiBroomBold />} label="Clear cache" />
+        <MenuItem
+          collapsed={collapsed}
+          icon={<PiBroomBold />}
+          label="Clear cache"
+        />
 
         {menuGroups.map((group) => (
           <MenuSection
@@ -151,11 +160,16 @@ function MainMenu() {
 
 function Brand({ collapsed }: { collapsed: boolean }) {
   const { update } = usePrototype();
+  const narrow = useNarrow();
   const mark = (
     <div className="size-6 shrink-0 rounded-md bg-gradient-to-tl from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 text-gray-50 dark:text-gray-900 flex items-center justify-center text-xs font-black">
       C
     </div>
   );
+
+  if (collapsed && narrow) {
+    return mark;
+  }
 
   if (collapsed) {
     return (
@@ -246,7 +260,9 @@ function TenantSwitch({ collapsed }: { collapsed: boolean }) {
 
 function SearchTrigger({ collapsed }: { collapsed: boolean }) {
   if (collapsed) {
-    return <MenuItem icon={<PiMagnifyingGlassBold />} label="Search" />;
+    return (
+      <MenuItem collapsed icon={<PiMagnifyingGlassBold />} label="Search" />
+    );
   }
 
   return (
@@ -278,6 +294,7 @@ function MenuSection({
       <div className="pt-2 mt-2 border-t border-sidebar-border space-y-0.5">
         {group.models.map((model) => (
           <MenuItem
+            collapsed={collapsed}
             key={model.label}
             icon={<span className={model.icon} />}
             label={model.label}
@@ -310,6 +327,7 @@ function MenuSection({
         <div className="space-y-0.5">
           {group.models.map((model) => (
             <MenuItem
+              collapsed={collapsed}
               key={model.label}
               icon={<span className={model.icon} />}
               label={model.label}
@@ -324,6 +342,7 @@ function MenuSection({
 }
 
 function MenuItem({
+  collapsed,
   icon,
   iconClassName,
   label,
@@ -337,9 +356,8 @@ function MenuItem({
   href?: string;
   active?: boolean;
   trailing?: ReactNode;
+  collapsed: boolean;
 }) {
-  const { settings } = usePrototype();
-  const collapsed = settings.menu === "collapsed";
   const Comp = href ? "a" : "button";
   const item = (
     <Comp
