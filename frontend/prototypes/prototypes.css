@@ -1,0 +1,17 @@
+/* The admin's styles, plus the component sources: Tailwind's automatic
+   source detection starts at the Vite root (this folder), so the classes
+   used only inside src/components would be dropped without it. */
+@import "../src/index.css";
+@source "../src";
+@source "./";
+
+/* Prototype-only styles: nothing here is meant for the admin. */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+}

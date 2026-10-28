@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "dev:prototypes": "vite --config vite.prototypes.config.ts",
+    "build:prototypes": "tsc --noEmit -p tsconfig.prototypes.json && vite build --config vite.prototypes.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",
