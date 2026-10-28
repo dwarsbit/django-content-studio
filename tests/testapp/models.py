@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models.functions import Lower
 
 from content_studio.blocks import Block, BlockField
-from content_studio.fields import HTMLField, URLPathField
+from content_studio.fields import HTMLField, TagField, URLPathField
 from content_studio.models import ManualOrderModel
 
 
@@ -235,6 +235,42 @@ class Edition(models.Model):
             ),
             models.UniqueConstraint(Lower("title"), name="edition_title_lower"),
         ]
+
+    def __str__(self):
+        return self.title
+
+
+class Event(models.Model):
+    """Export: field types written as the admin displays them; see
+    test_export."""
+
+    class Status(models.TextChoices):
+        PLANNED = "planned", "Planned"
+        CANCELED = "canceled", "Canceled"
+
+    title = models.CharField(max_length=100)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PLANNED
+    )
+    # A tenant field when TENANT_MODEL is Category.
+    category = models.ForeignKey(
+        Category, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    tags = models.ManyToManyField(Category, blank=True, related_name="events")
+    starts_at = models.DateTimeField(null=True, blank=True)
+    day = models.DateField(null=True, blank=True)
+    price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    attendees = models.IntegerField(default=0)
+    is_public = models.BooleanField(default=True)
+    notes = HTMLField(blank=True)
+    keywords = TagField()
+    details = models.JSONField(default=dict, blank=True)
+    secret = models.CharField(max_length=100, blank=True)
+    removed_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    class Meta:
+        verbose_name = "event"
+        verbose_name_plural = "events"
 
     def __str__(self):
         return self.title

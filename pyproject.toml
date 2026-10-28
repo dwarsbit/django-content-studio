@@ -52,6 +52,9 @@ Repository = "https://github.com/dwarsbit/django-content-studio"
 Issues = "https://github.com/dwarsbit/django-content-studio/issues"
 Changelog = "https://github.com/dwarsbit/django-content-studio/blob/main/CHANGELOG.md"
 
+[project.optional-dependencies]
+excel = ["openpyxl (>=3.1,<4)"]
+
 [tool.poetry]
 packages = [{include = "content_studio"}]
 include = [

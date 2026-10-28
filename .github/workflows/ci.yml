@@ -24,8 +24,9 @@ jobs:
       - name: Install Poetry
         run: pipx install poetry
 
+      # The extras too: the Excel export is tested with openpyxl.
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --all-extras
 
       - name: Pin Django ${{ matrix.django }}
         run: poetry run pip install "Django~=${{ matrix.django }}.0"
