@@ -94,6 +94,9 @@ export interface Model {
   verbose_name: string;
   verbose_name_plural: string;
   tenant_field: string | null;
+  // Combinations of fields that must be unique: the editor warns about
+  // duplicates.
+  unique_sets?: UniqueSet[];
   admin: {
     is_singleton: boolean;
     icon: string | null;
@@ -170,6 +173,16 @@ export interface BulkAction {
   icon: string | null;
   confirm: string | null;
   destructive: boolean;
+}
+
+export interface UniqueSet {
+  id: string;
+  // The fields whose combination must be unique (without the tenant field).
+  fields: string[];
+  // The fields a conditional constraint reads.
+  condition_fields?: string[];
+  // nulls_distinct=False: empty values clash too.
+  nulls_equal?: boolean;
 }
 
 export interface ModelField {

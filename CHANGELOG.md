@@ -20,6 +20,18 @@
   `content_studio.E021` (a `duplicate_inlines` entry that is not in
   `inlines`) and `content_studio.W014` (duplication options without
   effect) report misconfiguration.
+- **Duplicate warnings for combinations of fields.** The duplicate warning
+  on the edit page now also covers `Meta.unique_together` and
+  `UniqueConstraint`s over several fields. When the combination of values
+  in the form matches another object, the warning shows under the field
+  of the combination you edited last and names the other fields. Like the
+  warning for unique fields, it is scoped to the tenant, counts objects in
+  the trash, leaves out the object you are editing and never blocks
+  saving. A constraint's `condition` is applied to both objects; a tenant
+  field in the combination is left out, because only objects of the
+  current tenant are compared. Functional and deferrable constraints are
+  not checked, and an empty value only clashes when the constraint sets
+  `nulls_distinct=False` and the database supports it.
 
 ## 1.2.0 (unreleased)
 

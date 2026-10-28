@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Lower
 
 from content_studio.blocks import Block, BlockField
 from content_studio.fields import HTMLField, URLPathField
@@ -205,3 +206,35 @@ class ProductComment(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class Edition(models.Model):
+    """Combinations of fields that must be unique; see test_unique_sets."""
+
+    title = models.CharField(max_length=100)
+    slug = models.SlugField()
+    language = models.CharField(max_length=5, blank=True)
+    number = models.IntegerField(null=True, blank=True)
+    published = models.BooleanField(default=False)
+    # A tenant field when TENANT_MODEL is Category.
+    category = models.ForeignKey(
+        Category, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    removed_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    class Meta:
+        unique_together = [("slug", "language")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["title", "category"], name="edition_title_per_category"
+            ),
+            models.UniqueConstraint(
+                fields=["number", "language"],
+                condition=models.Q(published=True),
+                name="edition_published_number",
+            ),
+            models.UniqueConstraint(Lower("title"), name="edition_title_lower"),
+        ]
+
+    def __str__(self):
+        return self.title

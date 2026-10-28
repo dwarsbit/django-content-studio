@@ -6,6 +6,7 @@ from content_studio.form import FormSet, TableColumn
 from .models import (
     Article,
     Category,
+    Edition,
     Label,
     LandingPage,
     Note,
@@ -139,4 +140,10 @@ class ProductAdmin(ModelStudio):
     duplicate_inlines = [PartInline, ProductSupplierInline]
     readonly_fields = ["internal_note"]
     exclude = ["secret"]
+    soft_delete = "removed_at"
+
+
+@register(Edition)
+class EditionAdmin(ModelStudio):
+    table_display = ["title"]
     soft_delete = "removed_at"

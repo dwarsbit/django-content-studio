@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { FieldWidget, type FormField as IFormField, type Model } from "@/types";
 
 import { EditorReadOnlyContext } from "./editor-read-only";
-import { UniqueWarning } from "./unique-warning";
+import { UniqueSetWarning, UniqueWarning } from "./unique-warning";
 
 const COMPONENTS: Partial<
   Record<
@@ -146,6 +146,19 @@ export function FormField({
                 {!isReadonly && modelField?.unique && (
                   <UniqueWarning model={model} name={formField.name} />
                 )}
+                {!isReadonly &&
+                  model.unique_sets
+                    ?.filter((uniqueSet) =>
+                      uniqueSet.fields.includes(formField.name),
+                    )
+                    .map((uniqueSet) => (
+                      <UniqueSetWarning
+                        key={uniqueSet.id}
+                        model={model}
+                        uniqueSet={uniqueSet}
+                        name={formField.name}
+                      />
+                    ))}
                 {!isCheckbox && modelField?.help_text && (
                   <FormDescription className="text-xs">
                     {modelField.help_text}
