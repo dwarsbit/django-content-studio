@@ -8,6 +8,7 @@ from rest_framework import serializers
 from rest_framework.relations import RelatedField
 
 from content_studio.settings import cs_settings
+from content_studio.uniqueness import get_unique_sets
 from content_studio.utils import (
     get_tenant_field_name,
     get_tenant_scoped_queryset,
@@ -311,6 +312,10 @@ class ModelSerializer:
             "verbose_name_plural": model._meta.verbose_name_plural,
             "fields": self.get_fields(),
             "tenant_field": tenant_field,
+            # Combinations of fields the editor checks for duplicates.
+            "unique_sets": [
+                unique_set.serialize() for unique_set in get_unique_sets(model)
+            ],
         }
 
     def get_fields(self):

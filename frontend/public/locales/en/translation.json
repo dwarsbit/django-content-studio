@@ -80,6 +80,10 @@
     "unique_warning_trashed": "\"{{object}}\" ({{modelName}}, in the trash) already uses this {{fieldName}}.",
     "unique_warning_hidden": "Another object already uses this {{fieldName}}.",
     "unique_warning_hint": "Saving will fail unless you change it.",
+    "unique_set_warning": "\"{{object}}\" ({{modelName}}) already uses this {{fieldName}} with the same {{otherFields}}.",
+    "unique_set_warning_trashed": "\"{{object}}\" ({{modelName}}, in the trash) already uses this {{fieldName}} with the same {{otherFields}}.",
+    "unique_set_warning_hidden": "Another object already uses this {{fieldName}} with the same {{otherFields}}.",
+    "unique_set_warning_hint": "Saving will fail unless you change one of them.",
     "unsaved_changes": "Unsaved changes"
   },
   "list_view": {
