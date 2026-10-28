@@ -261,7 +261,8 @@
           "1": "added",
           "2": "edited",
           "3": "deleted"
-        }
+        },
+        "empty": "No changes yet"
       },
       "scheduled_tasks": {
         "empty": "No scheduled tasks",
@@ -276,7 +277,8 @@
       "content_list": {
         "empty_state": "No items"
       }
-    }
+    },
+    "view_all": "View all"
   },
   "tenant": {
     "selector": {

@@ -260,7 +260,8 @@
           "1": "voegde toe",
           "2": "bewerkte",
           "3": "verwijderde"
-        }
+        },
+        "empty": "Nog geen wijzigingen"
       },
       "scheduled_tasks": {
         "empty": "Geen geplande taken",
@@ -275,7 +276,8 @@
       "content_list": {
         "empty_state": "Geen items"
       }
-    }
+    },
+    "view_all": "Alles bekijken"
   },
   "tenant": {
     "selector": {

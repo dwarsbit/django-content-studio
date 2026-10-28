@@ -46,6 +46,16 @@
   footer; crop and focal point open in their own dialog from the sheet.
   An empty folder is a dashed drop zone inviting the first upload. The
   media picker in the editor shares the tree and the cards.
+- **The dashboard.** The greeting is the page's title, with today's
+  date under it. Every widget shares one card anatomy: a header row
+  with the title, a muted description and, for a content list of one
+  model, "View all"; rows separated by hairlines. The statistic shows
+  its trend as a signed percentage colored by sentiment (a negative
+  trend is shown too); the activity log shows an avatar, the editor,
+  the action and the object with the model and the time under it; a
+  scheduled task's status is a badge with a dot, or a spinner while it
+  runs. Wide widgets fill the row instead of overflowing it on narrow
+  screens.
 
 ## 1.1.0 (2026-10-27)
 

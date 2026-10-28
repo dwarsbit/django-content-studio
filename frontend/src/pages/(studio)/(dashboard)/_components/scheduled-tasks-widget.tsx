@@ -15,8 +15,18 @@ import { useHttp } from "@/hooks/use-http";
 import { cn } from "@/lib/utils";
 import { type DashboardWidget, type DateTimeString } from "@/types";
 
+import { Widget, WidgetEmpty, WidgetLoading } from "./widget";
+
 dayjs.extend(relativeTime);
 
+type TaskStatus = "RUNNING" | "SCHEDULED" | "SUCCESS" | "FAILURE";
+
+/**
+ * Background jobs and their last run: the title and description, a
+ * status badge with a dot (or a spinner while running) and a meta line
+ * with the last run, the duration and the next run. Unknown values are
+ * left out, such as the next run of a task that is not scheduled again.
+ */
 export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
   const http = useHttp();
   const { t } = useTranslation();
@@ -36,7 +46,7 @@ export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
           duration: number | null;
           title: string;
           description: string;
-          status: "RUNNING" | "SCHEDULED" | "SUCCESS" | "FAILURE";
+          status: TaskStatus;
           error_message: string | null;
         }[];
       }>(`/dashboard/widgets/${widget.widget_id}`);
@@ -46,84 +56,70 @@ export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
   });
 
   return (
-    <div className="min-h-[100px]">
+    <Widget title={data?.title ?? widget.name} description={data?.description}>
       {!data ? (
-        <div className="p-12 flex items-center justify-center">
-          <Spinner />
-        </div>
+        <WidgetLoading />
+      ) : R.isEmpty(data.tasks) ? (
+        <WidgetEmpty>
+          {t("dashboard.widgets.scheduled_tasks.empty")}
+        </WidgetEmpty>
       ) : (
-        <div>
-          <div className="p-4">
-            <h2 className="font-medium text-foreground">{data.title}</h2>
-            <div className="text-muted-foreground">{data.description}</div>
-          </div>
-          {R.isEmpty(data.tasks) ? (
-            <div className="py-12 text-center text-muted-foreground select-none">
-              {t("dashboard.widgets.scheduled_tasks.empty")}
-            </div>
-          ) : (
-            <ul>
-              {data.tasks.map((task, idx) => (
-                <li key={idx} className="border-t p-4">
-                  <div className="mb-1 flex items-start justify-between">
-                    <div>
-                      <h4 className="text-foreground">{task.title}</h4>
-                      <div className="text-muted-foreground">
-                        {task.description}
-                      </div>
-                    </div>
-
-                    <Badge
-                      className={cn({
-                        "bg-success/10 text-success": task.status === "SUCCESS",
-                        "bg-destructive/10 text-destructive":
-                          task.status === "FAILURE",
-                        "bg-accent text-muted-foreground":
-                          task.status === "SCHEDULED",
-                        "bg-primary/10 text-primary": task.status === "RUNNING",
-                      })}
-                    >
-                      {task.status === "RUNNING" && (
-                        <Spinner className="size-3" />
-                      )}
-                      {t(
-                        `dashboard.widgets.scheduled_tasks.status.${task.status}`,
-                      )}
-                    </Badge>
-                  </div>
-                  {/* Unknown values are left out, such as the next run
-                      of a task that is not scheduled again. */}
-                  <div className="flex gap-3 items-center text-sm text-muted-foreground empty:hidden">
-                    {task.last_run_at && (
-                      <div className="flex items-center gap-1">
-                        <PiClockBold />
-                        {dayjs(task.last_run_at).fromNow()}
-                      </div>
-                    )}
-                    {task.duration != null && (
-                      <div className="flex items-center gap-1">
-                        <PiPlayCircleBold />
-                        {`${task.duration}s`}
-                      </div>
-                    )}
-                    {task.next_run_at && (
-                      <div className="flex items-center gap-1">
-                        <PiCalendarBlankBold />
-                        {`${t("dashboard.widgets.scheduled_tasks.next")} ${dayjs(task.next_run_at).fromNow()}`}
-                      </div>
-                    )}
-                  </div>
-                  {task.error_message && task.status !== "SUCCESS" && (
-                    <div className="mt-1 text-sm text-destructive">
-                      {task.error_message}
+        <ul>
+          {data.tasks.map((task, idx) => (
+            <li key={idx} className="border-t px-4 py-3 space-y-1">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="font-medium">{task.title}</h3>
+                  {task.description && (
+                    <div className="text-xs text-muted-foreground">
+                      {task.description}
                     </div>
                   )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                </div>
+                <Badge variant="secondary" className="gap-1.5 pl-1.5 shrink-0">
+                  {task.status === "RUNNING" ? (
+                    <Spinner className="size-3" />
+                  ) : (
+                    <span
+                      className={cn("size-1.5 rounded-full", {
+                        "bg-success": task.status === "SUCCESS",
+                        "bg-destructive": task.status === "FAILURE",
+                        "bg-muted-foreground/60": task.status === "SCHEDULED",
+                      })}
+                    />
+                  )}
+                  {t(`dashboard.widgets.scheduled_tasks.status.${task.status}`)}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 items-center text-xs text-muted-foreground empty:hidden">
+                {task.last_run_at && (
+                  <span className="inline-flex items-center gap-1">
+                    <PiClockBold />
+                    {dayjs(task.last_run_at).fromNow()}
+                  </span>
+                )}
+                {task.duration != null && (
+                  <span className="inline-flex items-center gap-1">
+                    <PiPlayCircleBold />
+                    {`${task.duration}s`}
+                  </span>
+                )}
+                {task.next_run_at && (
+                  <span className="inline-flex items-center gap-1">
+                    <PiCalendarBlankBold />
+                    {`${t("dashboard.widgets.scheduled_tasks.next")} ${dayjs(task.next_run_at).fromNow()}`}
+                  </span>
+                )}
+              </div>
+              {task.error_message && task.status !== "SUCCESS" && (
+                <div className="text-xs text-destructive">
+                  {task.error_message}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
-    </div>
+    </Widget>
   );
 }

@@ -1,11 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { PiTrendDownBold, PiTrendUpBold } from "react-icons/pi";
 
-import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { useHttp } from "@/hooks/use-http";
 import { cn } from "@/lib/utils";
 import { type DashboardWidget } from "@/types";
 
+/**
+ * One number with its title and, when the widget reports one, the
+ * trend as a percentage colored by its sentiment.
+ */
 export function StatisticWidget({ widget }: { widget: DashboardWidget }) {
   const http = useHttp();
   const { data } = useQuery({
@@ -19,42 +23,51 @@ export function StatisticWidget({ widget }: { widget: DashboardWidget }) {
         value: number;
         suffix: string;
         prefix: string;
-        trend: string;
+        trend: string | null;
         trend_sentiment: "default" | "positive" | "negative";
       }>(`/dashboard/widgets/${widget.widget_id}`);
 
       return data;
     },
   });
-  const numTrend = data && Number(data.trend);
+  const trend = data?.trend != null ? Number(data.trend) : NaN;
+  const hasTrend = Number.isFinite(trend) && trend !== 0;
 
   return (
-    <div className="p-4 min-h-[100px]">
-      {data && (
-        <div>
-          <div className="flex items-center justify-between">
-            <h2 className="text-muted-foreground truncate">{data.title}</h2>
-            {numTrend! > 0 && (
-              <Badge
-                variant="outline"
-                className={cn({
-                  "text-success": data.trend_sentiment === "positive",
-                  "text-destructive": data.trend_sentiment === "negative",
-                })}
+    <section className="rounded-lg border bg-card shadow-xs p-4 min-h-[92px]">
+      {data ? (
+        <>
+          <div className="text-sm text-muted-foreground truncate">
+            {data.title}
+          </div>
+          <div className="flex items-end justify-between gap-2 mt-1">
+            <div className="text-3xl font-semibold tabular-nums leading-none truncate">
+              {data.prefix}
+              {data.value}
+              {data.suffix}
+            </div>
+            {hasTrend && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 text-xs font-medium tabular-nums mb-0.5 shrink-0",
+                  {
+                    "text-success": data.trend_sentiment === "positive",
+                    "text-destructive": data.trend_sentiment === "negative",
+                    "text-muted-foreground": data.trend_sentiment === "default",
+                  },
+                )}
               >
-                {numTrend! < 0 ? <PiTrendDownBold /> : <PiTrendUpBold />}
-                {`${numTrend! < 0 ? "-" : "+"}${data.trend}%`}
-              </Badge>
+                {trend < 0 ? <PiTrendDownBold /> : <PiTrendUpBold />}
+                {`${trend < 0 ? "-" : "+"}${Math.abs(trend)}%`}
+              </span>
             )}
           </div>
-
-          <div className="text-foreground mb-6 font-semibold text-3xl">
-            <span>{data.prefix}</span>
-            <span>{data.value}</span>
-            <span>{data.suffix}</span>
-          </div>
+        </>
+      ) : (
+        <div className="h-full min-h-[60px] flex items-center justify-center">
+          <Spinner />
         </div>
       )}
-    </div>
+    </section>
   );
 }
