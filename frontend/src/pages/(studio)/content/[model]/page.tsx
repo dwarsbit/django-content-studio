@@ -5,13 +5,9 @@ import { useTranslation } from "react-i18next";
 import { PiFileTextBold, PiRowsBold, PiTableBold } from "react-icons/pi";
 import { Link, useParams, useSearchParams } from "react-router";
 
-import {
-  HeaderTabs,
-  PageBody,
-  PageHeader,
-  Toolbar,
-} from "@/components/page-header";
+import { HeaderTabs } from "@/components/header-tabs";
 import { buttonVariants } from "@/components/ui/button";
+import { PageBody, PageHeader, Toolbar } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -20,7 +16,7 @@ import { useHttp } from "@/hooks/use-http";
 import { useMoveResource } from "@/hooks/use-move-resource";
 import type { Model, PaginatedResponse, Resource } from "@/types";
 
-import { BulkBar } from "./_components/bulk-bar";
+import { ContentBulkBar } from "./_components/bulk-bar";
 import { Filters } from "./_components/filters";
 import { ListView } from "./_components/list-view";
 import { SortSelect } from "./_components/sort-select";
@@ -390,7 +386,7 @@ export function ModelListPage() {
       </PageBody>
 
       {selected.size > 0 && actions.length > 0 && (
-        <BulkBar
+        <ContentBulkBar
           modelLabel={model.label}
           actions={actions}
           ids={Array.from(selected)}

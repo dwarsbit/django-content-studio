@@ -1,0 +1,17 @@
+<!-- @dsCard group="Actions" height=120 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>BulkBar preview</title>
+<style>body{margin:0;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+#root{position:relative;height:120px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(
+  h(C.BulkBar, { label: "3 selected", clearLabel: "Clear selection", onClear: function () {} },
+    h(C.Button, { variant: "ghost", size: "sm" }, h("span", { className: "ph-bold ph-folder" }), "Move"),
+    h(C.Button, { variant: "ghost", size: "sm", className: "text-destructive hover:bg-destructive/10 hover:text-destructive" }, h("span", { className: "ph-bold ph-trash" }), "Delete")));
+</script>
+</body>
+</html>

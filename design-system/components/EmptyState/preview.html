@@ -1,0 +1,20 @@
+<!-- @dsCard group="Feedback" height=240 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>EmptyState preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(
+  h(C.EmptyState, {
+    icon: h("span", { className: "ph-bold ph-upload-simple" }),
+    title: "No files yet",
+    description: "Drop files here to upload them, or use the upload button.",
+    action: h(C.Button, null, "Upload media"),
+    className: "rounded-lg border-2 border-dashed"
+  }));
+</script>
+</body>
+</html>

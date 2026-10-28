@@ -30,7 +30,7 @@ Django Content Studio is a modern alternative to the classic Django admin. Its a
 
 ### Space, shape and depth
 
-- Space comes from a 4px unit (`spacing`): `space-2` (8px) between controls, `space-3` (12px) inside buttons and inputs, `space-4` (16px) inside cards, `space-6` (24px) around sections.
+- Space comes from a 4px unit (`spacing`): `space-2` (8px) between controls, `space-3` (12px) inside inputs and small buttons, `space-4` (16px) inside cards, `space-6` (24px) around sections. Controls are low: buttons are 32px high (`sm` 28px, `xs` 24px) with 14px of horizontal padding; toolbar controls share the 32px height.
 - Radii derive from `radius` (10px): `radius-sm` for checkboxes and badges, `radius-md` for inputs and menus, `radius-lg` for buttons, cards and dialogs. Switches, avatars and pills are fully round.
 - Borders are 1px hairlines in `border` (`input` for form controls). Separate areas with borders and `muted` fills before reaching for shadows.
 - Shadows are soft and tinted with the mist hue: `shadow-xs` on buttons, checkboxes and switches, `shadow-sm` on inputs, `shadow-md` on cards and popovers, `shadow-lg` on menus and toasts, `shadow-xl` on dialogs and the login card.
@@ -38,8 +38,8 @@ Django Content Studio is a modern alternative to the classic Django admin. Its a
 
 ### Layout and motion
 
-- The admin is a main menu on the left (`sidebar`) and a content area capped at 1280px. The dashboard is a grid of up to four columns of widgets on `card`.
-- Edit pages put the fields in a main column and metadata in a narrower sidebar; form sets are cards.
+- The admin is a main menu on the left (`sidebar`, flush against the page with a hairline; a rail of icons when collapsed) and a content area. Every page starts with a `PageHeader`: a 56px bar with the title and the page's actions, then a `Toolbar` where a page searches, filters or switches views, then the `PageBody`, which scrolls and caps the content at 1280px.
+- Lists are tables or rows in a card; a selection brings up the floating `BulkBar`; an empty list shows an `EmptyState`. Edit pages put the fields in a main column and metadata in a narrower sidebar; form sets are cards with a small header; sections switch through line tabs. The dashboard is a grid of up to four columns of widgets on `card`, each with the same header row.
 - Motion is short and functional: overlays fade and zoom in, menus slide a few pixels. Nothing loops, nothing bounces.
 
 ## Iconography
@@ -50,7 +50,7 @@ Django Content Studio is a modern alternative to the classic Django admin. Its a
 
 ## Components
 
-The `ContentStudio` bundle holds the admin's own components: 34 of them, from Button and Input to Command, Sheet and Toaster, grouped as actions, forms, display, navigation, overlays and feedback. Each has guidelines and a live preview; use them instead of restyling native elements. The bundle runs on React 18, where a component does not receive a `ref` through `asChild`: give a Radix trigger `buttonVariants(...)` as its class instead of wrapping a `Button`.
+The `ContentStudio` bundle holds the admin's own components: 38 of them, from Button and Input to Command, Sheet, PageHeader and BulkBar, grouped as actions, forms, display, navigation, overlays and feedback. Each has guidelines and a live preview; use them instead of restyling native elements. The bundle runs on React 18, where a component does not receive a `ref` through `asChild`: give a Radix trigger `buttonVariants(...)` as its class instead of wrapping a `Button`.
 
 ## Source and build
 

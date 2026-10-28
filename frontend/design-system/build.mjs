@@ -58,6 +58,9 @@ const COMPONENTS = {
   ContextMenu: "context-menu",
   Alert: "alert",
   Toaster: "sonner",
+  PageHeader: "page-header",
+  EmptyState: "empty-state",
+  BulkBar: "bulk-bar",
 };
 // Folders in design-system/components that are cards, not components.
 const CARDS = ["Cover", "lib"];

@@ -17,6 +17,7 @@ export {
 } from "@/components/ui/alert-dialog";
 export { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export { Badge } from "@/components/ui/badge";
+export { BulkBar } from "@/components/ui/bulk-bar";
 export { Button, buttonVariants } from "@/components/ui/button";
 export {
   ButtonGroup,
@@ -77,6 +78,7 @@ export {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+export { EmptyState } from "@/components/ui/empty-state";
 export { Input } from "@/components/ui/input";
 export {
   InputGroup,
@@ -94,6 +96,7 @@ export {
 } from "@/components/ui/input-otp";
 export { Label } from "@/components/ui/label";
 export { MultiSelect } from "@/components/ui/multi-select";
+export { PageBody, PageHeader, Toolbar } from "@/components/ui/page-header";
 export { Pagination } from "@/components/ui/pagination";
 export {
   Popover,

@@ -15,27 +15,3 @@ body,
 body {
   overflow: hidden;
 }
-
-/* Proposed button sizes (to become the defaults of ui/button.tsx): a
-   little lower, a little more horizontal padding. Unlayered, so they
-   win over the component's utilities. */
-[data-slot="button"][data-size="default"] {
-  height: 2rem;
-  padding-inline: 0.875rem;
-}
-[data-slot="button"][data-size="sm"] {
-  height: 1.75rem;
-  padding-inline: 0.75rem;
-}
-[data-slot="button"][data-size="xs"] {
-  height: 1.5rem;
-  padding-inline: 0.625rem;
-}
-[data-slot="button"][data-size="lg"] {
-  height: 2.25rem;
-  padding-inline: 1.125rem;
-}
-[data-slot="button"][data-size="icon"] {
-  width: 2rem;
-  height: 2rem;
-}
