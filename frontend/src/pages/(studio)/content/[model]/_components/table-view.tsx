@@ -17,11 +17,22 @@ import {
 import { useReorderableRow } from "@/hooks/use-reorderable-row";
 import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
-import type { FieldFormat, Id, Model } from "@/types";
+import { type FieldFormat, FieldType, type Id, type Model } from "@/types";
 
 import { EmptyState } from "./empty-state";
 
 type Row = { id: string; __str__?: string; [p: string]: unknown };
+
+// Numbers line up on the right, in tabular figures.
+const NUMERIC_TYPES: FieldType[] = [
+  FieldType.IntegerField,
+  FieldType.DecimalField,
+  FieldType.FloatField,
+];
+
+function isNumeric(type: FieldType | undefined) {
+  return type !== undefined && NUMERIC_TYPES.includes(type);
+}
 
 // Reordering, when the list offers it: the moves a drop or the row
 // menu make, why reordering is off right now (null when it is on), and
@@ -95,6 +106,7 @@ export function TableView({
             )}
             {display.map(({ name, header }) => {
               const label = header ?? model.fields[name]?.verbose_name;
+              const numeric = isNumeric(model.fields[name]?.type);
               const active = name === ordering?.replace(/^-/, "");
               const descending = !!ordering?.startsWith("-");
               // Computed columns have no queryset equivalent to sort on.
@@ -114,7 +126,9 @@ export function TableView({
                         : "none"
                       : undefined
                   }
-                  className="sticky top-0 z-10 bg-muted"
+                  className={cn("sticky top-0 z-10 bg-muted", {
+                    "[&_div]:justify-end": numeric,
+                  })}
                 >
                   {label && isSortable ? (
                     <button
@@ -128,11 +142,12 @@ export function TableView({
                         }
                       }}
                       className={cn(
-                        "group inline-flex items-center gap-1 cursor-pointer hover:text-secondary-foreground",
+                        "group inline-flex items-center gap-1 cursor-pointer rounded-sm hover:text-foreground",
                         "outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        { "text-foreground": active },
                       )}
                     >
-                      <span>{label}</span>
+                      <span className="first-letter:uppercase">{label}</span>
                       <span
                         className={cn({
                           invisible: !active,
@@ -255,6 +270,7 @@ function TableViewRow({
     <TableRow
       ref={sortable?.ref}
       style={sortable?.style}
+      data-state={selected ? "selected" : undefined}
       onClick={() => navigate(`/content/${model.label}/${item.id}`)}
       className={cn({ "bg-muted shadow-sm": sortable?.isDragging })}
     >
@@ -278,9 +294,19 @@ function TableViewRow({
           />
         </TableCell>
       )}
-      {fields.map(({ name, format }) => (
-        <TableCell key={name}>
-          <div className="truncate min-h-8 items-center flex">
+      {fields.map(({ name, format }, index) => (
+        <TableCell
+          key={name}
+          className={cn({
+            "font-medium": index === 0,
+            "text-right tabular-nums": isNumeric(model.fields[name]?.type),
+          })}
+        >
+          <div
+            className={cn("truncate min-h-8 items-center flex", {
+              "justify-end": isNumeric(model.fields[name]?.type),
+            })}
+          >
             <FormatRenderer
               value={item[name]}
               field={model.fields[name]}

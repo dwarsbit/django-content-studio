@@ -16,7 +16,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr:hover]:bg-transparent", className)}
+      className={cn("bg-muted [&_tr:hover]:bg-transparent", className)}
       {...props}
     />
   );
@@ -66,12 +66,16 @@ function TableHead({
     <th
       data-slot="table-head"
       className={cn(
-        "first-of-type:[&_div]:pl-8 last-of-type:[&_div]:pr-8 text-muted-foreground cursor-default text-sm font-medium text-left align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "first-of-type:[&_div]:pl-4 last-of-type:[&_div]:pr-4 text-muted-foreground cursor-default text-sm font-medium text-left align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className,
       )}
       {...props}
     >
-      <div className="border-b h-9 px-2 flex items-center">{children}</div>
+      {/* Labels come from verbose_name, lowercase in Django: the first
+          letter is capitalized here. */}
+      <div className="border-b h-10 px-2 flex items-center first-letter:uppercase">
+        {children}
+      </div>
     </th>
   );
 }
@@ -81,7 +85,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 first-of-type:pl-8 last-of-type:pr-8 font-medium first-of-type:font-semibold align-middle cursor-default whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "h-11 px-2 py-1.5 first-of-type:pl-4 last-of-type:pr-4 align-middle cursor-default whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className,
       )}
       {...props}

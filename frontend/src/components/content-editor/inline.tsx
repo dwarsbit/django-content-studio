@@ -162,9 +162,7 @@ export function Inline({
               )}
               {adminModel.table_display?.map(({ name, header }) => (
                 <TableHead key={name}>
-                  <div className="flex items-center">
-                    {header ?? model.fields[name]?.verbose_name}
-                  </div>
+                  {header ?? model.fields[name]?.verbose_name}
                 </TableHead>
               ))}
               {onMove && (
@@ -356,8 +354,8 @@ function InlineRow({
             <RowDragHandle handleProps={sortable.handleProps} />
           </TableCell>
         )}
-        {adminModel.table_display?.map(({ name, format }) => (
-          <TableCell key={name}>
+        {adminModel.table_display?.map(({ name, format }, index) => (
+          <TableCell key={name} className={cn({ "font-medium": index === 0 })}>
             <FormatRenderer
               value={resource[name]}
               field={model.fields[name]}

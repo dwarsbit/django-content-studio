@@ -10,6 +10,14 @@
   are in the gray family; the `color` of a `ModelGroup` or a
   `MainMenuLink` is no longer shown. `ModelGroup(collapsed=True)` starts
   a group collapsed; the group of the current model always opens.
+- **Tables.** The list page's table, inlines and the media library's
+  table share one shape: a 40px header on the gray family with
+  capitalized labels, 44px rows with a 16px gutter, the object's name
+  as the only medium-weight column, numbers right-aligned in tabular
+  figures, selected rows on `accent`. Booleans show a check or a dash
+  in the text color instead of green and red circles; a user column
+  shows the avatar with the name instead of the avatar alone. The media
+  library's table uses the admin's checkboxes.
 
 ## 1.1.0 (2026-10-27)
 
