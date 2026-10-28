@@ -326,6 +326,30 @@ class ModelStudio(BaseStudio[T]):
     # The icon for this model will be shown in the menu and some other places.
     icon: Optional[str] = None
 
+    # Duplicate (save as new), as an opt-in: the edit page offers to
+    # open a create form prefilled with a copy of the object. Never
+    # offered for singletons.
+    allow_duplication: bool = False
+
+    # The inlines (entries of `inlines`) whose rows are copied along
+    # when the duplicate is saved. Inlines left out start empty.
+    duplicate_inlines: list[Type["InlineModelStudio"]] = []
+
+    def get_duplicate_initial(self, request: HttpRequest, obj: T) -> dict[str, Any]:
+        """
+        The values a duplicate of obj starts with, as model values:
+        related objects as instances, many-to-many fields as lists of
+        instances. The editor can change them before saving, and only
+        fields the create form writes are used. The default copies the
+        editable fields, gives unique slugs and URL paths a free suffix
+        and leaves other unique fields, files, one-to-one fields and
+        read-only, excluded and automatic fields out. Override to
+        adjust, e.g. starting from super().
+        """
+        from .duplication import get_default_duplicate_initial
+
+        return get_default_duplicate_initial(self, request, obj)
+
     def get_relation_display(
         self, obj: models.Model, request: HttpRequest
     ) -> "RelationDisplay":
@@ -842,6 +866,18 @@ def get_is_singleton(admin_class) -> bool:
     return bool(getattr(model, "is_singleton", False))
 
 
+def is_duplicable(studio) -> bool:
+    """
+    Whether a studio offers duplication: an opted-in model studio that
+    is not a singleton. Inlines are never duplicated on their own.
+    """
+    return (
+        isinstance(studio, ModelStudio)
+        and bool(studio.allow_duplication)
+        and not get_is_singleton(studio)
+    )
+
+
 def is_reorderable(studio, request: HttpRequest) -> bool:
     """
     Whether the request may reorder a studio's list: reordering is
@@ -890,6 +926,9 @@ class AdminSerializer:
                 "prepopulated_fields": serialize_prepopulated_fields(
                     admin_class, request
                 ),
+                # Whether the edit page offers Duplicate; it also needs
+                # add permission.
+                "duplicate": is_duplicable(admin_class),
                 "inlines": [
                     {
                         "model": inline.model._meta.label_lower,

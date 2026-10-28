@@ -124,6 +124,9 @@ export interface Model {
       readonly_fields?: string[];
       // The create form's prepopulated fields, mapped to their sources.
       prepopulated_fields?: Record<string, string[]>;
+      // Whether the edit page offers Duplicate (allow_duplication);
+      // it also needs add permission.
+      duplicate?: boolean;
       inlines: {
         model: string;
         fk_name: string;
@@ -145,6 +148,13 @@ export interface Model {
     permissions: Permissions;
   };
   fields: Record<string, ModelField>;
+}
+
+// A duplicate's starting point: the copied values, in the form's
+// shape, and the object they were copied from.
+export interface DuplicateInitial {
+  initial: Partial<Resource>;
+  source: { id: Id; __str__: string };
 }
 
 export interface Permissions {

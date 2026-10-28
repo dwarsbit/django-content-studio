@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.3.0 (unreleased)
+
+- **Duplicate (save as new).** A studio with `allow_duplication = True`
+  offers Duplicate in the edit page's actions menu. It opens the create
+  form filled in with a copy of the object; nothing is saved until the
+  editor creates it, so the usual validation runs. Field values, foreign
+  keys, media, block fields and plain many-to-many fields are copied. The
+  primary key, read-only, excluded and non-editable fields, one-to-one
+  fields and files are not. Unique slugs and URL paths get the first free
+  number suffix (`spring-sale-2`), within the tenant and counting the
+  trash; other unique fields start empty. The objects of the inlines in
+  `duplicate_inlines` are copied when the duplicate is saved, which is
+  also how a many-to-many field with a through model is copied.
+  `get_duplicate_initial(request, obj)` adjusts the copy. Duplicating
+  needs add permission and view permission on the object, and is not
+  available for singletons. The new object's history records that it was
+  duplicated, and `content_changed` reports it as created. System checks
+  `content_studio.E021` (a `duplicate_inlines` entry that is not in
+  `inlines`) and `content_studio.W014` (duplication options without
+  effect) report misconfiguration.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the

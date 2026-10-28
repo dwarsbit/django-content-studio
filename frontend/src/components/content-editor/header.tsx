@@ -10,6 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/ui/page-header";
@@ -30,6 +31,7 @@ export function Header({
   components = model?.admin.edit.header ?? [],
   readOnly = false,
   canDelete = true,
+  onDuplicate,
   onSave,
   onDelete,
   onClose,
@@ -44,6 +46,8 @@ export function Header({
   // Read-only editors have no save button.
   readOnly?: boolean;
   canDelete?: boolean;
+  // Offers Duplicate in the more actions menu.
+  onDuplicate?: VoidFunction;
   // Whether the editor renders inside a Dialog: the title then is a
   // DialogTitle and the close button confirms unsaved changes itself;
   // routed editors rely on the navigation guard instead.
@@ -163,7 +167,7 @@ export function Header({
                     model={model}
                   />
                 ))}
-                {!isSingleton && !isCreate && canDelete && (
+                {!isSingleton && !isCreate && (canDelete || onDuplicate) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -175,29 +179,37 @@ export function Header({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onSelect={async () => {
-                          const confirmed = await confirm({
-                            title: t("common.delete_confirm_title"),
-                            // With soft delete the object lands in the
-                            // trash and can be restored, which the
-                            // regular message denies.
-                            description: t(
-                              model.admin.list.trash
-                                ? "common.delete_to_trash_confirm_description"
-                                : "common.delete_confirm_description",
-                            ),
-                          });
+                      {onDuplicate && (
+                        <DropdownMenuItem onSelect={onDuplicate}>
+                          {t("editor.duplicate")}
+                        </DropdownMenuItem>
+                      )}
+                      {onDuplicate && canDelete && <DropdownMenuSeparator />}
+                      {canDelete && (
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onSelect={async () => {
+                            const confirmed = await confirm({
+                              title: t("common.delete_confirm_title"),
+                              // With soft delete the object lands in the
+                              // trash and can be restored, which the
+                              // regular message denies.
+                              description: t(
+                                model.admin.list.trash
+                                  ? "common.delete_to_trash_confirm_description"
+                                  : "common.delete_confirm_description",
+                              ),
+                            });
 
-                          if (confirmed) {
-                            await mutateAsync(resource!.id);
-                            onDelete?.();
-                          }
-                        }}
-                      >
-                        {t("common.delete")}
-                      </DropdownMenuItem>
+                            if (confirmed) {
+                              await mutateAsync(resource!.id);
+                              onDelete?.();
+                            }
+                          }}
+                        >
+                          {t("common.delete")}
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}

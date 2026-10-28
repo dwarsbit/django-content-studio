@@ -80,7 +80,9 @@
     "unique_warning_trashed": "\"{{object}}\" ({{modelName}}, in de prullenbak) gebruikt deze {{fieldName}} al.",
     "unique_warning_hidden": "Een ander object gebruikt deze {{fieldName}} al.",
     "unique_warning_hint": "Opslaan mislukt tenzij je dit wijzigt.",
-    "unsaved_changes": "Niet-opgeslagen wijzigingen"
+    "unsaved_changes": "Niet-opgeslagen wijzigingen",
+    "duplicate": "Dupliceren",
+    "duplicate_notice": "Een kopie van \"{{object}}\". Er wordt niets opgeslagen totdat je het aanmaakt."
   },
   "list_view": {
     "table_view": "Tabelweergave",

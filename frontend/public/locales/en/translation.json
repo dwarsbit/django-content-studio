@@ -80,7 +80,9 @@
     "unique_warning_trashed": "\"{{object}}\" ({{modelName}}, in the trash) already uses this {{fieldName}}.",
     "unique_warning_hidden": "Another object already uses this {{fieldName}}.",
     "unique_warning_hint": "Saving will fail unless you change it.",
-    "unsaved_changes": "Unsaved changes"
+    "unsaved_changes": "Unsaved changes",
+    "duplicate": "Duplicate",
+    "duplicate_notice": "A copy of \"{{object}}\". Nothing is saved until you create it."
   },
   "list_view": {
     "table_view": "Table view",
