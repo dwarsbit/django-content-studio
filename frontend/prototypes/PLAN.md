@@ -94,22 +94,24 @@ Files: `pages/(studio)/layout.tsx`, a new `components/page-header.tsx`
   the foreground color. No icon chips.
 - Model groups are section headings (12px, muted, with a caret on hover
   to collapse) with the models listed under them, so every model is one
-  click away. The group holding the current model is always expanded.
+  click away. A group can be configured to start collapsed; the group
+  holding the current model is always expanded.
 - Collapsed: a 56px rail with a separator per group and tooltips.
 - User menu: mist avatar (`secondary`), name and username, up/down
   caret; the dropdown keeps the theme toggle, log out and the version.
   The "online" dot goes.
-- The studio's `color` option is kept for `MainMenuLink` and groups,
-  rendered as a tinted icon instead of a chip (control "Menu icons");
-  the default is mist. `COLORS` loses the four unknown colors (or the
-  theme gains them).
+- The studio's `color` option on `MainMenuLink` and groups is no longer
+  rendered: icons are mist. The option stays accepted; `COLORS` and its
+  four unknown colors go.
 
 Files: `pages/(studio)/_components/main-menu.tsx`, `tenant-selector.tsx`.
 
 ### List view
 
-- Header: capitalized title, count in muted tabular figures, "Trash"
-  outline with icon, "Create" primary with a plus.
+- Header: capitalized title, count in muted tabular figures, "Create"
+  primary with a plus. Under it, scope tabs when the model has a trash:
+  "All articles" and "Trash" with its count; the trash page is the
+  second tab.
 - Toolbar: search with a magnifier addon (`InputGroup`), filter chips
   that read "Status is Published" with an inline clear when active,
   "Clear filters" ghost when any filter is set, sort menu (list view),
@@ -249,25 +251,31 @@ build:design-system`), update the README's layout paragraph, add the
 Strings that are new (counts, "Clear filters", "Unsaved changes",
 "No files yet", "View all") go into the English and Dutch locales.
 
-## Open decisions
+## Decisions
 
-1. **Sidebar: flush or floating?** The prototype defaults to flush; the
-   floating card is one toggle away.
-2. **Menu icon color.** Mist by default, with `color` as a tint, or keep
-   the chips? The brand book argues for mist.
-3. **Menu groups as headings.** All models visible (headings) versus the
-   compact collapsible items of today. Headings win for up to ~20
-   models; beyond that, collapsing by default per group may be needed.
-4. **Bulk bar placement.** Floating pill (prototype) versus in the
-   toolbar.
-5. **Status dots on choice badges** need a studio-side hint. Ship the
-   plain badge first, or add the option in the same release?
-6. **Media details in a sheet.** The sheet replaces the edit dialog for
-   name, alt text and tags; crop and focal point keep their dialog.
-   Alternatively keep one dialog and only restyle it.
-7. **Relation glyph colors.** `RelationGlyph` still colors initials
-   from a nine-hue list. Keep (it is a studio-configured display) or
-   move to mist as well?
+Taken on the first round of prototypes:
+
+1. **Sidebar**: flush left with a hairline. The floating card is gone.
+2. **Menu icons**: mist only. The studio's `color` option is no longer
+   rendered by the main menu (it stays accepted, for compatibility).
+3. **Menu groups**: section headings with every model visible, plus a
+   studio option to start a group collapsed (`collapsed=True` on the
+   group; the active model's group always opens).
+4. **Bulk bar**: the floating pill.
+5. **Status badges**: plain secondary badges first; how a studio hints
+   the dot color is decided separately.
+6. **Media details**: the sheet, with crop and focal point in their
+   dialog.
+7. **Buttons**: lower and wider. `default` 32px high with 14px
+   horizontal padding (was 36px and 10px), `sm` 28px and 12px, `xs`
+   24px and 10px, `lg` 36px and 18px, `icon` 32px. The prototypes apply
+   these through `prototypes.css`; the merge changes `ui/button.tsx`.
+8. **Trash**: not a button next to "Create" (it is a place, not an
+   action). The list page gets scope tabs under its title, "All
+   articles" and "Trash" with the count, which also hold the trash
+   page. The same row can later carry saved filters or views.
+9. **Menu items with icons** keep the admin's convention: the icon
+   after the label.
 
 ## Out of scope for now
 

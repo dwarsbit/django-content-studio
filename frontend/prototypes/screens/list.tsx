@@ -37,6 +37,7 @@ import {
   BulkBar,
   EmptyState,
   FilterChip,
+  HeaderTabs,
   PageBody,
   PageHeader,
   SearchInput,
@@ -89,20 +90,21 @@ export function ContentListScreen() {
           </span>
         }
         actions={
-          <>
-            <Button variant="outline">
-              <PiTrashBold />
-              Trash
-            </Button>
-            <Button
-              onClick={() => (window.location.hash = "#/content/articles/1")}
-            >
-              <PiPlusBold />
-              Create
-            </Button>
-          </>
+          <Button
+            onClick={() => (window.location.hash = "#/content/articles/1")}
+          >
+            <PiPlusBold />
+            Create
+          </Button>
         }
       >
+        <HeaderTabs
+          current="#/content/articles"
+          tabs={[
+            { label: "All articles", href: "#/content/articles" },
+            { label: "Trash", count: 3, href: "#/content/articles?trash" },
+          ]}
+        />
         <Toolbar>
           <SearchInput placeholder="Search articles" />
           <FilterChip

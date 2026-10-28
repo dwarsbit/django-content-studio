@@ -144,7 +144,8 @@ export interface MenuModel {
 export interface MenuGroup {
   label: string;
   icon: string;
-  color: "blue" | "amber" | "emerald" | "violet";
+  // Starts collapsed in the menu (a studio option; expanded by default).
+  collapsed?: boolean;
   models: MenuModel[];
 }
 
@@ -153,7 +154,6 @@ export const menuGroups: MenuGroup[] = [
   {
     label: "Content",
     icon: "ph-bold ph-article",
-    color: "blue",
     models: [
       {
         label: "Articles",
@@ -180,7 +180,6 @@ export const menuGroups: MenuGroup[] = [
   {
     label: "Site",
     icon: "ph-bold ph-gear",
-    color: "amber",
     models: [
       {
         label: "Site settings",

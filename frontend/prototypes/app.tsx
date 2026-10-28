@@ -23,8 +23,6 @@ export type Screen = "dashboard" | "list" | "edit" | "media";
 export interface Settings {
   theme: "light" | "dark";
   menu: "expanded" | "collapsed";
-  sidebarStyle: "flush" | "floating";
-  iconColor: "mist" | "tinted";
   tenant: boolean;
   listView: "table" | "list";
   listState: "default" | "selected" | "filtered" | "empty";
@@ -33,12 +31,15 @@ export interface Settings {
 }
 
 const DEFAULTS: Settings = {
-  theme: window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light",
+  // The host (the artifact viewer) may set data-theme; otherwise the
+  // system preference decides.
+  theme:
+    document.documentElement.dataset.theme === "dark" ||
+    (document.documentElement.dataset.theme !== "light" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches)
+      ? "dark"
+      : "light",
   menu: "expanded",
-  sidebarStyle: "flush",
-  iconColor: "mist",
   tenant: false,
   listView: "table",
   listState: "default",
@@ -167,32 +168,6 @@ function Controls() {
               options={[
                 ["expanded", "Expanded"],
                 ["collapsed", "Collapsed"],
-              ]}
-            />
-          </Control>
-          <Control label="Sidebar style">
-            <Segmented
-              value={settings.sidebarStyle}
-              onChange={(sidebarStyle) =>
-                update({
-                  sidebarStyle: sidebarStyle as Settings["sidebarStyle"],
-                })
-              }
-              options={[
-                ["flush", "Flush"],
-                ["floating", "Floating"],
-              ]}
-            />
-          </Control>
-          <Control label="Menu icons">
-            <Segmented
-              value={settings.iconColor}
-              onChange={(iconColor) =>
-                update({ iconColor: iconColor as Settings["iconColor"] })
-              }
-              options={[
-                ["mist", "Mist"],
-                ["tinted", "Tinted"],
               ]}
             />
           </Control>
