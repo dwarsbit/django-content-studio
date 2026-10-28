@@ -17,6 +17,7 @@ import { useDiscover } from "@/hooks/use-discover";
 import { useExport } from "@/hooks/use-export";
 import { useHttp } from "@/hooks/use-http";
 import { useMoveResource } from "@/hooks/use-move-resource";
+import { usePresenceList } from "@/hooks/use-presence";
 import { getDownloadErrorMessage } from "@/lib/download";
 import type { ExportFormat, Model, PaginatedResponse, Resource } from "@/types";
 
@@ -264,6 +265,12 @@ export function ModelListPage() {
     },
   });
 
+  // Who else has the objects of this page open.
+  const presence = usePresenceList(
+    model,
+    (data?.results ?? []).map((item) => item.id),
+  );
+
   // Reordering follows the manual order, so it is off while another
   // ordering or a search (ranked results) decides the order; filters
   // only narrow the list and keep it on.
@@ -377,6 +384,7 @@ export function ModelListPage() {
             filtered={filtered}
             onClear={clearContext}
             reorder={reorder}
+            presence={presence}
           />
         ) : (
           <TableView
@@ -390,6 +398,7 @@ export function ModelListPage() {
             filtered={filtered}
             onClear={clearContext}
             reorder={reorder}
+            presence={presence}
           />
         )}
         {data.results.length > 0 && (

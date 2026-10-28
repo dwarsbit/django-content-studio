@@ -341,5 +341,10 @@
     "value_description": "It is shown only once. Copy it now and store it somewhere safe.",
     "copy": "Copy",
     "close": "Close"
+  },
+  "presence": {
+    "label": "Also open by",
+    "viewing": "{{name}} is viewing",
+    "editing": "{{name}} is editing"
   }
 }

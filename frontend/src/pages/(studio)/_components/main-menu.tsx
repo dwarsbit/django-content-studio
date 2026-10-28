@@ -24,7 +24,6 @@ import {
 
 import { useAuth } from "@/auth";
 import { type Theme, useTheme } from "@/components/theme-provider";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,6 +39,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
@@ -504,11 +504,11 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
           )}
           aria-label={collapsed ? name || me.username : undefined}
         >
-          <Avatar className="size-7">
-            <AvatarFallback className="text-[11px] font-semibold bg-secondary text-secondary-foreground">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            name={name || me.username}
+            initials={initials}
+            className="size-7 [&_[data-slot=avatar-fallback]]:text-[11px]"
+          />
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0">

@@ -43,6 +43,7 @@ const COMPONENTS = {
   Form: "form",
   Badge: "badge",
   Avatar: "avatar",
+  UserAvatar: "user-avatar",
   Separator: "separator",
   Spinner: "spinner",
   Table: "table",

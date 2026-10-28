@@ -4,6 +4,7 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { PiArrowLeftBold, PiDotsThreeBold } from "react-icons/pi";
 
+import { PresenceAvatars } from "@/components/presence";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -18,7 +19,13 @@ import { useAdminInfo } from "@/hooks/use-admin-info";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useHttp } from "@/hooks/use-http";
 import { cn } from "@/lib/utils";
-import type { DateTimeString, FormField, Model, Resource } from "@/types";
+import type {
+  DateTimeString,
+  FormField,
+  Model,
+  PresenceUser,
+  Resource,
+} from "@/types";
 
 import { ComponentRenderer } from "./form-field";
 
@@ -31,6 +38,7 @@ export function Header({
   components = model?.admin.edit.header ?? [],
   readOnly = false,
   canDelete = true,
+  presence = [],
   onDuplicate,
   onSave,
   onDelete,
@@ -46,6 +54,8 @@ export function Header({
   // Read-only editors have no save button.
   readOnly?: boolean;
   canDelete?: boolean;
+  // The other users who have the object open.
+  presence?: PresenceUser[];
   // Offers Duplicate in the more actions menu.
   onDuplicate?: VoidFunction;
   // Whether the editor renders inside a Dialog: the title then is a
@@ -150,6 +160,7 @@ export function Header({
             }
             actions={
               <>
+                <PresenceAvatars users={presence} />
                 {isDirty && !readOnly ? (
                   <div className="hidden lg:flex items-center gap-1.5 text-muted-foreground text-sm mr-2 select-none">
                     <span className="size-1.5 rounded-full bg-warning" />

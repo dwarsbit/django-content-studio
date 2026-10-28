@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/spinner";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
+import { usePresence } from "@/hooks/use-presence";
 import { useShowResult } from "@/hooks/use-show-result";
 import { type ServerErrors, setServerErrors } from "@/lib/server-errors";
 import { getErrorMessage } from "@/lib/utils";
@@ -276,6 +277,15 @@ function EditorForm({
     return () => window.removeEventListener("beforeunload", handler);
   }, [dialog, isDirty]);
 
+  // Who else has the object open; routed editors of saved objects
+  // announce the user too. Inline rows live on their parent's page.
+  const presence = usePresence({
+    model,
+    id: resource?.id,
+    editing: isDirty && !readOnly,
+    enabled: !dialog && !inlineOf,
+  });
+
   const { mutateAsync: save, isPending } = useMutation({
     async mutationFn(values: Partial<Resource>) {
       // Saving a duplicate names its source, whose inlines are copied
@@ -370,6 +380,7 @@ function EditorForm({
               components={headerComponents}
               readOnly={readOnly}
               canDelete={canDelete}
+              presence={presence}
               onDuplicate={
                 canDuplicate && resource?.id != null
                   ? () => onDuplicate?.(String(resource.id))

@@ -74,6 +74,12 @@ DEFAULTS = {
     # limit.
     "MEDIA_LIBRARY_MAX_UPLOAD_SIZE": 50 * 1024 * 1024,
     "TENANT_MODEL": None,
+    # Whether edit and list pages show which users have an object open;
+    # a studio opts out with presence = False.
+    "PRESENCE": True,
+    # The cache alias presence is stored in. Across several processes or
+    # servers it must be a shared cache (Redis, Memcached, database).
+    "PRESENCE_CACHE": "default",
     # Hosts webhooks may reach although they resolve to a private,
     # loopback or link-local address, or are served over plain HTTP.
     "WEBHOOK_ALLOWED_HOSTS": [],

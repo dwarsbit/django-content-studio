@@ -14,6 +14,7 @@ from .export import get_export_formats, is_exportable
 from .form import FormSet, FormSetGroup, Field, Component, TableColumn
 from .login_backends import LoginBackendManager
 from .media_library import fields as ml_fields
+from .presence import is_presence_enabled
 from .settings import cs_settings
 from .token_backends import TokenBackendManager
 from .utils import get_related_field_name, flatten
@@ -342,6 +343,10 @@ class ModelStudio(BaseStudio[T]):
     # table_display columns. Never offered for singletons.
     export_fields: Optional[list[Union[str, "TableColumn"]]] = None
     allow_export: bool = False
+
+    # Whether the edit and list pages show which other users have an
+    # object open (when the PRESENCE setting is on).
+    presence: bool = True
 
     def get_duplicate_initial(self, request: HttpRequest, obj: T) -> dict[str, Any]:
         """
@@ -924,6 +929,9 @@ class AdminSerializer:
         return {
             "icon": admin_class.icon,
             "is_singleton": get_is_singleton(admin_class),
+            # Whether the edit and list pages show who else has an
+            # object open.
+            "presence": is_presence_enabled(admin_class),
             "edit": {
                 "header": serialize_edit_header(admin_class),
                 "main": self.serialize_edit_main(request),

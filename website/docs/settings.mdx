@@ -139,6 +139,21 @@ field without a media library model, or one that is missing or not a
 The tenant model for [multi-tenancy](/docs/multi-tenancy), as an import path
 string. Default: `None`, which turns multi-tenancy off.
 
+## Presence
+
+### PRESENCE {#presence}
+
+Whether the edit and list pages show which other editors have an object
+open; see [Presence](/docs/presence). Default: `True`. A studio turns it off
+for its model with `presence = False`.
+
+### PRESENCE_CACHE {#presence_cache}
+
+The alias of the cache in `CACHES` that presence is kept in. Default:
+`"default"`. With several worker processes or servers, it must be a shared
+cache, such as Redis, Memcached or the database cache. System check
+`content_studio.E023` reports an alias that is not in `CACHES`.
+
 ## Webhooks
 
 These settings apply when the `content_studio.webhooks` app is installed;

@@ -340,5 +340,10 @@
     "value_description": "Deze wordt maar één keer getoond. Kopieer hem nu en bewaar hem op een veilige plek.",
     "copy": "Kopiëren",
     "close": "Sluiten"
+  },
+  "presence": {
+    "label": "Ook geopend door",
+    "viewing": "{{name}} bekijkt dit",
+    "editing": "{{name}} bewerkt dit"
   }
 }

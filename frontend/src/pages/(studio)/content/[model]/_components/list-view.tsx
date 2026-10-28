@@ -1,13 +1,14 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
+import { PresenceIndicator } from "@/components/presence";
 import { MoveMenu, Reorderable, RowDragHandle } from "@/components/reorderable";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useReorderableRow } from "@/hooks/use-reorderable-row";
 import { getEdges } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
-import type { Model, Resource } from "@/types";
+import type { Model, PresenceUser, Resource } from "@/types";
 
 import { ListEmptyState } from "./empty-state";
 import type { ReorderProps } from "./table-view";
@@ -25,6 +26,7 @@ export function ListView({
   filtered,
   onClear,
   reorder,
+  presence,
 }: {
   items: Resource[];
   model: Model;
@@ -37,6 +39,8 @@ export function ListView({
   // Clears the search term and the remembered filters.
   onClear?: () => void;
   reorder?: ReorderProps;
+  // The other users who have objects open, by id.
+  presence?: Record<string, PresenceUser[]>;
 }) {
   return (
     <div className="w-full flex-1 border rounded-lg overflow-hidden">
@@ -60,6 +64,7 @@ export function ListView({
               reorder={reorder}
               selected={selected?.has(item.id)}
               onToggle={onToggle}
+              presence={presence?.[String(item.id)]}
             />
           ))}
         </Reorderable>
@@ -71,6 +76,7 @@ export function ListView({
             model={model}
             selected={selected?.has(item.id)}
             onToggle={onToggle}
+            presence={presence?.[String(item.id)]}
           />
         ))
       )}
@@ -99,6 +105,7 @@ function ListViewRow({
   reorder,
   sortable,
   edges,
+  presence,
 }: {
   item: Resource;
   model: Model;
@@ -109,6 +116,7 @@ function ListViewRow({
   reorder?: ReorderProps;
   sortable?: ReturnType<typeof useReorderableRow>;
   edges?: ReturnType<typeof getEdges>;
+  presence?: PresenceUser[];
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -163,6 +171,7 @@ function ListViewRow({
           </div>
         ) : null}
       </div>
+      <PresenceIndicator users={presence} />
       {display?.meta ? (
         <Badge variant="outline" className="shrink-0">
           {display.meta}

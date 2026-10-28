@@ -1,0 +1,20 @@
+<!-- @dsCard group="Display" height=64 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>UserAvatar preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:16px}.stack{display:flex;align-items:center}.stack>*+*{margin-left:-6px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(h("div", { className: "row" },
+  h(C.UserAvatar, { name: "Eva de Jong" }),
+  h(C.UserAvatar, { name: "noah", className: "size-7" }),
+  h(C.UserAvatar, { name: "Content Studio", src: "../../assets/Logos/content-studio-icon.png", className: "size-7" }),
+  h("div", { className: "stack" },
+    h(C.UserAvatar, { name: "Eva de Jong", className: "size-7 ring-2 ring-warning" }),
+    h(C.UserAvatar, { name: "Noah Bakker", className: "size-7 ring-2 ring-background" }))));
+</script>
+</body>
+</html>

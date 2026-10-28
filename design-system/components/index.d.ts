@@ -157,6 +157,8 @@ export declare function FormMessage(props: React.HTMLAttributes<HTMLParagraphEle
 export declare function Avatar(props: React.HTMLAttributes<HTMLSpanElement>): React.ReactElement;
 export declare function AvatarImage(props: React.ImgHTMLAttributes<HTMLImageElement>): React.ReactElement;
 export declare function AvatarFallback(props: React.HTMLAttributes<HTMLSpanElement>): React.ReactElement;
+/** A person: their picture, or initials derived from the name unless given. */
+export declare function UserAvatar(props: React.HTMLAttributes<HTMLSpanElement> & { name: string; initials?: string | null; src?: string | null }): React.ReactElement;
 
 export declare function Separator(props: { orientation?: "horizontal" | "vertical"; decorative?: boolean; className?: string }): React.ReactElement;
 

@@ -4,6 +4,7 @@ import { TbCaretDownFilled, TbCaretUpFilled } from "react-icons/tb";
 import { useNavigate } from "react-router";
 
 import { FormatRenderer } from "@/components/formats/renderer";
+import { PresenceIndicator } from "@/components/presence";
 import { MoveMenu, Reorderable, RowDragHandle } from "@/components/reorderable";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -17,7 +18,13 @@ import {
 import { useReorderableRow } from "@/hooks/use-reorderable-row";
 import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
-import { type FieldFormat, FieldType, type Id, type Model } from "@/types";
+import {
+  type FieldFormat,
+  FieldType,
+  type Id,
+  type Model,
+  type PresenceUser,
+} from "@/types";
 
 import { ListEmptyState } from "./empty-state";
 
@@ -56,6 +63,7 @@ export function TableView({
   filtered,
   onClear,
   reorder,
+  presence,
 }: {
   items: Row[];
   model: Model;
@@ -73,6 +81,8 @@ export function TableView({
   // Clears the search term and the remembered filters.
   onClear?: () => void;
   reorder?: ReorderProps;
+  // The other users who have objects open, by id.
+  presence?: Record<string, PresenceUser[]>;
 }) {
   const { t } = useTranslation();
   const fields = model.admin.list.display;
@@ -209,6 +219,7 @@ export function TableView({
                   selected={!!selected?.has(item.id)}
                   onToggle={onToggle}
                   reorder={reorder}
+                  presence={presence?.[String(item.id)]}
                 />
               ))}
             </Reorderable>
@@ -221,6 +232,7 @@ export function TableView({
                 hasActions={hasActions}
                 selected={!!selected?.has(item.id)}
                 onToggle={onToggle}
+                presence={presence?.[String(item.id)]}
               />
             ))
           )}
@@ -252,6 +264,7 @@ function TableViewRow({
   reorder,
   sortable,
   edges,
+  presence,
 }: {
   item: Row;
   model: Model;
@@ -259,6 +272,7 @@ function TableViewRow({
   selected: boolean;
   onToggle?: (id: string) => void;
   reorder?: ReorderProps;
+  presence?: PresenceUser[];
   sortable?: ReturnType<typeof useReorderableRow>;
   edges?: ReturnType<typeof getEdges>;
 }) {
@@ -312,6 +326,9 @@ function TableViewRow({
               field={model.fields[name]}
               formatName={(format as FieldFormat | null) ?? undefined}
             />
+            {index === 0 && (
+              <PresenceIndicator users={presence} className="ml-2" />
+            )}
           </div>
         </TableCell>
       ))}
