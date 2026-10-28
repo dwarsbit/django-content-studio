@@ -280,6 +280,7 @@ export enum FieldType {
   DateTimeField = "DateTimeField",
   DecimalField = "DecimalField",
   EmailField = "EmailField",
+  FlexField = "FlexField",
   FloatField = "FloatField",
   HTMLField = "HTMLField",
   IntegerField = "IntegerField",

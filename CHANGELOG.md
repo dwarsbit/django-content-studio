@@ -60,6 +60,11 @@
   padding (`sm` 28px, `xs` 24px, `lg` 36px, icon buttons 32px), so they
   line up with the toolbar's controls.
 
+- **`FlexField` shows its inputs.** The edit page never received the
+  field's schema, so a `FlexField` showed a warning instead of an input
+  per property. Inputs are labeled with the property's `title`, or its
+  name when it has none.
+
 ## 1.1.0 (2026-10-27)
 
 - **Block fields.** `BlockField` stores an ordered list of content

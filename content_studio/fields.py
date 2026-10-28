@@ -87,6 +87,10 @@ class FlexField(models.JSONField):
         kwargs["schema"] = self.json_schema
         return name, path, args, kwargs
 
+    def cs_get_field_attributes(self):
+        # The JSONSchemaWidget renders its inputs from the schema.
+        return {"json_schema": self.json_schema}
+
 
 class URLPathField(models.CharField):
     description = "A field for a unique URL path. Only accepts letters, numbers, underscores, hyphens and slashes."
