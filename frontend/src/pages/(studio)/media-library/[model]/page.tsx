@@ -14,6 +14,7 @@ import { FolderPath } from "@/components/media-library/folder-path";
 import { Folders } from "@/components/media-library/folders";
 import { ItemEdit } from "@/components/media-library/item-edit";
 import { UploadButton } from "@/components/media-library/upload-button";
+import { PageHeader } from "@/components/page-header";
 import { TenantInfo } from "@/components/tenant-info";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
@@ -206,7 +207,7 @@ function MediaLibrary() {
     .filter((id) => selected.has(id));
 
   return model ? (
-    <div className="flex flex-col overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <TenantInfo label={model} />
       <UploadsPanel uploads={uploads} />
       <ItemEdit
@@ -215,22 +216,20 @@ function MediaLibrary() {
         onClose={() => setEditing(null)}
       />
 
-      <div className="flex items-center gap-4 mb-6 py-3 px-5 border-b">
-        <PiImageBold size={20} className="shrink-0" />
-        <div className="flex-1">
-          <h1 className="text-xl/tight font-semibold mb-0.5">
-            {t("media_library.title")}
-          </h1>
-        </div>
-        {data && (
-          <div className="text-muted-foreground text-sm whitespace-nowrap">
-            {t("media_library.items_count", { count: data.pagination.count })}
-          </div>
-        )}
-        <UploadButton folder={folder} multiple onFiles={start} />
-      </div>
+      <PageHeader
+        icon={<PiImageBold />}
+        title={t("media_library.title")}
+        meta={
+          data && (
+            <span className="text-muted-foreground text-sm tabular-nums whitespace-nowrap">
+              {t("media_library.items_count", { count: data.pagination.count })}
+            </span>
+          )
+        }
+        actions={<UploadButton folder={folder} multiple onFiles={start} />}
+      />
 
-      <div className="mb-4 px-5 flex items-start justify-between gap-4">
+      <div className="mt-6 mb-4 px-6 flex items-start justify-between gap-4">
         <Filters
           folders={hasFolders}
           typeOptions={TYPES}
@@ -266,7 +265,7 @@ function MediaLibrary() {
         </div>
       </div>
 
-      <div className="flex items-start gap-6 px-5">
+      <div className="flex items-start gap-6 px-6 min-h-0">
         {hasFolders && !(search && !searchInFolder) && (
           <div className="w-[320px] shrink-0">
             <div className="mb-3">

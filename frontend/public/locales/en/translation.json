@@ -60,7 +60,10 @@
     "media_library": "Media library",
     "settings": "Settings",
     "log_out": "Log out",
-    "theme": "Theme"
+    "theme": "Theme",
+    "collapse": "Collapse menu",
+    "expand": "Expand menu",
+    "title": "Main menu"
   },
   "editor": {
     "title_create": "Create {{modelName}}",
@@ -248,7 +251,8 @@
   },
   "tenant": {
     "selector": {
-      "add": "Add new"
+      "add": "Add new",
+      "settings": "Settings"
     },
     "setup": {
       "title": "Create your first {{tenant}}",

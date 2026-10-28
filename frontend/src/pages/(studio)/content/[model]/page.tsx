@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { PiFileTextBold, PiRowsBold, PiTableBold } from "react-icons/pi";
 import { Link, useParams, useSearchParams } from "react-router";
 
+import { PageBody, PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
@@ -260,39 +261,40 @@ export function ModelListPage() {
     : undefined;
 
   return model && data ? (
-    <div className="flex flex-col overflow-hidden w-full max-w-[1200px] mx-auto pr-8 pl-4">
-      <div className="flex items-center gap-4 pb-3 pt-6 w-full">
-        {model.admin.icon ? (
-          <span
-            className={cn(model.admin.icon, "text-lg text-muted-foreground")}
-          />
-        ) : (
-          <PiFileTextBold />
-        )}
-        <div className="select-none flex-1">
-          <h1 className="text-lg font-semibold">{model.verbose_name_plural}</h1>
-          {model.admin.list.description && (
-            <div className="text-muted-foreground">
-              {model.admin.list.description}
-            </div>
-          )}
-        </div>
-        {model.admin.list.trash && (
-          <Link
-            to={`/content/${model.label}/trash`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            {t("list_view.trash")}
-          </Link>
-        )}
-        {model.admin.permissions.add_permission && (
-          <Link to={`/content/${model.label}/new`} className={buttonVariants()}>
-            {t("common.create")}
-          </Link>
-        )}
-      </div>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <PageHeader
+        icon={
+          model.admin.icon ? (
+            <span className={model.admin.icon} />
+          ) : (
+            <PiFileTextBold />
+          )
+        }
+        title={model.verbose_name_plural}
+        description={model.admin.list.description}
+        actions={
+          <>
+            {model.admin.list.trash && (
+              <Link
+                to={`/content/${model.label}/trash`}
+                className={buttonVariants({ variant: "outline" })}
+              >
+                {t("list_view.trash")}
+              </Link>
+            )}
+            {model.admin.permissions.add_permission && (
+              <Link
+                to={`/content/${model.label}/new`}
+                className={buttonVariants()}
+              >
+                {t("common.create")}
+              </Link>
+            )}
+          </>
+        }
+      />
 
-      <div className="py-6 space-y-4 w-full">
+      <PageBody className="space-y-4">
         <div className="flex gap-3 items-center justify-between">
           {view === "table" && selected.size > 0 && actions.length > 0 ? (
             <BulkBar
@@ -390,7 +392,7 @@ export function ModelListPage() {
             }
           />
         </div>
-      </div>
+      </PageBody>
     </div>
   ) : (
     <div className="flex-1 flex items-center justify-center">

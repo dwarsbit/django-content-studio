@@ -285,7 +285,7 @@ function EditorForm({
               prepopulatedFields ?? model.admin?.edit.prepopulated_fields ?? {}
             }
           />
-          <div className="flex-1 flex flex-col overflow-hidden max-w-[1200px] mx-auto w-full">
+          <div className="flex-1 flex flex-col overflow-hidden w-full">
             <TenantInfo label={model.label} />
             <Header
               model={model}
@@ -310,7 +310,7 @@ function EditorForm({
               onClose={onClose}
             />
             <div className="flex flex-col items-center overflow-y-auto scrollbar">
-              <div className="flex p-6 w-full gap-6 justify-center">
+              <div className="flex p-6 w-full max-w-[1280px] gap-6 justify-center">
                 <div className="flex-1">
                   <Main model={model} id={id} hiddenFields={hiddenFields} />
                 </div>

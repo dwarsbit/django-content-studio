@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0 (unreleased)
+
+- **The app shell and the main menu.** Every page shares one header: the
+  title on the left, the page's actions on the right and, where a page
+  has them, a toolbar row underneath. The main menu sits flush against
+  the page, lists the model groups as headings with their models visible,
+  and becomes a rail of icons when collapsed or on narrow screens. Icons
+  are in the gray family; the `color` of a `ModelGroup` or a
+  `MainMenuLink` is no longer shown. `ModelGroup(collapsed=True)` starts
+  a group collapsed; the group of the current model always opens.
+
 ## 1.1.0 (2026-10-27)
 
 - **Block fields.** `BlockField` stores an ordered list of content

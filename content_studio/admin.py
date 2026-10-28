@@ -30,11 +30,18 @@ __all__ = [
 
 
 class ModelGroup:
+    """
+    A group of models in the main menu: a heading with the models listed
+    under it. A group starts collapsed when `collapsed` is set; the group
+    holding the current model is always expanded.
+    """
+
     name: str
     label: str
     icon: Optional[str]
     color: Optional[str]
     models: list[Type[Model]]
+    collapsed: bool
 
     def __init__(
         self,
@@ -43,12 +50,14 @@ class ModelGroup:
         icon: Optional[str] = None,
         color: Optional[str] = None,
         models: Optional[list[Type[Model]]] = None,
+        collapsed: bool = False,
     ):
         self.name = name
         self.label = label or name.capitalize()
         self.icon = icon
         self.color = color
         self.models = models or []
+        self.collapsed = collapsed
 
 
 class RelationDisplay:

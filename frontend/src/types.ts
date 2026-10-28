@@ -80,9 +80,13 @@ export interface SessionUser {
 export interface ModelGroup {
   models: string[];
   name: string;
-  icon: null;
-  color: TailwindColor;
+  icon: string | null;
+  // Accepted for compatibility; the main menu no longer shows it.
+  color: TailwindColor | null;
   label: string;
+  // Starts collapsed in the main menu; the group holding the current
+  // model is always expanded.
+  collapsed?: boolean;
 }
 
 export interface Model {

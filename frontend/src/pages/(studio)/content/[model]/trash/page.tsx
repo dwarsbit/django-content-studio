@@ -8,16 +8,18 @@ import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
+import { PiArrowLeftBold } from "react-icons/pi";
 import { Link, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
+import { PageBody, PageHeader } from "@/components/page-header";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
-import { getErrorMessage } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import type { Model, PaginatedResponse, Resource } from "@/types";
 
 dayjs.extend(localizedFormat);
@@ -112,23 +114,25 @@ function TrashView({ model }: { model: Model }) {
   const canDestroy = model.admin.permissions.delete_permission;
 
   return (
-    <div className="flex flex-col overflow-hidden">
-      <div className="flex items-center gap-4 px-8 py-3 border-b">
-        <div className="select-none flex-1">
-          <h1 className="text-lg font-semibold">
-            {t("trash.title", { model: model.verbose_name_plural })}
-          </h1>
-          <div className="text-muted-foreground">{t("trash.subtitle")}</div>
-        </div>
-        <Link
-          to={`/content/${model.label}`}
-          className={buttonVariants({ variant: "outline" })}
-        >
-          {t("editor.back_to_list")}
-        </Link>
-      </div>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <PageHeader
+        back={
+          <Link
+            to={`/content/${model.label}`}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon-sm" }),
+              "-ml-2 text-muted-foreground",
+            )}
+            aria-label={t("editor.back_to_list")}
+          >
+            <PiArrowLeftBold />
+          </Link>
+        }
+        title={t("trash.title", { model: model.verbose_name_plural })}
+        description={t("trash.subtitle")}
+      />
 
-      <div className="px-8 py-6 space-y-4 w-full max-w-[1128px] mx-auto">
+      <PageBody className="space-y-4">
         {!hasTrash ? (
           <div className="text-muted-foreground">{t("trash.unavailable")}</div>
         ) : !data ? (
@@ -185,7 +189,7 @@ function TrashView({ model }: { model: Model }) {
             })
           }
         />
-      </div>
+      </PageBody>
     </div>
   );
 }

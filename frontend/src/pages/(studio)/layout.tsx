@@ -26,11 +26,11 @@ export function StudioLayout() {
   return (
     <TenantProvider>
       <>
-        <div className="h-screen flex items-stretch">
+        <div className="h-screen flex items-stretch bg-background">
           <MainMenu onOpenPalette={() => setPaletteOpen(true)} />
-          <div className="flex-1 overflow-hidden bg-background flex flex-col">
+          <main className="relative flex-1 min-w-0 overflow-hidden bg-background flex flex-col">
             <Outlet />
-          </div>
+          </main>
         </div>
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       </>
