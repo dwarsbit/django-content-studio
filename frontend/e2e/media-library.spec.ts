@@ -120,14 +120,11 @@ test("offers list and table views with remembered type filters", async ({
   await expect(page.getByRole("columnheader", { name: "Name" })).toBeVisible();
 
   // The list view renders rows (scoped: the uploads panel shows the
-  // name briefly as well) and carries no selection: clicking a row
-  // opens the item for editing.
+  // name briefly as well): clicking a row opens the item for editing,
+  // its checkbox selects it.
   await page.getByTitle("List view").click();
   const row = page.getByRole("button", { name: new RegExp(document) });
   await expect(row).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: "Select item" })).toHaveCount(
-    0,
-  );
 
   await row.click();
   const dialog = page.getByRole("dialog");
@@ -142,13 +139,18 @@ test("offers list and table views with remembered type filters", async ({
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByText(/selected/)).toHaveCount(0);
 
-  // Grid cards carry no selection either: clicking a card opens the
-  // editor, and only the table's checkboxes select.
+  // Grid cards open the editor on click; their checkbox selects the
+  // card and brings up the bulk bar.
   await page.keyboard.press("Escape");
   await page.getByTitle("Grid view").click();
-  await expect(page.getByRole("checkbox", { name: "Select item" })).toHaveCount(
-    0,
-  );
+  const card = page
+    .locator("[data-slot=media-card]")
+    .filter({ hasText: document });
+  await card.hover();
+  await card.getByRole("checkbox", { name: "Select item" }).check();
+  await expect(page.getByText(/1 selected/)).toBeVisible();
+  await page.getByRole("button", { name: "Clear selection" }).click();
+  await expect(page.getByText(/selected/)).toHaveCount(0);
 });
 
 test("bulk deletes the selected items", async ({ page }) => {

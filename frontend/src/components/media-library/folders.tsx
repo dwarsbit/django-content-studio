@@ -1,7 +1,13 @@
 import * as R from "ramda";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PiFolder } from "react-icons/pi";
+import {
+  PiCaretDownBold,
+  PiCaretRightBold,
+  PiFolderSimpleBold,
+  PiImagesBold,
+} from "react-icons/pi";
 
 import { CreateFolderButton } from "@/components/media-library/create-folder-button";
 import { EditFolder } from "@/components/media-library/edit-folder";
@@ -12,7 +18,6 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Pagination } from "@/components/ui/pagination";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useDeleteFolder } from "@/hooks/use-delete-folder";
 import { useDiscover } from "@/hooks/use-discover";
@@ -21,107 +26,196 @@ import { useListFolder } from "@/hooks/use-list-folder";
 import { cn } from "@/lib/utils";
 import type { MediaFolder } from "@/types";
 
+/**
+ * The folder tree: the library's root, then the folders with their
+ * counts, nested folders behind carets (the path to the current folder
+ * starts expanded), and "New folder" at the foot. Right-click renames
+ * or deletes a folder.
+ */
 export function Folders({
-  parent,
+  current,
   onSelect,
+  className,
 }: {
-  parent: string | null;
-  onSelect?(folder: string | null): void;
+  current: string | null;
+  onSelect(folder: string | null): void;
+  className?: string;
 }) {
+  const { t } = useTranslation();
   const { data: discover } = useDiscover();
   const folderModelName = discover?.media_library.models.folder_model;
   const model = discover?.models.find(R.whereEq({ label: folderModelName }));
-  const [page, setPage] = useState(1);
-  const { isFetching, data } = useListFolder({ parent, page });
-  const { data: folderPath } = useFolderPath(parent);
+  const { isFetching, data } = useListFolder({ parent: null, limit: 1000 });
+  const { data: folderPath } = useFolderPath(current);
+  const path = (folderPath ?? []).map((folder) => String(folder.id));
 
   return (
-    <div
-      className={cn("rounded-md border bg-background", {
-        "animate-pulse": isFetching,
-      })}
+    <nav
+      aria-label={t("media_library.folders")}
+      className={cn("space-y-0.5", { "animate-pulse": isFetching }, className)}
     >
-      <ul className="p-2 space-y-1.5">
-        {folderPath && !R.isEmpty(folderPath) && (
-          <li className="flex">
-            <button
-              className="w-full text-left group font-medium px-4 py-0.5 flex items-center gap-2 hover:bg-accent rounded-md"
-              onClick={() => {
-                const parent = folderPath[folderPath.length - 2]?.id ?? null;
-                setPage(1);
-                onSelect?.(parent);
-              }}
-            >
-              <span className="size-5 bg-accent p-px rounded flex items-center justify-center">
-                {".."}
-              </span>
-            </button>
-          </li>
-        )}
-        {data?.results.map((folder) => (
-          <Folder
-            key={folder.id}
-            folder={folder}
-            onSelect={() => {
-              setPage(1);
-              onSelect?.(folder.id);
-            }}
-          />
-        ))}
-      </ul>
-
-      {data && (
-        <div className="p-2 border-t empty:hidden">
-          <Pagination
-            pages={data.pagination.pages}
-            current={page}
-            onPageChange={setPage}
-          />
-        </div>
-      )}
-
+      <FolderRow
+        icon={<PiImagesBold />}
+        label={t("media_library.title")}
+        active={current === null}
+        onClick={() => onSelect(null)}
+      />
+      {data?.results.map((folder) => (
+        <FolderNode
+          key={folder.id}
+          folder={folder}
+          depth={0}
+          current={current}
+          path={path}
+          onSelect={onSelect}
+        />
+      ))}
       {model?.admin?.permissions.add_permission && (
-        <div className="font-medium text-sm border-t border-dashed px-6 py-2">
-          <CreateFolderButton parent={parent} />
+        <div className="pt-2">
+          <CreateFolderButton
+            parent={current}
+            className="w-full justify-start text-muted-foreground"
+          />
         </div>
       )}
+    </nav>
+  );
+}
+
+function FolderRow({
+  icon,
+  label,
+  count,
+  active,
+  depth = 0,
+  caret,
+  onClick,
+  ...props
+}: {
+  icon: ReactNode;
+  label: string;
+  count?: number | null;
+  active?: boolean;
+  depth?: number;
+  /** The expand/collapse button of a folder with children. */
+  caret?: ReactNode;
+  onClick(): void;
+} & Omit<React.ComponentProps<"div">, "onClick">) {
+  return (
+    <div
+      {...props}
+      className={cn(
+        "flex items-center h-8 rounded-md pr-2 text-sm font-medium select-none",
+        active
+          ? "bg-accent text-foreground"
+          : "text-foreground/80 hover:bg-muted hover:text-foreground data-[state=open]:bg-muted",
+      )}
+      style={{ paddingLeft: 4 + depth * 16 }}
+    >
+      <span className="size-5 shrink-0 flex items-center justify-center">
+        {caret}
+      </span>
+      <button
+        type="button"
+        aria-current={active ? "true" : undefined}
+        className="flex-1 min-w-0 h-full flex items-center gap-2 rounded-md text-left cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={onClick}
+      >
+        <span
+          className={cn(
+            "shrink-0 [&_svg]:size-4",
+            active ? "text-foreground" : "text-muted-foreground",
+          )}
+        >
+          {icon}
+        </span>
+        <span className="flex-1 truncate">{label}</span>
+        {count != null && (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {count}
+          </span>
+        )}
+      </button>
     </div>
   );
 }
 
-function Folder({
+function FolderNode({
   folder,
+  depth,
+  current,
+  path,
   onSelect,
 }: {
   folder: MediaFolder;
-  onSelect: VoidFunction;
+  depth: number;
+  current: string | null;
+  /** The ids of the current folder and its ancestors. */
+  path: string[];
+  onSelect(folder: string | null): void;
 }) {
   const { t } = useTranslation();
   const { mutate: deleteFolder } = useDeleteFolder();
-  const [edit, setEdit] = useState(false);
   const confirm = useConfirmDialog();
+  const [edit, setEdit] = useState(false);
+
+  // A folder on the path to the current one opens; navigating into
+  // its subtree later opens it again (adjusted during render).
+  const inPath = path.includes(String(folder.id));
+  const [expanded, setExpanded] = useState(inPath);
+  const [lastInPath, setLastInPath] = useState(inPath);
+
+  if (inPath !== lastInPath) {
+    setLastInPath(inPath);
+    if (inPath) {
+      setExpanded(true);
+    }
+  }
+
+  const { data: children } = useListFolder({
+    parent: folder.id,
+    limit: 1000,
+    enabled: expanded && folder.has_children,
+  });
 
   return (
-    <li key={folder.id} className="flex">
+    <>
       {edit ? (
-        <EditFolder folder={folder} onClose={() => setEdit(false)} />
+        <div style={{ paddingLeft: 4 + depth * 16 }}>
+          <EditFolder folder={folder} onClose={() => setEdit(false)} />
+        </div>
       ) : (
         <ContextMenu>
           <ContextMenuTrigger asChild>
-            <button
-              className="w-full text-left group font-medium text-sm px-4 py-0.5 flex items-center gap-2 hover:bg-foreground/10 rounded-md data-[state=open]:bg-accent"
-              onClick={onSelect}
-            >
-              <span className="size-5 bg-blue-50 p-px rounded flex items-center justify-center text-blue-500">
-                <PiFolder size={14} />
-              </span>
-              <span>{folder.name}</span>
-              {folder.count != null && (
-                <span className="ml-auto text-muted-foreground text-xs">
-                  {folder.count}
-                </span>
-              )}
-            </button>
+            <FolderRow
+              icon={<PiFolderSimpleBold />}
+              label={folder.name}
+              count={folder.count}
+              depth={depth}
+              active={current === String(folder.id)}
+              caret={
+                folder.has_children && (
+                  <button
+                    type="button"
+                    aria-expanded={expanded}
+                    aria-label={
+                      expanded
+                        ? t("media_library.collapse_folder", {
+                            name: folder.name,
+                          })
+                        : t("media_library.expand_folder", {
+                            name: folder.name,
+                          })
+                    }
+                    className="size-5 rounded-sm flex items-center justify-center text-muted-foreground hover:bg-foreground/10 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3"
+                    onClick={() => setExpanded(!expanded)}
+                  >
+                    {expanded ? <PiCaretDownBold /> : <PiCaretRightBold />}
+                  </button>
+                )
+              }
+              onClick={() => onSelect(folder.id)}
+            />
           </ContextMenuTrigger>
           <ContextMenuContent>
             <ContextMenuItem onSelect={() => setEdit(true)}>
@@ -145,6 +239,17 @@ function Folder({
           </ContextMenuContent>
         </ContextMenu>
       )}
-    </li>
+      {expanded &&
+        children?.results.map((child) => (
+          <FolderNode
+            key={child.id}
+            folder={child}
+            depth={depth + 1}
+            current={current}
+            path={path}
+            onSelect={onSelect}
+          />
+        ))}
+    </>
   );
 }

@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { PiFolderBold, PiFoldersBold, PiHouseBold } from "react-icons/pi";
 
@@ -41,7 +42,7 @@ function FolderTree({
         folder.has_children ? (
           <DropdownMenuSub key={folder.id}>
             <DropdownMenuSubTrigger>
-              <PiFoldersBold className="mr-2 size-3.5" />
+              <PiFoldersBold className="size-3.5" />
               {folder.name}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
@@ -68,13 +69,16 @@ function FolderTree({
 
 /**
  * A folder tree picker for dropdown menus: the root plus the folder
- * tree, recursive where folders have children.
+ * tree, recursive where folders have children. Opens from an outline
+ * button with `label`, or from the `trigger` element given.
  */
 export function FolderPicker({
   label,
+  trigger,
   onSelect,
 }: {
-  label: string;
+  label?: string;
+  trigger?: ReactElement;
   onSelect(id: string | null): void;
 }) {
   const { t } = useTranslation();
@@ -82,9 +86,12 @@ export function FolderPicker({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          {label}
-        </Button>
+        {trigger ?? (
+          <Button variant="outline" size="sm">
+            <PiFolderBold />
+            {label}
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <FolderTree parent={null} onSelect={onSelect} t={t} />

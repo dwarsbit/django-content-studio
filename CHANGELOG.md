@@ -35,6 +35,17 @@
   the title, the count and the add button in its header. The media
   picker is a row with the file, its type and size, and replace and
   remove buttons, instead of a large preview with buttons on hover.
+- **The media library.** Folders are a tree on the left, with their
+  counts, nested folders behind carets and "New folder" at its foot; a
+  breadcrumb above the files repeats the path. Files are cards with the
+  thumbnail, or the type icon and extension, on the gray family; a
+  checkbox on hover selects a card or a list row for the floating bulk
+  bar (move, delete), and a more button holds the file's actions. A
+  file opens in a sheet from the right with its preview, Copy URL,
+  Download and Move, the name, alt text and tags, and Delete in the
+  footer; crop and focal point open in their own dialog from the sheet.
+  An empty folder is a dashed drop zone inviting the first upload. The
+  media picker in the editor shares the tree and the cards.
 
 ## 1.1.0 (2026-10-27)
 

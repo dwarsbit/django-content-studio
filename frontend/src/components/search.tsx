@@ -10,10 +10,29 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 
+/**
+ * The list's search box: a debounced input that keeps its term in the
+ * URL (`search`). A term that changes in the URL from elsewhere — a
+ * "clear all filters", the browser's back button — flows back into
+ * the box.
+ */
 export function Search() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [local, setLocal] = useState(searchParams.get("search") ?? "");
+  const param = searchParams.get("search") ?? "";
+  const [local, setLocal] = useState(param);
+  // The term the box itself last pushed to the URL, so its own
+  // navigation does not overwrite what is being typed meanwhile.
+  const [pushed, setPushed] = useState(param);
+  const [lastParam, setLastParam] = useState(param);
+
+  if (param !== lastParam) {
+    setLastParam(param);
+    if (param !== pushed) {
+      setLocal(param);
+      setPushed(param);
+    }
+  }
 
   useDebounce(
     () => {
@@ -27,6 +46,7 @@ export function Search() {
 
       // A new term strands the current page, so searching returns to
       // the first page.
+      setPushed(local);
       setSearchParams((searchParams) => {
         if (local) {
           searchParams.set("search", local);
