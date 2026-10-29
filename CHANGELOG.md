@@ -120,6 +120,12 @@
   inline object now requires view permission on its parent, including a
   `has_view_permission(request, obj)` that denies that one object.
 
+- **Inline lists showed other tenants' objects.** An inline list looked
+  up its parent object without the tenant, so an editor who passed the
+  id of another tenant's object got that object's inline rows. The
+  parent is now looked up within the selected tenant and outside the
+  trash, like the parent's own edit page.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the
