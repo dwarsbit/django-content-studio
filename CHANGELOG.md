@@ -113,6 +113,13 @@
   comma-separated values, lookups and exclusions on the parent field
   are rejected with a 400.
 
+- **Bulk actions and relation pickers included trashed objects.** A
+  bulk action ran on every selected id, so a custom action such as
+  publish also acted on objects in the trash, and a relation picker
+  offered trashed objects to link to. Bulk actions now only act on
+  objects the list shows, and relation pickers leave out trashed
+  objects when the related model's studio configures `soft_delete`.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the

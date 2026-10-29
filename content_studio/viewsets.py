@@ -607,8 +607,8 @@ class BaseModelViewSet(ModelViewSet):
         """
         Run a bulk action on the selected rows: {"action": id,
         "ids": [...]}. The action resolves per request — permissions
-        included — and runs on a tenant-scoped queryset of the ids, like
-        any list. The handler's return value becomes the response: an
+        included — and runs on the ids within the list's queryset:
+        tenant-scoped and without trashed objects. The handler's return value becomes the response: an
         int is a count, a str a message.
         """
         action_id = request.data.get("action")
@@ -638,9 +638,7 @@ class BaseModelViewSet(ModelViewSet):
             self._get_export_format(request.data)
             queryset = self.filter_queryset(self.get_queryset()).filter(pk__in=ids)
         else:
-            queryset = get_tenant_scoped_queryset(request, self._model).filter(
-                pk__in=ids
-            )
+            queryset = self.get_queryset().filter(pk__in=ids)
 
         result = action.handler(request, queryset)
 
@@ -859,12 +857,19 @@ class BaseModelViewSet(ModelViewSet):
         Search the related model by the related model studio's
         search_fields. Without search_fields nothing is searchable, so a
         search term matches nothing: other fields (such as the user
-        model's password) are never searched.
+        model's password) are never searched. Trashed objects are never
+        offered when the related model studio configures soft_delete.
         """
-        if not search:
-            return related_model.objects.all()
-
         related_admin = cs_settings.ADMIN_SITE._registry.get(related_model)
+        qs = related_model.objects.all()
+
+        soft_delete_field = related_admin.soft_delete if related_admin else None
+        if soft_delete_field:
+            qs = qs.filter(**{f"{soft_delete_field}__isnull": True})
+
+        if not search:
+            return qs
+
         search_fields = related_admin.search_fields if related_admin else None
 
         if not search_fields:
@@ -873,7 +878,7 @@ class BaseModelViewSet(ModelViewSet):
         queries = [Q(**{f"{field}__icontains": search}) for field in search_fields]
         combined_query = reduce(operator.or_, queries)
 
-        return related_model.objects.filter(combined_query)
+        return qs.filter(combined_query)
 
 
 def get_relation_field(model, field_name):

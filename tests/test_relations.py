@@ -224,3 +224,36 @@ def test_relation_display_is_customizable():
     finally:
         admin_site.unregister(Category)
         admin_site._registry[Category] = original_studio
+
+
+@pytest.mark.django_db
+def test_trashed_objects_are_not_offered():
+    """A related studio with soft_delete keeps trashed objects out."""
+    from django.utils import timezone
+
+    from content_studio.admin import admin_site
+    from tests.testapp.models import Product, ProductSupplier
+
+    user = auth_models.User.objects.create_superuser(
+        username="admin", email="a@example.com", password="x"
+    )
+    Product.objects.create(title="Kept", slug="kept")
+    Product.objects.create(title="Trashed", slug="trashed", removed_at=timezone.now())
+
+    viewset, request = make_viewset(user, ProductSupplier)
+
+    response = viewset.get_related_objects(request, "product")
+
+    assert [item["__str__"] for item in response.data] == ["Kept"]
+
+    product_studio = admin_site._registry[Product]
+    original_search_fields = product_studio.search_fields
+    product_studio.search_fields = ["title"]
+    try:
+        viewset, request = make_viewset(user, ProductSupplier, search="e")
+
+        response = viewset.get_related_objects(request, "product")
+
+        assert [item["__str__"] for item in response.data] == ["Kept"]
+    finally:
+        product_studio.search_fields = original_search_fields
