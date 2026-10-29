@@ -170,6 +170,13 @@
   objects the list shows, and relation pickers leave out trashed
   objects when the related model's studio configures `soft_delete`.
 
+- **Save errors that are not about fields are shown.** When saving an
+  object or setting up a tenant failed for another reason than invalid
+  fields (no permission, a server error), the admin asked you to fix
+  the fields without marking any and hid the real reason. Only invalid
+  fields are now marked on the form; any other failure shows its
+  message.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the
