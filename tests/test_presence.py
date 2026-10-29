@@ -143,6 +143,42 @@ class HeartbeatTests(PresenceTestCase):
         ):
             self.assertEqual(self.beat(self.eva).json()["users"], [])
 
+    def cached_sessions(self):
+        key = presence.get_cache_key("", Article, self.article.pk)
+        return list(caches["default"].get(key))
+
+    def test_sessions_per_user_are_capped(self):
+        for i in range(presence.MAX_SESSIONS_PER_USER + 3):
+            with mock.patch("content_studio.presence.time.time", return_value=1000 + i):
+                self.beat(self.noah, session=f"tab{i}")
+
+        with mock.patch("content_studio.presence.time.time", return_value=1010):
+            self.beat(self.eva)
+            sessions = self.cached_sessions()
+
+        noah = [key for key in sessions if key.startswith(f"{self.noah.pk}:")]
+        self.assertEqual(
+            sorted(noah),
+            sorted(
+                f"{self.noah.pk}:tab{i}"
+                for i in range(3, presence.MAX_SESSIONS_PER_USER + 3)
+            ),
+        )
+        self.assertIn(f"{self.eva.pk}:tab", sessions)
+
+    def test_entries_per_object_are_capped(self):
+        users = [self.create_user("view_article", username=f"u{i}") for i in range(4)]
+
+        with mock.patch.object(presence, "MAX_ENTRIES", 3):
+            for i, user in enumerate(users):
+                with mock.patch(
+                    "content_studio.presence.time.time", return_value=1000 + i
+                ):
+                    self.beat(user)
+                    sessions = self.cached_sessions()
+
+        self.assertEqual(sorted(sessions), sorted(f"{u.pk}:tab" for u in users[1:]))
+
     def test_validates_the_state_and_session(self):
         self.assertEqual(self.beat(self.eva, state="locked").status_code, 400)
         self.assertEqual(self.beat(self.eva, session="").status_code, 400)

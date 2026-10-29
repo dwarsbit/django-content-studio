@@ -40,6 +40,13 @@ MAX_SESSION_LENGTH = 64
 # The most objects one list request asks about.
 MAX_OBJECTS = 500
 
+# The most sessions kept per user and per object: a user's oldest
+# sessions make way for new ones, and the object's oldest entries make
+# way once it has MAX_ENTRIES, so no editor can grow an object's cache
+# value without bound by sending heartbeats for made-up sessions.
+MAX_SESSIONS_PER_USER = 5
+MAX_ENTRIES = 100
+
 
 def is_presence_enabled(studio) -> bool:
     """
@@ -115,6 +122,30 @@ def _live_entries(entries: Optional[dict], now: float) -> dict:
     }
 
 
+def _newest(entries: dict, limit: int) -> dict:
+    """
+    The limit entries that expire last (the most recent heartbeats).
+    """
+    if len(entries) <= limit:
+        return entries
+
+    newest = sorted(entries.items(), key=lambda item: item[1].get("expires", 0))
+
+    return dict(newest[-limit:])
+
+
+def _cap(entries: dict, user) -> dict:
+    """
+    Keep at most MAX_SESSIONS_PER_USER sessions of user and MAX_ENTRIES
+    entries in all, dropping the oldest.
+    """
+    prefix = f"{user.pk}:"
+    own = {k: v for k, v in entries.items() if k.startswith(prefix)}
+    others = {k: v for k, v in entries.items() if not k.startswith(prefix)}
+
+    return _newest({**others, **_newest(own, MAX_SESSIONS_PER_USER)}, MAX_ENTRIES)
+
+
 def collapse(entries: dict, exclude_user=None) -> list[dict[str, Any]]:
     """
     One entry per user, editing when any of their sessions edits, left
@@ -158,6 +189,7 @@ def heartbeat(
         "state": state,
         "expires": now + PRESENCE_TIMEOUT,
     }
+    entries = _cap(entries, request.user)
     cache.set(key, entries, PRESENCE_TIMEOUT)
 
     return collapse(entries, exclude_user=request.user)
