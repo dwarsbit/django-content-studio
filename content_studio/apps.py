@@ -104,6 +104,8 @@ class DjangoContentStudioConfig(AppConfig):
             get_table_display_columns,
             is_computed_column,
         )
+        from .export import fetch_related
+        from .form import TableColumn
         from .viewsets import BaseModelViewSet
         from .router import content_studio_router
         from .serializers import ContentSerializer
@@ -385,7 +387,30 @@ class DjangoContentStudioConfig(AppConfig):
                     ]
                 else:
                     ordering = ["pk"]
-                return qs.order_by(*ordering)
+                qs = qs.order_by(*ordering)
+
+                # Lists fetch the related objects their rows show along
+                # with the rows, instead of one query per row.
+                if self.action in ("list", "trash") and not self.is_singleton:
+                    qs = fetch_related(self._admin_model, qs, self._get_row_columns())
+
+                return qs
+
+            def _get_row_columns(self):
+                """The columns a list row shows: the table columns and,
+                with the list view, the list item display's fields."""
+                row_columns = list(columns)
+
+                if "list" in self._admin_model.list_views:
+                    row_columns += [
+                        TableColumn(field=field)
+                        for field in (
+                            self._admin_model.list_item_display or {}
+                        ).values()
+                        if field
+                    ]
+
+                return row_columns
 
             def get_parent_filter_keys(self):
                 """The parent keys the viewset filters on itself (lists)."""

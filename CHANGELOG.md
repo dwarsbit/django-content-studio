@@ -226,6 +226,11 @@
   `+`, `&` or `#`, such as `jane+admin@example.com`, reached the reset
   step changed or cut off, so the code sent to it was always rejected.
   The address now arrives unchanged.
+- **Relation columns made lists slow.** Every foreign key and
+  many-to-many column in `table_display`, and every foreign key in
+  `list_item_display`, cost extra database queries for each row of the
+  list and the trash. Lists now fetch those related objects along with
+  the rows, like exports do.
 
 ## 1.2.0 (unreleased)
 
