@@ -97,6 +97,12 @@
   name their model, such as `MediaField("blog.MediaItem")`, are
   unchanged.
 
+- **Logins go through Django's login plumbing.** Logging in passes the
+  request to `authenticate()` and sends Django's `user_logged_in` and
+  `user_login_failed` signals, so django-axes and other audit tools see
+  Content Studio logins and refused attempts. `last_login` is updated by
+  Django's `update_last_login` receiver, as for any Django login.
+
 ### Security
 
 - **Buttons and bulk actions need change permission by default.** A

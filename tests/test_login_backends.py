@@ -142,3 +142,95 @@ class LoginThrottleTests(DjangoTestCase):
             )
 
             assert UsernamePasswordViewSet.throttle_classes == []
+
+
+class LoginSignalTests(DjangoTestCase):
+    """Logging in goes through Django's login plumbing: authenticate()
+    gets the request and the auth signals are sent, so django-axes and
+    audit tools see Content Studio logins."""
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+
+        self.staff = User.objects.create_user(
+            username="editor", password="secret", is_staff=True
+        )
+        User.objects.create_user(username="customer", password="secret")
+
+    def _login(self, username, password="secret"):
+        return APIClient().post(
+            "/api/login/usernamepassword",
+            {"username": username, "password": password},
+            format="json",
+        )
+
+    def _receive(self, signal):
+        received = []
+
+        def receiver(sender, **kwargs):
+            received.append(kwargs)
+
+        signal.connect(receiver)
+        self.addCleanup(signal.disconnect, receiver)
+
+        return received
+
+    def test_a_login_sends_user_logged_in_with_the_request(self):
+        from django.contrib.auth.signals import user_logged_in
+        from django.http import HttpRequest
+
+        received = self._receive(user_logged_in)
+
+        assert self._login("editor").status_code == 200
+
+        assert len(received) == 1
+        assert received[0]["user"] == self.staff
+        assert isinstance(received[0]["request"], HttpRequest)
+
+        # update_last_login listens to the signal.
+        self.staff.refresh_from_db()
+        assert self.staff.last_login is not None
+
+    def test_authenticate_receives_the_request(self):
+        from unittest import mock
+
+        from django.http import HttpRequest
+
+        with mock.patch(
+            "content_studio.login_backends.username_password.authenticate",
+            return_value=None,
+        ) as authenticate:
+            self._login("editor")
+
+        request = authenticate.call_args.args[0]
+        assert isinstance(request, HttpRequest)
+        assert authenticate.call_args.kwargs == {
+            "username": "editor",
+            "password": "secret",
+        }
+
+    def test_a_wrong_password_sends_user_login_failed(self):
+        from django.contrib.auth.signals import user_logged_in, user_login_failed
+        from django.http import HttpRequest
+
+        failed = self._receive(user_login_failed)
+        logged_in = self._receive(user_logged_in)
+
+        assert self._login("editor", "wrong").status_code == 403
+
+        assert logged_in == []
+        assert len(failed) == 1
+        assert failed[0]["credentials"]["username"] == "editor"
+        assert isinstance(failed[0]["request"], HttpRequest)
+
+    def test_a_refused_non_staff_login_sends_user_login_failed(self):
+        from django.contrib.auth.signals import user_logged_in, user_login_failed
+
+        failed = self._receive(user_login_failed)
+        logged_in = self._receive(user_logged_in)
+
+        assert self._login("customer").status_code == 403
+
+        assert logged_in == []
+        assert len(failed) == 1
+        assert failed[0]["credentials"] == {"username": "customer"}
