@@ -36,9 +36,21 @@ export function ForeignKeyWidget({
   const { t } = useTranslation();
   const http = useHttp();
   const form = useFormContext();
-  const formValues = form.watch();
+  // The relations endpoint filters on the form's values (a studio's
+  // get_related_<field> hook). They are read when the picker opens: the
+  // popover is modal, so the form cannot change while it is open, and
+  // subscribing to the whole form made every keystroke in any field
+  // refetch the options.
+  const [formValues, setFormValues] = useState<Record<string, unknown>>({});
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setFormValues(form.getValues());
+    }
+
+    setOpen(nextOpen);
+  };
   const { data = [], isLoading } = useQuery({
     enabled: open,
     queryKey: ["related-model", model.label, name, formValues, search],
@@ -60,7 +72,7 @@ export function ForeignKeyWidget({
   }, [data, value, search]);
 
   return (
-    <Popover modal open={open} onOpenChange={setOpen}>
+    <Popover modal open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger className="w-full font-medium text-foreground flex items-center justify-between text-left border border-border hover:border-ring cursor-pointer rounded-md px-3 h-9 select-none">
         <div className="flex-1 flex items-center gap-2 min-w-0">
           <RelationGlyph
@@ -101,7 +113,7 @@ export function ForeignKeyWidget({
                     key={option.id}
                     onSelect={() => {
                       onChange?.(option);
-                      setOpen(false);
+                      handleOpenChange(false);
                     }}
                   >
                     <RelationOption option={option} />
