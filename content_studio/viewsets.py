@@ -681,10 +681,12 @@ class BaseModelViewSet(ModelViewSet):
         """
         Whether another object already uses a value for a unique field:
         ?field=slug&value=hello-world&exclude=<id>. Only single fields
-        with unique=True qualify. The lookup is tenant-scoped like the
-        list, but includes trashed objects: they still occupy the value
-        in the database. The conflicting object is only described when
-        the user may view it.
+        with unique=True that the studio does not exclude qualify: the
+        check would otherwise reveal the values of fields the form never
+        shows. The lookup is tenant-scoped like the list, but includes
+        trashed objects: they still occupy the value in the database.
+        The conflicting object is only described when the user may view
+        it.
 
         A combination of fields (unique_together or a UniqueConstraint
         over several fields) is checked with ?set=<id>&values=<json>,
@@ -707,6 +709,7 @@ class BaseModelViewSet(ModelViewSet):
             or field.many_to_many
             or field.primary_key
             or not field.unique
+            or field.name in self._excluded_fields()
         ):
             raise ValidationError("Only fields with unique=True can be checked.")
 
@@ -738,7 +741,11 @@ class BaseModelViewSet(ModelViewSet):
             (s for s in get_unique_sets(self._model) if s.id == set_id), None
         )
 
-        if unique_set is None:
+        # A combination with an excluded field is not checked either: the
+        # form cannot supply the field, and the check would reveal it.
+        if unique_set is None or self._excluded_fields().intersection(
+            unique_set.fields
+        ):
             raise ValidationError("Unknown unique set.")
 
         try:
@@ -772,6 +779,9 @@ class BaseModelViewSet(ModelViewSet):
         )
 
         return self._unique_check_response(request, obj)
+
+    def _excluded_fields(self):
+        return set(self._admin_model.exclude or [])
 
     def _unique_check_response(self, request, obj):
         if obj is None:

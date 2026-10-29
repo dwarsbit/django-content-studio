@@ -106,6 +106,13 @@
   unless `allowed_permissions` says otherwise. To keep a button or
   action open to viewers, set `allowed_permissions = []`.
 
+- **The duplicate check revealed excluded fields.** While an editor
+  types, the edit page asks whether another object already uses the
+  value of a unique field. The check answered for every unique field,
+  including fields in the studio's `exclude`, so an editor could find
+  out which values such a field holds. Excluded fields, and combinations
+  that include one, are no longer checked.
+
 - **Bulk actions ignored per-object permissions.** Bulk actions, the
   built-in Delete included, only checked the model-level permissions
   they list. A studio whose `has_delete_permission(request, obj)` refused
