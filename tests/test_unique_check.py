@@ -142,6 +142,16 @@ class UniqueCheckTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"exists": True})
 
+    def test_excluded_fields_are_not_checked(self):
+        # A field the studio leaves out of the form is not probed either:
+        # the check would reveal the values it holds.
+        studio = admin_site._registry[Page]
+
+        with mock.patch.object(type(studio), "exclude", ["slug"]):
+            response = self.check(value="hello-world")
+
+        self.assertEqual(response.status_code, 400)
+
     def test_inline_endpoint(self):
         from tests.testapp.models import Article
 

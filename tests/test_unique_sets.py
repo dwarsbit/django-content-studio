@@ -19,6 +19,7 @@ from django.test.utils import isolate_apps
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from content_studio.admin import admin_site
 from content_studio.serializers import ModelSerializer
 from content_studio.token_backends.jwt import create_access_token
 from content_studio.uniqueness import get_unique_sets
@@ -67,6 +68,16 @@ class UniqueSetCheckTests(TestCase):
 
         response = self.check(TOGETHER, {"slug": "spring", "language": "nl"})
         self.assertEqual(response.json(), {"exists": False})
+
+    def test_sets_with_an_excluded_field_are_not_checked(self):
+        # The form cannot supply an excluded field, and the check would
+        # reveal its values.
+        studio = admin_site._registry[Edition]
+
+        with mock.patch.object(type(studio), "exclude", ["language"]):
+            response = self.check(TOGETHER, {"slug": "spring", "language": "en"})
+
+        self.assertEqual(response.status_code, 400)
 
     def test_unique_constraint(self):
         response = self.check(
