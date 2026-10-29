@@ -183,6 +183,25 @@ describe("AuthProvider", () => {
     expect(callsTo(REFRESH_URL)).toBe(refreshCallsAfterBoot + 1);
   });
 
+  it("does not refresh again when the retried request also runs into a 401", async () => {
+    respond = (url, config) => {
+      if (url === REFRESH_URL) {
+        return { data: { access: "fresh-token" }, status: 200 };
+      }
+      return makeError(401, config);
+    };
+
+    renderApp();
+    await screen.findByText("token:fresh-token");
+    const refreshCallsAfterBoot = callsTo(REFRESH_URL);
+
+    await expect(http.get("/content/x")).rejects.toMatchObject({ status: 401 });
+
+    // One refresh, one retry, then the error propagates.
+    expect(callsTo(REFRESH_URL)).toBe(refreshCallsAfterBoot + 1);
+    expect(callsTo("/content/x")).toBe(2);
+  });
+
   it("ends the session when a 401 cannot be refreshed", async () => {
     let refreshCalls = 0;
 
