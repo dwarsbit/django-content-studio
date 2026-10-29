@@ -1,7 +1,9 @@
 import uuid
 
 from django.core.validators import MinLengthValidator
-from django.db import models
+from django.db import models, transaction
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 from .fields import CropField
@@ -87,6 +89,25 @@ class Media(ContentModel):
             self.size = self.file.size
 
         return super().save(*args, **kwargs)
+
+
+@receiver(
+    post_delete, sender=Media, dispatch_uid="content_studio_media_library_delete_file"
+)
+def delete_file(sender, instance, using, **kwargs):
+    """
+    Remove a deleted item's file from storage, once the deletion is
+    committed: a rolled-back delete keeps its file. Bulk deletes and
+    folders that cascade go through the collector, which sends this
+    signal for every item.
+    """
+    file = instance.file
+
+    if not file or not file.name:
+        return
+
+    storage, name = file.storage, file.name
+    transaction.on_commit(lambda: storage.delete(name), using=using)
 
 
 class Folder(ContentModel):

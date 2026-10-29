@@ -114,6 +114,13 @@
   no longer logs every editor out. New sessions are signed with the
   current key.
 
+- **Media files are removed from storage.** Deleting an item of the
+  built-in media library models now removes its file from storage once
+  the deletion is committed, also when it is deleted in bulk or with its
+  folder. Replacing an item's file removes the previous file, for the
+  built-in and your own media models alike. Files of items deleted
+  before this release stay in storage.
+
 ### Security
 
 - **Buttons and bulk actions need change permission by default.** A
