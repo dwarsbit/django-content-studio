@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.3.0 (unreleased)
+## 1.2.0 (unreleased)
 
 - **Duplicate (save as new).** A studio with `allow_duplication = True`
   offers Duplicate in the edit page's actions menu. It opens the create
@@ -298,9 +298,6 @@
   `list_item_display`, cost extra database queries for each row of the
   list and the trash. Lists now fetch those related objects along with
   the rows, like exports do.
-
-## 1.2.0 (unreleased)
-
 - **The app shell and the main menu.** Every page shares one header: the
   title on the left, the page's actions on the right and, where a page
   has them, a toolbar row underneath. The main menu sits flush against
