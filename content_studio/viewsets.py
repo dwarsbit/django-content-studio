@@ -448,10 +448,12 @@ class BaseModelViewSet(ModelViewSet):
         if self.is_singleton:
             singleton = self.get_queryset().first()
 
-            if singleton:
-                return singleton
-            else:
+            if singleton is None:
                 raise NotFound()
+
+            self.check_object_permissions(self.request, singleton)
+
+            return singleton
 
         return super().get_object()
 

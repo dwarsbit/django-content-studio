@@ -109,6 +109,13 @@
   none checks `has_view_permission(request, obj)`. If any selected
   object fails the check, the action runs on none of them.
 
+- **Singletons ignored per-object permissions.** Viewing and editing a
+  singleton only checked the model-level permissions. A singleton studio
+  whose `has_view_permission(request, obj)` or
+  `has_change_permission(request, obj)` refused the object still let
+  editors view or change it. These checks now apply to singletons, as
+  they do to other objects.
+
 - **Logging out did not end the session on the server.** Sessions were
   only checked for their signature and expiry: after logging out, a copy
   of the session cookie still renewed the session, a renewed cookie left
