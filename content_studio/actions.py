@@ -12,6 +12,7 @@ queryset of the selected rows.
 from dataclasses import dataclass
 from typing import Callable, Optional
 
+from django.core.exceptions import PermissionDenied
 from django.db import router, transaction
 from django.db.models.deletion import Collector
 from django.utils import timezone
@@ -292,10 +293,26 @@ def get_bulk_actions(studio, request=None) -> list[BulkAction]:
     return actions
 
 
-def _allowed(studio, request, meta: BulkActionMeta) -> bool:
+def _allowed(studio, request, meta: BulkActionMeta, obj=None) -> bool:
     """Whether the request may run an action: a gate on each of the
-    permissions it lists, or none when it lists none."""
-    return not meta.allowed_permissions or any(
-        getattr(studio, f"has_{permission}_permission")(request)
+    permissions it lists, or none when it lists none. With an object,
+    the gate applies to that object, and an action that lists none
+    needs view permission on it."""
+    if not meta.allowed_permissions:
+        return obj is None or studio.has_view_permission(request, obj)
+
+    return any(
+        getattr(studio, f"has_{permission}_permission")(request, obj)
         for permission in meta.allowed_permissions
     )
+
+
+def check_object_permissions(studio, request, meta: BulkActionMeta, queryset):
+    """Raise PermissionDenied unless the request may run the action on
+    every selected object, like the classic admin's delete_selected."""
+    for obj in queryset:
+        if not _allowed(studio, request, meta, obj):
+            raise PermissionDenied(
+                "You do not have permission to run this action on all "
+                "selected objects."
+            )

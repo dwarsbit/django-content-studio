@@ -20,7 +20,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from .actions import EXPORT_ACTION_ID, get_bulk_actions
+from .actions import EXPORT_ACTION_ID, check_object_permissions, get_bulk_actions
 from .admin import get_relation_display_for, is_duplicable
 from .dashboard.activity_log import LogEntrySerializer
 from .duplication import copy_inline_rows, represent_initial
@@ -639,6 +639,10 @@ class BaseModelViewSet(ModelViewSet):
             queryset = self.filter_queryset(self.get_queryset()).filter(pk__in=ids)
         else:
             queryset = self.get_queryset().filter(pk__in=ids)
+
+        # The resolution above gates on model-level permissions; the
+        # selection must also pass them per object.
+        check_object_permissions(self._admin_model, request, action.meta, queryset)
 
         result = action.handler(request, queryset)
 

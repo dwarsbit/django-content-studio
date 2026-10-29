@@ -99,6 +99,16 @@
 
 ### Security
 
+- **Bulk actions ignored per-object permissions.** Bulk actions, the
+  built-in Delete included, only checked the model-level permissions
+  they list. A studio whose `has_delete_permission(request, obj)` refused
+  an object blocked deleting it from its edit page, but not deleting it
+  with the Delete bulk action; the same went for custom actions and
+  per-object `has_change_permission`. A bulk action now also checks the
+  permissions it lists on each selected object, and an action that lists
+  none checks `has_view_permission(request, obj)`. If any selected
+  object fails the check, the action runs on none of them.
+
 - **Logging out did not end the session on the server.** Sessions were
   only checked for their signature and expiry: after logging out, a copy
   of the session cookie still renewed the session, a renewed cookie left
