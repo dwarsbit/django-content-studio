@@ -8,7 +8,7 @@ from django.contrib.admin.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import IntegrityError, models, transaction
+from django.db import IntegrityError, models, router, transaction
 from django.db.models import Q
 from django.http import HttpResponseBase
 from django.utils import timezone
@@ -24,6 +24,7 @@ from .actions import EXPORT_ACTION_ID, check_object_permissions, get_bulk_action
 from .admin import get_relation_display_for, is_duplicable
 from .dashboard.activity_log import LogEntrySerializer
 from .duplication import copy_inline_rows, represent_initial
+from .exceptions import DeleteConflict
 from .export import export_response, get_export_formats, is_exportable
 from .filters import LookupFilter
 from .form import Button, ButtonResult
@@ -105,7 +106,7 @@ class BaseModelViewSet(ModelViewSet):
             if not tenant_id:
                 raise ValidationError("A tenant is required to create this object.")
 
-            validate_tenant_access(self.request, tenant_id)
+            tenant_id = validate_tenant_access(self.request, tenant_id)
             attrs[f"{tenant_field_name}_id"] = tenant_id
 
         if hasattr(model, cs_settings.CREATED_BY_ATTR):
@@ -243,17 +244,29 @@ class BaseModelViewSet(ModelViewSet):
         record_change(self.request, instance, UPDATED)
 
     def perform_destroy(self, instance):
-        record_change(self.request, instance, DELETED)
-
         # With soft_delete configured, deleting moves the object to the
         # trash: the field is stamped instead of the row being removed.
         soft_delete_field = self._admin_model.soft_delete
         if soft_delete_field:
+            record_change(self.request, instance, DELETED)
             setattr(instance, soft_delete_field, timezone.now())
             instance.save(update_fields=[soft_delete_field])
             return
 
-        instance.delete()
+        self._delete(instance)
+
+    def _delete(self, instance):
+        """
+        Delete an object and record the change. Objects that refer to it
+        with on_delete=PROTECT or RESTRICT block the delete: 409, and
+        the transaction drops the recorded change.
+        """
+        try:
+            with transaction.atomic(using=router.db_for_write(instance.__class__)):
+                record_change(self.request, instance, DELETED)
+                instance.delete()
+        except (models.ProtectedError, models.RestrictedError) as error:
+            raise DeleteConflict.from_error(error)
 
     @action(methods=["get"], detail=False, url_path="trash")
     def trash(self, request):
@@ -330,9 +343,7 @@ class BaseModelViewSet(ModelViewSet):
 
         instance = self.get_object()
 
-        record_change(self.request, instance, DELETED)
-
-        instance.delete()
+        self._delete(instance)
 
         return Response(status=204)
 
@@ -644,7 +655,12 @@ class BaseModelViewSet(ModelViewSet):
         # selection must also pass them per object.
         check_object_permissions(self._admin_model, request, action.meta, queryset)
 
-        result = action.handler(request, queryset)
+        # A delete (the built-in one or a custom action's) blocked by
+        # on_delete=PROTECT or RESTRICT is a conflict, not a crash.
+        try:
+            result = action.handler(request, queryset)
+        except (models.ProtectedError, models.RestrictedError) as error:
+            raise DeleteConflict.from_error(error)
 
         # A response, such as the export's download, is returned as is.
         if isinstance(result, HttpResponseBase):

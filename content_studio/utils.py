@@ -133,20 +133,30 @@ def validate_tenant_access(request, tenant_id):
     single authorization hook for tenant access, also used to populate
     the frontend's tenant selector.
 
-    Raises PermissionDenied when the user may not access the tenant.
+    Raises PermissionDenied when the user may not access the tenant, or
+    when the value is not a valid primary key for the tenant model.
+    Returns the tenant id cast to the tenant model's primary key type.
     """
+    from django.core.exceptions import ValidationError as DjangoValidationError
     from rest_framework.exceptions import PermissionDenied
 
     tenant_model = cs_settings.TENANT_MODEL
 
     if not tenant_model:
-        return
+        return tenant_id
+
+    try:
+        tenant_id = tenant_model._meta.pk.to_python(tenant_id)
+    except (DjangoValidationError, ValueError, TypeError):
+        raise PermissionDenied("Unknown or unauthorized tenant.")
 
     admin_site = cs_settings.ADMIN_SITE
     tenants = admin_site.get_tenants(tenant_model=tenant_model, request=request)
 
     if not tenants.filter(pk=tenant_id).exists():
         raise PermissionDenied("Unknown or unauthorized tenant.")
+
+    return tenant_id
 
 
 def get_tenant_scoped_queryset(request, model, queryset=None):
@@ -172,7 +182,7 @@ def get_tenant_scoped_queryset(request, model, queryset=None):
     if not tenant_id:
         return qs.none()
 
-    validate_tenant_access(request, tenant_id)
+    tenant_id = validate_tenant_access(request, tenant_id)
 
     return qs.filter(**{f"{field_name}_id": tenant_id})
 

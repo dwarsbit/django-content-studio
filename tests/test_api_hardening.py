@@ -20,7 +20,7 @@ from content_studio.serializers import ContentRelatedField
 from content_studio.token_backends.jwt import create_access_token
 from content_studio.viewsets import BaseModelViewSet
 from tests.testapp.admin import ArticleAdmin
-from tests.testapp.models import Article, Category, Label, Page
+from tests.testapp.models import Article, Category, Label, Page, Track
 
 TENANT_SETTINGS = {
     "ADMIN_SITE": "content_studio.admin.admin_site",
@@ -360,3 +360,132 @@ def test_tenant_field_is_described_as_read_only():
 
     assert fields["category"]["readonly"] is True
     assert "readonly" not in fields["title"]
+
+
+# Malformed query parameters and headers: client errors, never a 500
+
+
+class CategoryGuard(models.Model):
+    """Protects its category from being deleted."""
+
+    category = models.ForeignKey(Category, on_delete=models.PROTECT)
+
+    class Meta:
+        app_label = "content_studio"
+
+
+class CategoryLock(models.Model):
+    """Restricts its category from being deleted."""
+
+    category = models.ForeignKey(Category, on_delete=models.RESTRICT)
+
+    class Meta:
+        app_label = "content_studio"
+
+
+class PageGuard(models.Model):
+    """Protects its page (a soft-deletable model) from being deleted."""
+
+    page = models.ForeignKey(Page, on_delete=models.PROTECT)
+
+    class Meta:
+        app_label = "content_studio"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "query",
+    [
+        {"title__icontains__exact": "x"},
+        {"title__exact__in": "x"},
+        {"category": "abc"},
+        {"category__in": "1,abc"},
+        {"~category": "abc"},
+    ],
+)
+def test_malformed_filters_are_a_client_error(query):
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+
+    response = client.get("/api/content/testapp.track", query)
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_relation_filter_casts_the_value():
+    category = Category.objects.create(name="c")
+    Track.objects.create(title="in", category=category)
+    Track.objects.create(title="out")
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+
+    response = client.get("/api/content/testapp.track", {"category": str(category.pk)})
+
+    assert response.status_code == 200
+    assert [row["title"] for row in response.json()["results"]] == ["in"]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("tenant", ["abc", "1.5", " "])
+def test_malformed_tenant_header_is_forbidden(tenant):
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+
+    with override_settings(CONTENT_STUDIO=TENANT_SETTINGS):
+        listed = client.get("/api/content/testapp.page", HTTP_X_DCS_TENANT=tenant)
+        created = client.post(
+            "/api/content/testapp.page",
+            {"title": "t", "slug": "t"},
+            format="json",
+            HTTP_X_DCS_TENANT=tenant,
+        )
+
+    assert listed.status_code == 403
+    assert listed.json()["detail"] == "Unknown or unauthorized tenant."
+    assert created.status_code == 403
+    assert not Page.objects.exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("guard", [CategoryGuard, CategoryLock])
+def test_delete_blocked_by_a_reference_is_a_conflict(guard):
+    category = Category.objects.create(name="c")
+    guard.objects.create(category=category)
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+
+    response = client.delete(f"/api/content/testapp.category/{category.pk}")
+
+    assert response.status_code == 409
+    assert guard._meta.verbose_name in response.json()["detail"]
+    assert Category.objects.filter(pk=category.pk).exists()
+    assert not LogEntry.objects.exists()
+
+
+@pytest.mark.django_db
+def test_bulk_delete_blocked_by_a_reference_is_a_conflict():
+    category = Category.objects.create(name="c")
+    CategoryGuard.objects.create(category=category)
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+
+    response = client.post(
+        "/api/content/testapp.category/bulk",
+        {"action": "delete", "ids": [str(category.pk)]},
+        format="json",
+    )
+
+    assert response.status_code == 409
+    assert Category.objects.filter(pk=category.pk).exists()
+    assert not LogEntry.objects.exists()
+
+
+@pytest.mark.django_db
+def test_permanent_delete_blocked_by_a_reference_is_a_conflict():
+    page = Page.objects.create(title="p", slug="p")
+    PageGuard.objects.create(page=page)
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+    client.delete(f"/api/content/testapp.page/{page.pk}")
+    LogEntry.objects.all().delete()
+
+    response = client.delete(f"/api/content/testapp.page/{page.pk}/destroy")
+
+    assert response.status_code == 409
+    assert Page.objects.filter(pk=page.pk).exists()
+    assert not LogEntry.objects.exists()

@@ -64,15 +64,21 @@ class LookupFilter(BaseFilterBackend):
                 for key in view.get_parent_filter_keys():
                     query_params.pop(key, None)
 
+            # Building the query is part of the validation: an invalid
+            # lookup or value raises here rather than in a 500.
             try:
                 filter_kwargs, exclude_kwargs = self.get_filter_kwargs(
                     model_class=view.queryset.model,
                     query_params=query_params,
                     allowed_fields=self.get_allowed_fields(view),
                 )
+                return (
+                    queryset.filter(**filter_kwargs)
+                    .exclude(**exclude_kwargs)
+                    .distinct()
+                )
             except Exception as e:
                 raise ParseError(detail=f"Invalid filter parameters: {e}")
-            return queryset.filter(**filter_kwargs).exclude(**exclude_kwargs).distinct()
 
         return queryset
 
@@ -118,13 +124,20 @@ class LookupFilter(BaseFilterBackend):
             # Get the model field.
             field = model_class._meta.get_field(field_name)
 
-            # A relation only takes a lookup of its own: anything longer
-            # (author__password__gt) ends in a lookup the relation also
-            # registers, but filters on the related model's fields.
-            if field.is_relation and len(key.split("__")) > 2:
+            # A key is a field name with at most one lookup. Anything
+            # longer on a relation (author__password__gt) ends in a
+            # lookup the relation also registers, but filters on the
+            # related model's fields; elsewhere it chains lookups
+            # (title__icontains__exact), which no field supports.
+            if len(key.split("__")) > 2:
+                if field.is_relation:
+                    raise FieldDoesNotExist(
+                        f"Filtering on '{key}' traverses into a related field; "
+                        "only lookups on the declared field are allowed."
+                    )
                 raise FieldDoesNotExist(
-                    f"Filtering on '{key}' traverses into a related field; "
-                    "only lookups on the declared field are allowed."
+                    f"Filtering on '{key}' is not allowed; "
+                    "use the field name with at most one lookup."
                 )
             # Get the allowed lookups for this field.
             lookups = field_lookups.get(field_name, [])
@@ -178,10 +191,16 @@ class LookupFilter(BaseFilterBackend):
         Cast a raw string value to the field's type.
 
         Values are passed through unchanged unless the field type
-        requires a cast: booleans and nulls match case-insensitively,
-        numbers are cast to their numeric type, everything else is
-        matched exactly as provided.
+        requires a cast: relations take their target field's type,
+        booleans and nulls match case-insensitively, numbers are cast to
+        their numeric type, everything else is matched exactly as
+        provided.
         """
+        if field.is_relation:
+            # A relation filters on its target field's values (usually
+            # the related model's primary key).
+            return field.target_field.to_python(value)
+
         lowered = value.strip().lower()
 
         if isinstance(field, models.BooleanField) or isinstance(

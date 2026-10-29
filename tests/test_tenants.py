@@ -100,3 +100,15 @@ def test_unauthorized_tenant_is_rejected():
                 get_tenant_scoped_queryset(make_request(b.pk), TenantItem)
     finally:
         admin_site.get_tenants = original
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("tenant_id", ["abc", "1.5"])
+def test_malformed_tenant_is_rejected(tenant_id):
+    from django.test import override_settings
+
+    TenantModel.objects.create(name="a")
+
+    with override_settings(CONTENT_STUDIO=TENANT_SETTINGS):
+        with pytest.raises(PermissionDenied):
+            get_tenant_scoped_queryset(make_request(tenant_id), TenantItem)
