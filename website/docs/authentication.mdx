@@ -22,10 +22,16 @@ immediately. What an editor may see and do is decided by the
   ([`TOKEN_LIFETIME`](/docs/settings#token_lifetime)) and renews itself
   while the editor works. After a week without using the admin, the editor
   logs in again ([`REFRESH_TOKEN_LIFETIME`](/docs/settings#refresh_token_lifetime)).
+  However active, a session ends 30 days after logging in
+  ([`MAX_SESSION_LIFETIME`](/docs/settings#max_session_lifetime)).
 - **Survives a reload.** Reloading the page keeps the editor logged in.
 - **Ends everywhere on a password change.** Changing or resetting a
   password logs the user out on every device.
-- **Logging out** ends the session in that browser.
+- **Logging out** ends the session in that browser. The session cannot be
+  continued afterwards, not even with a copy of its cookie.
+- **A copied session ends.** Each renewal replaces the session cookie and
+  the old one stops working. When an old cookie is presented again, it was
+  copied, and Content Studio ends the session for both.
 
 Sessions are signed with your `SECRET_KEY`, or with
 [`TOKEN_SIGNING_KEY`](/docs/settings#token_signing_key) when you set one.
