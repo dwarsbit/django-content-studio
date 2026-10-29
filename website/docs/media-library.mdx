@@ -57,6 +57,11 @@ CONTENT_STUDIO = {
 }
 ```
 
+Deleting an item also removes its file from storage, and replacing an item's
+file removes the previous one. With your own models, a replaced file is
+removed as well; a deleted item's file stays unless your model removes it,
+for example in a `post_delete` receiver.
+
 ## Working in the media library
 
 Editors upload files with the upload button or by dragging them onto the

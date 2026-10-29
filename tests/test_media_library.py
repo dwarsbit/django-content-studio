@@ -553,6 +553,54 @@ def test_allowed_uploads_are_stored(media_root):
     assert ItemModel.objects.count() == 1
 
 
+def patch_item(user, pk, data):
+    from django.test import TestCase
+
+    # The replaced file is removed on commit; run the callbacks like a
+    # real commit.
+    with override_settings(CONTENT_STUDIO=MEDIA_SETTINGS):
+        with TestCase.captureOnCommitCallbacks(execute=True):
+            return media_client(user).patch(
+                f"/api/media-library/items/{pk}", data, format="multipart"
+            )
+
+
+@pytest.mark.django_db
+def test_replacing_a_file_removes_the_previous_one(media_root):
+    from django.core.files.storage import default_storage
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    user = make_superuser()
+    pk = upload(user, "photo.png", PNG_BYTES).json()["id"]
+    previous = ItemModel.objects.get(pk=pk).file.name
+    assert default_storage.exists(previous)
+
+    response = patch_item(
+        user, pk, {"file": SimpleUploadedFile("other.png", PNG_BYTES + b"\x01")}
+    )
+
+    assert response.status_code == 200, response.content
+    current = ItemModel.objects.get(pk=pk).file.name
+    assert current != previous
+    assert default_storage.exists(current)
+    assert not default_storage.exists(previous)
+
+
+@pytest.mark.django_db
+def test_editing_an_item_without_a_new_file_keeps_the_file(media_root):
+    from django.core.files.storage import default_storage
+
+    user = make_superuser()
+    pk = upload(user, "photo.png", PNG_BYTES).json()["id"]
+    previous = ItemModel.objects.get(pk=pk).file.name
+
+    response = patch_item(user, pk, {"name": "renamed"})
+
+    assert response.status_code == 200, response.content
+    assert ItemModel.objects.get(pk=pk).file.name == previous
+    assert default_storage.exists(previous)
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "name, content",

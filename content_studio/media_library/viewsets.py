@@ -179,7 +179,21 @@ class MediaLibraryViewSet(ModelViewSet):
         record_change(self.request, serializer.save(), CREATED)
 
     def perform_update(self, serializer):
-        record_change(self.request, serializer.save(), UPDATED)
+        # A replaced file is removed from storage once the change is
+        # committed; the previous name is read before the save replaces
+        # it. A file field by another name is not the item's upload.
+        previous = getattr(serializer.instance, "file", None)
+        previous_name = previous.name if previous else None
+
+        obj = serializer.save()
+        record_change(self.request, obj, UPDATED)
+
+        if previous_name and obj.file.name != previous_name:
+            storage = previous.storage
+            transaction.on_commit(
+                lambda: storage.delete(previous_name),
+                using=router.db_for_write(type(obj)),
+            )
 
     def perform_destroy(self, instance):
         using = router.db_for_write(type(instance))
