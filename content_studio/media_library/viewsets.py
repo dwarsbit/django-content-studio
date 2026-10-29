@@ -216,10 +216,12 @@ class MediaLibraryViewSet(ModelViewSet):
     def tags(self, request):
         """
         The unique tags currently on the media items, sorted
-        case-insensitively — the options for the tags filter.
-        Aggregated in Python, so it works over any tags field shape
-        and on every database backend. A model without a tags field
-        yields an empty list.
+        case-insensitively — the options for the tags filter. The
+        database returns the distinct, non-null values of the field;
+        splitting them into tags happens in Python, so it works over
+        any tags field shape (a list field or a plain string) on every
+        database backend. A model without a tags field yields an empty
+        list.
         """
         model = self.get_media_model()
 
@@ -231,9 +233,17 @@ class MediaLibraryViewSet(ModelViewSet):
         if "tags" not in field_names:
             return Response([])
 
+        # order_by() clears the default ordering: ordered by pk, every
+        # row would be distinct.
+        values = (
+            model.objects.exclude(tags__isnull=True)
+            .order_by()
+            .values_list("tags", flat=True)
+            .distinct()
+        )
         tags = set()
 
-        for value in model.objects.values_list("tags", flat=True).iterator():
+        for value in values.iterator():
             if isinstance(value, (list, tuple)):
                 tags.update(str(tag) for tag in value if tag)
             elif value:

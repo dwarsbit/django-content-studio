@@ -121,6 +121,10 @@
   built-in and your own media models alike. Files of items deleted
   before this release stay in storage.
 
+- **The media library's tag options come from a distinct query.** The
+  options of the tags filter were collected by loading every media
+  item's tags into Python; the database now returns the distinct values.
+
 ### Security
 
 - **Buttons and bulk actions need change permission by default.** A
