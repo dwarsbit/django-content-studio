@@ -412,15 +412,7 @@ class DjangoContentStudioConfig(AppConfig):
                     raise ValidationError("Invalid parent.")
 
             def _check_parent_access(self, parent_id):
-                from django.core.exceptions import (
-                    ValidationError as DjangoValidationError,
-                )
                 from rest_framework.exceptions import PermissionDenied
-
-                try:
-                    parent_id = self.parent_model._meta.pk.to_python(parent_id)
-                except DjangoValidationError:
-                    raise ValidationError("Invalid parent.")
 
                 parent_admin = cs_settings.ADMIN_SITE._registry.get(self.parent_model)
 
