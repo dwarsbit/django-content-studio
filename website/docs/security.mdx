@@ -15,8 +15,14 @@ deployment has to take care of.
   revoking their staff status ends their access immediately. What an editor
   may see and do is decided by the [permission hooks](/docs/permissions).
 - **Short sessions.** Sessions renew themselves while an editor works and
-  end after a week without use. Changing or resetting a password logs the
-  user out everywhere ([authentication](/docs/authentication)).
+  end after a week without use, and 30 days after logging in at the latest
+  ([`MAX_SESSION_LIFETIME`](/docs/settings#max_session_lifetime)). Changing
+  or resetting a password logs the user out everywhere
+  ([authentication](/docs/authentication)).
+- **Logging out ends the session on the server.** A copy of the session
+  cookie stops working at logout, and each renewal invalidates the previous
+  cookie. A cookie presented again after its renewal was copied, so
+  Content Studio ends that session.
 - **Limited login and password reset attempts**, per IP address
   ([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate),
   [`PASSWORD_RESET_THROTTLE_RATE`](/docs/settings#password_reset_throttle_rate)).
@@ -41,6 +47,9 @@ deployment has to take care of.
 - **Configure a shared cache**, such as Redis, Memcached or the database
   cache. The login and password reset limits are counted in the cache; with
   the default per-process cache, every worker counts separately.
+  Ended sessions are recorded in the cache
+  ([`TOKEN_CACHE`](/docs/settings#token_cache)); with a per-process cache,
+  a session logged out in one worker continues in another.
   [Presence](/docs/presence) is kept in the cache too.
 - **Pass on the client's IP address.** The limits count per IP address.
   Without further configuration, Content Studio uses the address of the

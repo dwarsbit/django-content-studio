@@ -57,6 +57,20 @@ short lifetime does not log anyone out.
 How long a session can go unused before the editor has to log in again, in
 seconds. Default: `604800` (seven days).
 
+### MAX_SESSION_LIFETIME {#max_session_lifetime}
+
+How long a session can last after logging in, however active the editor
+is, in seconds. Default: `2592000` (30 days). After that, the editor logs
+in again. `None` lets a session that is in use last indefinitely.
+
+### TOKEN_CACHE {#token_cache}
+
+The alias of the cache in `CACHES` that ended sessions are recorded in.
+Default: `"default"`. With several worker processes or servers, it must be
+a shared cache, such as Redis, Memcached or the database cache: with a
+per-process cache, a session that was logged out in one worker continues in
+another. Clearing the cache lets ended sessions continue until they expire.
+
 ### TOKEN_SIGNING_KEY {#token_signing_key}
 
 The key that signs the sessions. Default: `None`, which uses Django's
