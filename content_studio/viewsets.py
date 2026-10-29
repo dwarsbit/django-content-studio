@@ -20,7 +20,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from .actions import EXPORT_ACTION_ID, get_bulk_actions
+from .actions import EXPORT_ACTION_ID, check_object_permissions, get_bulk_actions
 from .admin import get_relation_display_for, is_duplicable
 from .dashboard.activity_log import LogEntrySerializer
 from .duplication import copy_inline_rows, represent_initial
@@ -618,8 +618,8 @@ class BaseModelViewSet(ModelViewSet):
         """
         Run a bulk action on the selected rows: {"action": id,
         "ids": [...]}. The action resolves per request — permissions
-        included — and runs on a tenant-scoped queryset of the ids, like
-        any list. The handler's return value becomes the response: an
+        included — and runs on the ids within the list's queryset:
+        tenant-scoped and without trashed objects. The handler's return value becomes the response: an
         int is a count, a str a message.
         """
         action_id = request.data.get("action")
@@ -649,9 +649,11 @@ class BaseModelViewSet(ModelViewSet):
             self._get_export_format(request.data)
             queryset = self.filter_queryset(self.get_queryset()).filter(pk__in=ids)
         else:
-            queryset = get_tenant_scoped_queryset(request, self._model).filter(
-                pk__in=ids
-            )
+            queryset = self.get_queryset().filter(pk__in=ids)
+
+        # The resolution above gates on model-level permissions; the
+        # selection must also pass them per object.
+        check_object_permissions(self._admin_model, request, action.meta, queryset)
 
         # A delete (the built-in one or a custom action's) blocked by
         # on_delete=PROTECT or RESTRICT is a conflict, not a crash.
@@ -875,12 +877,19 @@ class BaseModelViewSet(ModelViewSet):
         Search the related model by the related model studio's
         search_fields. Without search_fields nothing is searchable, so a
         search term matches nothing: other fields (such as the user
-        model's password) are never searched.
+        model's password) are never searched. Trashed objects are never
+        offered when the related model studio configures soft_delete.
         """
-        if not search:
-            return related_model.objects.all()
-
         related_admin = cs_settings.ADMIN_SITE._registry.get(related_model)
+        qs = related_model.objects.all()
+
+        soft_delete_field = related_admin.soft_delete if related_admin else None
+        if soft_delete_field:
+            qs = qs.filter(**{f"{soft_delete_field}__isnull": True})
+
+        if not search:
+            return qs
+
         search_fields = related_admin.search_fields if related_admin else None
 
         if not search_fields:
@@ -889,7 +898,7 @@ class BaseModelViewSet(ModelViewSet):
         queries = [Q(**{f"{field}__icontains": search}) for field in search_fields]
         combined_query = reduce(operator.or_, queries)
 
-        return related_model.objects.filter(combined_query)
+        return qs.filter(combined_query)
 
 
 def get_relation_field(model, field_name):

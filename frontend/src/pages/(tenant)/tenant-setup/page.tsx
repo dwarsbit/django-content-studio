@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import * as R from "ramda";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -13,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
+import { applyFieldErrors } from "@/lib/server-errors";
+import { getErrorMessage } from "@/lib/utils";
 import type { Resource } from "@/types";
 
 export function TenantSetupPage() {
@@ -57,10 +58,7 @@ export function TenantSetupPage() {
       await save(values);
       window.location.reload();
     } catch (e: unknown) {
-      if (axios.isAxiosError(e) && e.response) {
-        const errors = Object.entries(
-          e.response.data as Record<string, string[]>,
-        );
+      if (applyFieldErrors(e, form.setError as never)) {
         toast.error(
           <div>
             <div>{t("editor.field_validation_error_title")}</div>
@@ -69,10 +67,8 @@ export function TenantSetupPage() {
             </div>
           </div>,
         );
-
-        for (const [key, error] of errors) {
-          form.setError(key, { type: "custom", message: error[0] ?? "" });
-        }
+      } else {
+        toast.error(getErrorMessage(e));
       }
       throw e;
     }
