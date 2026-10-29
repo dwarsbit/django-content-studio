@@ -61,3 +61,18 @@ admin_site = BlogStudioSite()
 
 Point the [`ADMIN_SITE`](/docs/settings#admin_site) setting at the site to
 use it.
+
+## What every tenant shares
+
+Two parts of the admin are not scoped to a tenant, whichever tenant the
+editor works in:
+
+- The [media library](/docs/media-library): every editor sees the same
+  folders and files, also when the media model has a foreign key to the
+  tenant model.
+- [Webhooks](/docs/webhooks): editors see and change every webhook and its
+  delivery log. A webhook's **Tenant** field chooses whose changes trigger
+  it, not who may manage it.
+
+Give the permissions on these models only to editors who may work across
+tenants.
