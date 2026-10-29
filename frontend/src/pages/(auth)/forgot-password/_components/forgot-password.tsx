@@ -19,7 +19,7 @@ export function ForgotPassword() {
     async mutationFn(email: string) {
       try {
         await http.post("/password-reset/request", { email });
-        navigate(`/reset-password?email=${email}`);
+        navigate(`/reset-password?${new URLSearchParams({ email })}`);
       } catch (e: unknown) {
         throw new Error(getErrorMessage(e), { cause: e });
       }
