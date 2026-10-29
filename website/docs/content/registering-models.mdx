@@ -259,6 +259,31 @@ class ArticleStudio(ModelStudio):
         )
 ```
 
+### Model properties
+
+The admin shows a model's `@property` only where the studio names it: as a
+column in `table_display`, a field in `edit_main` or `edit_sidebar`, or an
+entry in `readonly_fields`. A property you do not name is never computed
+and never sent to the admin, so a property that holds a secret or runs a
+query stays out of every list page and edit page.
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    table_display = ["title", "word_count"]
+```
+
+Here `word_count` is a property on `Article`, shown as a table column. A
+property named in `list_item_display` is computed for each item of the list
+view.
+
 ## Bulk actions
 
 In the table view, editors select objects (the header checkbox selects the
