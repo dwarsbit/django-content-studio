@@ -113,6 +113,19 @@
   comma-separated values, lookups and exclusions on the parent field
   are rejected with a 400.
 
+- **Malformed requests caused server errors.** Several requests the
+  admin never sends answered with a 500 instead of a client error. List
+  filters now accept a field name with at most one lookup
+  (`?title__icontains=x`, not `?title__icontains__exact=x`) and cast
+  relation values to the related object's primary key type, so
+  `?category=abc` is a 400. A tenant value that is not a valid primary
+  key for `TENANT_MODEL` is answered like an unknown tenant, with a 403.
+  A malformed folder in the media library's item and folder lists and
+  folder path answers with a 404, like an unknown folder. A delete
+  blocked by an `on_delete=PROTECT` or `RESTRICT` reference, from the
+  edit page, the Delete bulk action or the trash, answers with a 409
+  that names what still refers to the object, and records no change.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the

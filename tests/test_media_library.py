@@ -816,3 +816,31 @@ def test_deleting_a_folder_logs_the_media_deleted_with_it(media_root):
         [(DELETION, str(folder.pk), "")]
         + [(DELETION, str(obj.pk), "Deleted with its folder.") for obj in media]
     )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "path, params",
+    [
+        ("/api/media-library/items", {"folder": "abc"}),
+        ("/api/media-library/folders", {"parent": "abc"}),
+        ("/api/media-library/folders/path", {"folder": "abc"}),
+    ],
+)
+def test_malformed_folder_returns_404(media_settings, path, params):
+    response = media_client(make_superuser()).get(path, params)
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_items_filter_by_folder(media_settings):
+    folder = FolderModel.objects.create(name="one")
+    ItemModel.objects.create(name="in", type="file", folder=folder)
+    ItemModel.objects.create(name="out", type="file")
+
+    response = media_client(make_superuser()).get(
+        "/api/media-library/items", {"folder": str(folder.pk)}
+    )
+
+    assert [item["name"] for item in response.json()["results"]] == ["in"]
