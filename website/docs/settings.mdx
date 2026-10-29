@@ -188,7 +188,8 @@ minutes.
 
 ### WEBHOOK_TIMEOUT {#webhook_timeout}
 
-How long a webhook request may take to connect and to respond, in seconds.
+How long a webhook request may take in total, from connecting to reading the
+response, in seconds. A request that takes longer fails and is retried.
 Default: `5`.
 
 ### WEBHOOK_DELIVERY_RETENTION {#webhook_delivery_retention}
