@@ -108,6 +108,12 @@
   characters and passwords at 4096 characters, so a request cannot keep
   a worker busy hashing a very long password.
 
+- **Rotating `SECRET_KEY` keeps the sessions.** Sessions are checked
+  against `SECRET_KEY_FALLBACKS` as well as `SECRET_KEY`, like Django's
+  own sessions, so a key rotation that keeps the old key in the fallbacks
+  no longer logs every editor out. New sessions are signed with the
+  current key.
+
 ### Security
 
 - **Buttons and bulk actions need change permission by default.** A

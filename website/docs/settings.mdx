@@ -74,8 +74,10 @@ another. Clearing the cache lets ended sessions continue until they expire.
 ### TOKEN_SIGNING_KEY {#token_signing_key}
 
 The key that signs the sessions. Default: `None`, which uses Django's
-`SECRET_KEY`. Set a separate key if you rotate `SECRET_KEY` independently
-of admin sessions.
+`SECRET_KEY`. Rotate `SECRET_KEY` the way Django documents, with the old key
+in `SECRET_KEY_FALLBACKS`, and the sessions it signed continue; without the
+fallback, every editor logs in again. Set a separate key if you rotate
+`SECRET_KEY` independently of admin sessions.
 
 ### TOKEN_ALGORITHM {#token_algorithm}
 

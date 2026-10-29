@@ -66,31 +66,75 @@ def _signing_key():
     return cs_settings.TOKEN_SIGNING_KEY or settings.SECRET_KEY
 
 
+def _secret_key_fallbacks():
+    return list(getattr(settings, "SECRET_KEY_FALLBACKS", None) or [])
+
+
+def _verification_keys():
+    """
+    The keys a token may be signed with: the signing key and, when that
+    is Django's SECRET_KEY, its SECRET_KEY_FALLBACKS — so rotating the
+    key the way Django documents keeps the sessions it signed.
+    """
+    if cs_settings.TOKEN_SIGNING_KEY:
+        return [cs_settings.TOKEN_SIGNING_KEY]
+
+    return [settings.SECRET_KEY, *_secret_key_fallbacks()]
+
+
 def _encode(payload):
     return pyjwt.encode(payload, _signing_key(), algorithm=cs_settings.TOKEN_ALGORITHM)
 
 
 def _decode(token):
-    try:
-        return pyjwt.decode(
-            token,
-            _signing_key(),
-            algorithms=[cs_settings.TOKEN_ALGORITHM],
-            options={"require": ["exp", "iat", "token_type", "user_id", "jti", "pwd"]},
-        )
-    except pyjwt.InvalidTokenError as e:
-        raise AuthenticationFailed("Invalid or expired token.") from e
+    keys = _verification_keys()
+
+    for index, key in enumerate(keys):
+        try:
+            return pyjwt.decode(
+                token,
+                key,
+                algorithms=[cs_settings.TOKEN_ALGORITHM],
+                options={
+                    "require": ["exp", "iat", "token_type", "user_id", "jti", "pwd"]
+                },
+            )
+        except pyjwt.InvalidSignatureError as e:
+            # Signed with none of the keys: invalid. Otherwise try the
+            # next key.
+            if index == len(keys) - 1:
+                raise AuthenticationFailed("Invalid or expired token.") from e
+        except pyjwt.InvalidTokenError as e:
+            raise AuthenticationFailed("Invalid or expired token.") from e
 
 
-def _password_fingerprint(user):
+def _password_fingerprint(user, secret=None):
     """
     A short HMAC of the user's password hash. Tokens carry it, so changing
     or resetting the password invalidates every token issued before —
-    like Django's session auth hash does for sessions.
+    like Django's session auth hash does for sessions. Keyed with
+    SECRET_KEY unless a secret is given.
     """
     return salted_hmac(
-        "content_studio.token_backends.jwt", user.password, algorithm="sha256"
+        "content_studio.token_backends.jwt",
+        user.password,
+        secret=secret,
+        algorithm="sha256",
     ).hexdigest()[:32]
+
+
+def _password_fingerprint_matches(user, fingerprint):
+    """
+    Whether the fingerprint was made from the user's current password,
+    with SECRET_KEY or one of its SECRET_KEY_FALLBACKS — like Django's
+    session auth hash, so a key rotation does not end the sessions.
+    """
+    secrets = [settings.SECRET_KEY, *_secret_key_fallbacks()]
+
+    return any(
+        constant_time_compare(fingerprint, _password_fingerprint(user, secret))
+        for secret in secrets
+    )
 
 
 def _create_token(user, token_type, lifetime, **claims):
@@ -230,7 +274,7 @@ def _get_user(payload):
     if not (user.is_active and user.is_staff):
         raise AuthenticationFailed("User account is disabled.")
 
-    if not constant_time_compare(payload["pwd"], _password_fingerprint(user)):
+    if not _password_fingerprint_matches(user, payload["pwd"]):
         raise AuthenticationFailed("Invalid or expired token.")
 
     return user
