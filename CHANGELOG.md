@@ -96,6 +96,15 @@
   admin now only returns to one of its own pages and otherwise opens the
   dashboard; the return path also keeps the page's query string.
 
+- **Inline lists could include a hidden parent's objects.** The inline
+  list endpoint checked view permission on one parent but filtered on
+  every parent in the request: repeating the parent filter
+  (`?article=<hidden>&article=<visible>`) listed the hidden parent's
+  inline objects too. Inline lists now take exactly one plain parent
+  value and filter on the parent they checked; repeated or
+  comma-separated values, lookups and exclusions on the parent field
+  are rejected with a 400.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the
