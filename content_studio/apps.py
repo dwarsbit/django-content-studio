@@ -436,6 +436,16 @@ class DjangoContentStudioConfig(AppConfig):
                 ):
                     raise PermissionDenied("Unknown or unauthorized parent.")
 
+            def get_object(self):
+                obj = super().get_object()
+
+                # Inline objects are only reachable through a parent the
+                # user can see, on every detail action.
+                if self.parent_fk:
+                    self._check_parent_instance(getattr(obj, self.parent_fk))
+
+                return obj
+
             def perform_create(self, serializer):
                 # Inline objects cannot be attached to parents the user
                 # cannot see.
