@@ -22,10 +22,12 @@ from content_studio.contrib.password_reset.views import (
 )
 
 
-def post(view, data):
+def post(view, data, **extra):
     # Mails are enqueued on commit; run the callbacks like a real commit.
     with TestCase.captureOnCommitCallbacks(execute=True):
-        return view.as_view()(APIRequestFactory().post("/", data, format="json"))
+        return view.as_view()(
+            APIRequestFactory().post("/", data, format="json", **extra)
+        )
 
 
 @pytest.fixture
@@ -250,6 +252,42 @@ def test_endpoints_are_throttled_per_ip(user, settings):
     ]
 
     assert statuses == [202, 202, 429]
+
+
+def reset_requests_from_varying_forwarded_for(count):
+    return [
+        post(
+            PasswordResetRequestView,
+            {"email": "a@example.com"},
+            REMOTE_ADDR="10.2.2.2",
+            HTTP_X_FORWARDED_FOR=f"1.2.3.{i}",
+        ).status_code
+        for i in range(count)
+    ]
+
+
+@pytest.mark.django_db
+def test_spoofed_forwarded_for_does_not_bypass_the_throttle(user, settings):
+    settings.CONTENT_STUDIO = {
+        **getattr(settings, "CONTENT_STUDIO", {}),
+        "PASSWORD_RESET_THROTTLE_RATE": "2/hour",
+    }
+
+    assert reset_requests_from_varying_forwarded_for(3) == [202, 202, 429]
+
+
+@pytest.mark.django_db
+def test_forwarded_for_is_honoured_with_num_proxies(user, settings):
+    settings.CONTENT_STUDIO = {
+        **getattr(settings, "CONTENT_STUDIO", {}),
+        "PASSWORD_RESET_THROTTLE_RATE": "2/hour",
+    }
+    settings.REST_FRAMEWORK = {
+        **getattr(settings, "REST_FRAMEWORK", {}),
+        "NUM_PROXIES": 1,
+    }
+
+    assert reset_requests_from_varying_forwarded_for(3) == [202, 202, 202]
 
 
 # --- Mails as tasks ----------------------------------------------------------

@@ -75,6 +75,50 @@
   `LocMemCache`) report caches presence cannot work with. A new
   `UserAvatar` component in the design system shows editors in the user
   menu, the activity logs and presence.
+- **Throttles ignore a spoofed `X-Forwarded-For`.** The login and
+  password reset limits used the `X-Forwarded-For` header as the client's
+  address when Django REST Framework's `NUM_PROXIES` was unset (the
+  default), so a client sending a different header with every request was
+  never limited. Without `NUM_PROXIES`, they now count per connection
+  address (`REMOTE_ADDR`) and ignore the header; with `NUM_PROXIES` set,
+  the address the proxies add is used as before. Behind a proxy, set
+  `NUM_PROXIES`, or all clients share the proxy's limit.
+
+### Security
+
+- **Relation pickers could search password hashes.** When the related
+  model's studio had no `search_fields`, such as the default user
+  studio, a relation picker searched every `CharField` of the related
+  model, including the user model's `password`. An editor who could view
+  users could recover a user's password hash piece by piece. Relation
+  pickers now only search the related studio's `search_fields`; without
+  them, the picker lists all objects but a search term matches nothing.
+  Set `search_fields` on the related model's studio to make its picker
+  searchable.
+
+- **The login page's return path could leave the admin.** After
+  signing in, the admin went to the path in the login page's `redirect`
+  parameter without checking it. With the admin mounted at the site
+  root, a crafted link sent a user who signed in to another site
+  (`//evil.example`) or ran script in the admin (`javascript:`). The
+  admin now only returns to one of its own pages and otherwise opens the
+  dashboard; the return path also keeps the page's query string.
+
+- **Inline lists could include a hidden parent's objects.** The inline
+  list endpoint checked view permission on one parent but filtered on
+  every parent in the request: repeating the parent filter
+  (`?article=<hidden>&article=<visible>`) listed the hidden parent's
+  inline objects too. Inline lists now take exactly one plain parent
+  value and filter on the parent they checked; repeated or
+  comma-separated values, lookups and exclusions on the parent field
+  are rejected with a 400.
+
+- **Inline objects respect their parent's permissions.** Only the
+  inline's list checked that the editor may view the parent object, so
+  an editor who could not see an object could still open, edit and
+  delete its inline objects, and read their history. Every action on an
+  inline object now requires view permission on its parent, including a
+  `has_view_permission(request, obj)` that denies that one object.
 
 ### Security
 

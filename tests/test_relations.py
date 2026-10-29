@@ -53,12 +53,12 @@ def test_superuser_can_retrieve_related_objects():
     auth_models.Group.objects.create(name="editors")
     auth_models.Group.objects.create(name="writers")
 
-    viewset, request = make_viewset(user, auth_models.User, search="edit")
+    viewset, request = make_viewset(user, auth_models.User)
 
     response = viewset.get_related_objects(request, "groups")
 
     results = response.data
-    assert [item["__str__"] for item in results] == ["editors"]
+    assert sorted(item["__str__"] for item in results) == ["editors", "writers"]
 
 
 @pytest.mark.django_db
@@ -103,6 +103,49 @@ def test_search_without_char_fields_returns_empty():
 
 
 @pytest.mark.django_db
+def test_search_uses_the_related_studios_search_fields():
+    from tests.testapp.models import Article, Category
+
+    user = auth_models.User.objects.create_superuser(
+        username="admin", email="a@example.com", password="x"
+    )
+    Category.objects.create(name="General")
+    Category.objects.create(name="News")
+
+    viewset, request = make_viewset(user, Article, search="gen")
+
+    response = viewset.get_related_objects(request, "categories")
+
+    assert [item["__str__"] for item in response.data] == ["General"]
+
+
+@pytest.mark.django_db
+def test_search_does_not_fall_back_to_other_fields():
+    """
+    Without search_fields (like the default user studio), a search term
+    matches nothing: the user model's password hash is not searchable.
+    """
+    from tests.testapp.models import Article
+
+    user = auth_models.User.objects.create_superuser(
+        username="admin", email="a@example.com", password="x"
+    )
+
+    for search in [user.password[:20], "pbkdf2", "admin"]:
+        viewset, request = make_viewset(user, Article, search=search)
+
+        response = viewset.get_related_objects(request, "author")
+
+        assert response.data == [], search
+
+    viewset, request = make_viewset(user, Article)
+
+    response = viewset.get_related_objects(request, "author")
+
+    assert [item["__str__"] for item in response.data] == ["admin"]
+
+
+@pytest.mark.django_db
 def test_custom_filter_method_is_used():
     class CustomAdmin:
         def get_related_groups(self, search, form_data, related_model, request):
@@ -130,7 +173,7 @@ def test_relation_display_defaults_to_str():
     )
     auth_models.Group.objects.create(name="editors")
 
-    viewset, request = make_viewset(user, auth_models.User, search="edit")
+    viewset, request = make_viewset(user, auth_models.User)
 
     response = viewset.get_related_objects(request, "groups")
 
