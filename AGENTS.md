@@ -48,6 +48,7 @@ content_studio/
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
+├── throttling.py        # ClientIPMixin: throttles identify clients by REMOTE_ADDR unless NUM_PROXIES is set
 ├── presence.py          # Presence: who has an object open, kept in Django's cache (PRESENCE, PRESENCE_CACHE)
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions

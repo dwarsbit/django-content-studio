@@ -2,6 +2,7 @@ from rest_framework.throttling import AnonRateThrottle
 
 from ..router import content_studio_router
 from ..settings import cs_settings
+from ..throttling import ClientIPMixin
 from .username_password import UsernamePasswordBackend
 
 # The login backends Content Studio ships, as import path strings —
@@ -11,7 +12,7 @@ AVAILABLE_LOGIN_BACKENDS = [
 ]
 
 
-class LoginRateThrottle(AnonRateThrottle):
+class LoginRateThrottle(ClientIPMixin, AnonRateThrottle):
     """
     Rate limit for login attempts, per IP. The rate comes from the
     CONTENT_STUDIO["LOGIN_THROTTLE_RATE"] setting.
