@@ -93,6 +93,20 @@
 
 ### Security
 
+- **Logging out did not end the session on the server.** Sessions were
+  only checked for their signature and expiry: after logging out, a copy
+  of the session cookie still renewed the session, a renewed cookie left
+  the previous one working, and every renewal granted another week, so
+  one copied cookie gave access for as long as it was used. Logging out
+  now ends the session on the server, a renewal invalidates the previous
+  cookie, and a cookie presented again after its renewal ends the whole
+  session. A session now also ends 30 days after logging in, however
+  active (the new `MAX_SESSION_LIFETIME` setting; `None` turns it off).
+  Ended sessions are recorded in the cache named by the new `TOKEN_CACHE`
+  setting (default `"default"`), which must be shared across worker
+  processes and servers. Sessions started before the upgrade continue and
+  their 30 days count from their last renewal.
+
 - **Relation pickers could search password hashes.** When the related
   model's studio had no `search_fields`, such as the default user
   studio, a relation picker searched every `CharField` of the related
