@@ -90,6 +90,24 @@ ships one ready to use: `DeployButton`.
 A page in the admin that shows another web page in an iframe. `path` is the
 page's address under the admin's URL prefix, `iframe_url` the page it shows.
 
+The embedded page runs in a sandbox: it can run scripts, keep its origin,
+submit forms, open windows and offer downloads, but it cannot navigate the
+admin away, show modal dialogs or lock the pointer. The `sandbox` option
+takes another string of
+[sandbox tokens](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe#sandbox)
+to tighten or widen it, or `None` to embed the page without a sandbox:
+
+```python
+IFramePage(
+    path="reports/",
+    iframe_url="https://metabase.example.com/dashboard/1",
+    sandbox="allow-scripts allow-same-origin",
+)
+```
+
+You choose the page the iframe shows, so the admin trusts it to that extent:
+a page that may navigate the admin or open dialogs needs `sandbox=None`.
+
 ## Identity
 
 Each extension gets an ID from its class and its settings, so every worker

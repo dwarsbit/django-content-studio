@@ -472,6 +472,8 @@ export interface MainMenuButtonConfig {
 export interface IFramePageConfig {
   path: string;
   iframe_url: string;
+  // The iframe's sandbox attribute; null embeds the page without one.
+  sandbox: string | null;
 }
 
 export interface MainMenuLinkExtension {
