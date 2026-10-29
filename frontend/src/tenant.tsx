@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import * as R from "ramda";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
+import { storeTenant, TENANT_STORAGE_KEY } from "@/lib/tenant-storage";
 import { TenantSetupPage } from "@/pages/(tenant)/tenant-setup/page";
 import type { Resource } from "@/types";
 
@@ -15,16 +16,18 @@ interface TenantState {
   setTenant(tenant: string): void;
 }
 
-const LOCALE_STORAGE_KEY = "__dcs_tenant__";
 const TenantContext = React.createContext<TenantState>({} as TenantState);
 
 export function TenantProvider({ children }: { children: React.ReactElement }) {
-  const [init, setInit] = useState(false);
   const { data: discover } = useDiscover();
   const enabled = discover?.multitenancy.enabled ?? false;
-  const [tenantId, setTenant] = useState<string | null>(
-    localStorage.getItem(LOCALE_STORAGE_KEY) || null,
+  // The stored tenant is only a candidate: it may belong to another user
+  // of this browser or have been revoked. It is not sent until the tenant
+  // list confirms it.
+  const [tenantId, setTenantId] = useState<string | null>(
+    () => localStorage.getItem(TENANT_STORAGE_KEY) || null,
   );
+  const [ready, setReady] = useState(false);
   const http = useHttp();
   const { data: tenants = [], isFetched } = useQuery({
     enabled,
@@ -37,24 +40,26 @@ export function TenantProvider({ children }: { children: React.ReactElement }) {
   });
   const tenant = tenants.find(R.whereEq({ id: tenantId })) ?? null;
 
-  useEffect(() => {
-    if (tenantId && enabled) {
-      localStorage.setItem(LOCALE_STORAGE_KEY, tenantId);
-      // eslint-disable-next-line react-hooks/immutability -- deliberate mutation of the shared axios instance
-      http.defaults.headers.common["X-DCS-Tenant"] = tenantId;
-    }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- `init` gates rendering until the tenant header is set, so no child request can fire unscoped
-    setInit(true);
-  }, [http.defaults.headers.common, tenantId, enabled]);
+  // The header is set together with the state, not in an effect: child
+  // mount effects run before a parent effect and would otherwise send the
+  // previous tenant.
+  const setTenant = useCallback((id: string | null) => {
+    storeTenant(id);
+    setTenantId(id);
+  }, []);
 
   useEffect(() => {
-    if (enabled && !tenantId && isFetched) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-selects the first tenant once the list is known; there is no earlier point where `tenants` exists
-      setTenant(tenants[0]?.id ?? null);
+    if (!enabled || !isFetched) {
+      return;
     }
-  }, [tenants, tenantId, enabled, isFetched]);
+    const known = tenants.some((t) => t.id === tenantId);
+    // Keeps a known tenant, otherwise falls back to the first one (or none).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- `ready` gates rendering until the tenant is checked against the list, so no child request can fire with a stale tenant
+    setTenant(known ? tenantId : (tenants[0]?.id ?? null));
+    setReady(true);
+  }, [tenants, tenantId, enabled, isFetched, setTenant]);
 
-  return init && (isFetched || !enabled) ? (
+  return !enabled || ready ? (
     <TenantContext.Provider
       value={{
         enabled,

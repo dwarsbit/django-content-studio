@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import * as R from "ramda";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -18,7 +17,7 @@ import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
 import { usePresence } from "@/hooks/use-presence";
 import { useShowResult } from "@/hooks/use-show-result";
-import { type ServerErrors, setServerErrors } from "@/lib/server-errors";
+import { applyFieldErrors } from "@/lib/server-errors";
 import { getErrorMessage } from "@/lib/utils";
 import type {
   ButtonResult,
@@ -332,10 +331,7 @@ function EditorForm({
         onCreated?.(String(savedId));
       }
     } catch (e: unknown) {
-      if (axios.isAxiosError(e) && e.response) {
-        const errors = Object.entries(
-          e.response.data as Record<string, ServerErrors>,
-        );
+      if (applyFieldErrors(e, form.setError as never)) {
         toast.error(
           <div>
             <div>{t("editor.field_validation_error_title")}</div>
@@ -344,10 +340,8 @@ function EditorForm({
             </div>
           </div>,
         );
-
-        for (const [key, error] of errors) {
-          setServerErrors(form.setError, key, error);
-        }
+      } else {
+        toast.error(getErrorMessage(e));
       }
       throw e;
     }
