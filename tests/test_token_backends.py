@@ -7,6 +7,7 @@ refresh/logout endpoints and the CONTENT_STUDIO token settings.
 """
 
 import time
+from unittest.mock import patch
 
 import jwt as pyjwt
 import pytest
@@ -313,6 +314,164 @@ class LoginAndRefreshFlowTests(TestCase):
 
         # Without a valid refresh cookie the session cannot be continued.
         assert APIClient().post(REFRESH_URL).status_code == 401
+
+
+class RevocationTests(TestCase):
+    """Rotation, logout and the absolute session lifetime revoke server-side."""
+
+    def setUp(self):
+        from django.contrib.auth import models as auth_models
+
+        self.user = auth_models.User.objects.create_superuser(
+            username="admin", email="a@example.com", password="secret"
+        )
+
+    def login(self):
+        response = APIClient().post(
+            LOGIN_URL, {"username": "admin", "password": "secret"}, format="json"
+        )
+        return response.json()["access"], response.cookies[REFRESH_COOKIE_NAME].value
+
+    def refresh(self, cookie):
+        client = APIClient()
+        client.cookies[REFRESH_COOKIE_NAME] = cookie
+        return client.post(REFRESH_URL)
+
+    def me_with(self, access):
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        return client.get(ME_URL)
+
+    def test_a_used_refresh_token_cannot_be_reused(self):
+        _, cookie = self.login()
+
+        assert self.refresh(cookie).status_code == 200
+        assert self.refresh(cookie).status_code == 401
+
+    def test_reuse_revokes_the_whole_session(self):
+        _, cookie = self.login()
+        rotated = self.refresh(cookie)
+        new_access = rotated.json()["access"]
+        new_cookie = rotated.cookies[REFRESH_COOKIE_NAME].value
+
+        # The old cookie comes back: it leaked. Neither copy goes on.
+        assert self.refresh(cookie).status_code == 401
+        assert self.refresh(new_cookie).status_code == 401
+        assert self.me_with(new_access).status_code == 401
+
+    def test_reuse_leaves_other_sessions_alone(self):
+        _, cookie = self.login()
+        other_access, other_cookie = self.login()
+        self.refresh(cookie)
+        self.refresh(cookie)
+
+        assert self.me_with(other_access).status_code == 200
+        assert self.refresh(other_cookie).status_code == 200
+
+    def test_rotation_keeps_the_session_and_login_time(self):
+        _, cookie = self.login()
+        rotated = self.refresh(cookie).cookies[REFRESH_COOKIE_NAME].value
+
+        assert decode(rotated)["sid"] == decode(cookie)["sid"]
+        assert decode(rotated)["auth_time"] == decode(cookie)["auth_time"]
+
+    def test_logout_revokes_the_refresh_and_access_tokens(self):
+        access, cookie = self.login()
+
+        client = APIClient()
+        client.cookies[REFRESH_COOKIE_NAME] = cookie
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        assert client.post(LOGOUT_URL).status_code == 204
+
+        assert self.refresh(cookie).status_code == 401
+        assert self.me_with(access).status_code == 401
+
+    def test_logout_with_only_the_access_token_ends_the_session(self):
+        access, cookie = self.login()
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        assert client.post(LOGOUT_URL).status_code == 204
+
+        assert self.me_with(access).status_code == 401
+        assert self.refresh(cookie).status_code == 401
+
+    def test_logout_with_invalid_tokens_still_succeeds(self):
+        client = APIClient()
+        client.cookies[REFRESH_COOKIE_NAME] = "not-a-token"
+        client.credentials(HTTP_AUTHORIZATION="Bearer not-a-token")
+
+        assert client.post(LOGOUT_URL).status_code == 204
+
+    def test_refresh_is_refused_past_the_maximum_session_lifetime(self):
+        _, cookie = self.login()
+        payload = decode(cookie)
+
+        with patch("time.time", return_value=payload["auth_time"] + 31 * 86400):
+            assert self.refresh(cookie).status_code == 401
+
+    def test_refresh_token_never_outlives_the_session(self):
+        from django.conf import settings
+
+        payload = decode(self.login()[1])
+        # A session that started 28 days ago: its next refresh token lives
+        # for the remaining two days, not another week.
+        payload["auth_time"] -= 28 * 86400
+        cookie = pyjwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+        response = self.refresh(cookie)
+        rotated = decode(response.cookies[REFRESH_COOKIE_NAME].value)
+
+        assert response.status_code == 200
+        assert rotated["auth_time"] == payload["auth_time"]
+        assert rotated["exp"] <= payload["auth_time"] + 30 * 86400 + 1
+        assert response.cookies[REFRESH_COOKIE_NAME]["max-age"] <= 2 * 86400 + 2
+
+    @override_settings(
+        CONTENT_STUDIO={
+            "ADMIN_SITE": "content_studio.admin.admin_site",
+            "MAX_SESSION_LIFETIME": None,
+        }
+    )
+    def test_the_maximum_session_lifetime_can_be_disabled(self):
+        from django.conf import settings
+
+        payload = decode(self.login()[1])
+        payload["auth_time"] -= 365 * 86400
+        cookie = pyjwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+        response = self.refresh(cookie)
+
+        assert response.status_code == 200
+        rotated = decode(response.cookies[REFRESH_COOKIE_NAME].value)
+        assert rotated["exp"] - rotated["iat"] == cs_settings.REFRESH_TOKEN_LIFETIME
+
+    def test_tokens_from_before_sessions_still_refresh_once(self):
+        import datetime
+
+        from django.conf import settings
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        legacy = pyjwt.encode(
+            {
+                "token_type": "refresh",
+                "user_id": str(self.user.pk),
+                "iat": now,
+                "exp": now + datetime.timedelta(days=7),
+                "jti": "legacy-refresh",
+                "pwd": decode(self.login()[1])["pwd"],
+            },
+            settings.SECRET_KEY,
+            algorithm="HS256",
+        )
+
+        response = self.refresh(legacy)
+
+        assert response.status_code == 200
+        rotated = decode(response.cookies[REFRESH_COOKIE_NAME].value)
+        assert rotated["sid"]
+        assert rotated["auth_time"] == int(now.timestamp())
+        assert self.refresh(legacy).status_code == 401
 
 
 class CustomBackend(JsonWebTokenBackend):

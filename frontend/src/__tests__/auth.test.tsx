@@ -183,6 +183,25 @@ describe("AuthProvider", () => {
     expect(callsTo(REFRESH_URL)).toBe(refreshCallsAfterBoot + 1);
   });
 
+  it("does not refresh again when the retried request also runs into a 401", async () => {
+    respond = (url, config) => {
+      if (url === REFRESH_URL) {
+        return { data: { access: "fresh-token" }, status: 200 };
+      }
+      return makeError(401, config);
+    };
+
+    renderApp();
+    await screen.findByText("token:fresh-token");
+    const refreshCallsAfterBoot = callsTo(REFRESH_URL);
+
+    await expect(http.get("/content/x")).rejects.toMatchObject({ status: 401 });
+
+    // One refresh, one retry, then the error propagates.
+    expect(callsTo(REFRESH_URL)).toBe(refreshCallsAfterBoot + 1);
+    expect(callsTo("/content/x")).toBe(2);
+  });
+
   it("ends the session when a 401 cannot be refreshed", async () => {
     let refreshCalls = 0;
 
@@ -213,6 +232,8 @@ describe("AuthProvider", () => {
 
     const queryClient = new QueryClient();
     queryClient.setQueryData(["model-groups"], { models: ["secret"] });
+    localStorage.setItem("__dcs_tenant__", "tenant-1");
+    http.defaults.headers.common["X-DCS-Tenant"] = "tenant-1";
 
     renderApp({ onLogout: true, queryClient });
     await screen.findByText("token:boot-token");
@@ -224,8 +245,10 @@ describe("AuthProvider", () => {
     );
     expect(callsTo(LOGOUT_URL)).toBe(1);
     expect(http.defaults.headers.common["Authorization"]).toBeUndefined();
-    // The signed-out user's cached data is gone.
+    // The signed-out user's cached data and tenant are gone.
     expect(queryClient.getQueryData(["model-groups"])).toBeUndefined();
+    expect(localStorage.getItem("__dcs_tenant__")).toBeNull();
+    expect(http.defaults.headers.common["X-DCS-Tenant"]).toBeUndefined();
   });
 });
 
