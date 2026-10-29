@@ -9,7 +9,9 @@ through WEBHOOK_ALLOWED_HOSTS.
 import hashlib
 import hmac
 import json
+import socket
 import threading
+import time
 from importlib.util import find_spec
 from datetime import timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -349,6 +351,43 @@ class AddressTests(ReceiverMixin, TestCase):
         delivery = self.attempt("http://example.com/")
 
         self.assertEqual(delivery.error, "The URL must use https.")
+
+
+class TrickleTests(TestCase):
+    """A server that sends its response one byte at a time, each byte
+    within the socket timeout."""
+
+    def setUp(self):
+        self.listener = socket.create_server(("127.0.0.1", 0))
+        self.addCleanup(self.listener.close)
+        threading.Thread(target=self.trickle, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.listener.getsockname()[1]}/"
+
+    def trickle(self):
+        conn, _ = self.listener.accept()
+        with conn:
+            conn.recv(65536)
+            try:
+                for byte in b"HTTP/1.1 200 OK\r\n" + b"X-Slow: y\r\n" * 100:
+                    conn.sendall(bytes([byte]))
+                    time.sleep(0.05)
+            except OSError:
+                pass
+
+    @override_settings(CONTENT_STUDIO={**ALLOW_LOCAL, "WEBHOOK_TIMEOUT": 0.5})
+    def test_the_timeout_bounds_the_whole_request(self):
+        webhook = Webhook.objects.create(name="x", url=self.url)
+        delivery = WebhookDelivery.objects.create(webhook=webhook, payload={})
+
+        started = time.monotonic()
+        deliver(delivery.pk)
+        delivery.refresh_from_db()
+
+        self.assertLess(time.monotonic() - started, 2)
+        self.assertEqual(
+            delivery.error, "The webhook did not respond within 0.5 seconds."
+        )
+        self.assertIsNone(delivery.response_status)
 
 
 class BackoffTests(TestCase):

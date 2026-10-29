@@ -13,7 +13,8 @@ removes old finished deliveries.
 Requests are signed, never follow redirects, and only connect to public
 addresses (checked on the address the connection uses, so a DNS answer
 cannot change between the check and the connection), unless the host is
-in WEBHOOK_ALLOWED_HOSTS.
+in WEBHOOK_ALLOWED_HOSTS. WEBHOOK_TIMEOUT bounds the whole request,
+not each read: a server that trickles its response is cut off.
 """
 
 import hashlib
@@ -23,6 +24,7 @@ import ipaddress
 import json
 import logging
 import socket
+import threading
 import time
 from datetime import timedelta
 from urllib.parse import urlsplit
@@ -192,7 +194,7 @@ def check_url(url: str):
         raise WebhookError("The URL must use https.")
 
 
-def _create_connection(host, allowed):
+def _create_connection(host, allowed, sockets):
     def create_connection(address, timeout=None, source_address=None):
         """socket.create_connection, refusing non-public addresses
         unless the host is allowed."""
@@ -212,6 +214,7 @@ def _create_connection(host, allowed):
                 continue
 
             sock = socket.socket(family, type_, proto)
+            sockets.append(sock)
             try:
                 sock.settimeout(timeout)
                 if source_address:
@@ -229,7 +232,10 @@ def _create_connection(host, allowed):
 
 def send(url: str, body: bytes, headers: dict) -> tuple[int, str]:
     """POST the body; returns the response status and the start of its
-    body. Redirects are not followed."""
+    body. Redirects are not followed. The socket timeout bounds each
+    read; a timer shuts the connection down once WEBHOOK_TIMEOUT has
+    passed, so the request as a whole cannot take longer (a slow DNS
+    lookup aside)."""
     check_url(url)
     parts = urlsplit(url)
     timeout = cs_settings.WEBHOOK_TIMEOUT
@@ -239,21 +245,47 @@ def send(url: str, body: bytes, headers: dict) -> tuple[int, str]:
         else http.client.HTTPConnection
     )
     connection = connection_class(parts.hostname, parts.port, timeout=timeout)
+    sockets = []
     connection._create_connection = _create_connection(
-        parts.hostname, _is_allowed_host(parts.hostname)
+        parts.hostname, _is_allowed_host(parts.hostname), sockets
     )
     path = parts.path or "/"
 
     if parts.query:
         path = f"{path}?{parts.query}"
 
+    expired = threading.Event()
+
+    def expire():
+        expired.set()
+        # Shutting the socket down wakes a read blocked in another
+        # thread, also one inside the TLS layer.
+        for sock in sockets:
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+
+    timer = threading.Timer(timeout, expire)
+    timer.daemon = True
+    timer.start()
+
     try:
         connection.request("POST", path, body=body, headers=headers)
         response = connection.getresponse()
         content = response.read(RESPONSE_BODY_LIMIT)
-        return response.status, content.decode("utf-8", "replace")
+    except (OSError, http.client.HTTPException) as exc:
+        if expired.is_set():
+            raise WebhookError(
+                f"The webhook did not respond within {timeout} seconds."
+            ) from exc
+        raise
     finally:
+        timer.cancel()
+        timer.join()
         connection.close()
+
+    return response.status, content.decode("utf-8", "replace")
 
 
 def backoff(attempts: int) -> timedelta:

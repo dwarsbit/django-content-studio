@@ -148,6 +148,14 @@
   admin now only returns to one of its own pages and otherwise opens the
   dashboard; the return path also keeps the page's query string.
 
+- **A slow webhook endpoint could hold a request for minutes.**
+  `WEBHOOK_TIMEOUT` applied to each read rather than to the whole
+  request, so an endpoint that sent its response a few bytes at a time
+  kept the request open far longer. Without a task backend that runs
+  deliveries in the background, that was the editor's save request, and
+  "Trigger now" and "Retry" always wait for the delivery. A webhook
+  request is now cut off once `WEBHOOK_TIMEOUT` has passed.
+
 - **A media folder could be moved into itself.** Changing a folder's
   parent accepted the folder itself or one of its subfolders, which made
   the folder part of a cycle: it disappeared from the media library's
