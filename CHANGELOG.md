@@ -88,6 +88,14 @@
   Set `search_fields` on the related model's studio to make its picker
   searchable.
 
+- **The login page's return path could leave the admin.** After
+  signing in, the admin went to the path in the login page's `redirect`
+  parameter without checking it. With the admin mounted at the site
+  root, a crafted link sent a user who signed in to another site
+  (`//evil.example`) or ran script in the admin (`javascript:`). The
+  admin now only returns to one of its own pages and otherwise opens the
+  dashboard; the return path also keeps the page's query string.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the

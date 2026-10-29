@@ -9,7 +9,7 @@ import {
   PiLockBold,
   PiUserBold,
 } from "react-icons/pi";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { useAuth } from "@/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useHttp } from "@/hooks/use-http";
-import { getErrorMessage } from "@/lib/utils";
+import { getErrorMessage, safeRedirectPath } from "@/lib/utils";
 import { FieldType, type UsernamePasswordBackend } from "@/types";
 
 export function UsernamePasswordBackend({
@@ -35,6 +35,7 @@ export function UsernamePasswordBackend({
   const http = useHttp();
   const { setToken } = useAuth();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { mutate, isPending, error } = useMutation({
     async mutationFn(credentials: { username: string; password: string }) {
       try {
@@ -44,15 +45,12 @@ export function UsernamePasswordBackend({
         );
         setToken(data.access);
         // The redirect parameter is router-relative (the AuthGuard stores the
-        // pathname without the router basename); resolve it against the mount
-        // prefix so a full page load stays inside the app. In development the
-        // router has no basename, matching main.tsx.
-        const base = import.meta.env.PROD
-          ? (
-              window as Window & typeof globalThis & { DCS_BASENAME: string }
-            ).DCS_BASENAME.replace(/\/+$/, "")
-          : "";
-        location.href = `${base}${searchParams.get("redirect") ?? "/"}`;
+        // path without the router basename), so the router resolves it
+        // against the mount prefix. Anything but a same-origin path falls
+        // back to the dashboard.
+        navigate(safeRedirectPath(searchParams.get("redirect")), {
+          replace: true,
+        });
       } catch (e: unknown) {
         throw new Error(getErrorMessage(e), { cause: e });
       }
