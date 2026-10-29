@@ -316,8 +316,9 @@ class Button(Component):
     handle returns None, a message (shown as a notification) or a
     ButtonResult. allowed_permissions gates the button on the studio's
     has_<permission>_permission for the object, any one of them being
-    enough (anyone who can view the object when empty); is_visible
-    hides it per object. Buttons only show on saved objects.
+    enough; by default the button needs change permission. An empty
+    list opens it to anyone who can view the object. is_visible hides
+    it per object. Buttons only show on saved objects.
     """
 
     component_type = "Button"
@@ -327,7 +328,7 @@ class Button(Component):
     confirm: Optional[str] = None
     # Shown in the destructive style.
     destructive: bool = False
-    allowed_permissions: Union[list[str], tuple[str, ...]] = ()
+    allowed_permissions: Union[list[str], tuple[str, ...]] = ("change",)
 
     def get_id_parts(self):
         return (self.label,)

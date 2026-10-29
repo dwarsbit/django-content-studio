@@ -103,8 +103,12 @@ class PermissionTests(TestCase):
         def gated(self, request, queryset):
             pass
 
-        @bulk_action
+        @bulk_action(allowed_permissions=[])
         def open(self, request, queryset):
+            pass
+
+        @bulk_action
+        def default(self, request, queryset):
             pass
 
     def studio_for(self, allowed):
@@ -115,12 +119,25 @@ class PermissionTests(TestCase):
         studio.has_view_permission = lambda request, obj=None: True
         return studio
 
-    def test_actions_without_permissions_are_open(self):
+    def test_actions_with_an_empty_permission_list_are_open(self):
         request = self.Request(False)
 
         actions = {a.id for a in get_bulk_actions(self.studio_for(False), request)}
 
         self.assertIn("open", actions)
+
+    def test_actions_need_change_permission_by_default(self):
+        self.assertEqual(make_published.bulk_action.allowed_permissions, ("change",))
+
+        actions = {
+            a.id for a in get_bulk_actions(self.studio_for(False), self.Request(False))
+        }
+        self.assertNotIn("default", actions)
+
+        actions = {
+            a.id for a in get_bulk_actions(self.studio_for(True), self.Request(True))
+        }
+        self.assertIn("default", actions)
 
     def test_gated_actions_follow_the_listed_permissions(self):
         request = self.Request(False)
@@ -137,9 +154,9 @@ class PermissionTests(TestCase):
         # Checks resolve without a request.
         actions = {a.id for a in get_bulk_actions(self.studio_for(False))}
 
-        self.assertEqual(actions, {"delete", "gated", "open"})
+        self.assertEqual(actions, {"default", "delete", "gated", "open"})
 
-    def test_actions_without_permissions_need_view_permission_per_object(self):
+    def test_open_actions_need_view_permission_per_object(self):
         studio = self.studio_for(True)
         studio.has_view_permission = lambda request, obj=None: obj is None
         action = next(a for a in get_bulk_actions(studio) if a.id == "open")

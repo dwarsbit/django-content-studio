@@ -110,7 +110,7 @@ def test_running_a_button_returns_its_message(buttons):
 def test_a_result_can_carry_a_value_or_nothing(buttons):
     _, secret, silent = buttons
     article = Article.objects.create(title="a")
-    client = client_for(staff_with("view_article"))
+    client = client_for(staff_with("view_article", "change_article"))
 
     assert client.post(url(article, secret, run=True)).json() == {
         "message": "A new secret.",
@@ -149,6 +149,40 @@ def test_a_button_needs_its_permissions_and_visibility(buttons):
 
     article.refresh_from_db()
     assert article.status == Article.Status.DRAFT
+
+
+@pytest.mark.django_db
+def test_a_button_needs_change_permission_by_default(buttons):
+    _, secret, _ = buttons
+    article = Article.objects.create(title="a")
+    viewer = client_for(staff_with("view_article"))
+
+    assert secret.allowed_permissions == ("change",)
+    assert viewer.get(url(article, secret)).json() == {"visible": False}
+    assert viewer.post(url(article, secret, run=True)).status_code == 403
+
+
+@pytest.mark.django_db
+def test_an_empty_permission_list_opens_a_button_to_viewers(monkeypatch):
+    class OpenButton(Button):
+        label = "Open"
+        allowed_permissions = []
+
+        def handle(self, obj, request):
+            return "Ran."
+
+    button = OpenButton()
+    monkeypatch.setattr(
+        ArticleAdmin, "edit_sidebar", ArticleAdmin.edit_sidebar + [button]
+    )
+    article = Article.objects.create(title="a")
+    viewer = client_for(staff_with("view_article"))
+
+    assert viewer.get(url(article, button)).json() == {"visible": True}
+    assert viewer.post(url(article, button, run=True)).json() == {
+        "message": "Ran.",
+        "value": None,
+    }
 
 
 @pytest.mark.django_db

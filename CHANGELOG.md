@@ -99,6 +99,13 @@
 
 ### Security
 
+- **Buttons and bulk actions need change permission by default.** A
+  `Button` or `@bulk_action` without `allowed_permissions` was available
+  to everyone who could view the object or the list, so a viewer could
+  run an action that changes content. Both now need change permission
+  unless `allowed_permissions` says otherwise. To keep a button or
+  action open to viewers, set `allowed_permissions = []`.
+
 - **Bulk actions ignored per-object permissions.** Bulk actions, the
   built-in Delete included, only checked the model-level permissions
   they list. A studio whose `has_delete_permission(request, obj)` refused
