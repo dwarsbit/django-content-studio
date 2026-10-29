@@ -385,6 +385,27 @@ def test_tags_endpoint_lists_unique_tags_sorted(media_settings):
 
 
 @pytest.mark.django_db
+def test_tags_endpoint_reads_distinct_values_only(
+    media_settings, django_assert_num_queries
+):
+    """Rows sharing their tags reach Python once: the database returns
+    the distinct values."""
+    make_superuser()
+    for _ in range(3):
+        ItemModel.objects.create(name="a", type="video", tags=["hero", "summer"])
+    ItemModel.objects.create(name="b", type="video", tags=[])
+
+    client = media_client(auth_models.User.objects.get(username="admin"))
+    with django_assert_num_queries(2) as captured:
+        response = client.get("/api/media-library/items/tags")
+
+    assert response.json() == ["hero", "summer"]
+    tags_query = captured.captured_queries[-1]["sql"]
+    assert "DISTINCT" in tags_query
+    assert "IS NULL" in tags_query
+
+
+@pytest.mark.django_db
 def test_tags_endpoint_handles_plain_tag_values(media_settings):
     """A tags field holding plain strings yields those as options."""
     make_superuser()
