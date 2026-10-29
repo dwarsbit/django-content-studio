@@ -83,8 +83,45 @@
   address (`REMOTE_ADDR`) and ignore the header; with `NUM_PROXIES` set,
   the address the proxies add is used as before. Behind a proxy, set
   `NUM_PROXIES`, or all clients share the proxy's limit.
+- **A remembered tenant you can no longer access is replaced.** The
+  admin remembers the selected tenant in the browser. When that tenant
+  was no longer yours (access revoked, or another user signed in on the
+  same browser), every page failed with a permission error until you
+  picked another tenant. The admin now checks the remembered tenant
+  against your tenants before loading anything and otherwise opens the
+  first one. Signing out forgets the selected tenant.
+- **`MediaField()` and `ManyMediaField()` without a model.** Without a
+  model as the first argument, both fields pointed at an app that does
+  not exist, so the project failed its system checks. They now point at
+  the built-in media library's `Media` model, as intended. Fields that
+  name their model, such as `MediaField("blog.MediaItem")`, are
+  unchanged.
 
 ### Security
+
+- **Bulk actions ignored per-object permissions.** Bulk actions, the
+  built-in Delete included, only checked the model-level permissions
+  they list. A studio whose `has_delete_permission(request, obj)` refused
+  an object blocked deleting it from its edit page, but not deleting it
+  with the Delete bulk action; the same went for custom actions and
+  per-object `has_change_permission`. A bulk action now also checks the
+  permissions it lists on each selected object, and an action that lists
+  none checks `has_view_permission(request, obj)`. If any selected
+  object fails the check, the action runs on none of them.
+
+- **Logging out did not end the session on the server.** Sessions were
+  only checked for their signature and expiry: after logging out, a copy
+  of the session cookie still renewed the session, a renewed cookie left
+  the previous one working, and every renewal granted another week, so
+  one copied cookie gave access for as long as it was used. Logging out
+  now ends the session on the server, a renewal invalidates the previous
+  cookie, and a cookie presented again after its renewal ends the whole
+  session. A session now also ends 30 days after logging in, however
+  active (the new `MAX_SESSION_LIFETIME` setting; `None` turns it off).
+  Ended sessions are recorded in the cache named by the new `TOKEN_CACHE`
+  setting (default `"default"`), which must be shared across worker
+  processes and servers. Sessions started before the upgrade continue and
+  their 30 days count from their last renewal.
 
 - **Relation pickers could search password hashes.** When the related
   model's studio had no `search_fields`, such as the default user
@@ -104,6 +141,13 @@
   admin now only returns to one of its own pages and otherwise opens the
   dashboard; the return path also keeps the page's query string.
 
+- **A media folder could be moved into itself.** Changing a folder's
+  parent accepted the folder itself or one of its subfolders, which made
+  the folder part of a cycle: it disappeared from the media library's
+  folder tree, and deleting it cascaded through the cycle. Moving a
+  folder into itself or its subfolders is now rejected with a validation
+  error.
+
 - **Inline lists could include a hidden parent's objects.** The inline
   list endpoint checked view permission on one parent but filtered on
   every parent in the request: repeating the parent filter
@@ -112,6 +156,55 @@
   value and filter on the parent they checked; repeated or
   comma-separated values, lookups and exclusions on the parent field
   are rejected with a 400.
+
+- **Inline objects respect their parent's permissions.** Only the
+  inline's list checked that the editor may view the parent object, so
+  an editor who could not see an object could still open, edit and
+  delete its inline objects, and read their history. Every action on an
+  inline object now requires view permission on its parent, including a
+  `has_view_permission(request, obj)` that denies that one object.
+
+- **Inline lists showed other tenants' objects.** An inline list looked
+  up its parent object without the tenant, so an editor who passed the
+  id of another tenant's object got that object's inline rows. The
+  parent is now looked up within the selected tenant and outside the
+  trash, like the parent's own edit page.
+
+- **A rejected retry could refresh the session in a loop.** When a
+  request ran into a 401, the admin refreshed the access token and
+  retried the request, but did not recognize the retry as one. If the
+  retry ran into a 401 as well, for example behind a proxy that strips
+  the `Authorization` header, the admin refreshed and retried again for
+  as long as the refresh succeeded, issuing a new refresh token every
+  time. The admin now retries a request once; a second 401 ends the
+  request with the error.
+
+- **Bulk actions and relation pickers included trashed objects.** A
+  bulk action ran on every selected id, so a custom action such as
+  publish also acted on objects in the trash, and a relation picker
+  offered trashed objects to link to. Bulk actions now only act on
+  objects the list shows, and relation pickers leave out trashed
+  objects when the related model's studio configures `soft_delete`.
+
+- **Save errors that are not about fields are shown.** When saving an
+  object or setting up a tenant failed for another reason than invalid
+  fields (no permission, a server error), the admin asked you to fix
+  the fields without marking any and hid the real reason. Only invalid
+  fields are now marked on the form; any other failure shows its
+  message.
+
+- **Malformed requests caused server errors.** Several requests the
+  admin never sends answered with a 500 instead of a client error. List
+  filters now accept a field name with at most one lookup
+  (`?title__icontains=x`, not `?title__icontains__exact=x`) and cast
+  relation values to the related object's primary key type, so
+  `?category=abc` is a 400. A tenant value that is not a valid primary
+  key for `TENANT_MODEL` is answered like an unknown tenant, with a 403.
+  A malformed folder in the media library's item and folder lists and
+  folder path answers with a 404, like an unknown folder. A delete
+  blocked by an `on_delete=PROTECT` or `RESTRICT` reference, from the
+  edit page, the Delete bulk action or the trash, answers with a 409
+  that names what still refers to the object, and records no change.
 
 - **Every model property reached the admin.** List rows and edit pages
   carried every public `@property` of the model, including `pk` and the

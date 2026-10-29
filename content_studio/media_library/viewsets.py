@@ -30,6 +30,17 @@ BULK_ACTION_MOVE = "move"
 BULK_ACTION_NAMES = (BULK_ACTION_DELETE, BULK_ACTION_MOVE)
 
 
+def to_folder_pk(model, field_name, value):
+    """
+    Cast a folder id from the request to the type of the folder
+    relation's target. A malformed id names no folder: NotFound.
+    """
+    try:
+        return model._meta.get_field(field_name).target_field.to_python(value)
+    except (DjangoValidationError, ValueError, TypeError):
+        raise NotFound("Unknown folder.")
+
+
 def can_view(user, model) -> bool:
     """View or change permission on the model, like the content lists."""
     opts = model._meta
@@ -140,7 +151,7 @@ class MediaLibraryViewSet(ModelViewSet):
             if folder == "root":
                 qs = qs.filter(folder__isnull=True)
             else:
-                qs = qs.filter(folder=folder)
+                qs = qs.filter(folder=to_folder_pk(model, "folder", folder))
 
         if types:
             qs = qs.filter(type__in=types)
@@ -438,7 +449,7 @@ class MediaFolderViewSet(ModelViewSet):
         # The list endpoint is always within the scope of a folder
         if not parent:
             return qs.filter(parent__isnull=True)
-        return qs.filter(parent=parent)
+        return qs.filter(parent=to_folder_pk(self._folder_model, "parent", parent))
 
     def get_serializer_class(self):
         if self._folder_model:
@@ -459,6 +470,11 @@ class MediaFolderViewSet(ModelViewSet):
 
         if not folder_id:
             return Response(data=[])
+
+        try:
+            folder_id = self._folder_model._meta.pk.to_python(folder_id)
+        except (DjangoValidationError, ValueError, TypeError):
+            raise NotFound("Unknown folder.")
 
         try:
             folder = self._folder_model.objects.get(pk=folder_id)

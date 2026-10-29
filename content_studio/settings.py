@@ -101,6 +101,14 @@ DEFAULTS = {
     "TOKEN_LIFETIME": 60 * 60,
     # Refresh token lifetime in seconds; the token lives in an httpOnly cookie.
     "REFRESH_TOKEN_LIFETIME": 7 * 24 * 60 * 60,
+    # Seconds after login past which a session can no longer be renewed
+    # and the user has to log in again; None for no maximum.
+    "MAX_SESSION_LIFETIME": 30 * 24 * 60 * 60,
+    # The cache alias used and logged-out tokens are recorded in. Across
+    # several processes or servers it must be a shared cache (Redis,
+    # Memcached, database), or a token revoked in one worker still works
+    # in another.
+    "TOKEN_CACHE": "default",
     # Whether the refresh token cookie is Secure (sent over HTTPS only).
     # None: secure for HTTPS requests and whenever DEBUG is off, so a
     # deployment behind a TLS-terminating proxy without

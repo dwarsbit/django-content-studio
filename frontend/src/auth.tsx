@@ -12,10 +12,19 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import { useEffectOnce } from "react-use";
 
 import { http } from "@/hooks/use-http";
+import { storeTenant } from "@/lib/tenant-storage";
 import { type AuthState } from "@/types";
 
 const REFRESH_URL = "/tokens/jsonwebtoken/refresh";
 const LOGOUT_URL = "/tokens/jsonwebtoken/logout";
+
+// axios merges the config of every request into a new object, so a retry
+// is marked on the config itself rather than tracked by identity.
+declare module "axios" {
+  interface AxiosRequestConfig {
+    __isRetry?: boolean;
+  }
+}
 
 const AuthContext = React.createContext<AuthState>({} as AuthState);
 
@@ -27,7 +36,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(null);
   const refreshInFlight = useRef<Promise<string | null> | null>(null);
   const queryClient = useQueryClient();
-  const retriedRequests = useRef(new WeakSet<object>());
 
   // The Authorization header is set the moment the token changes, not in an
   // effect: child mount effects (e.g. the discover query, which is
@@ -71,6 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // local session either way.
     }
     setToken(null);
+    // The next user of this browser picks their own tenant.
+    storeTenant(null);
     // Cached responses (discover, content) belong to the signed-out user;
     // the next user starts without them.
     queryClient.clear();
@@ -99,15 +109,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (
         error.status === 401 &&
         config &&
-        !retriedRequests.current.has(config) &&
+        !config.__isRetry &&
         config.url !== REFRESH_URL
       ) {
-        retriedRequests.current.add(config);
         const newToken = await singleFlightRefresh();
 
         if (newToken) {
           config.headers.Authorization = `Bearer ${newToken}`;
-          return http.request(config);
+          return http.request({ ...config, __isRetry: true });
         }
       }
 

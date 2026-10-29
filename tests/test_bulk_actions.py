@@ -3,10 +3,17 @@ Tests for bulk actions: the @bulk_action declaration, resolution with
 permissions, the payload and the bulk endpoint.
 """
 
+from unittest import mock
+
 from django.contrib.admin.models import DELETION, LogEntry
+from django.core.exceptions import PermissionDenied
 from django.test import TestCase
 
-from content_studio.actions import bulk_action, get_bulk_actions
+from content_studio.actions import (
+    bulk_action,
+    check_object_permissions,
+    get_bulk_actions,
+)
 from content_studio.admin import ModelStudio
 from tests.testapp.admin import ArticleAdmin
 from tests.testapp.models import Article
@@ -132,6 +139,26 @@ class PermissionTests(TestCase):
 
         self.assertEqual(actions, {"delete", "gated", "open"})
 
+    def test_actions_without_permissions_need_view_permission_per_object(self):
+        studio = self.studio_for(True)
+        studio.has_view_permission = lambda request, obj=None: obj is None
+        action = next(a for a in get_bulk_actions(studio) if a.id == "open")
+
+        with self.assertRaises(PermissionDenied):
+            check_object_permissions(
+                studio, self.Request(True), action.meta, [Article(title="x")]
+            )
+
+    def test_gated_actions_check_the_listed_permissions_per_object(self):
+        studio = self.studio_for(True)
+        studio.has_change_permission = lambda request, obj=None: obj is None
+        action = next(a for a in get_bulk_actions(studio) if a.id == "gated")
+
+        with self.assertRaises(PermissionDenied):
+            check_object_permissions(
+                studio, self.Request(True), action.meta, [Article(title="x")]
+            )
+
 
 class EndpointTests(AuthenticatedTestCase):
     """The bulk endpoint through the generated API, the way the frontend
@@ -193,6 +220,65 @@ class EndpointTests(AuthenticatedTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Article.objects.filter(pk=self.articles[0].pk).exists())
+
+    def deny_for(self, title):
+        """Deny a per-object permission on the article with this title."""
+
+        def has_permission(studio, request, obj=None):
+            return obj is None or obj.title != title
+
+        return has_permission
+
+    def test_delete_checks_delete_permission_per_object(self):
+        client = self.client_for(self.superuser)
+
+        with mock.patch.object(
+            ArticleAdmin, "has_delete_permission", self.deny_for("one")
+        ):
+            response = client.post(
+                "/api/content/testapp.article/bulk",
+                {
+                    "action": "delete",
+                    "ids": [str(article.pk) for article in self.articles],
+                },
+                format="json",
+            )
+
+        # Nothing is deleted, not even the allowed object.
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Article.objects.count(), 2)
+
+    def test_custom_action_checks_its_permissions_per_object(self):
+        client = self.client_for(self.superuser)
+
+        with mock.patch.object(
+            ArticleAdmin, "has_change_permission", self.deny_for("one")
+        ):
+            response = client.post(
+                "/api/content/testapp.article/bulk",
+                {"action": "publish", "ids": [str(self.articles[0].pk)]},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 403)
+        self.articles[0].refresh_from_db()
+        self.assertEqual(self.articles[0].status, Article.Status.DRAFT)
+
+    def test_per_object_check_allows_permitted_objects(self):
+        client = self.client_for(self.superuser)
+
+        with mock.patch.object(
+            ArticleAdmin, "has_delete_permission", self.deny_for("one")
+        ):
+            response = client.post(
+                "/api/content/testapp.article/bulk",
+                {"action": "delete", "ids": [str(self.articles[1].pk)]},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"count": 1})
+        self.assertEqual(list(Article.objects.values_list("title", flat=True)), ["one"])
 
     def test_missing_ids_is_rejected(self):
         client = self.client_for(self.superuser)

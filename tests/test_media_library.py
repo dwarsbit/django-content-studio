@@ -765,6 +765,63 @@ def test_creating_renaming_and_deleting_a_folder_are_logged(media_settings):
 
 
 @pytest.mark.django_db
+def test_a_folder_cannot_be_its_own_parent(media_settings):
+    folder = FolderModel.objects.create(name="one")
+
+    response = media_client(make_superuser()).patch(
+        f"/api/media-library/folders/{folder.pk}", {"parent": folder.pk}, format="json"
+    )
+
+    assert response.status_code == 400
+    assert "parent" in response.json()
+    folder.refresh_from_db()
+    assert folder.parent is None
+
+
+@pytest.mark.django_db
+def test_a_folder_cannot_be_moved_into_its_subfolder(media_settings):
+    parent = FolderModel.objects.create(name="parent")
+    child = FolderModel.objects.create(name="child", parent=parent)
+    grandchild = FolderModel.objects.create(name="grandchild", parent=child)
+    client = media_client(make_superuser())
+
+    for target in (child, grandchild):
+        response = client.patch(
+            f"/api/media-library/folders/{parent.pk}",
+            {"parent": target.pk},
+            format="json",
+        )
+        assert response.status_code == 400
+        assert "parent" in response.json()
+
+    parent.refresh_from_db()
+    assert parent.parent is None
+
+
+@pytest.mark.django_db
+def test_a_folder_can_be_moved_to_another_folder(media_settings):
+    one = FolderModel.objects.create(name="one")
+    two = FolderModel.objects.create(name="two")
+    child = FolderModel.objects.create(name="child", parent=one)
+    client = media_client(make_superuser())
+
+    response = client.patch(
+        f"/api/media-library/folders/{child.pk}", {"parent": two.pk}, format="json"
+    )
+    assert response.status_code == 200
+    child.refresh_from_db()
+    assert child.parent == two
+
+    # Moving a folder into a sibling's subfolder is fine too.
+    response = client.patch(
+        f"/api/media-library/folders/{two.pk}", {"parent": one.pk}, format="json"
+    )
+    assert response.status_code == 200
+    two.refresh_from_db()
+    assert two.parent == one
+
+
+@pytest.mark.django_db
 def test_deleting_a_folder_logs_the_subfolders_deleted_with_it(media_settings):
     from django.contrib.admin.models import DELETION
 
@@ -816,3 +873,31 @@ def test_deleting_a_folder_logs_the_media_deleted_with_it(media_root):
         [(DELETION, str(folder.pk), "")]
         + [(DELETION, str(obj.pk), "Deleted with its folder.") for obj in media]
     )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "path, params",
+    [
+        ("/api/media-library/items", {"folder": "abc"}),
+        ("/api/media-library/folders", {"parent": "abc"}),
+        ("/api/media-library/folders/path", {"folder": "abc"}),
+    ],
+)
+def test_malformed_folder_returns_404(media_settings, path, params):
+    response = media_client(make_superuser()).get(path, params)
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_items_filter_by_folder(media_settings):
+    folder = FolderModel.objects.create(name="one")
+    ItemModel.objects.create(name="in", type="file", folder=folder)
+    ItemModel.objects.create(name="out", type="file")
+
+    response = media_client(make_superuser()).get(
+        "/api/media-library/items", {"folder": str(folder.pk)}
+    )
+
+    assert [item["name"] for item in response.json()["results"]] == ["in"]

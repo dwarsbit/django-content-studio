@@ -424,8 +424,16 @@ class DjangoContentStudioConfig(AppConfig):
             def _check_parent_access(self, parent_id):
                 from rest_framework.exceptions import PermissionDenied
 
-                parent = self.parent_model.objects.filter(pk=parent_id).first()
                 parent_admin = cs_settings.ADMIN_SITE._registry.get(self.parent_model)
+
+                # The parent is looked up like the parent studio's own
+                # detail endpoint: within the tenant and, with soft delete,
+                # outside the trash.
+                parents = get_tenant_scoped_queryset(self.request, self.parent_model)
+                soft_delete_field = getattr(parent_admin, "soft_delete", "")
+                if soft_delete_field:
+                    parents = parents.filter(**{f"{soft_delete_field}__isnull": True})
+                parent = parents.filter(pk=parent_id).first()
 
                 if (
                     not parent
@@ -445,6 +453,16 @@ class DjangoContentStudioConfig(AppConfig):
                     or not parent_admin.has_view_permission(self.request, parent_obj)
                 ):
                     raise PermissionDenied("Unknown or unauthorized parent.")
+
+            def get_object(self):
+                obj = super().get_object()
+
+                # Inline objects are only reachable through a parent the
+                # user can see, on every detail action.
+                if self.parent_fk:
+                    self._check_parent_instance(getattr(obj, self.parent_fk))
+
+                return obj
 
             def perform_create(self, serializer):
                 # Inline objects cannot be attached to parents the user
