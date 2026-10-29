@@ -12,6 +12,7 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import { useEffectOnce } from "react-use";
 
 import { http } from "@/hooks/use-http";
+import { storeTenant } from "@/lib/tenant-storage";
 import { type AuthState } from "@/types";
 
 const REFRESH_URL = "/tokens/jsonwebtoken/refresh";
@@ -78,6 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // local session either way.
     }
     setToken(null);
+    // The next user of this browser picks their own tenant.
+    storeTenant(null);
     // Cached responses (discover, content) belong to the signed-out user;
     // the next user starts without them.
     queryClient.clear();

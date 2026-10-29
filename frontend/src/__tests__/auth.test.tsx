@@ -232,6 +232,8 @@ describe("AuthProvider", () => {
 
     const queryClient = new QueryClient();
     queryClient.setQueryData(["model-groups"], { models: ["secret"] });
+    localStorage.setItem("__dcs_tenant__", "tenant-1");
+    http.defaults.headers.common["X-DCS-Tenant"] = "tenant-1";
 
     renderApp({ onLogout: true, queryClient });
     await screen.findByText("token:boot-token");
@@ -243,8 +245,10 @@ describe("AuthProvider", () => {
     );
     expect(callsTo(LOGOUT_URL)).toBe(1);
     expect(http.defaults.headers.common["Authorization"]).toBeUndefined();
-    // The signed-out user's cached data is gone.
+    // The signed-out user's cached data and tenant are gone.
     expect(queryClient.getQueryData(["model-groups"])).toBeUndefined();
+    expect(localStorage.getItem("__dcs_tenant__")).toBeNull();
+    expect(http.defaults.headers.common["X-DCS-Tenant"]).toBeUndefined();
   });
 });
 
