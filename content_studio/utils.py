@@ -15,6 +15,12 @@ console = Console()
 # Namespace for deterministically derived UUIDs: widgets, components and
 # extensions derive their IDs from stable parts so every process (and
 # every worker) agrees on them.
+# The longest password the login and password reset endpoints accept.
+# Hashing a password takes time by design, so a request carrying
+# megabytes of password would keep a worker busy; Django's own forms
+# applied the same cap.
+MAX_PASSWORD_LENGTH = 4096
+
 UUID_NAMESPACE = uuid.uuid5(
     uuid.NAMESPACE_URL, "https://github.com/dwarsbit/django-content-studio"
 )

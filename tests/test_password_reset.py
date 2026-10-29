@@ -115,6 +115,37 @@ def test_submission_resets_the_password(user):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "view, field, value",
+    [
+        (PasswordResetRequestView, "email", "a" * 250 + "@example.com"),
+        (CodeValidationView, "email", "a" * 250 + "@example.com"),
+        (PasswordResetSubmissionView, "email", "a" * 250 + "@example.com"),
+        (PasswordResetSubmissionView, "password", "a" * 4097),
+    ],
+)
+def test_overlong_fields_are_a_client_error(user, view, field, value):
+    code = PasswordResetCode.objects.create(email="a@example.com")
+
+    response = post(
+        view,
+        {
+            "email": "a@example.com",
+            "code": code.code,
+            "password": "new-password-123",
+            field: value,
+        },
+    )
+
+    assert response.status_code == 400
+    assert field in response.data
+    # Nothing ran: the code was not consumed and no attempt was counted.
+    code.refresh_from_db()
+    assert code.attempts == 0
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
 def test_submission_with_wrong_code_counts_an_attempt(user):
     PasswordResetCode.objects.create(email="a@example.com")
 
