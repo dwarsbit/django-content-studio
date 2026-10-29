@@ -113,6 +113,15 @@
   comma-separated values, lookups and exclusions on the parent field
   are rejected with a 400.
 
+- **A rejected retry could refresh the session in a loop.** When a
+  request ran into a 401, the admin refreshed the access token and
+  retried the request, but did not recognize the retry as one. If the
+  retry ran into a 401 as well, for example behind a proxy that strips
+  the `Authorization` header, the admin refreshed and retried again for
+  as long as the refresh succeeded, issuing a new refresh token every
+  time. The admin now retries a request once; a second 401 ends the
+  request with the error.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the
