@@ -88,6 +88,13 @@
   Set `search_fields` on the related model's studio to make its picker
   searchable.
 
+- **Inline objects respect their parent's permissions.** Only the
+  inline's list checked that the editor may view the parent object, so
+  an editor who could not see an object could still open, edit and
+  delete its inline objects, and read their history. Every action on an
+  inline object now requires view permission on its parent, including a
+  `has_view_permission(request, obj)` that denies that one object.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the

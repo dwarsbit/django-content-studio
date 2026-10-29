@@ -5,6 +5,8 @@ These exercise the full stack: routes, permissions, serializers,
 tenant scoping and audit stamps, the way the frontend uses the API.
 """
 
+from unittest import mock
+
 from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
 from django.contrib.auth import models as auth_models
 from django.test import TestCase
@@ -356,6 +358,75 @@ class InlineTests(AuthenticatedTestCase):
         )
 
         assert response.status_code == 400, response.content
+
+
+class InlineDetailParentTests(AuthenticatedTestCase):
+    """Inline detail actions check the parent like the list does (#22)."""
+
+    def setUp(self):
+        from content_studio.settings import cs_settings
+
+        self.editor = self.create_user(
+            "view_article",
+            "view_review",
+            "change_review",
+            "delete_review",
+            username="editor",
+        )
+        self.article = Article.objects.create(title="hidden")
+        self.review = Review.objects.create(article=self.article, text="secret")
+        self.url = f"/api/inlines/testapp.article/testapp.review/{self.review.pk}"
+        self.client = self.client_for(self.editor)
+
+        # The editor may view articles in general, but not this one.
+        article_admin = cs_settings.ADMIN_SITE._registry[Article]
+        patcher = mock.patch.object(
+            article_admin,
+            "has_view_permission",
+            lambda request, obj=None: obj is None or obj.pk != self.article.pk,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_retrieve_rejects_invisible_parent(self):
+        response = self.client.get(self.url)
+
+        assert response.status_code == 403
+
+    def test_update_rejects_invisible_parent(self):
+        response = self.client.patch(self.url, {"text": "changed"}, format="json")
+
+        assert response.status_code == 403
+        self.review.refresh_from_db()
+        assert self.review.text == "secret"
+
+    def test_delete_rejects_invisible_parent(self):
+        response = self.client.delete(self.url)
+
+        assert response.status_code == 403
+        assert Review.objects.filter(pk=self.review.pk).exists()
+
+    def test_activity_rejects_invisible_parent(self):
+        response = self.client.get(f"{self.url}/activity")
+
+        assert response.status_code == 403
+
+    def test_retrieve_allows_visible_parent(self):
+        other = Article.objects.create(title="visible")
+        review = Review.objects.create(article=other, text="public")
+
+        response = self.client.get(
+            f"/api/inlines/testapp.article/testapp.review/{review.pk}"
+        )
+
+        assert response.status_code == 200, response.content
+
+    def test_retrieve_rejects_parent_without_model_permission(self):
+        user = self.create_user("view_review", username="reviewer")
+
+        response = self.client_for(user).get(self.url)
+
+        assert response.status_code == 403
 
 
 class UserSerializerTests(AuthenticatedTestCase):
