@@ -215,6 +215,10 @@
   when the studio names them in `table_display`, `edit_main`,
   `edit_sidebar` or `readonly_fields`. Name the properties your studio
   shows there.
+- **Password reset failed for some email addresses.** An address with
+  `+`, `&` or `#`, such as `jane+admin@example.com`, reached the reset
+  step changed or cut off, so the code sent to it was always rejected.
+  The address now arrives unchanged.
 
 ## 1.2.0 (unreleased)
 
