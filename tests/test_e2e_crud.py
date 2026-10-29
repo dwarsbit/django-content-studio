@@ -134,11 +134,13 @@ class CreateUpdateDeleteTests(AuthenticatedTestCase):
             action_flag=ADDITION, object_id=str(article.id)
         ).exists()
 
-        # Retrieve serializes all fields plus model properties.
+        # Retrieve serializes all fields; properties the studio does not
+        # name are left out.
         response = self.client.get(f"/api/content/testapp.article/{pk}")
         data = response.json()
         assert data["title"] == "created"
-        assert data["word_count"] == 0
+        assert "word_count" not in data
+        assert "pk" not in data
 
         # Full update stamps the editor and the edit timestamp.
         response = self.client.put(

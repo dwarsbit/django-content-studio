@@ -113,6 +113,16 @@
   comma-separated values, lookups and exclusions on the parent field
   are rejected with a 400.
 
+- **Every model property reached the admin.** List rows and edit pages
+  carried every public `@property` of the model, including `pk` and the
+  user model's `is_anonymous` and `is_authenticated`, whatever
+  `exclude` and `table_display` said. A property holding a secret was
+  visible to every editor with view permission, and every property ran
+  for every row of every list page. Properties are now only serialized
+  when the studio names them in `table_display`, `edit_main`,
+  `edit_sidebar` or `readonly_fields`. Name the properties your studio
+  shows there.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the

@@ -157,48 +157,33 @@ class ContentSerializer(serializers.ModelSerializer):
     __str__ = serializers.CharField(read_only=True)
     serializer_related_field = ContentRelatedField
 
+    # The model properties a studio names explicitly (table columns, form
+    # fields, read-only fields). Only these are added to an "__all__" or
+    # exclude field list: properties are never serialized implicitly, so a
+    # computed value stays out of the admin unless a studio asks for it.
+    named_properties: frozenset[str] = frozenset()
+
     def get_field_names(self, declared_fields, info):
-        """
-        Override to automatically add model properties to the fields list.
-        """
-        # Get the default fields from parent class
-        fields = super().get_field_names(declared_fields, info)
+        fields = list(super().get_field_names(declared_fields, info))
 
-        # If fields is '__all__', we need to expand it
-        if fields == "__all__":
-            fields = list(super().get_field_names(declared_fields, info))
-        else:
-            fields = list(fields)
-
-        # Get all properties from the model
-        model_properties = self._get_model_properties()
-
-        # Add properties that aren't already in fields
-        for prop_name in model_properties:
-            if prop_name not in fields and prop_name not in declared_fields:
-                fields.append(prop_name)
+        for name in self._get_named_properties():
+            if name not in fields and name not in declared_fields:
+                fields.append(name)
 
         return fields
 
-    def _get_model_properties(self):
+    def _get_named_properties(self) -> list[str]:
         """
-        Extract all @property attributes from the model class.
+        The named properties that are public properties of the model.
         """
         model = self.Meta.model
-        properties = []
 
-        # Inspect the model class and its parent classes
-        for klass in inspect.getmro(model):
-            if klass == object:
-                break
-
-            for name, obj in inspect.getmembers(klass):
-                # Check if it's a property and not private/protected
-                if isinstance(obj, property) and not name.startswith("_"):
-                    if name not in properties:
-                        properties.append(name)
-
-        return properties
+        return [
+            name
+            for name in sorted(self.named_properties)
+            if not name.startswith("_")
+            and isinstance(inspect.getattr_static(model, name, None), property)
+        ]
 
     def build_property_field(self, field_name, model_class):
         """

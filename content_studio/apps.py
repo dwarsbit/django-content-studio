@@ -181,7 +181,17 @@ class DjangoContentStudioConfig(AppConfig):
                 else:
                     available_fields = "__all__"
 
+                # Model properties are serialized only when the studio
+                # names them: as a table column, an edit page field or a
+                # read-only field.
+                studio_named_properties = frozenset(
+                    [column.field for column in columns]
+                    + list(get_form_field_names(self._admin_model, self.request))
+                    + list(get_readonly_field_names(self._admin_model, self.request))
+                )
+
                 class Serializer(ContentSerializer):
+                    named_properties = studio_named_properties
 
                     class Meta:
                         model = self._model
