@@ -26,7 +26,7 @@ class MediaField(models.ForeignKey, BaseMediaField):
 
     def __init__(
         self,
-        to="dbp_media_library.Media",
+        to="content_studio_media_library.Media",
         file_type: FileType | list[FileType] = None,
         **kwargs,
     ):
@@ -48,7 +48,7 @@ class ManyMediaField(models.ManyToManyField, BaseMediaField):
 
     def __init__(
         self,
-        to="dbp_media_library.Media",
+        to="content_studio_media_library.Media",
         file_type: FileType | list[FileType] = None,
         **kwargs,
     ):

@@ -90,6 +90,12 @@
   picked another tenant. The admin now checks the remembered tenant
   against your tenants before loading anything and otherwise opens the
   first one. Signing out forgets the selected tenant.
+- **`MediaField()` and `ManyMediaField()` without a model.** Without a
+  model as the first argument, both fields pointed at an app that does
+  not exist, so the project failed its system checks. They now point at
+  the built-in media library's `Media` model, as intended. Fields that
+  name their model, such as `MediaField("blog.MediaItem")`, are
+  unchanged.
 
 ### Security
 
