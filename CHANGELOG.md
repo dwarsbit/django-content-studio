@@ -137,6 +137,11 @@
   while a select or menu had the focus. The theme is switched in the
   main menu and the command palette.
 
+- **Relation pickers no longer refetch on every keystroke.** A foreign
+  key picker listened to the whole form, so while it was open every
+  change to any field fetched its options again. The picker now reads
+  the form once, when it opens.
+
 ### Security
 
 - **Buttons and bulk actions need change permission by default.** A

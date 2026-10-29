@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useForm } from "react-hook-form";
+import { useEffect } from "react";
+import { type FieldValues, useForm, type UseFormReturn } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 
 import { Form } from "@/components/ui/form";
@@ -42,8 +43,21 @@ const MODEL: Model = {
   fields: {},
 };
 
-function Harness({ onChange }: { onChange: (value: unknown) => void }) {
-  const form = useForm();
+function Harness({
+  onChange,
+  formRef,
+}: {
+  onChange: (value: unknown) => void;
+  formRef?: { current: UseFormReturn | null };
+}) {
+  const form = useForm<FieldValues>({ defaultValues: { title: "Hello" } });
+
+  // Hands the form to the test, so it can change other fields.
+  useEffect(() => {
+    if (formRef) {
+      formRef.current = form;
+    }
+  }, [form, formRef]);
 
   return (
     <QueryClientProvider client={new QueryClient()}>
@@ -62,10 +76,12 @@ function Harness({ onChange }: { onChange: (value: unknown) => void }) {
 function setup(
   postResult: Promise<{ data: unknown[] }> = Promise.resolve({ data: [] }),
 ) {
+  httpMock.post.mockReset();
   httpMock.post.mockReturnValue(postResult);
   const onChange = vi.fn();
-  render(<Harness onChange={onChange} />);
-  return { onChange };
+  const formRef: { current: UseFormReturn | null } = { current: null };
+  render(<Harness onChange={onChange} formRef={formRef} />);
+  return { onChange, formRef };
 }
 
 describe("ForeignKeyWidget", () => {
@@ -115,6 +131,52 @@ describe("ForeignKeyWidget", () => {
       expect(screen.getByText("3 article(s)")).toBeInTheDocument(),
     );
     expect(screen.getByText("General")).toBeInTheDocument();
+  });
+
+  it("sends the form's values as they are when the picker opens", async () => {
+    setup();
+
+    await userEvent.click(screen.getByRole("button"));
+
+    await waitFor(() => expect(httpMock.post).toHaveBeenCalledTimes(1));
+    expect(httpMock.post).toHaveBeenCalledWith(
+      "/content/demo_blog.article/relations/author",
+      { search: "", form: { title: "Hello" } },
+    );
+  });
+
+  it("does not refetch when another field of the form changes", async () => {
+    const { formRef } = setup();
+
+    await userEvent.click(screen.getByRole("button"));
+    await waitFor(() => expect(httpMock.post).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      formRef.current?.setValue("title", "Changed");
+    });
+
+    // Settle: a refetch would be another call.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(httpMock.post).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads the form again the next time the picker opens", async () => {
+    const { formRef } = setup();
+
+    await userEvent.click(screen.getByRole("button"));
+    await waitFor(() => expect(httpMock.post).toHaveBeenCalledTimes(1));
+    await userEvent.keyboard("{Escape}");
+
+    act(() => {
+      formRef.current?.setValue("title", "Changed");
+    });
+    await userEvent.click(screen.getByRole("button"));
+
+    await waitFor(() => expect(httpMock.post).toHaveBeenCalledTimes(2));
+    expect(httpMock.post).toHaveBeenLastCalledWith(
+      "/content/demo_blog.article/relations/author",
+      { search: "", form: { title: "Changed" } },
+    );
   });
 
   it("shows an empty state when the search yields no results", async () => {
