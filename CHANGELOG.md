@@ -133,6 +133,10 @@
   origin. The new `sandbox` option takes another set of sandbox tokens,
   or `None` for no sandbox.
 
+- **The `d` key no longer switches the theme.** The shortcut also fired
+  while a select or menu had the focus. The theme is switched in the
+  main menu and the command palette.
+
 ### Security
 
 - **Buttons and bulk actions need change permission by default.** A
