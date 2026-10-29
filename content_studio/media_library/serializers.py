@@ -101,6 +101,28 @@ def build_media_folder_serializer(folder_model):
         def get_has_children(self, obj):
             return obj.children.exists()
 
+        def validate_parent(self, parent):
+            """
+            Reject a parent that is the folder itself or one of its
+            subfolders: either would make the folder part of a cycle.
+            """
+            if parent is None or self.instance is None:
+                return parent
+
+            seen = set()
+            ancestor = parent
+
+            # Bounded by the folders seen, so cyclic data cannot loop.
+            while ancestor is not None and ancestor.pk not in seen:
+                if ancestor.pk == self.instance.pk:
+                    raise serializers.ValidationError(
+                        _("A folder cannot be moved into itself or its subfolders.")
+                    )
+                seen.add(ancestor.pk)
+                ancestor = ancestor.parent
+
+            return parent
+
         def get_count(self, obj):
             """The folder's direct items; None without a media model."""
             media_model = cs_settings.MEDIA_LIBRARY_MODEL
