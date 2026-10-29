@@ -856,9 +856,10 @@ class BaseModelViewSet(ModelViewSet):
 
     def _get_related_search_queryset(self, related_model, search):
         """
-        Search the related model. Uses the related model studio's
-        search_fields when available; otherwise all CharFields are
-        searched.
+        Search the related model by the related model studio's
+        search_fields. Without search_fields nothing is searchable, so a
+        search term matches nothing: other fields (such as the user
+        model's password) are never searched.
         """
         if not search:
             return related_model.objects.all()
@@ -866,20 +867,10 @@ class BaseModelViewSet(ModelViewSet):
         related_admin = cs_settings.ADMIN_SITE._registry.get(related_model)
         search_fields = related_admin.search_fields if related_admin else None
 
-        if search_fields:
-            queries = [Q(**{f"{field}__icontains": search}) for field in search_fields]
-        else:
-            char_fields = [
-                f.name
-                for f in related_model._meta.get_fields()
-                if isinstance(f, models.CharField)
-            ]
-            queries = [Q(**{f"{field}__icontains": search}) for field in char_fields]
-
-        # No searchable fields: nothing can match a search term.
-        if not queries:
+        if not search_fields:
             return related_model.objects.none()
 
+        queries = [Q(**{f"{field}__icontains": search}) for field in search_fields]
         combined_query = reduce(operator.or_, queries)
 
         return related_model.objects.filter(combined_query)

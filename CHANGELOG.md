@@ -78,6 +78,24 @@
 
 ### Security
 
+- **Relation pickers could search password hashes.** When the related
+  model's studio had no `search_fields`, such as the default user
+  studio, a relation picker searched every `CharField` of the related
+  model, including the user model's `password`. An editor who could view
+  users could recover a user's password hash piece by piece. Relation
+  pickers now only search the related studio's `search_fields`; without
+  them, the picker lists all objects but a search term matches nothing.
+  Set `search_fields` on the related model's studio to make its picker
+  searchable.
+
+- **The login page's return path could leave the admin.** After
+  signing in, the admin went to the path in the login page's `redirect`
+  parameter without checking it. With the admin mounted at the site
+  root, a crafted link sent a user who signed in to another site
+  (`//evil.example`) or ran script in the admin (`javascript:`). The
+  admin now only returns to one of its own pages and otherwise opens the
+  dashboard; the return path also keeps the page's query string.
+
 - **Inline lists could include a hidden parent's objects.** The inline
   list endpoint checked view permission on one parent but filtered on
   every parent in the request: repeating the parent filter
