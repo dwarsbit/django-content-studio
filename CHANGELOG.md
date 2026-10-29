@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 (unreleased)
+## 1.2.0 (2026-10-29)
 
 - **Duplicate (save as new).** A studio with `allow_duplication = True`
   offers Duplicate in the edit page's actions menu. It opens the create
