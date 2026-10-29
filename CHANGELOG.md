@@ -103,6 +103,11 @@
   Content Studio logins and refused attempts. `last_login` is updated by
   Django's `update_last_login` receiver, as for any Django login.
 
+- **Length limits on the login and password reset fields.** The username
+  is capped at the user model's field length, email addresses at 254
+  characters and passwords at 4096 characters, so a request cannot keep
+  a worker busy hashing a very long password.
+
 ### Security
 
 - **Buttons and bulk actions need change permission by default.** A

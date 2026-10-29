@@ -234,3 +234,47 @@ class LoginSignalTests(DjangoTestCase):
         assert logged_in == []
         assert len(failed) == 1
         assert failed[0]["credentials"] == {"username": "customer"}
+
+
+class LoginFieldLengthTests(DjangoTestCase):
+    """The login fields are capped: the username at the user model's
+    field length, the password at MAX_PASSWORD_LENGTH."""
+
+    def _login(self, username, password):
+        return APIClient().post(
+            "/api/login/usernamepassword",
+            {"username": username, "password": password},
+            format="json",
+        )
+
+    def test_an_overlong_username_is_a_client_error(self):
+        from django.contrib.auth.models import User
+
+        max_length = User._meta.get_field("username").max_length
+        response = self._login("a" * (max_length + 1), "secret")
+
+        assert response.status_code == 400
+        assert "username" in response.json()
+
+        assert self._login("a" * max_length, "secret").status_code == 403
+
+    def test_an_overlong_password_is_a_client_error(self):
+        from content_studio.utils import MAX_PASSWORD_LENGTH
+
+        response = self._login("editor", "a" * (MAX_PASSWORD_LENGTH + 1))
+
+        assert response.status_code == 400
+        assert "password" in response.json()
+
+        assert self._login("editor", "a" * MAX_PASSWORD_LENGTH).status_code == 403
+
+    def test_the_username_cap_follows_the_user_model(self):
+        from content_studio.login_backends.username_password import (
+            UsernamePasswordSerializer,
+        )
+
+        serializer = UsernamePasswordSerializer(
+            data={"username": "a" * 150, "password": "x"}
+        )
+        assert serializer.is_valid()
+        assert serializer.fields["username"].max_length == 150

@@ -6,10 +6,30 @@ from rest_framework.permissions import AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.viewsets import ViewSet
 
+from ..utils import MAX_PASSWORD_LENGTH
+
+
+def username_max_length():
+    """The length of the user model's username field; a field without
+    one gets the length of an email address."""
+    user_model = get_user_model()
+    field = user_model._meta.get_field(user_model.USERNAME_FIELD)
+
+    return getattr(field, "max_length", None) or 254
+
 
 class UsernamePasswordSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
-    password = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, max_length=MAX_PASSWORD_LENGTH)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        # Bound here: the user model is not available at import time.
+        fields["username"] = serializers.CharField(
+            required=True, max_length=username_max_length()
+        )
+
+        return fields
 
 
 class UsernamePasswordViewSet(ViewSet):
