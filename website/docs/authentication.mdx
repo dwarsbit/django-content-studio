@@ -35,6 +35,9 @@ immediately. What an editor may see and do is decided by the
 
 Sessions are signed with your `SECRET_KEY`, or with
 [`TOKEN_SIGNING_KEY`](/docs/settings#token_signing_key) when you set one.
+When you rotate `SECRET_KEY`, keep the old key in `SECRET_KEY_FALLBACKS` for
+a while, as Django documents: sessions signed with it then continue until
+they expire.
 
 ## Login backends
 

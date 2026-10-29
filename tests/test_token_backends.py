@@ -150,6 +150,58 @@ class AuthenticationTests(TestCase):
 
             assert self.client.get(ME_URL).status_code == 401
 
+    def test_a_token_signed_with_a_fallback_key_is_accepted(self):
+        from django.conf import settings
+
+        # Created before SECRET_KEY was rotated, with the old key.
+        token = create_access_token(self.user)
+        old_key = settings.SECRET_KEY
+
+        with override_settings(
+            SECRET_KEY="rotated-key-" * 4, SECRET_KEY_FALLBACKS=[old_key]
+        ):
+            self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+            assert self.client.get(ME_URL).status_code == 200
+
+            # New tokens are signed with the current key.
+            fresh = create_access_token(self.user)
+            assert pyjwt.decode(fresh, "rotated-key-" * 4, algorithms=["HS256"])
+
+        # Without the fallback, the rotation ends the session.
+        with override_settings(SECRET_KEY="rotated-key-" * 4, SECRET_KEY_FALLBACKS=[]):
+            self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+            assert self.client.get(ME_URL).status_code == 401
+
+    def test_fallback_keys_do_not_apply_to_a_dedicated_signing_key(self):
+        from django.conf import settings
+
+        token = create_access_token(self.user)
+
+        with override_settings(
+            CONTENT_STUDIO={"TOKEN_SIGNING_KEY": "separate-key-" * 4},
+            SECRET_KEY_FALLBACKS=[settings.SECRET_KEY],
+        ):
+            self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+            assert self.client.get(ME_URL).status_code == 401
+
+    def test_a_dedicated_signing_key_survives_a_secret_key_rotation(self):
+        from django.conf import settings
+
+        old_key = settings.SECRET_KEY
+
+        with override_settings(
+            CONTENT_STUDIO={"TOKEN_SIGNING_KEY": "separate-key-" * 4}
+        ):
+            token = create_access_token(self.user)
+
+            # The password fingerprint is keyed with SECRET_KEY; the
+            # fallbacks keep it valid.
+            with override_settings(
+                SECRET_KEY="rotated-key-" * 4, SECRET_KEY_FALLBACKS=[old_key]
+            ):
+                self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+                assert self.client.get(ME_URL).status_code == 200
+
     def test_expired_token_is_rejected(self):
         payload = decode(create_access_token(self.user))
         payload["exp"] = int(time.time()) - 10
