@@ -86,6 +86,42 @@ class LoginThrottleTests(DjangoTestCase):
             # The fourth attempt within the window is throttled.
             assert statuses == [403, 403, 403, 429], statuses
 
+    def _throttled_statuses(self, rest_framework=None):
+        from django.test import override_settings
+
+        with override_settings(
+            CONTENT_STUDIO={
+                "ADMIN_SITE": "content_studio.admin.admin_site",
+                "LOGIN_THROTTLE_RATE": "3/min",
+            },
+            REST_FRAMEWORK=rest_framework or {},
+        ):
+            LoginBackendManager().set_up_router(ExtendedRouter(trailing_slash=False))
+            client = APIClient(REMOTE_ADDR="10.1.1.3")
+
+            return [
+                client.post(
+                    "/api/login/usernamepassword",
+                    {"username": "admin", "password": "wrong"},
+                    format="json",
+                    HTTP_X_FORWARDED_FOR=f"1.2.3.{i}",
+                ).status_code
+                for i in range(4)
+            ]
+
+    def test_spoofed_forwarded_for_does_not_bypass_the_throttle(self):
+        # Without NUM_PROXIES the header is not trusted: every attempt
+        # counts against the connection's address.
+        statuses = self._throttled_statuses()
+
+        assert statuses == [403, 403, 403, 429], statuses
+
+    def test_forwarded_for_is_honoured_with_num_proxies(self):
+        # Behind one proxy, the address it adds identifies the client.
+        statuses = self._throttled_statuses({"NUM_PROXIES": 1})
+
+        assert statuses == [403, 403, 403, 403], statuses
+
     def test_throttle_can_be_disabled(self):
         from django.test import override_settings
 

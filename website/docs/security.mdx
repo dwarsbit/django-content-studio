@@ -20,8 +20,10 @@ deployment has to take care of.
 - **Limited login and password reset attempts**, per IP address
   ([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate),
   [`PASSWORD_RESET_THROTTLE_RATE`](/docs/settings#password_reset_throttle_rate)).
-  Five wrong reset codes lock an email address out, and new passwords must
-  pass `AUTH_PASSWORD_VALIDATORS`.
+  The address is the one the connection comes from; an `X-Forwarded-For`
+  header sent by the client is ignored unless you configure your proxies
+  (see the checklist below). Five wrong reset codes lock an email address
+  out, and new passwords must pass `AUTH_PASSWORD_VALIDATORS`.
 - **Sanitized rich text.** `HTMLField` cleans its value on save with an
   allowlist sanitizer ([`HTML_SANITIZER`](/docs/settings#html_sanitizer)).
 - **Checked uploads.** The media library accepts a list of file types up to
@@ -41,9 +43,13 @@ deployment has to take care of.
   the default per-process cache, every worker counts separately.
   [Presence](/docs/presence) is kept in the cache too.
 - **Pass on the client's IP address.** The limits count per IP address.
-  Behind a proxy, set `NUM_PROXIES` in the
+  Without further configuration, Content Studio uses the address of the
+  connection and ignores `X-Forwarded-For`, which any client can set. Behind
+  a proxy, every request then comes from the proxy's address and all
+  clients share one limit. Set `NUM_PROXIES` in the
   [Django REST Framework settings](https://www.django-rest-framework.org/api-guide/settings/#num_proxies)
-  to the number of proxies in front of your application.
+  to the number of proxies in front of your application, and make sure
+  those proxies add the client's address to `X-Forwarded-For`.
 - **Serve uploads from a separate domain** when you can, such as a CDN or an
   object storage bucket. Even with the upload checks, a file served from your
   own domain runs with your site's privileges if a browser renders it.

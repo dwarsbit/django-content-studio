@@ -75,6 +75,14 @@
   `LocMemCache`) report caches presence cannot work with. A new
   `UserAvatar` component in the design system shows editors in the user
   menu, the activity logs and presence.
+- **Throttles ignore a spoofed `X-Forwarded-For`.** The login and
+  password reset limits used the `X-Forwarded-For` header as the client's
+  address when Django REST Framework's `NUM_PROXIES` was unset (the
+  default), so a client sending a different header with every request was
+  never limited. Without `NUM_PROXIES`, they now count per connection
+  address (`REMOTE_ADDR`) and ignore the header; with `NUM_PROXIES` set,
+  the address the proxies add is used as before. Behind a proxy, set
+  `NUM_PROXIES`, or all clients share the proxy's limit.
 
 ### Security
 
