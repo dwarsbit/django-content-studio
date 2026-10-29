@@ -76,6 +76,18 @@
   `UserAvatar` component in the design system shows editors in the user
   menu, the activity logs and presence.
 
+### Security
+
+- **Relation pickers could search password hashes.** When the related
+  model's studio had no `search_fields`, such as the default user
+  studio, a relation picker searched every `CharField` of the related
+  model, including the user model's `password`. An editor who could view
+  users could recover a user's password hash piece by piece. Relation
+  pickers now only search the related studio's `search_fields`; without
+  them, the picker lists all objects but a search term matches nothing.
+  Set `search_fields` on the related model's studio to make its picker
+  searchable.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the
