@@ -83,6 +83,13 @@
   address (`REMOTE_ADDR`) and ignore the header; with `NUM_PROXIES` set,
   the address the proxies add is used as before. Behind a proxy, set
   `NUM_PROXIES`, or all clients share the proxy's limit.
+- **A remembered tenant you can no longer access is replaced.** The
+  admin remembers the selected tenant in the browser. When that tenant
+  was no longer yours (access revoked, or another user signed in on the
+  same browser), every page failed with a permission error until you
+  picked another tenant. The admin now checks the remembered tenant
+  against your tenants before loading anything and otherwise opens the
+  first one. Signing out forgets the selected tenant.
 
 ### Security
 
