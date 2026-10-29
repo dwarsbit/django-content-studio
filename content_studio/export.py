@@ -226,9 +226,18 @@ def to_cell(value, native: bool = False):
 
 def prepare_queryset(studio, queryset):
     """Fetch the related objects the columns show along with the rows."""
+    return fetch_related(studio, queryset, get_export_columns(studio))
+
+
+def fetch_related(studio, queryset, columns):
+    """
+    Fetch the related objects of the given columns along with the rows:
+    forward relations are joined, many-to-many relations prefetched, so
+    a list costs a fixed number of queries instead of some per row.
+    """
     select, prefetch = [], []
 
-    for column in get_export_columns(studio):
+    for column in columns:
         field = get_model_field(studio, column)
 
         if field is None or not field.is_relation:
@@ -240,10 +249,10 @@ def prepare_queryset(studio, queryset):
             select.append(field.name)
 
     if select:
-        queryset = queryset.select_related(*select)
+        queryset = queryset.select_related(*dict.fromkeys(select))
 
     if prefetch:
-        queryset = queryset.prefetch_related(*prefetch)
+        queryset = queryset.prefetch_related(*dict.fromkeys(prefetch))
 
     return queryset
 
