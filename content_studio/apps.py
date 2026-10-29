@@ -1,11 +1,13 @@
 from django.apps import AppConfig
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
 from packaging.version import Version
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from . import VERSION
+from .filters import LookupFilter
 from .paginators import ContentPagination
 from .settings import cs_settings
 from .utils import (
@@ -324,7 +326,9 @@ class DjangoContentStudioConfig(AppConfig):
 
                 # Inline lists only exist in the context of a parent:
                 # the parent filter is required and the referenced
-                # parent must be visible to the user.
+                # parent must be visible to the user. The list is
+                # filtered here, on the one parent that was checked
+                # (LookupFilter skips the parent keys).
                 if self.parent_fk and self.action == "list":
                     parent_id = self._get_parent_id()
                     if not parent_id:
@@ -332,6 +336,7 @@ class DjangoContentStudioConfig(AppConfig):
                             "Filtering by the parent is required on inline endpoints."
                         )
                     self._check_parent_access(parent_id)
+                    qs = qs.filter(**{f"{self.parent_fk}__pk": parent_id})
 
                 # Soft delete, when configured: the regular lists exclude
                 # trashed objects, the trash (and its export) lists only
@@ -372,9 +377,39 @@ class DjangoContentStudioConfig(AppConfig):
                     ordering = ["pk"]
                 return qs.order_by(*ordering)
 
+            def get_parent_filter_keys(self):
+                """The parent keys the viewset filters on itself (lists)."""
+                if self.parent_fk and self.action == "list":
+                    return [self.parent_fk, f"{self.parent_fk}_id"]
+                return []
+
             def _get_parent_id(self):
+                # Exactly one plain value for the parent: no repeated
+                # keys, comma lists or lookups, so the parent that is
+                # checked is the only one the list is filtered on.
                 params = self.request.query_params
-                return params.get(f"{self.parent_fk}_id") or params.get(self.parent_fk)
+                keys = self.get_parent_filter_keys()
+                values = []
+
+                for key in params:
+                    name = key.removeprefix(LookupFilter.EXCLUDE_SYMBOL)
+                    if name.split("__")[0] not in keys:
+                        continue
+                    if key not in keys:
+                        raise ValidationError(
+                            f"Filtering on '{key}' is not allowed on inline endpoints."
+                        )
+                    values += params.getlist(key)
+
+                if not values:
+                    return None
+                if len(values) > 1 or "," in values[0]:
+                    raise ValidationError("Filter on exactly one parent.")
+
+                try:
+                    return self.parent_model._meta.pk.to_python(values[0])
+                except DjangoValidationError:
+                    raise ValidationError("Invalid parent.")
 
             def _check_parent_access(self, parent_id):
                 from rest_framework.exceptions import PermissionDenied

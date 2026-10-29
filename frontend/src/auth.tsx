@@ -137,7 +137,12 @@ export function AuthGuard() {
     <Outlet />
   ) : (
     <Navigate
-      to={{ pathname: "/login", search: `redirect=${location.pathname}` }}
+      to={{
+        pathname: "/login",
+        search: new URLSearchParams({
+          redirect: `${location.pathname}${location.search}`,
+        }).toString(),
+      }}
       replace
     />
   );

@@ -12,6 +12,7 @@ from django.contrib.auth import models as auth_models
 from django.test import TestCase
 from rest_framework.test import APIClient
 
+from content_studio.settings import cs_settings
 from content_studio.token_backends.jwt import create_access_token
 from tests.testapp.models import Article, Category, Review, SiteSettings
 
@@ -314,6 +315,97 @@ class InlineTests(AuthenticatedTestCase):
         )
 
         assert response.status_code == 403
+
+    def hide_article(self, hidden):
+        """Patch the article studio so one article is not visible."""
+        studio = cs_settings.ADMIN_SITE._registry[Article]
+        original = studio.has_view_permission
+
+        def has_view_permission(request, obj=None):
+            if obj is not None and obj.pk == hidden.pk:
+                return False
+            return original(request, obj)
+
+        return mock.patch.object(studio, "has_view_permission", has_view_permission)
+
+    def test_inline_list_rejects_repeated_parent(self):
+        """A repeated parent key cannot add a hidden parent (#23)."""
+        editor = self.create_user("view_article", "view_review", username="editor")
+        hidden = Article.objects.create(title="hidden")
+        visible = Article.objects.create(title="visible")
+        Review.objects.create(article=hidden, text="secret")
+        client = self.client_for(editor)
+
+        with self.hide_article(hidden):
+            for key in ("article", "article_id"):
+                response = client.get(
+                    f"/api/inlines/testapp.article/testapp.review"
+                    f"?{key}={hidden.pk}&{key}={visible.pk}"
+                )
+                assert response.status_code == 400, response.content
+
+            response = client.get(
+                "/api/inlines/testapp.article/testapp.review"
+                f"?article={hidden.pk}&article_id={visible.pk}"
+            )
+            assert response.status_code == 400, response.content
+
+    def test_inline_list_rejects_comma_separated_parent(self):
+        editor = self.create_user("view_article", "view_review", username="editor")
+        hidden = Article.objects.create(title="hidden")
+        visible = Article.objects.create(title="visible")
+        Review.objects.create(article=hidden, text="secret")
+        client = self.client_for(editor)
+
+        with self.hide_article(hidden):
+            response = client.get(
+                "/api/inlines/testapp.article/testapp.review",
+                {"article_id": f"{visible.pk},{hidden.pk}"},
+            )
+
+        assert response.status_code == 400, response.content
+
+    def test_inline_list_rejects_parent_lookups(self):
+        """Only the plain parent keys: no lookups or exclusions on it."""
+        editor = self.create_user("view_article", "view_review", username="editor")
+        hidden = Article.objects.create(title="hidden")
+        visible = Article.objects.create(title="visible")
+        Review.objects.create(article=hidden, text="secret")
+        client = self.client_for(editor)
+
+        with self.hide_article(hidden):
+            for key in ("article__in", "article_id__in", "article__gte", "~article"):
+                response = client.get(
+                    "/api/inlines/testapp.article/testapp.review",
+                    {"article_id": visible.pk, key: hidden.pk},
+                )
+                assert response.status_code == 400, (key, response.content)
+
+    def test_inline_list_rejects_invalid_parent_id(self):
+        editor = self.create_user("view_article", "view_review", username="editor")
+        client = self.client_for(editor)
+
+        response = client.get(
+            "/api/inlines/testapp.article/testapp.review", {"article_id": "abc"}
+        )
+
+        assert response.status_code == 400, response.content
+
+    def test_inline_list_filters_by_parent_key(self):
+        editor = self.create_user("view_article", "view_review", username="editor")
+        article = Article.objects.create(title="one")
+        other = Article.objects.create(title="two")
+        Review.objects.create(article=article, text="for one")
+        Review.objects.create(article=other, text="for two")
+        client = self.client_for(editor)
+
+        response = client.get(
+            "/api/inlines/testapp.article/testapp.review", {"article": article.pk}
+        )
+
+        assert response.status_code == 200, response.content
+        strs = [item["__str__"] for item in response.json()["results"]]
+        assert strs == ["for one"]
 
     def test_inline_create_attaches_to_visible_parent(self):
         editor = self.create_user(

@@ -13,6 +13,7 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from content_studio.settings import cs_settings
+from content_studio.throttling import ClientIPMixin
 
 from .models import MAX_ATTEMPTS, PasswordResetCode, generate_code
 from .tasks import send_reset_code, send_reset_confirmation
@@ -23,7 +24,7 @@ from .serializers import (
 )
 
 
-class PasswordResetRateThrottle(AnonRateThrottle):
+class PasswordResetRateThrottle(ClientIPMixin, AnonRateThrottle):
     """
     Rate limit for the password reset endpoints, per IP, from the
     CONTENT_STUDIO["PASSWORD_RESET_THROTTLE_RATE"] setting. Like the

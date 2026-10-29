@@ -36,3 +36,23 @@ export function getInitials(name: string): string {
 
   return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
 }
+
+/**
+ * The path to go to after signing in: a router-relative path from the
+ * `redirect` parameter, or `/`. Only a same-origin path is accepted: it
+ * starts with a single `/`, so `//host`, `/\host` and anything with a
+ * scheme (`javascript:`, `https:`) fall back to `/`, as does a path with
+ * control characters, which browsers strip when they parse a URL.
+ */
+export function safeRedirectPath(redirect: string | null): string {
+  if (
+    !redirect ||
+    !/^\/(?![/\\])/.test(redirect) ||
+    // eslint-disable-next-line no-control-regex
+    /[\u0000-\u001F\u007F]/.test(redirect)
+  ) {
+    return "/";
+  }
+
+  return redirect;
+}

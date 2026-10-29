@@ -6,7 +6,7 @@ import {
   type InternalAxiosRequestConfig,
 } from "axios";
 import React from "react";
-import { createMemoryRouter, RouterProvider } from "react-router";
+import { createMemoryRouter, RouterProvider, useLocation } from "react-router";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { AuthGuard, AuthProvider, useAuth } from "@/auth";
@@ -226,5 +226,42 @@ describe("AuthProvider", () => {
     expect(http.defaults.headers.common["Authorization"]).toBeUndefined();
     // The signed-out user's cached data is gone.
     expect(queryClient.getQueryData(["model-groups"])).toBeUndefined();
+  });
+});
+
+function LoginLocation() {
+  const location = useLocation();
+  return <div>login:{location.search}</div>;
+}
+
+describe("AuthGuard", () => {
+  it("sends the full return path to the login page, encoded", async () => {
+    respond = (url, config) =>
+      url === REFRESH_URL ? makeError(401, config) : { data: {}, status: 200 };
+    const router = createMemoryRouter(
+      [
+        {
+          element: <AuthGuard />,
+          children: [{ path: "*", element: <div>protected</div> }],
+        },
+        { path: "/login", element: <LoginLocation /> },
+      ],
+      { initialEntries: ["/content/blog?page=2&q=a"] },
+    );
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    const search = (await screen.findByText(/^login:/)).textContent!.slice(
+      "login:".length,
+    );
+    expect(new URLSearchParams(search).get("redirect")).toBe(
+      "/content/blog?page=2&q=a",
+    );
   });
 });
