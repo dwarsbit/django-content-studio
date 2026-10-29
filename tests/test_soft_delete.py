@@ -254,6 +254,40 @@ class BulkDeleteTests(AuthenticatedTestCase):
         response = self.client.get("/api/content/testapp.note/trash")
         self.assertEqual(response.json()["pagination"]["count"], 2)
 
+    def test_bulk_action_skips_trashed_objects(self):
+        kept = Note.objects.create(title="kept")
+        trashed = Note.objects.create(title="trashed")
+        self.client.delete(f"/api/content/testapp.note/{trashed.pk}")
+        trashed.refresh_from_db()
+        removed_at = trashed.removed_at
+
+        response = self.client.post(
+            "/api/content/testapp.note/bulk",
+            {"action": "delete", "ids": [kept.pk, trashed.pk]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["count"], 1)
+        kept.refresh_from_db()
+        self.assertIsNotNone(kept.removed_at)
+        # The trashed object was left alone.
+        trashed.refresh_from_db()
+        self.assertEqual(trashed.removed_at, removed_at)
+
+    def test_bulk_action_on_only_trashed_objects_does_nothing(self):
+        trashed = Note.objects.create(title="trashed")
+        self.client.delete(f"/api/content/testapp.note/{trashed.pk}")
+
+        response = self.client.post(
+            "/api/content/testapp.note/bulk",
+            {"action": "delete", "ids": [trashed.pk]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["count"], 0)
+
     def test_bulk_delete_confirm_announces_the_trash(self):
         response = self.client.get("/api/discover")
 
