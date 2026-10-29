@@ -267,6 +267,27 @@ class SingletonTests(AuthenticatedTestCase):
         assert response.status_code == 403
         assert SiteSettings.objects.count() == 1
 
+    def test_singleton_checks_object_permissions(self):
+        """Per-object permission overrides apply to the singleton (#43)."""
+        SiteSettings.objects.create(site_name="My site")
+        studio = cs_settings.ADMIN_SITE._registry[SiteSettings]
+
+        def denies_obj(request, obj=None):
+            return obj is None
+
+        with mock.patch.object(studio, "has_view_permission", denies_obj):
+            response = self.client.get("/api/content/testapp.sitesettings")
+            assert response.status_code == 403
+
+        with mock.patch.object(studio, "has_change_permission", denies_obj):
+            response = self.client.patch(
+                "/api/content/testapp.sitesettings",
+                {"tagline": "changed"},
+                format="json",
+            )
+            assert response.status_code == 403
+            assert SiteSettings.objects.get().tagline != "changed"
+
 
 class InlineTests(AuthenticatedTestCase):
     def make_editor(self, with_article_view=True):
