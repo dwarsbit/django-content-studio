@@ -125,6 +125,13 @@
   admin now only returns to one of its own pages and otherwise opens the
   dashboard; the return path also keeps the page's query string.
 
+- **A media folder could be moved into itself.** Changing a folder's
+  parent accepted the folder itself or one of its subfolders, which made
+  the folder part of a cycle: it disappeared from the media library's
+  folder tree, and deleting it cascaded through the cycle. Moving a
+  folder into itself or its subfolders is now rejected with a validation
+  error.
+
 - **Inline lists could include a hidden parent's objects.** The inline
   list endpoint checked view permission on one parent but filtered on
   every parent in the request: repeating the parent filter
