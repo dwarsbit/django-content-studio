@@ -83,6 +83,12 @@
   address (`REMOTE_ADDR`) and ignore the header; with `NUM_PROXIES` set,
   the address the proxies add is used as before. Behind a proxy, set
   `NUM_PROXIES`, or all clients share the proxy's limit.
+- **`MediaField()` and `ManyMediaField()` without a model.** Without a
+  model as the first argument, both fields pointed at an app that does
+  not exist, so the project failed its system checks. They now point at
+  the built-in media library's `Media` model, as intended. Fields that
+  name their model, such as `MediaField("blog.MediaItem")`, are
+  unchanged.
 
 ### Security
 

@@ -45,3 +45,13 @@ def test_fields_are_content_studio_classes():
     assert fields.TagField.__module__ == "content_studio.fields"
     assert media_fields.MediaField.__module__ == "content_studio.media_library.fields"
     assert formats.HtmlFormat.__module__ == "content_studio.formats"
+
+
+def test_media_fields_default_to_built_in_media_model():
+    """Without `to`, the media fields point at the built-in Media model."""
+    from django.apps import apps
+
+    from content_studio.media_library.models import Media
+
+    for field in (media_fields.MediaField(), media_fields.ManyMediaField()):
+        assert apps.get_model(field.remote_field.model) is Media
