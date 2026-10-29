@@ -58,10 +58,16 @@ class LookupFilter(BaseFilterBackend):
         declared in list_filter.
         """
         if getattr(view, "action", None) in ("list", "move", "export"):
+            # An inline list filters on its parent itself.
+            query_params = request.query_params.copy()
+            if hasattr(view, "get_parent_filter_keys"):
+                for key in view.get_parent_filter_keys():
+                    query_params.pop(key, None)
+
             try:
                 filter_kwargs, exclude_kwargs = self.get_filter_kwargs(
                     model_class=view.queryset.model,
-                    query_params=request.query_params,
+                    query_params=query_params,
                     allowed_fields=self.get_allowed_fields(view),
                 )
             except Exception as e:
