@@ -65,8 +65,9 @@ def bulk_action(
     label defaults to the method name; icon is a Phosphor class (like
     the model icon); confirm, when set, is shown before the action runs;
     allowed_permissions gates the action on the model-level permissions
-    it lists (available to anyone who can see the list when empty);
-    destructive marks actions that cannot be undone.
+    it lists; by default the action needs change permission. An empty
+    list opens it to anyone who can see the list. destructive marks
+    actions that cannot be undone.
     """
 
     def decorator(func):
@@ -74,7 +75,11 @@ def bulk_action(
             label=label,
             icon=icon,
             confirm=confirm,
-            allowed_permissions=tuple(allowed_permissions or ()),
+            allowed_permissions=(
+                ("change",)
+                if allowed_permissions is None
+                else tuple(allowed_permissions)
+            ),
             destructive=destructive,
         )
         return func

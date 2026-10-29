@@ -294,8 +294,9 @@ class ArticleStudio(ModelStudio):
 - `destructive`: shows the button in the style for changes that cannot be
   undone.
 - `allowed_permissions`: the studio permissions that allow the button, such
-  as `["change"]`, checked for the object; any one of them is enough.
-  Without it, everyone who can view the object can use the button.
+  as `["change"]`, checked for the object; any one of them is enough. By
+  default the button needs change permission. An empty list, `[]`, lets
+  everyone who can view the object use the button.
 - `is_visible(obj, request)`: hide the button for some objects, such as
   articles that are already published.
 

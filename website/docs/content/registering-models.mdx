@@ -321,11 +321,12 @@ class ArticleStudio(ModelStudio):
 - `icon`: an icon class, like the studio's `icon`.
 - `confirm`: a question to confirm before the action runs.
 - `allowed_permissions`: the model permissions that allow the action; any one
-  of them is enough. Without it, everyone who can see the list can run the
-  action. The permissions are also checked on each selected object (for
-  example `has_change_permission(request, obj)`; without
-  `allowed_permissions`, `has_view_permission(request, obj)`): if any
-  selected object fails, the action runs on none of them.
+  of them is enough. By default the action needs change permission. An
+  empty list, `[]`, lets everyone who can see the list run the action. The
+  permissions are also checked on each selected object (for example
+  `has_change_permission(request, obj)`; with an empty list,
+  `has_view_permission(request, obj)`): if any selected object fails, the
+  action runs on none of them.
 
 The return value is the message editors see: a number reports how many
 objects changed, a string is shown as it is.

@@ -73,6 +73,9 @@ class RegenerateSecretButton(Button):
 class RetryButton(Button):
     label = _("Retry")
     icon = "ph-bold ph-arrow-clockwise"
+    # The delivery log is read-only; the gate is change permission on
+    # the webhook, checked in is_visible.
+    allowed_permissions = []
 
     def is_visible(self, obj, request):
         return obj.status == WebhookDelivery.Status.FAILED and (
