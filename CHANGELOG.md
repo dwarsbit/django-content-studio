@@ -125,6 +125,14 @@
   options of the tags filter were collected by loading every media
   item's tags into Python; the database now returns the distinct values.
 
+- **`IFramePage` embeds its page in a sandbox.** The iframe gets a
+  `sandbox` attribute that lets the embedded page run scripts, keep its
+  origin, submit forms, open windows and offer downloads, but not
+  navigate the admin away, show modal dialogs or lock the pointer, and a
+  referrer policy that keeps the admin's URLs from reaching another
+  origin. The new `sandbox` option takes another set of sandbox tokens,
+  or `None` for no sandbox.
+
 ### Security
 
 - **Buttons and bulk actions need change permission by default.** A

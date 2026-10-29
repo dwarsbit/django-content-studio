@@ -182,19 +182,41 @@ class MainMenuButton(BaseExtension):
         }
 
 
+# The sandbox an IFramePage's iframe gets by default. The embedded page
+# may run scripts, keep its origin, submit forms, open windows and offer
+# downloads, but cannot navigate the admin away, show modal dialogs or
+# lock the pointer.
+DEFAULT_IFRAME_SANDBOX = (
+    "allow-scripts allow-same-origin allow-forms allow-popups "
+    "allow-popups-to-escape-sandbox allow-downloads"
+)
+
+
 class IFramePage(BaseExtension):
+    """
+    A page in the admin that shows another web page in an iframe.
+
+    sandbox is the iframe's sandbox attribute: DEFAULT_IFRAME_SANDBOX
+    unless given, another string of sandbox tokens to tighten or widen
+    it, or None to embed the page without a sandbox.
+    """
+
     extension_type = "IFramePage"
     path: str
     iframe_url: str
+    sandbox: Optional[str]
 
     def __init__(
         self,
         path: str,
         iframe_url: str,
         extension_id: uuid.UUID = None,
+        *,
+        sandbox: Optional[str] = DEFAULT_IFRAME_SANDBOX,
     ):
         self.path = path
         self.iframe_url = iframe_url
+        self.sandbox = sandbox
         super().__init__(extension_id)
 
     def get_id_parts(self):
@@ -206,5 +228,6 @@ class IFramePage(BaseExtension):
             "config": {
                 "path": self.path,
                 "iframe_url": self.iframe_url,
+                "sandbox": self.sandbox,
             },
         }
