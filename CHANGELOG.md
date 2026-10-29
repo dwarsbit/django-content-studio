@@ -76,6 +76,15 @@
   `UserAvatar` component in the design system shows editors in the user
   menu, the activity logs and presence.
 
+### Security
+
+- **Inline lists showed other tenants' objects.** An inline list looked
+  up its parent object without the tenant, so an editor who passed the
+  id of another tenant's object got that object's inline rows. The
+  parent is now looked up within the selected tenant and outside the
+  trash, like the parent's own edit page; a malformed parent id is a
+  client error instead of a server error.
+
 ## 1.2.0 (unreleased)
 
 - **The app shell and the main menu.** Every page shares one header: the
