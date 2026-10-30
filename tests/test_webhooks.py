@@ -16,7 +16,7 @@ from importlib.util import find_spec
 from datetime import timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from io import StringIO
-from unittest import skipUnless
+from unittest import mock, skipUnless
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -26,6 +26,8 @@ from django.utils import timezone
 
 from content_studio.signals import Change
 from content_studio.webhooks.delivery import (
+    WebhookError,
+    _create_connection,
     backoff,
     deliver,
     deliver_due,
@@ -346,6 +348,20 @@ class AddressTests(ReceiverMixin, TestCase):
 
         self.assertIn("non-public address", delivery.error)
         self.assertEqual(self.server.requests, [])
+
+    def test_nat64_addresses_are_checked_on_the_ipv4_address(self):
+        connect = _create_connection("example.com", allowed=False, sockets=[])
+
+        for address in ("64:ff9b::7f00:1", "64:ff9b::a00:1", "64:ff9b::a9fe:a9fe"):
+            answer = [(socket.AF_INET6, socket.SOCK_STREAM, 0, "", (address, 80, 0, 0))]
+            with (
+                self.subTest(address),
+                mock.patch("socket.getaddrinfo", return_value=answer),
+                mock.patch("socket.socket") as sock,
+            ):
+                with self.assertRaisesMessage(WebhookError, "non-public address"):
+                    connect(("example.com", 80))
+                sock.assert_not_called()
 
     def test_plain_http_needs_debug_or_an_allowed_host(self):
         delivery = self.attempt("http://example.com/")

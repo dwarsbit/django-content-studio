@@ -7,6 +7,15 @@
   the README, the package metadata and the settings error messages point to
   the new address.
 
+### Security
+
+- **Webhooks could reach private addresses through NAT64.** A webhook
+  URL with an address in the NAT64 prefix `64:ff9b::/96`, such as
+  `http://[64:ff9b::7f00:1]/`, passed the public-address check. On a
+  network with a NAT64 gateway, that reaches the IPv4 address it
+  embeds, such as `127.0.0.1`. These addresses are now checked on the
+  IPv4 address they embed.
+
 ### Fixes
 
 - `URLPathField` no longer accepts a value that ends with a line break,
