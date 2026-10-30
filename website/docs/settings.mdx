@@ -148,6 +148,16 @@ the editor off. System check `content_studio.E009` reports a focal point
 field without a media library model, or one that is missing or not a
 `JSONField`.
 
+### MEDIA_METADATA_ATTR {#media_metadata_attr}
+
+The field on the media item model that stores the
+[metadata read from its file](/docs/media-library#metadata), such as an
+image's width and height. The field must be a `JSONField`; editors cannot
+change it. Default: `None`, which turns reading metadata off. The built-in
+`Media` model has a `metadata` field for it. System check
+`content_studio.E025` reports a metadata field without a media library model,
+or one that is missing or not a `JSONField`.
+
 ## Multi-tenancy
 
 ### TENANT_MODEL {#tenant_model}

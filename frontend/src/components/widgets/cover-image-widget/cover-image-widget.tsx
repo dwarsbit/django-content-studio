@@ -21,6 +21,7 @@ import { useCreateMedia } from "@/hooks/use-create-media";
 import { useDiscover } from "@/hooks/use-discover";
 import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
 import { useUpdateMedia } from "@/hooks/use-update-media";
+import { dimensionsOf, metadataOf } from "@/lib/media-metadata";
 import { cn, getErrorMessage } from "@/lib/utils";
 import type {
   CoverImageWidgetOptions,
@@ -137,10 +138,17 @@ export function CoverImageWidget({
   });
 
   const thumbnail = value?.thumbnail ?? item?.thumbnail;
-  // Thumbnails are scaled down: the minimum size is checked on the file.
-  const imageSize = useImageSize(
-    (minWidth || minHeight) && item?.type === "image" ? item.file : null,
+  // The image's size: from its stored metadata, or else measured on
+  // the file (thumbnails are scaled down) when a minimum size needs it.
+  const storedSize = dimensionsOf(
+    metadataOf(item, discover?.media_library.metadata),
   );
+  const measuredSize = useImageSize(
+    !storedSize && (minWidth || minHeight) && item?.type === "image"
+      ? item.file
+      : null,
+  );
+  const imageSize = storedSize ?? measuredSize;
   const isTooSmall =
     imageSize !== null &&
     ((minWidth !== undefined && imageSize.width < minWidth) ||

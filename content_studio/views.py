@@ -174,6 +174,9 @@ class AdminApiViewSet(ViewSet):
             # The media item attribute holding the focal point; None
             # disables the focal point editor.
             "focal_point": cs_settings.FOCAL_POINT_ATTR,
+            # The media item attribute holding the metadata read from its
+            # file (such as an image's width and height); None when off.
+            "metadata": cs_settings.MEDIA_METADATA_ATTR,
             "models": {
                 "media_model": (media_model._meta.label_lower if media_model else None),
                 "folder_model": (

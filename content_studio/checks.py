@@ -653,15 +653,16 @@ def webhook_setting_errors() -> list[tuple[str, str]]:
     return errors
 
 
-def focal_point_errors() -> list[tuple[str, str]]:
+def media_json_attr_errors(setting, check_id, purpose) -> list[tuple[str, str]]:
     """
-    A misconfigured FOCAL_POINT_ATTR, as (check id, message) pairs.
-    The attribute must exist on the media item model and be a JSONField:
-    the frontend stores the focal point in it as {"x": 0-100, "y": 0-100}.
+    A misconfigured setting naming a JSONField on the media item model
+    (FOCAL_POINT_ATTR, MEDIA_METADATA_ATTR), as (check id, message)
+    pairs. The attribute must exist on the media item model and be a
+    JSONField.
     """
     errors = []
 
-    attr = cs_settings.FOCAL_POINT_ATTR
+    attr = getattr(cs_settings, setting)
 
     if not attr:
         return errors
@@ -671,9 +672,9 @@ def focal_point_errors() -> list[tuple[str, str]]:
     if not media_model:
         errors.append(
             (
-                "content_studio.E009",
-                "FOCAL_POINT_ATTR is set but MEDIA_LIBRARY_MODEL is not; "
-                "the focal point attribute needs a media item model.",
+                check_id,
+                f"{setting} is set but MEDIA_LIBRARY_MODEL is not; "
+                f"the {purpose} attribute needs a media item model.",
             )
         )
         return errors
@@ -683,8 +684,8 @@ def focal_point_errors() -> list[tuple[str, str]]:
     except FieldDoesNotExist:
         errors.append(
             (
-                "content_studio.E009",
-                f"FOCAL_POINT_ATTR refers to the unknown field '{attr}' on "
+                check_id,
+                f"{setting} refers to the unknown field '{attr}' on "
                 f"{media_model._meta.label_lower}.",
             )
         )
@@ -693,13 +694,33 @@ def focal_point_errors() -> list[tuple[str, str]]:
     if not isinstance(field, models.JSONField):
         errors.append(
             (
-                "content_studio.E009",
-                f"FOCAL_POINT_ATTR must name a JSONField; '{attr}' on "
+                check_id,
+                f"{setting} must name a JSONField; '{attr}' on "
                 f"{media_model._meta.label_lower} is not.",
             )
         )
 
     return errors
+
+
+def focal_point_errors() -> list[tuple[str, str]]:
+    """
+    A misconfigured FOCAL_POINT_ATTR, as (check id, message) pairs. The
+    frontend stores the focal point in it as {"x": 0-100, "y": 0-100}.
+    """
+    return media_json_attr_errors(
+        "FOCAL_POINT_ATTR", "content_studio.E009", "focal point"
+    )
+
+
+def media_metadata_errors() -> list[tuple[str, str]]:
+    """
+    A misconfigured MEDIA_METADATA_ATTR, as (check id, message) pairs.
+    Uploads store the metadata read from the file in it.
+    """
+    return media_json_attr_errors(
+        "MEDIA_METADATA_ATTR", "content_studio.E025", "metadata"
+    )
 
 
 def model_field_names(model) -> set[str]:
@@ -1940,6 +1961,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in focal_point_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in media_metadata_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in media_upload_errors():

@@ -14,6 +14,17 @@
   `default_format_mapping` and `TableColumn(format=...)` accept instances
   too, and the system checks `content_studio.E006`, `E010` and `E013`
   accept them.
+- **Media metadata.** The media library stores facts read from a file
+  when it is uploaded or replaced, in the `JSONField` that the new
+  `MEDIA_METADATA_ATTR` setting names: an image's width and height, read
+  with Pillow (install the new `images` extra). The site's new
+  `get_media_metadata(file, type)` hook decides what is read; override it
+  to add, for example, a video's duration and frame rate. The built-in
+  `Media` model has a `metadata` field (run `migrate`), and
+  `manage.py content_studio_media_metadata` reads the files you already
+  have. The admin shows the metadata in a file's details, and the cover
+  image widget uses the stored size. System check `content_studio.E025`
+  reports a misconfigured `MEDIA_METADATA_ATTR`.
 - **Cover image options.** `CoverImageWidget` takes `aspect_ratio`, such
   as `"21:9"` or `"1:1"`, for the frame's shape (16:9 when unset), and
   `min_width` and `min_height` in pixels: a smaller image gets a warning,

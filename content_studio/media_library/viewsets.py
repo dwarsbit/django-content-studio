@@ -22,6 +22,7 @@ from content_studio.signals import (
     collect_changes,
     record_change,
 )
+from .metadata import get_metadata_values
 from .serializers import build_media_folder_serializer, build_media_item_serializer
 
 # The bulk actions offered on the items endpoint.
@@ -175,8 +176,16 @@ class MediaLibraryViewSet(ModelViewSet):
 
         raise NotConfigured("The media library model is not defined.")
 
+    def get_metadata_values(self, serializer) -> dict:
+        """The metadata of an uploaded file, read before it is saved."""
+        data = serializer.validated_data
+        media_type = data.get("type", getattr(serializer.instance, "type", None))
+
+        return get_metadata_values(data.get("file"), media_type)
+
     def perform_create(self, serializer):
-        record_change(self.request, serializer.save(), CREATED)
+        obj = serializer.save(**self.get_metadata_values(serializer))
+        record_change(self.request, obj, CREATED)
 
     def perform_update(self, serializer):
         # A replaced file is removed from storage once the change is
@@ -185,7 +194,7 @@ class MediaLibraryViewSet(ModelViewSet):
         previous = getattr(serializer.instance, "file", None)
         previous_name = previous.name if previous else None
 
-        obj = serializer.save()
+        obj = serializer.save(**self.get_metadata_values(serializer))
         record_change(self.request, obj, UPDATED)
 
         if previous_name and obj.file.name != previous_name:

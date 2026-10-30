@@ -386,3 +386,43 @@ describe("CoverImageWidget options", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("CoverImageWidget metadata", () => {
+  it("checks the minimum size on the stored metadata, without loading the file", async () => {
+    const loads = vi.fn();
+    vi.stubGlobal(
+      "Image",
+      class {
+        set src(src: string) {
+          loads(src);
+        }
+      },
+    );
+    const item = {
+      ...makeMediaItem(),
+      metadata: { width: 800, height: 450 },
+    } as MediaItem;
+    setup(null, item);
+    useDiscoverMock.mockReturnValue({
+      data: {
+        media_library: {
+          enabled: true,
+          folders: false,
+          crop: false,
+          focal_point: null,
+          metadata: "metadata",
+          models: { media_model: "media.image", folder_model: null },
+        },
+      },
+    });
+
+    renderWidget({ value: relatedValue, options: { min_width: 1600 } });
+
+    expect(
+      await screen.findByText("widgets.cover_image_widget.too_small"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("800 × 450 px")).toBeInTheDocument();
+    expect(loads).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});

@@ -103,7 +103,7 @@ editors' sessions.
 
 ## Customize with site hooks
 
-Three methods on the site change how the media library behaves. Add them to
+Four methods on the site change how the media library behaves. Add them to
 your site subclass:
 
 ```python
@@ -132,6 +132,8 @@ admin_site = BlogStudioSite()
   media item the admin works with. By default, all fields; leave out fields
   editors should not see.
 - **`crop_image(obj, crop_info)`** turns on cropping (see below).
+- **`get_media_metadata(file, type)`** returns the [metadata](#metadata) to
+  store for an uploaded file.
 
 ## Cropping and focal points
 
@@ -151,3 +153,108 @@ A focal point is stored on the item itself. Name its `JSONField` in
 the image to set it; it is saved as `{"x": 0-100, "y": 0-100}`, percentages
 of the image's width and height. The [cover image widget](/docs/forms/widgets#cover-images)
 sets the same focal point from the edit page.
+
+## Metadata
+
+The media library can store facts about each file, read once when the file
+is uploaded or replaced: an image's width and height, or a video's duration.
+The admin shows them in the file's details, and the
+[cover image widget](/docs/forms/widgets#cover-images) uses an image's size
+to warn about images that are too small.
+
+1. Add a `JSONField` to your media item model, or use the built-in `Media`
+   model, which has a `metadata` field.
+2. Name the field in [`MEDIA_METADATA_ATTR`](/docs/settings#media_metadata_attr):
+
+   ```python
+   # mysite/settings.py
+   CONTENT_STUDIO = {
+       "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Media",
+       "MEDIA_LIBRARY_FOLDER_MODEL": "content_studio.media_library.models.Folder",
+       "MEDIA_METADATA_ATTR": "metadata",
+   }
+   ```
+
+3. Install Content Studio with the `images` extra, which adds
+   [Pillow](https://python-pillow.org/) to read the size of images:
+
+   ```bash
+   pip install "django-content-studio[images]"
+   ```
+
+4. Read the metadata of the files you already have:
+
+   ```bash
+   python manage.py content_studio_media_metadata
+   ```
+
+   The command reads the items without metadata. Pass `--all` to read every
+   item again, for example after you change what is read.
+
+Images get `{"width": 1600, "height": 900}`, in pixels as the image is shown,
+after its EXIF orientation. Other files get no metadata by default: a video's
+duration and frame rate need a tool such as
+[FFmpeg](https://ffmpeg.org/)'s `ffprobe`. Override `get_media_metadata` on
+your site to read them. It receives the uploaded file and the item's type
+(`"image"`, `"video"`, `"audio"` or `"file"`) and returns a dictionary of
+JSON values:
+
+```python
+# mysite/studio.py
+import json
+import subprocess
+import tempfile
+
+from content_studio.admin import ContentStudioSite
+
+
+class BlogStudioSite(ContentStudioSite):
+    def get_media_metadata(self, file, type):
+        if type != "video":
+            return super().get_media_metadata(file, type)
+
+        # ffprobe reads from a path: copy the upload to a temporary file.
+        with tempfile.NamedTemporaryFile() as copy:
+            file.seek(0)
+            for chunk in file.chunks():
+                copy.write(chunk)
+            copy.flush()
+            file.seek(0)
+
+            result = subprocess.run(
+                [
+                    "ffprobe",
+                    "-v",
+                    "error",
+                    "-select_streams",
+                    "v:0",
+                    "-show_entries",
+                    "stream=width,height,r_frame_rate:format=duration",
+                    "-of",
+                    "json",
+                    copy.name,
+                ],
+                capture_output=True,
+                check=True,
+                text=True,
+            )
+
+        probe = json.loads(result.stdout)
+        stream = probe["streams"][0]
+        frames, seconds = stream["r_frame_rate"].split("/")
+
+        return {
+            "width": stream["width"],
+            "height": stream["height"],
+            "duration": float(probe["format"]["duration"]),
+            "frame_rate": round(int(frames) / int(seconds), 2),
+        }
+
+
+admin_site = BlogStudioSite()
+```
+
+The admin shows `width` and `height` in pixels, `duration` in seconds as
+minutes and seconds, and `frame_rate` in frames per second. Other keys are
+stored for your own templates and code. The method runs during the upload
+request, so keep it fast; an exception in it fails the upload.

@@ -9,8 +9,9 @@ import {
   PiImagesBold,
 } from "react-icons/pi";
 
+import { describeMetadata } from "@/lib/media-metadata";
 import { cn } from "@/lib/utils";
-import type { MediaItem } from "@/types";
+import type { MediaItem, MediaMetadata } from "@/types";
 
 /** The file's extension in upper case, from its name; empty without one. */
 export function extensionOf(item: MediaItem): string {
@@ -25,9 +26,17 @@ export function sizeOf(item: Pick<MediaItem, "size">): string {
 }
 
 /** The meta line of a file: "PNG · 1.2 MB", the type where the name
- * has no extension. */
-export function describeFile(item: MediaItem, typeLabel: string): string {
-  return [extensionOf(item) || typeLabel, sizeOf(item)]
+ * has no extension, then its metadata when known. */
+export function describeFile(
+  item: MediaItem,
+  typeLabel: string,
+  metadata: MediaMetadata | null = null,
+): string {
+  return [
+    extensionOf(item) || typeLabel,
+    sizeOf(item),
+    describeMetadata(metadata),
+  ]
     .filter(Boolean)
     .join(" · ");
 }

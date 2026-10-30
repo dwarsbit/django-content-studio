@@ -44,7 +44,7 @@ content_studio/
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E024, W001-W019)
+├── checks.py            # System checks (content_studio.E001-E025, W001-W019)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
@@ -133,6 +133,8 @@ CONTENT_STUDIO = {
     'MEDIA_LIBRARY_ALLOWED_EXTENSIONS': [...],  # images (no SVG), video, audio, documents
     'MEDIA_LIBRARY_MAX_UPLOAD_SIZE': 50 * 1024 * 1024,
     'HTML_SANITIZER': None,
+    'FOCAL_POINT_ATTR': None,  # JSONField on the media model for the focal point
+    'MEDIA_METADATA_ATTR': None,  # JSONField for metadata read on upload (site.get_media_metadata)
     'TENANT_MODEL': None,
     'PRESENCE': True,  # who has an object open; a studio opts out with presence = False
     'PRESENCE_CACHE': 'default',  # must be a shared cache across processes
