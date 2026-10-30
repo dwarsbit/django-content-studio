@@ -367,6 +367,14 @@ class LoginAndRefreshFlowTests(TestCase):
         # Without a valid refresh cookie the session cannot be continued.
         assert APIClient().post(REFRESH_URL).status_code == 401
 
+    def test_logout_without_the_cookie_leaves_cookies_alone(self):
+        # A cross-site form POST carries no SameSite=Lax cookie; it must
+        # not clear the refresh cookie of the browser it runs in.
+        logout = APIClient().post(LOGOUT_URL)
+
+        assert logout.status_code == 204
+        assert REFRESH_COOKIE_NAME not in logout.cookies
+
 
 class RevocationTests(TestCase):
     """Rotation, logout and the absolute session lifetime revoke server-side."""
