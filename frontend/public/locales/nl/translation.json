@@ -28,7 +28,8 @@
     "error_troubleshooting": "Veelvoorkomende problemen kunnen zijn:",
     "error_troubleshooting_django": "Django draait niet",
     "error_troubleshooting_api": "De API URL is niet correct",
-    "not_found": "We kunnen niet vinden wat je zoekt."
+    "not_found": "We kunnen niet vinden wat je zoekt.",
+    "log_out_failed": "Uitloggen is niet gelukt. Probeer het opnieuw."
   },
   "login": {
     "title": "Welkom terug",

@@ -31,6 +31,12 @@
   that was the right one got a different error than a wrong code. Both
   now get the same error and count as a failed attempt.
 
+- **Logging out could fail silently.** When the server could not be
+  reached, the admin showed the login page although the session was not
+  ended, and the next visit signed the same user back in. The admin now
+  says that logging out failed and keeps the user signed in, so they can
+  try again.
+
 ### Fixes
 
 - The admin no longer stays blank in browsers that block site data, such

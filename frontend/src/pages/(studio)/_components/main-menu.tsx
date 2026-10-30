@@ -577,8 +577,11 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
-                logout();
-                navigate("/login");
+                logout().then((loggedOut) => {
+                  if (loggedOut) {
+                    navigate("/login");
+                  }
+                });
               }}
             >
               {t("main_menu.log_out")}
