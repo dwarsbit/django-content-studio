@@ -2,7 +2,7 @@
 
 The documentation site for [Django Content Studio](https://github.com/dwarsbit/django-content-studio),
 built with [Docusaurus](https://docusaurus.io/) and hosted on GitHub Pages at
-[dwarsbit.github.io/django-content-studio](https://dwarsbit.github.io/django-content-studio/).
+[djangocontentstudio.org](https://djangocontentstudio.org/).
 
 ## Development
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 (unreleased)
+
+- **New documentation address.** The documentation moved to
+  [djangocontentstudio.org](https://djangocontentstudio.org/). The links in
+  the README, the package metadata and the settings error messages point to
+  the new address.
+
 ## 1.2.0 (2026-10-29)
 
 - **Duplicate (save as new).** A studio with `allow_duplication = True`

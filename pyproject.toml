@@ -46,8 +46,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://dwarsbit.github.io/django-content-studio/"
-Documentation = "https://dwarsbit.github.io/django-content-studio/docs/intro"
+Homepage = "https://djangocontentstudio.org/"
+Documentation = "https://djangocontentstudio.org/docs/intro"
 Repository = "https://github.com/dwarsbit/django-content-studio"
 Issues = "https://github.com/dwarsbit/django-content-studio/issues"
 Changelog = "https://github.com/dwarsbit/django-content-studio/blob/main/CHANGELOG.md"
