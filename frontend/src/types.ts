@@ -22,7 +22,8 @@ export interface AuthState {
   token: string | null;
   setToken(token: string | null): void;
   isAuthenticated: boolean;
-  logout(): Promise<void>;
+  /** Resolves to false when the server could not end the session. */
+  logout(): Promise<boolean>;
 }
 
 export interface AdminInfo {

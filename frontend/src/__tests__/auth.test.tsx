@@ -7,10 +7,14 @@ import {
 } from "axios";
 import React from "react";
 import { createMemoryRouter, RouterProvider, useLocation } from "react-router";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthGuard, AuthProvider, useAuth } from "@/auth";
 import { http } from "@/hooks/use-http";
+
+const toastMock = vi.hoisted(() => ({ error: vi.fn() }));
+
+vi.mock("sonner", () => ({ toast: toastMock }));
 
 const REFRESH_URL = "/tokens/jsonwebtoken/refresh";
 const LOGOUT_URL = "/tokens/jsonwebtoken/logout";
@@ -249,6 +253,31 @@ describe("AuthProvider", () => {
     expect(queryClient.getQueryData(["model-groups"])).toBeUndefined();
     expect(localStorage.getItem("__dcs_tenant__")).toBeNull();
     expect(http.defaults.headers.common["X-DCS-Tenant"]).toBeUndefined();
+  });
+
+  it("keeps the session when the server never received the logout", async () => {
+    respond = (url, config) =>
+      url === REFRESH_URL
+        ? { data: { access: "boot-token" }, status: 200 }
+        : makeError(503, config);
+
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(["model-groups"], { models: ["secret"] });
+
+    renderApp({ onLogout: true, queryClient });
+    await screen.findByText("token:boot-token");
+
+    screen.getByText("log out").click();
+
+    // The refresh cookie may still be there and would sign the user back
+    // in on the next page load, so the admin does not pretend otherwise.
+    await waitFor(() => expect(toastMock.error).toHaveBeenCalled());
+    expect(callsTo(LOGOUT_URL)).toBe(1);
+    expect(screen.getByText("token:boot-token")).toBeInTheDocument();
+    expect(http.defaults.headers.common["Authorization"]).toBe(
+      "Bearer boot-token",
+    );
+    expect(queryClient.getQueryData(["model-groups"])).toBeDefined();
   });
 });
 

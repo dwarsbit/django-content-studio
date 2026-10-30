@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
+import i18n from "i18next";
 import * as R from "ramda";
 import React, {
   useCallback,
@@ -10,6 +11,7 @@ import React, {
 } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useEffectOnce } from "react-use";
+import { toast } from "sonner";
 
 import { http } from "@/hooks/use-http";
 import { storeTenant } from "@/lib/tenant-storage";
@@ -75,8 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await http.post(LOGOUT_URL);
     } catch {
-      // The refresh cookie is cleared server-side regardless; reset the
-      // local session either way.
+      // Only the logout response clears the httpOnly refresh cookie.
+      // Without it, the cookie would sign the user back in on the next
+      // page load, so the session stays and the user can try again.
+      toast.error(i18n.t("app.log_out_failed"));
+      return false;
     }
     setToken(null);
     // The next user of this browser picks their own tenant.
@@ -84,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Cached responses (discover, content) belong to the signed-out user;
     // the next user starts without them.
     queryClient.clear();
+    return true;
   }, [setToken, queryClient]);
 
   // Silent session restore on boot, gated so no child request can fire
