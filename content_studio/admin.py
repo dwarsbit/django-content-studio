@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models import Model
+from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 from rest_framework.request import HttpRequest
 
@@ -93,13 +94,22 @@ class RelationDisplay:
 class ListItemDisplay:
     """
     The anatomy of an item in the list view: a prominent title, a muted
-    description and a meta value rendered as a badge on the right.
+    description, a meta value rendered as a badge on the right and a
+    thumbnail (an image URL) on the left.
     """
 
-    def __init__(self, title: str, description: str = "", meta: str = ""):
+    def __init__(
+        self,
+        title: str,
+        description: str = "",
+        meta: str = "",
+        thumbnail: str = "",
+    ):
         self.title = title
         self.description = description
         self.meta = meta
+        # A URL to an image.
+        self.thumbnail = thumbnail
 
 
 T = TypeVar("T", bound=Model)
@@ -402,7 +412,36 @@ class ModelStudio(BaseStudio[T]):
             title=resolve("title") or str(obj),
             description=resolve("description"),
             meta=resolve("meta"),
+            thumbnail=self._resolve_thumbnail(obj, display.get("thumbnail")),
         )
+
+    def _resolve_thumbnail(self, obj: models.Model, field: Optional[str]) -> str:
+        """
+        The thumbnail URL of the list_item_display mapping: an image or
+        file field, a media library item (images only) or a URL string.
+        """
+        if not field:
+            return ""
+
+        value = getattr(obj, field)
+
+        if callable(value):
+            value = value()
+
+        if not value:
+            return ""
+
+        if isinstance(value, FieldFile):
+            return value.url
+
+        if isinstance(value, models.Model):
+            if value.__class__ is cs_settings.MEDIA_LIBRARY_MODEL:
+                if getattr(value, "type", None) != "image":
+                    return ""
+                return self.admin_site.get_thumbnail(value) or ""
+            return ""
+
+        return str(value)
 
     def has_add_permission(self, request: HttpRequest, obj: Optional[T] = None) -> bool:
         # Don't allow adding more than one singleton object.

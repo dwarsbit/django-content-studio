@@ -7,6 +7,7 @@ and the list_display alias of table_display.
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
+from django.test import override_settings
 
 from content_studio.admin import (
     InlineModelStudio,
@@ -17,7 +18,8 @@ from content_studio.admin import (
 )
 from content_studio.checks import list_config_errors, list_display_warnings
 from tests.test_e2e_crud import AuthenticatedTestCase
-from tests.testapp.models import Article
+from content_studio.media_library.models import Media
+from tests.testapp.models import Article, Product
 
 
 def _validate_with(model_studio):
@@ -133,6 +135,51 @@ def test_get_list_item_display_falls_back_to_str_without_mapping():
     assert display.title == "Fallback"
     assert display.description == ""
     assert display.meta == ""
+    assert display.thumbnail == ""
+
+
+def _thumbnail_of(model, obj, field):
+    class WithThumbnail(ModelStudio):
+        list_item_display = {"thumbnail": field}
+
+    return WithThumbnail(model, admin_site).get_list_item_display(obj, None).thumbnail
+
+
+def test_thumbnail_resolves_a_file_field_to_its_url():
+    product = Product(title="Lamp", manual="covers/lamp.png")
+
+    assert _thumbnail_of(Product, product, "manual") == product.manual.url
+
+
+def test_thumbnail_of_an_empty_file_field_is_empty():
+    assert _thumbnail_of(Product, Product(title="Lamp"), "manual") == ""
+
+
+def test_thumbnail_resolves_a_method_returning_a_url():
+    article = Article(title="Hello")
+    article.get_cover_url = lambda: "https://cdn.example.com/hello.jpg"
+
+    assert (
+        _thumbnail_of(Article, article, "get_cover_url")
+        == "https://cdn.example.com/hello.jpg"
+    )
+
+
+@override_settings(
+    CONTENT_STUDIO={
+        "ADMIN_SITE": "content_studio.admin.admin_site",
+        "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Media",
+        "MEDIA_LIBRARY_FOLDER_MODEL": "content_studio.media_library.models.Folder",
+    }
+)
+def test_thumbnail_resolves_media_library_images_only():
+    holder = Article(title="Hello")
+    holder.image = Media(file="photos/sea.jpg", type="image")
+    holder.video = Media(file="clips/sea.mp4", type="video")
+
+    assert _thumbnail_of(Article, holder, "image") == holder.image.file.url
+    # Other media types have no picture to show.
+    assert _thumbnail_of(Article, holder, "video") == ""
 
 
 def test_get_list_item_display_can_be_overridden():
@@ -173,6 +220,7 @@ class ListDisplaySerializationTests(AuthenticatedTestCase):
             "title": "Hello",
             "description": "Body text",
             "meta": "Published",
+            "thumbnail": "",
         }
 
     def test_table_fields_still_limited_to_table_display(self):

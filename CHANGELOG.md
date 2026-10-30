@@ -2,6 +2,12 @@
 
 ## 1.3.0 (unreleased)
 
+- **Thumbnails in the list view.** `list_item_display` takes a
+  `thumbnail`, shown as a square on the left of each list item. It names
+  an image or file field, a media field (images only) or a method or
+  property that returns an image URL; `ListItemDisplay` takes it as
+  `thumbnail`. Once one item on the page has a thumbnail, items without
+  one show a placeholder, so the titles stay aligned.
 - **Edit pages keep a readable width.** The main column of the edit page
   is now at most 800px wide, with the sidebar next to it, so fields no
   longer stretch across the screen on a studio without a sidebar. The

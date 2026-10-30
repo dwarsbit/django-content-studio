@@ -60,6 +60,7 @@ class ArticleStudio(ModelStudio):
         "title": "title",
         "description": "body",
         "meta": "get_status_display",
+        "thumbnail": "cover",
     }
     # Newest first, so the seeded demo article leads the list.
     ordering = ["-pk"]
