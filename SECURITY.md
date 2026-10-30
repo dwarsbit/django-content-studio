@@ -20,6 +20,6 @@ you in the changelog unless you prefer otherwise.
 
 ## Deploying securely
 
-The [Security](https://dwarsbit.github.io/django-content-studio/docs/security)
+The [Security](https://djangocontentstudio.org/docs/security)
 page of the documentation describes how Content Studio protects its
 interface and the checklist for running it in production.

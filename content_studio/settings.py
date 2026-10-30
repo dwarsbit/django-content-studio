@@ -213,7 +213,7 @@ class ContentStudioSettings:
         return val
 
     def __check_user_settings(self, user_settings):
-        SETTINGS_DOC = "https://dwarsbit.github.io/django-content-studio/docs/settings"
+        SETTINGS_DOC = "https://djangocontentstudio.org/docs/settings"
         for setting in REMOVED_SETTINGS:
             if setting in user_settings:
                 raise RuntimeError(

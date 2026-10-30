@@ -15,7 +15,7 @@ with batteries included. Register the models you already have and manage
 them in a fast, modern admin, with optional fields and models for
 content-driven projects.
 
-**Documentation: [dwarsbit.github.io/django-content-studio](https://dwarsbit.github.io/django-content-studio/)**
+**Documentation: [djangocontentstudio.org](https://djangocontentstudio.org/)**
 
 ## Features
 
@@ -88,23 +88,23 @@ content-driven projects.
 5. Start the development server, open `/admin/` and log in with a staff
    account.
 
-Continue with [Getting started](https://dwarsbit.github.io/django-content-studio/docs/getting-started)
+Continue with [Getting started](https://djangocontentstudio.org/docs/getting-started)
 in the documentation.
 
 ## Documentation
 
-- [Introduction](https://dwarsbit.github.io/django-content-studio/docs/intro): what Content Studio is, and what it is not
-- [How it compares](https://dwarsbit.github.io/django-content-studio/docs/comparison): Content Studio next to admin themes and content management systems
-- [Getting started](https://dwarsbit.github.io/django-content-studio/docs/getting-started): installation and your first model
-- [Registering models](https://dwarsbit.github.io/django-content-studio/docs/content/registering-models): studio options, singletons and inlines
-- [Access control](https://dwarsbit.github.io/django-content-studio/docs/permissions): model and object permissions
-- [Widgets](https://dwarsbit.github.io/django-content-studio/docs/forms/widgets) and [form sets](https://dwarsbit.github.io/django-content-studio/docs/forms/form-sets): field editors and edit page layouts
-- [Dashboard](https://dwarsbit.github.io/django-content-studio/docs/dashboard): composing the start page
-- [Media library](https://dwarsbit.github.io/django-content-studio/docs/media-library): models, uploads and cropping
-- [Authentication](https://dwarsbit.github.io/django-content-studio/docs/authentication): logging in, sessions and password reset
-- [Multi-tenancy](https://dwarsbit.github.io/django-content-studio/docs/multi-tenancy): tenants and who may work in them
-- [Security](https://dwarsbit.github.io/django-content-studio/docs/security): what is protected, and a deployment checklist
-- [Settings](https://dwarsbit.github.io/django-content-studio/docs/settings): every `CONTENT_STUDIO` setting
+- [Introduction](https://djangocontentstudio.org/docs/intro): what Content Studio is, and what it is not
+- [How it compares](https://djangocontentstudio.org/docs/comparison): Content Studio next to admin themes and content management systems
+- [Getting started](https://djangocontentstudio.org/docs/getting-started): installation and your first model
+- [Registering models](https://djangocontentstudio.org/docs/content/registering-models): studio options, singletons and inlines
+- [Access control](https://djangocontentstudio.org/docs/permissions): model and object permissions
+- [Widgets](https://djangocontentstudio.org/docs/forms/widgets) and [form sets](https://djangocontentstudio.org/docs/forms/form-sets): field editors and edit page layouts
+- [Dashboard](https://djangocontentstudio.org/docs/dashboard): composing the start page
+- [Media library](https://djangocontentstudio.org/docs/media-library): models, uploads and cropping
+- [Authentication](https://djangocontentstudio.org/docs/authentication): logging in, sessions and password reset
+- [Multi-tenancy](https://djangocontentstudio.org/docs/multi-tenancy): tenants and who may work in them
+- [Security](https://djangocontentstudio.org/docs/security): what is protected, and a deployment checklist
+- [Settings](https://djangocontentstudio.org/docs/settings): every `CONTENT_STUDIO` setting
 
 See also [Django Headless](https://djangoheadless.org), if you need an API
 for your own clients.
