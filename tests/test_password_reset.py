@@ -5,6 +5,8 @@ Codes are generated with secrets, bound to the email on validation, and
 invalidated after too many failed attempts.
 """
 
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import models as auth_models
 from django.core import mail
@@ -435,3 +437,25 @@ def test_failed_attempts_survive_atomic_requests(user):
         connection.settings_dict["ATOMIC_REQUESTS"] = original
 
     assert PasswordResetCode.objects.get(email="a@example.com").locked
+
+
+@pytest.mark.django_db
+def test_mail_sent_in_the_request_is_a_deployment_warning():
+    pytest.importorskip("django.tasks")
+    from django.core import checks
+
+    from content_studio.checks import check_password_reset_deployment
+
+    def check_ids(**kwargs):
+        return [message.id for message in checks.run_checks(**kwargs)]
+
+    # Without a TASKS setting, Django's ImmediateBackend sends in the request.
+    assert [m.id for m in check_password_reset_deployment()] == ["content_studio.W018"]
+    assert "content_studio.W018" in check_ids(include_deployment_checks=True)
+    assert "content_studio.W018" not in check_ids()
+
+    with override_settings(TASKS=DEFERRED_TASKS):
+        assert check_password_reset_deployment() == []
+
+    with patch("content_studio.checks.apps.is_installed", return_value=False):
+        assert check_password_reset_deployment() == []

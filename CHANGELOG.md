@@ -21,6 +21,12 @@
   their current session expired. Signing out now only clears the cookie
   when the request comes from the admin itself.
 
+- **A warning for password reset emails sent during the request.**
+  Without a task backend that runs Django tasks in a worker, password
+  reset emails are sent during the request, which then takes longer for
+  an address that has an account. `manage.py check --deploy` now warns
+  about this (`content_studio.W018`).
+
 ### Fixes
 
 - `URLPathField` no longer accepts a value that ends with a line break,

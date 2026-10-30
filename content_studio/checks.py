@@ -5,6 +5,9 @@ Django's check framework runs (`manage.py check`, runserver startup,
 `makemigrations` and CI).
 """
 
+from importlib import import_module
+
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import checks
@@ -1713,6 +1716,64 @@ def check_presence_deployment(app_configs=None, **kwargs) -> list[checks.CheckMe
                 "database cache) in PRESENCE_CACHE, or set PRESENCE to False.",
                 obj=cs_settings.ADMIN_SITE.__class__.__name__,
                 id="content_studio.W017",
+            )
+        ]
+
+    return []
+
+
+def password_reset_mail_in_request() -> bool:
+    """
+    Whether password reset emails are sent during the request: by an
+    ImmediateBackend (the default without a TASKS setting), or in place
+    without a tasks framework (Django 5.2 without django-tasks).
+    """
+    from .contrib.password_reset import tasks
+
+    task = tasks.send_reset_code
+
+    if isinstance(task, tasks._SynchronousTask):
+        return True
+
+    try:
+        backend = task.get_backend()
+    except Exception:
+        # A misconfigured TASKS setting is reported by Django's own checks.
+        return False
+
+    immediate = []
+    for module in (
+        "django.tasks.backends.immediate",
+        "django_tasks.backends.immediate",
+    ):
+        try:
+            immediate.append(import_module(module).ImmediateBackend)
+        except ImportError:
+            pass
+
+    return isinstance(backend, tuple(immediate))
+
+
+@checks.register(checks.Tags.security, deploy=True)
+def check_password_reset_deployment(
+    app_configs=None, **kwargs
+) -> list[checks.CheckMessage]:
+    """
+    Password reset emails sent during the request, a deployment check:
+    an email is only sent for an account, so the response time reveals
+    which addresses have one.
+    """
+    if not apps.is_installed("content_studio.contrib.password_reset"):
+        return []
+
+    if password_reset_mail_in_request():
+        return [
+            checks.Warning(
+                "Password reset emails are sent during the request, so its "
+                "duration reveals which email addresses have an account.",
+                hint="Configure a task backend that runs Django tasks in a "
+                "worker (the TASKS setting).",
+                id="content_studio.W018",
             )
         ]
 
