@@ -1,9 +1,9 @@
-import bytes from "bytes";
 import * as R from "ramda";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { PiFileBold, PiImage, PiXBold } from "react-icons/pi";
 
+import { sizeOf } from "@/components/media-library/file-meta";
 import { SelectDialog } from "@/components/media-library/select-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -93,9 +93,7 @@ function SingleMedia({
         <div className="font-medium truncate">{value.name}</div>
         <div className="text-xs text-muted-foreground">
           {t(`media_library.file_types.${value.type}`)}
-          {!R.isNil(value.size) && value.size > 0
-            ? ` · ${bytes(value.size * 1000)}`
-            : ""}
+          {sizeOf(value) ? ` · ${sizeOf(value)}` : ""}
         </div>
       </div>
       {!field.readonly && chooser}

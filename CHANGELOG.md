@@ -24,6 +24,12 @@
   an inline studio, it widens the inline's dialogs. System check
   `content_studio.E024` reports any other value.
 
+### Fixes
+
+- File sizes in the media library and in media fields were shown a
+  thousand times too large: a 20 KB image read as 20 MB. They now show
+  the actual size.
+
 ## 1.2.1 (2026-10-30)
 
 - **New documentation address.** The documentation moved to
