@@ -190,6 +190,7 @@ class ArticleStudio(ModelStudio):
         "title": "title",
         "description": "body",
         "meta": "get_status_display",
+        "thumbnail": "cover",
     }
 ```
 
@@ -238,7 +239,15 @@ when both are set, `table_display` applies.
 ### List items
 
 `list_item_display` maps the parts of a list item to field or method names:
-a prominent `title`, a muted `description` and a `meta` label on the right.
+a prominent `title`, a muted `description`, a `meta` label on the right and a
+`thumbnail` on the left.
+
+The `thumbnail` is an image or file field, a media field or a method or
+property that returns an image URL; in these examples, `cover` is an
+`ImageField` on `Article`. A media field shows images only, using the site's
+`get_thumbnail`. Once one item on the page has a thumbnail, items
+without one show a placeholder, so the titles stay aligned.
+
 For items computed in code, override `get_list_item_display` instead:
 
 ```python
@@ -255,7 +264,10 @@ class ArticleStudio(ModelStudio):
 
     def get_list_item_display(self, obj, request):
         return ListItemDisplay(
-            title=obj.title, description=obj.author.get_full_name(), meta=obj.status
+            title=obj.title,
+            description=obj.author.get_full_name(),
+            meta=obj.status,
+            thumbnail=obj.cover.url if obj.cover else "",
         )
 ```
 

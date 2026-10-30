@@ -263,6 +263,8 @@ export interface Resource {
     title: string;
     description?: string;
     meta?: string;
+    // An image URL, shown on the left.
+    thumbnail?: string;
   };
   // Relation display customization (ModelAdmin.get_relation_display).
   description?: string | null;

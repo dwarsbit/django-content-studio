@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -925,6 +925,61 @@ describe("ModelListPage views", () => {
       "list",
     );
     expect(screen.getByTestId("location-search")).toHaveTextContent("");
+  });
+
+  it("shows thumbnails, with a placeholder for items without one", async () => {
+    localStorage.setItem("__dcs_list_view__:testapp.article", "list");
+    httpGetMock.mockResolvedValue({
+      data: makePaginated([
+        {
+          ...listArticles[0],
+          list_item_display: {
+            ...listArticles[0].list_item_display!,
+            thumbnail: "/media/first.jpg",
+          },
+        },
+        listArticles[1],
+      ]),
+    });
+    renderListPage(makeModel({ list: { views: ["table", "list"] } }));
+
+    await screen.findByText("The first body");
+    const [first, second] = screen.getAllByTestId("list-item-thumbnail");
+    expect(first.querySelector("img")).toHaveAttribute(
+      "src",
+      "/media/first.jpg",
+    );
+    // The item without a thumbnail keeps the slot, without an image.
+    expect(second.querySelector("img")).toBeNull();
+  });
+
+  it("falls back to the placeholder when a thumbnail fails to load", async () => {
+    localStorage.setItem("__dcs_list_view__:testapp.article", "list");
+    httpGetMock.mockResolvedValue({
+      data: makePaginated([
+        {
+          ...listArticles[0],
+          list_item_display: {
+            ...listArticles[0].list_item_display!,
+            thumbnail: "/media/missing.jpg",
+          },
+        },
+      ]),
+    });
+    renderListPage(makeModel({ list: { views: ["table", "list"] } }));
+
+    await screen.findByText("The first body");
+    const thumbnail = screen.getByTestId("list-item-thumbnail");
+    fireEvent.error(thumbnail.querySelector("img")!);
+    expect(thumbnail.querySelector("img")).toBeNull();
+  });
+
+  it("reserves no thumbnail slot when no item has a thumbnail", async () => {
+    localStorage.setItem("__dcs_list_view__:testapp.article", "list");
+    renderListPage(makeModel({ list: { views: ["table", "list"] } }));
+
+    await screen.findByText("The first body");
+    expect(screen.queryByTestId("list-item-thumbnail")).not.toBeInTheDocument();
   });
 
   it("restores a remembered choice for the content type", async () => {

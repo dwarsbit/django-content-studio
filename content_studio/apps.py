@@ -327,6 +327,7 @@ class DjangoContentStudioConfig(AppConfig):
                                 "title": display.title,
                                 "description": display.description,
                                 "meta": display.meta,
+                                "thumbnail": display.thumbnail,
                             }
 
                     return ListSerializer
