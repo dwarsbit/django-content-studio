@@ -302,6 +302,14 @@ export interface RichTextWidgetOptions {
   heading_levels?: HeadingLevel[];
 }
 
+export interface CoverImageWidgetOptions {
+  // "W:H"; unset: 16:9.
+  aspect_ratio?: string;
+  // Pixels: smaller images get a warning.
+  min_width?: number;
+  min_height?: number;
+}
+
 export interface DateWidgetOptions {
   // ISO dates (YYYY-MM-DD) bounding the days the picker offers.
   min_date?: DateString;

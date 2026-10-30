@@ -76,6 +76,18 @@ class BaseWidget:
         }
 
 
+def is_aspect_ratio(value) -> bool:
+    """Whether value is an aspect ratio of two positive ints, like "16:9"."""
+    if not isinstance(value, str):
+        return False
+
+    parts = value.split(":")
+
+    return len(parts) == 2 and all(
+        part.isascii() and part.isdigit() and int(part) > 0 for part in parts
+    )
+
+
 def as_number(value):
     """A number option as a JSON number; decimals become floats."""
     return float(value) if isinstance(value, Decimal) else value
@@ -336,9 +348,44 @@ class CoverImageWidget(BaseWidget):
     A single image shown large, in a 16:9 frame, for a MediaField: with
     upload by drag and drop, the media item's alt text and its focal
     point. Not used by default.
+
+    aspect_ratio ("21:9", "1:1", ...) sets the frame's shape. min_width
+    and min_height (pixels) warn editors about an image that is too
+    small; they do not reject it.
     """
 
-    pass
+    def __init__(
+        self,
+        *,
+        aspect_ratio: str = None,
+        min_width: int = None,
+        min_height: int = None,
+    ):
+        if aspect_ratio is not None and not is_aspect_ratio(aspect_ratio):
+            raise ValueError(
+                "CoverImageWidget aspect_ratio must be two positive whole "
+                f'numbers like "16:9"; got {aspect_ratio!r}.'
+            )
+
+        for name, value in (("min_width", min_width), ("min_height", min_height)):
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, int) or value < 1
+            ):
+                raise ValueError(
+                    f"CoverImageWidget {name} must be a positive int (pixels); "
+                    f"got {value!r}."
+                )
+
+        self.aspect_ratio = aspect_ratio
+        self.min_width = min_width
+        self.min_height = min_height
+
+    def get_options(self):
+        return {
+            "aspect_ratio": self.aspect_ratio,
+            "min_width": self.min_width,
+            "min_height": self.min_height,
+        }
 
 
 class TagWidget(BaseWidget):

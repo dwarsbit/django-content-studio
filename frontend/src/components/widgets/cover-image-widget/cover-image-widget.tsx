@@ -23,6 +23,7 @@ import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
 import { useUpdateMedia } from "@/hooks/use-update-media";
 import { cn, getErrorMessage } from "@/lib/utils";
 import type {
+  CoverImageWidgetOptions,
   FocalPointValue,
   MediaItem,
   ModelField,
@@ -31,6 +32,7 @@ import type {
 
 import { FocalPointDialog } from "./focal-point-dialog";
 import { focalPointPosition } from "./focal-point-position";
+import { parseAspectRatio, useImageSize } from "./image-size";
 
 // The field's value: the related item as the API represents it, or a
 // full media item once one is chosen or uploaded.
@@ -48,19 +50,24 @@ const uploadErrorMessage = (e: unknown): string =>
   R.pathOr(getErrorMessage(e), ["response", "data", "file", 0], e);
 
 /**
- * One image shown large, in a 16:9 frame: for a cover or header image.
+ * One image shown large, in a 16:9 frame (or the aspect_ratio option's):
+ * for a cover or header image.
  * An image can be dropped on the frame, uploaded or chosen from the
  * media library. Alt text and the focal point are edited on the media
- * item itself, so they apply wherever the image is used.
+ * item itself, so they apply wherever the image is used. With min_width
+ * or min_height, an image smaller than that gets a warning.
  */
 export function CoverImageWidget({
   field,
   value,
   onChange,
+  options = {},
 }: {
   field: ModelField;
-} & WidgetProps<CoverValue | null>) {
+} & WidgetProps<CoverValue | null, CoverImageWidgetOptions>) {
   const { t } = useTranslation();
+  const { min_width: minWidth, min_height: minHeight } = options;
+  const [ratioWidth, ratioHeight] = parseAspectRatio(options.aspect_ratio);
   const { data: discover } = useDiscover();
   const focalPointAttr = discover?.media_library.focal_point ?? null;
   const readonly = !!field.readonly;
@@ -130,6 +137,34 @@ export function CoverImageWidget({
   });
 
   const thumbnail = value?.thumbnail ?? item?.thumbnail;
+  // Thumbnails are scaled down: the minimum size is checked on the file.
+  const imageSize = useImageSize(
+    (minWidth || minHeight) && item?.type === "image" ? item.file : null,
+  );
+  const isTooSmall =
+    imageSize !== null &&
+    ((minWidth !== undefined && imageSize.width < minWidth) ||
+      (minHeight !== undefined && imageSize.height < minHeight));
+  const minSize =
+    minWidth && minHeight
+      ? t("widgets.cover_image_widget.min_size", {
+          width: minWidth,
+          height: minHeight,
+        })
+      : minWidth
+        ? t("widgets.cover_image_widget.min_width", { width: minWidth })
+        : minHeight
+          ? t("widgets.cover_image_widget.min_height", { height: minHeight })
+          : null;
+  const ratio = `${ratioWidth}:${ratioHeight}`;
+  const sizeHint = t(
+    ratioWidth > ratioHeight
+      ? "widgets.cover_image_widget.size_hint"
+      : ratioWidth < ratioHeight
+        ? "widgets.cover_image_widget.size_hint_portrait"
+        : "widgets.cover_image_widget.size_hint_square",
+    { ratio },
+  );
   const focalPoint = focalPointAttr
     ? ((
         item as unknown as Record<string, FocalPointValue | null> | undefined
@@ -152,13 +187,14 @@ export function CoverImageWidget({
       <div
         {...getRootProps({
           className: cn(
-            "group relative aspect-video overflow-hidden rounded-md border bg-muted",
+            "group relative overflow-hidden rounded-md border bg-muted",
             {
               "border-dashed": !value && !upload,
               "border-destructive": error && !value,
               "border-2 border-ring ring-3 ring-ring/20": isDragActive,
             },
           ),
+          style: { aspectRatio: `${ratioWidth} / ${ratioHeight}` },
         })}
       >
         <input {...getInputProps()} data-testid="cover-image-input" />
@@ -310,6 +346,20 @@ export function CoverImageWidget({
             {item.name}
           </span>
           <span className="tabular-nums shrink-0">{sizeOf(item)}</span>
+          {imageSize && (
+            <span className="tabular-nums shrink-0">
+              {imageSize.width} × {imageSize.height} px
+            </span>
+          )}
+        </div>
+      )}
+
+      {value && !upload && isTooSmall && (
+        <div className="flex items-start gap-1.5 text-xs text-warning">
+          <PiWarningCircleBold className="size-3.5 mt-0.5 shrink-0" />
+          <span>
+            {t("widgets.cover_image_widget.too_small", { min: minSize })}
+          </span>
         </div>
       )}
 
@@ -325,7 +375,9 @@ export function CoverImageWidget({
         !value &&
         !readonly && (
           <div className="text-xs text-muted-foreground">
-            {t("widgets.cover_image_widget.size_hint")}
+            {sizeHint}
+            {minSize &&
+              ` ${t("widgets.cover_image_widget.size_hint_min", { min: minSize })}`}
           </div>
         )
       )}

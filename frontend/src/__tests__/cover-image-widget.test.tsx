@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as R from "ramda";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CoverImageWidget } from "@/components/widgets/cover-image-widget/cover-image-widget";
 import type { FieldType, MediaItem, ModelField } from "@/types";
@@ -319,5 +319,70 @@ describe("CoverImageWidget", () => {
         { id: "media-1", focal_point: { x: 60, y: 49 } },
       ),
     );
+  });
+});
+
+describe("CoverImageWidget options", () => {
+  // jsdom loads no images: this one reports a fixed natural size.
+  function stubImageSize(width: number, height: number) {
+    class SizedImage {
+      naturalWidth = width;
+      naturalHeight = height;
+      onload: (() => void) | null = null;
+      set src(_src: string) {
+        setTimeout(() => this.onload?.());
+      }
+    }
+    vi.stubGlobal("Image", SizedImage);
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shapes the frame by the aspect ratio", () => {
+    setup(null);
+    renderWidget({ options: { aspect_ratio: "4:5" } });
+
+    expect(screen.getByTestId("cover-image-input").parentElement).toHaveStyle({
+      aspectRatio: "4 / 5",
+    });
+    expect(
+      screen.getByText("widgets.cover_image_widget.size_hint_portrait"),
+    ).toBeInTheDocument();
+  });
+
+  it("is 16:9 without an aspect ratio", () => {
+    setup(null);
+    renderWidget();
+
+    expect(screen.getByTestId("cover-image-input").parentElement).toHaveStyle({
+      aspectRatio: "16 / 9",
+    });
+  });
+
+  it("warns about an image smaller than the minimum size", async () => {
+    stubImageSize(1200, 675);
+    setup(null);
+    renderWidget({
+      value: relatedValue,
+      options: { min_width: 1600, min_height: 900 },
+    });
+
+    expect(
+      await screen.findByText("widgets.cover_image_widget.too_small"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("1200 × 675 px")).toBeInTheDocument();
+  });
+
+  it("does not warn about an image of the minimum size", async () => {
+    stubImageSize(1600, 900);
+    setup(null);
+    renderWidget({ value: relatedValue, options: { min_width: 1600 } });
+
+    expect(await screen.findByText("1600 × 900 px")).toBeInTheDocument();
+    expect(
+      screen.queryByText("widgets.cover_image_widget.too_small"),
+    ).not.toBeInTheDocument();
   });
 });
