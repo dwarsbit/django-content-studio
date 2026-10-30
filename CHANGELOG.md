@@ -33,6 +33,9 @@
 
 ### Fixes
 
+- The admin no longer stays blank in browsers that block site data, such
+  as Safari with "Block all cookies". It works there without remembering
+  the theme, the selected tenant and other choices between visits.
 - `URLPathField` no longer accepts a value that ends with a line break,
   which was saved as a path that looks like the one without it but
   never matches.

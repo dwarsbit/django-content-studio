@@ -26,6 +26,7 @@ import { useDiscover } from "@/hooks/use-discover";
 import { useFolderPath } from "@/hooks/use-folder-path";
 import { useListMedia } from "@/hooks/use-list-media";
 import { useMediaUpload } from "@/hooks/use-media-upload";
+import { safeStorage } from "@/lib/safe-storage";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/types";
 
@@ -63,14 +64,14 @@ function MediaLibrary() {
   // dropping values that no longer apply (an unknown view or file
   // type cannot be selected anymore).
   const storedView = (label: string) => {
-    const remembered = localStorage.getItem(`__dcs_media_view__:${label}`);
+    const remembered = safeStorage.get(`__dcs_media_view__:${label}`);
 
     return remembered && R.includes(remembered, VIEWS) ? remembered : "grid";
   };
   const storedFilters = (label: string) => {
     try {
       const remembered = JSON.parse(
-        localStorage.getItem(`__dcs_media_filters__:${label}`) ?? "{}",
+        safeStorage.get(`__dcs_media_filters__:${label}`) ?? "{}",
       ) as { type?: string; tags?: string };
 
       return {
@@ -86,7 +87,7 @@ function MediaLibrary() {
     }
   };
   const storedOrdering = (label: string) =>
-    localStorage.getItem(`__dcs_media_ordering__:${label}`);
+    safeStorage.get(`__dcs_media_ordering__:${label}`);
 
   const [view, setViewState] = useState<string>(() =>
     model ? storedView(model) : "grid",
@@ -146,7 +147,7 @@ function MediaLibrary() {
     setViewState(next);
 
     if (model) {
-      localStorage.setItem(`__dcs_media_view__:${model}`, next);
+      safeStorage.set(`__dcs_media_view__:${model}`, next);
     }
 
     // Selection is current-page: switching views resets it.
@@ -158,12 +159,9 @@ function MediaLibrary() {
 
     if (model) {
       if (next.type || next.tags) {
-        localStorage.setItem(
-          `__dcs_media_filters__:${model}`,
-          JSON.stringify(next),
-        );
+        safeStorage.set(`__dcs_media_filters__:${model}`, JSON.stringify(next));
       } else {
-        localStorage.removeItem(`__dcs_media_filters__:${model}`);
+        safeStorage.remove(`__dcs_media_filters__:${model}`);
       }
     }
 
@@ -176,9 +174,9 @@ function MediaLibrary() {
 
     if (model) {
       if (next) {
-        localStorage.setItem(`__dcs_media_ordering__:${model}`, next);
+        safeStorage.set(`__dcs_media_ordering__:${model}`, next);
       } else {
-        localStorage.removeItem(`__dcs_media_ordering__:${model}`);
+        safeStorage.remove(`__dcs_media_ordering__:${model}`);
       }
     }
 

@@ -4,6 +4,7 @@ import React, { useCallback, useContext, useEffect, useState } from "react";
 
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
+import { safeStorage } from "@/lib/safe-storage";
 import { storeTenant, TENANT_STORAGE_KEY } from "@/lib/tenant-storage";
 import { TenantSetupPage } from "@/pages/(tenant)/tenant-setup/page";
 import type { Resource } from "@/types";
@@ -25,7 +26,7 @@ export function TenantProvider({ children }: { children: React.ReactElement }) {
   // of this browser or have been revoked. It is not sent until the tenant
   // list confirms it.
   const [tenantId, setTenantId] = useState<string | null>(
-    () => localStorage.getItem(TENANT_STORAGE_KEY) || null,
+    () => safeStorage.get(TENANT_STORAGE_KEY) || null,
   );
   const [ready, setReady] = useState(false);
   const http = useHttp();
