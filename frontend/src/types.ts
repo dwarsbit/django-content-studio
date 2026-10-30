@@ -34,8 +34,8 @@ export interface AdminInfo {
   health_check: null;
   login_backends: LoginBackend[];
   token_backend: TokenBackend;
-  formats: Record<FieldType, { name: FieldFormat }>;
-  widgets: Record<FieldType, { name: FieldWidget }>;
+  formats: Record<FieldType, FormatConfig>;
+  widgets: Record<FieldType, WidgetConfig>;
   settings: {
     created_at_attr: string;
     created_by_attr: string;
@@ -113,7 +113,7 @@ export interface Model {
       display: {
         name: string;
         header: string | null;
-        format: string | null;
+        format: FormatConfig | null;
       }[];
       views?: string[];
       search: boolean;
@@ -149,7 +149,7 @@ export interface Model {
         table_display: {
           name: string;
           header: string | null;
-          format: string | null;
+          format: FormatConfig | null;
         }[];
         reorderable?: boolean;
         // Components in the header of an inline row's editor.
@@ -254,13 +254,70 @@ export interface BlockValue {
 }
 
 /**
+ * A widget as configured on the server: its name and the options it
+ * was given (unset options are left out).
+ */
+export interface WidgetConfig {
+  name: FieldWidget;
+  options?: Record<string, unknown>;
+}
+
+/** A format as configured on the server, like WidgetConfig. */
+export interface FormatConfig {
+  name: FieldFormat;
+  options?: Record<string, unknown>;
+}
+
+export interface InputWidgetOptions {
+  placeholder?: string;
+  prefix?: string;
+  suffix?: string;
+  min_value?: number;
+  max_value?: number;
+  step?: number;
+}
+
+export interface TextAreaWidgetOptions {
+  rows?: number;
+  placeholder?: string;
+}
+
+export type RichTextFeature =
+  | "heading"
+  | "blockquote"
+  | "code_block"
+  | "bold"
+  | "italic"
+  | "underline"
+  | "strike"
+  | "ordered_list"
+  | "bullet_list"
+  | "link";
+
+export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
+
+export interface RichTextWidgetOptions {
+  // Unset: every feature.
+  features?: RichTextFeature[];
+  heading_levels?: HeadingLevel[];
+}
+
+export interface DateWidgetOptions {
+  // ISO dates (YYYY-MM-DD) bounding the days the picker offers.
+  min_date?: DateString;
+  max_date?: DateString;
+}
+
+/**
  * Props shared by field widgets. The concrete value type depends on the
  * field being edited, so every widget instantiates this with the type it
  * handles; the widget registry passes values through as `unknown`.
  */
-export interface WidgetProps<T> {
+export interface WidgetProps<T, O = Record<string, unknown>> {
   value?: T;
   onChange(value: T): void;
+  // The widget's options, from its configuration.
+  options?: O;
 }
 
 export interface Resource {
@@ -310,7 +367,7 @@ export interface FormField {
   col_span: number;
   // Widget override from the form configuration; falls back to the
   // model field's default widget when null.
-  widget: FieldWidget | null;
+  widget: WidgetConfig | null;
   component_id: string;
   component_type: "Link" | "LinkButton" | "Button" | "ActivityLog";
   copy: boolean;

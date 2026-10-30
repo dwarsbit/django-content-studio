@@ -30,7 +30,6 @@ import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type {
   EditWidth,
-  FieldFormat,
   FormField,
   Id,
   Model,
@@ -380,7 +379,7 @@ function InlineRow({
             <FormatRenderer
               value={resource[name]}
               field={model.fields[name]}
-              formatName={(format as FieldFormat | null) ?? undefined}
+              format={format}
             />
           </TableCell>
         ))}

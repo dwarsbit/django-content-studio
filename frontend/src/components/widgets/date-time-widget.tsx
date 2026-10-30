@@ -14,7 +14,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { TimeWidget } from "@/components/widgets/time-widget";
-import type { DateString, ModelField, WidgetProps } from "@/types";
+import { getDateLimits } from "@/lib/date-limits";
+import type {
+  DateString,
+  DateWidgetOptions,
+  ModelField,
+  WidgetProps,
+} from "@/types";
 
 dayjs.extend(localizedFormat);
 
@@ -22,10 +28,12 @@ export function DateTimeWidget({
   value,
   onChange,
   field,
+  options,
 }: {
   field: ModelField;
-} & WidgetProps<DateString | null>) {
+} & WidgetProps<DateString | null, DateWidgetOptions>) {
   const { t } = useTranslation();
+  const limits = getDateLimits(options);
   const [open, setOpen] = React.useState(false);
   const date$ = React.useMemo(
     () => (value ? dayjs(value, "YYYY-MM-DD HH:mm") : null),
@@ -61,6 +69,7 @@ export function DateTimeWidget({
         <Calendar
           mode="single"
           fixedWeeks
+          {...limits}
           defaultMonth={date$?.toDate()}
           selected={date}
           onSelect={(date) => {

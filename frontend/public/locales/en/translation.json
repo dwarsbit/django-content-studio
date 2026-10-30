@@ -210,6 +210,12 @@
       "paragraph": "Paragraph",
       "blockquote": "Blockquote",
       "codeBlock": "Code block",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "strike": "Strikethrough",
+      "ordered_list": "Numbered list",
+      "bullet_list": "Bulleted list",
       "set_link": "Add link",
       "update_link": "Edit link",
       "remove_link": "Remove link"

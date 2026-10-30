@@ -18,13 +18,7 @@ import {
 import { useReorderableRow } from "@/hooks/use-reorderable-row";
 import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
-import {
-  type FieldFormat,
-  FieldType,
-  type Id,
-  type Model,
-  type PresenceUser,
-} from "@/types";
+import { FieldType, type Id, type Model, type PresenceUser } from "@/types";
 
 import { ListEmptyState } from "./empty-state";
 
@@ -324,7 +318,7 @@ function TableViewRow({
             <FormatRenderer
               value={item[name]}
               field={model.fields[name]}
-              formatName={(format as FieldFormat | null) ?? undefined}
+              format={format}
             />
             {index === 0 && (
               <PresenceIndicator users={presence} className="ml-2" />

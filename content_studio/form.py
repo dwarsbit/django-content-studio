@@ -9,7 +9,7 @@ from django.db.models import Model
 from django.utils.translation import gettext_lazy as _
 from rest_framework.response import Response
 
-from .utils import derive_uuid
+from .utils import as_instance, derive_uuid
 
 __all__ = [
     "ActivityLog",
@@ -37,14 +37,15 @@ class Field:
         col_span: int = 1,
         label: str = None,
         readonly: bool = False,
-        widget: Type = None,
+        widget: Union[Type, object] = None,
     ):
         self.name = name
         self.col_span = col_span
         self.label = label
         self.readonly = readonly
-        # The widget class rendering the field. None falls back to
-        # the field type's default widget.
+        # The widget rendering the field: a widget class, or an
+        # instance carrying options. None falls back to the field
+        # type's default widget.
         self.widget = widget
 
     def serialize(self):
@@ -54,7 +55,7 @@ class Field:
             "col_span": self.col_span,
             "label": self.label,
             "readonly": self.readonly,
-            "widget": self.widget.__name__ if self.widget else None,
+            "widget": as_instance(self.widget).serialize() if self.widget else None,
         }
 
 
@@ -100,21 +101,23 @@ class TableColumn:
     strings for the date and time formats.
     """
 
-    def __init__(self, field: str, header: str = None, format: Type = None):
+    def __init__(
+        self, field: str, header: str = None, format: Union[Type, object] = None
+    ):
         self.field = field
         # The column header. None uses the field's verbose name and
         # leaves method columns unlabeled.
         self.header = header
-        # The format class rendering the column's values. None falls
-        # back to the field type's default format (TextFormat for
-        # methods).
+        # The format rendering the column's values: a format class, or
+        # an instance carrying options. None falls back to the field
+        # type's default format (TextFormat for methods).
         self.format = format
 
     def serialize(self):
         return {
             "name": self.field,
             "header": self.header,
-            "format": self.format.__name__ if self.format else None,
+            "format": as_instance(self.format).serialize() if self.format else None,
         }
 
 

@@ -22,6 +22,7 @@ from .permissions import IsActiveStaff
 from .serializers import ModelSerializer, get_session_user_serializer
 from .settings import cs_settings
 from .signals import collect_changes
+from .utils import as_instance
 
 
 @method_decorator(never_cache, name="dispatch")
@@ -88,7 +89,7 @@ class AdminApiViewSet(ViewSet):
                     model_class
                     if isinstance(model_class, str)
                     else model_class.__name__
-                ): frmt.serialize()
+                ): as_instance(frmt).serialize()
                 for model_class, frmt in self.admin_site.default_format_mapping.items()
             },
             "widgets": get_widgets(),
@@ -288,7 +289,7 @@ def get_widgets():
     admin_site = cs_settings.ADMIN_SITE
 
     return {
-        (m if isinstance(m, str) else m.__name__): widget.serialize()
+        (m if isinstance(m, str) else m.__name__): as_instance(widget).serialize()
         for m, widget in admin_site.default_widget_mapping.items()
     }
 
