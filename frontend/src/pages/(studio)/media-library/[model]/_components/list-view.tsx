@@ -4,6 +4,8 @@ import { describeFile, Thumb } from "@/components/media-library/file-meta";
 import { ItemActions } from "@/components/media-library/item-card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useDiscover } from "@/hooks/use-discover";
+import { metadataOf } from "@/lib/media-metadata";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "@/types";
 
@@ -25,6 +27,8 @@ export function ListView({
   onOpen(id: string): void;
 }) {
   const { t } = useTranslation();
+  const { data: discover } = useDiscover();
+  const metadataAttr = discover?.media_library.metadata;
 
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
@@ -67,6 +71,7 @@ export function ListView({
                   {describeFile(
                     item,
                     t(`media_library.file_types.${item.type}`),
+                    metadataOf(item, metadataAttr),
                   )}
                 </span>
               </span>

@@ -55,6 +55,7 @@ import { useCropMedia } from "@/hooks/use-crop-media";
 import { useDiscover } from "@/hooks/use-discover";
 import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
 import { useUpdateMedia } from "@/hooks/use-update-media";
+import { metadataOf } from "@/lib/media-metadata";
 import { getErrorMessage } from "@/lib/utils";
 import type { CropValue, FocalPointValue, MediaItem } from "@/types";
 
@@ -195,7 +196,13 @@ function EditForm({
     <Form {...form}>
       <SheetHeader className="border-b pr-12 relative">
         <SheetTitle className="truncate">{data.name}</SheetTitle>
-        <SheetDescription>{describeFile(data, typeLabel)}</SheetDescription>
+        <SheetDescription>
+          {describeFile(
+            data,
+            typeLabel,
+            metadataOf(data, mediaLibrary?.metadata),
+          )}
+        </SheetDescription>
         <SheetClose asChild>
           <Button
             variant="ghost"

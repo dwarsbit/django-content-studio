@@ -69,6 +69,12 @@ def build_media_item_serializer(media_model):
         class Meta:
             model = media_model
             fields = admin_site.get_media_serializer_fields(media_model)
+            # Metadata is read from the file, never edited.
+            read_only_fields = (
+                [cs_settings.MEDIA_METADATA_ATTR]
+                if cs_settings.MEDIA_METADATA_ATTR
+                else []
+            )
 
         def validate_file(self, file):
             return validate_media_upload(file)

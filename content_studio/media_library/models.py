@@ -57,6 +57,14 @@ class Media(ContentModel):
         null=True, verbose_name=_("File size"), editable=False
     )
 
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        editable=False,
+        verbose_name=_("Metadata"),
+        help_text=_("Read from the file, such as an image's width and height."),
+    )
+
     type = models.CharField(
         choices={
             "image": _("Image"),

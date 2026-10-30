@@ -480,6 +480,20 @@ export interface MediaItem {
   size: number;
 }
 
+/**
+ * Metadata read from a media item's file, under the attribute the
+ * discover's media_library.metadata names. Images have their size by
+ * default; a site's get_media_metadata hook can add more.
+ */
+export interface MediaMetadata {
+  width?: number;
+  height?: number;
+  // Seconds.
+  duration?: number;
+  frame_rate?: number;
+  [key: string]: unknown;
+}
+
 export interface MediaFolder {
   id: string;
   name: string;

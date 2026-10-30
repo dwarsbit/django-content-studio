@@ -687,6 +687,21 @@ class ContentStudioSite:
         """
         return obj.file.url
 
+    def get_media_metadata(self, file, type: str) -> dict:
+        """
+        The metadata to store for a media file of the given type
+        ("image", "video", "audio" or "file") when MEDIA_METADATA_ATTR is
+        set: a JSON-safe dict. By default, an image's width and height
+        (with Pillow, when it is installed) and nothing for other types.
+        Override to read more, such as a video's duration.
+        """
+        from .media_library.metadata import read_image_size
+
+        if type == "image":
+            return read_image_size(file)
+
+        return {}
+
     def get_media_serializer_fields(self, media_model):
         """
         Controls which fields the media library serializer exposes for

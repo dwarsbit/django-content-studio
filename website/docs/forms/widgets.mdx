@@ -190,7 +190,9 @@ To match how your site shows the image, pass options:
   `"1:1"` for a square. It is `"16:9"` when unset.
 - **`min_width`** and **`min_height`** are the smallest size in pixels your
   templates need. Editors see a warning when the image is smaller, so a
-  cover does not end up blurry. The image is still accepted.
+  cover does not end up blurry. The image is still accepted. With
+  [media metadata](/docs/media-library#metadata), the stored size is used;
+  without it, the editor's browser loads the full image to measure it.
 
 ```python
 # blog/admin.py

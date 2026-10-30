@@ -30,6 +30,9 @@ export function useDiscover() {
           // The media item attribute holding the focal point; null
           // disables the focal point editor.
           focal_point: string | null;
+          // The media item attribute holding the metadata read from its
+          // file (MediaMetadata); null when off.
+          metadata?: string | null;
           models: {
             media_model: string | null;
             folder_model: string | null;
