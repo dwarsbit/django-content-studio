@@ -148,6 +148,28 @@ def test_date_widget_rejects_invalid_limits(kwargs):
         widgets.DateWidget(**kwargs)
 
 
+def test_cover_image_options():
+    widget = widgets.CoverImageWidget(aspect_ratio="21:9", min_width=1600)
+
+    assert widget.serialize()["options"] == {"aspect_ratio": "21:9", "min_width": 1600}
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"aspect_ratio": "16/9"},
+        {"aspect_ratio": "16:0"},
+        {"aspect_ratio": "1.5:1"},
+        {"aspect_ratio": (16, 9)},
+        {"min_width": 0},
+        {"min_height": 900.5},
+    ],
+)
+def test_cover_image_rejects_invalid_options(kwargs):
+    with pytest.raises(ValueError):
+        widgets.CoverImageWidget(**kwargs)
+
+
 class InfoWidgetOptionsTests(TestCase):
     def test_mapping_instances_serialize_their_options(self):
         original = admin_site.default_widget_mapping

@@ -14,6 +14,10 @@
   `default_format_mapping` and `TableColumn(format=...)` accept instances
   too, and the system checks `content_studio.E006`, `E010` and `E013`
   accept them.
+- **Cover image options.** `CoverImageWidget` takes `aspect_ratio`, such
+  as `"21:9"` or `"1:1"`, for the frame's shape (16:9 when unset), and
+  `min_width` and `min_height` in pixels: a smaller image gets a warning,
+  and the image's size shows next to its file size.
 
 ## 1.3.0 (2026-10-30)
 

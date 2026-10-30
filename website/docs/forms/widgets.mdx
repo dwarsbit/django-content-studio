@@ -116,6 +116,8 @@ an error when the studio is defined, not when an editor opens the page.
   **`DateTimeWidget(min_date=None, max_date=None)`**: limit the days the
   picker offers. Pass a date, or a callable that returns one, such as
   `datetime.date.today`, for a limit that moves with time.
+- **`CoverImageWidget(aspect_ratio=None, min_width=None, min_height=None)`**:
+  see [Cover images](#cover-images).
 
 :::note
 Options guide editors; they do not validate. To enforce a range or a
@@ -127,7 +129,7 @@ to the model field, such as `MinValueValidator`, and an `HTMLField`'s
 ## Cover images
 
 `CoverImageWidget` shows the image of a `MediaField` across the width of the
-form, in a 16:9 frame, the way a cover or header image appears on a site.
+form, in a 16:9 frame by default, the way a cover or header image appears on a site.
 Use it for one field in `edit_main`:
 
 ```python
@@ -168,7 +170,8 @@ Editors drop an image on the frame, upload one or choose one from the
 the library, which needs the media model's add permission. Only images are
 accepted.
 
-Once an image is chosen, the frame crops it to 16:9 around its focal point.
+Once an image is chosen, the frame crops it to its shape around its focal
+point.
 Below the image, editors edit its alt text, and from the frame they set its
 focal point:
 
@@ -180,6 +183,40 @@ focal point:
 
 Both belong to the media item, not to the article: a change applies wherever
 the image is used, and needs the media model's change permission.
+
+To match how your site shows the image, pass options:
+
+- **`aspect_ratio`** sets the frame's shape, such as `"21:9"` for a banner or
+  `"1:1"` for a square. It is `"16:9"` when unset.
+- **`min_width`** and **`min_height`** are the smallest size in pixels your
+  templates need. Editors see a warning when the image is smaller, so a
+  cover does not end up blurry. The image is still accepted.
+
+```python
+# blog/admin.py
+from content_studio import register, widgets
+from content_studio.admin import ModelStudio
+from content_studio.form import Field, FormSet
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_main = [
+        FormSet(
+            fields=[
+                Field(
+                    "cover",
+                    widget=widgets.CoverImageWidget(
+                        aspect_ratio="21:9", min_width=2100, min_height=900
+                    ),
+                ),
+                "title",
+            ],
+        ),
+    ]
+```
 
 System check `content_studio.W019` reports a `CoverImageWidget` on a field
 that is not a `MediaField` to the media library model.
