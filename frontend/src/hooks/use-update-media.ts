@@ -9,7 +9,8 @@ export function useUpdateMedia() {
   const http = useHttp();
 
   return useMutation({
-    async mutationFn(values: MediaItem) {
+    // A partial item updates only the given fields.
+    async mutationFn(values: Pick<MediaItem, "id"> & Partial<MediaItem>) {
       const { data } = await http.patch<MediaItem>(
         `/media-library/items/${values.id}`,
         R.omit(["file"], values),

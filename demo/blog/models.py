@@ -60,6 +60,8 @@ class MediaItem(models.Model):
     alt_text = models.CharField(max_length=200, blank=True)
     size = models.PositiveIntegerField(default=0)
     crop = models.JSONField(default=list, blank=True)
+    # The focal point, {"x": 0-100, "y": 0-100}; see FOCAL_POINT_ATTR.
+    focal_point = models.JSONField(null=True, blank=True)
     folder = models.ForeignKey(
         MediaFolder,
         null=True,

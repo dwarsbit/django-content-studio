@@ -2,6 +2,13 @@
 
 ## 1.3.0 (unreleased)
 
+- **Cover images.** `CoverImageWidget` shows the image of a `MediaField`
+  large, in a 16:9 frame cropped around its focal point. Editors drop an
+  image on it, upload one or choose one from the media library, and edit
+  the image's alt text and focal point without leaving the page; both are
+  saved on the media item. Set it on a field with
+  `Field("cover", widget=widgets.CoverImageWidget)`. System check
+  `content_studio.W019` reports it on a field that is not a `MediaField`.
 - **Thumbnails in the list view.** `list_item_display` takes a
   `thumbnail`, shown as a square on the left of each list item. It names
   an image or file field, a media field (images only) or a method or

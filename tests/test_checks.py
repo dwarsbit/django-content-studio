@@ -523,6 +523,43 @@ def test_choice_widget_on_choice_field_produces_no_warning():
     assert not [m for m in messages if m.id == "content_studio.W003"]
 
 
+# --- W019: CoverImageWidget on a field that is not a media relation ----------
+
+
+def test_cover_image_widget_on_other_field_surfaces_as_warning():
+    class Cover(ModelStudio):
+        edit_main = [Field("title", widget=widgets.CoverImageWidget)]
+
+    with swapped_article_studio(Cover):
+        messages = check_content_studio()
+
+    warning = next(m for m in messages if m.id == "content_studio.W019")
+
+    assert "title" in str(warning)
+    assert "CoverImageWidget" in str(warning)
+
+
+def test_cover_image_widget_on_media_relation_produces_no_warning():
+    from django.contrib.auth import get_user_model
+
+    user_model = get_user_model()
+
+    class Cover(ModelStudio):
+        edit_main = [Field("author", widget=widgets.CoverImageWidget)]
+
+    # author is a ForeignKey to the user model; with that model as the
+    # media library model, it is a media relation.
+    with override_settings(
+        CONTENT_STUDIO={
+            "MEDIA_LIBRARY_MODEL": f"{user_model.__module__}.{user_model.__name__}"
+        }
+    ):
+        with swapped_article_studio(Cover):
+            messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.W019"]
+
+
 # --- W004: sortable_by outside table_display ---------------------------------
 
 

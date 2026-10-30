@@ -62,3 +62,4 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.W016` | [Presence](/docs/presence) kept in a `DummyCache`, which keeps nothing, so the admin never shows who has an object open. |
 | `content_studio.W017` | [Presence](/docs/presence) kept in a `LocMemCache`, which each process keeps for itself. A deployment check: `manage.py check --deploy` reports it. |
 | `content_studio.W018` | [Password reset](/docs/authentication#password-reset) emails sent during the request, because no task backend runs Django tasks in a worker. A deployment check: `manage.py check --deploy` reports it. |
+| `content_studio.W019` | `CoverImageWidget` on a field that is not a `MediaField` to the media library model. The widget edits one media item. |
