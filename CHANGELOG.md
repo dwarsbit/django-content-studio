@@ -16,6 +16,11 @@
   embeds, such as `127.0.0.1`. These addresses are now checked on the
   IPv4 address they embed.
 
+- **Another site could sign editors out.** A page on another site could
+  clear an editor's session cookie, so they had to sign in again once
+  their current session expired. Signing out now only clears the cookie
+  when the request comes from the admin itself.
+
 ### Fixes
 
 - `URLPathField` no longer accepts a value that ends with a line break,

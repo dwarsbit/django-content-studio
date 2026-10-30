@@ -370,9 +370,13 @@ class JsonWebTokenViewSet(ViewSet):
     @action(detail=False, methods=["post"], url_path="logout")
     def logout(self, request):
         # Revokes whatever valid tokens the request carries; logging out
-        # without them (or with expired ones) still clears the cookie.
+        # with expired ones still clears the cookie. The cookie is only
+        # cleared when the request carries it: SameSite=Lax keeps it off
+        # cross-site POSTs, so another site cannot sign the user out.
+        refresh_token = request.COOKIES.get(REFRESH_COOKIE_NAME)
+
         for token, token_type in (
-            (request.COOKIES.get(REFRESH_COOKIE_NAME), REFRESH_TOKEN_TYPE),
+            (refresh_token, REFRESH_TOKEN_TYPE),
             (_bearer_token(request), ACCESS_TOKEN_TYPE),
         ):
             if not token:
@@ -387,7 +391,10 @@ class JsonWebTokenViewSet(ViewSet):
             _revoke_session(payload)
 
         response = Response(status=status.HTTP_204_NO_CONTENT)
-        response.delete_cookie(REFRESH_COOKIE_NAME, path=_cookie_path(), samesite="Lax")
+        if refresh_token is not None:
+            response.delete_cookie(
+                REFRESH_COOKIE_NAME, path=_cookie_path(), samesite="Lax"
+            )
 
         return response
 
