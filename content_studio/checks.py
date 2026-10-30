@@ -33,7 +33,7 @@ from .admin import (
 from .export import is_exportable
 from .form import Component, Field, TableColumn
 from .settings import cs_settings
-from .utils import flatten, get_tenant_field_name
+from .utils import as_instance, flatten, get_tenant_field_name
 
 LIST_VIEW_NAMES = {"table", "list"}
 
@@ -47,6 +47,16 @@ def config_name(owner) -> str:
         return owner.__name__
 
     return owner.__class__.__name__
+
+
+def is_kind(value, base) -> bool:
+    """
+    Whether value is a widget or format of the given base type: a
+    subclass, or an instance carrying options.
+    """
+    return isinstance(value, base) or (
+        isinstance(value, type) and issubclass(value, base)
+    )
 
 
 # Widgets that render a field's choices; a field without any would
@@ -124,16 +134,15 @@ def table_column_errors(studio) -> list[tuple[str, str]]:
                     )
                 )
 
-            if column.format is not None and not (
-                isinstance(column.format, type)
-                and issubclass(column.format, formats.BaseFormat)
+            if column.format is not None and not is_kind(
+                column.format, formats.BaseFormat
             ):
                 errors.append(
                     (
                         "content_studio.E006",
                         f"{config_name(owner)}.table_display column "
                         f"{column.field!r} has format {column.format!r}; formats "
-                        "must be content_studio.formats classes.",
+                        "must be content_studio.formats classes or instances.",
                     )
                 )
 
@@ -742,9 +751,9 @@ def edit_form_config_errors(studio) -> list[tuple[str, str]]:
     Unresolvable edit form configuration, as (check id, message)
     pairs. A Field naming anything but a model field renders as an
     empty read-only box in the editor — a typo that never surfaces at
-    runtime. Widget overrides must be content_studio.widgets classes;
-    anything else falls back to the frontend's fallback widget
-    silently.
+    runtime. Widget overrides must be content_studio.widgets classes
+    or instances; anything else falls back to the frontend's fallback
+    widget silently.
     """
     model = getattr(studio, "model", None)
 
@@ -764,16 +773,13 @@ def edit_form_config_errors(studio) -> list[tuple[str, str]]:
                 )
             )
 
-        if field.widget is not None and not (
-            isinstance(field.widget, type)
-            and issubclass(field.widget, widgets.BaseWidget)
-        ):
+        if field.widget is not None and not is_kind(field.widget, widgets.BaseWidget):
             errors.append(
                 (
                     "content_studio.E010",
                     f"{studio.__class__.__name__}: edit field {field.name!r} "
                     f"has widget {field.widget!r}; widgets must be "
-                    "content_studio.widgets classes.",
+                    "content_studio.widgets classes or instances.",
                 )
             )
 
@@ -1274,29 +1280,29 @@ def prepopulated_fields_errors(studio) -> list[tuple[str, str]]:
 def mapping_errors(site) -> list[tuple[str, str]]:
     """
     Widget and format mapping values that are not widget or format
-    classes, as (check id, message) pairs. Both mappings are
+    classes or instances, as (check id, message) pairs. Both mappings are
     serialized to the frontend by name; anything else fails the info
     endpoint or renders nothing at all.
     """
     errors = []
 
     for key, widget in (getattr(site, "default_widget_mapping", None) or {}).items():
-        if not (isinstance(widget, type) and issubclass(widget, widgets.BaseWidget)):
+        if not is_kind(widget, widgets.BaseWidget):
             errors.append(
                 (
                     "content_studio.E013",
                     f"default_widget_mapping[{key!r}] must map to a "
-                    "content_studio.widgets class.",
+                    "content_studio.widgets class or instance.",
                 )
             )
 
     for key, frmt in (getattr(site, "default_format_mapping", None) or {}).items():
-        if not (isinstance(frmt, type) and issubclass(frmt, formats.BaseFormat)):
+        if not is_kind(frmt, formats.BaseFormat):
             errors.append(
                 (
                     "content_studio.E013",
                     f"default_format_mapping[{key!r}] must map to a "
-                    "content_studio.formats class.",
+                    "content_studio.formats class or instance.",
                 )
             )
 
@@ -1369,7 +1375,7 @@ def choice_widget_warnings(studio) -> list[tuple[str, str]]:
     warnings = []
 
     def is_choice_widget(widget) -> bool:
-        return isinstance(widget, type) and issubclass(widget, CHOICE_WIDGETS)
+        return is_kind(widget, CHOICE_WIDGETS)
 
     for field in iter_edit_fields(studio):
         model_field = fields.get(field.name)
@@ -1385,7 +1391,8 @@ def choice_widget_warnings(studio) -> list[tuple[str, str]]:
                 (
                     "content_studio.W003",
                     f"{studio.__class__.__name__}: the widget "
-                    f"{widget.__name__} on {field.name!r} renders choices, "
+                    f"{as_instance(widget).__class__.__name__} on "
+                    f"{field.name!r} renders choices, "
                     f"but the field on {model._meta.label_lower} has none.",
                 )
             )
@@ -1416,9 +1423,7 @@ def cover_image_widget_warnings(studio) -> list[tuple[str, str]]:
 
         widget = field.widget or getattr(model_field, "widget_class", None)
 
-        if not (
-            isinstance(widget, type) and issubclass(widget, widgets.CoverImageWidget)
-        ):
+        if not is_kind(widget, widgets.CoverImageWidget):
             continue
 
         is_media_relation = (

@@ -398,7 +398,14 @@ from content_studio import widgets
 from content_studio.form import Field, FormSet
 
 edit_main = [FormSet(fields=[Field("summary", widget=widgets.TextAreaWidget)])]
+# Or an instance with options (keyword-only, validated in __init__):
+edit_main = [FormSet(fields=[Field("summary", widget=widgets.TextAreaWidget(rows=6))])]
 ```
+
+Widgets and formats are given as a class or an instance; `utils.as_instance`
+turns either into an instance, and `serialize()` sends
+`{"name": ..., "options": {...}}` (unset options left out) to the admin,
+where `WidgetRenderer` / `FormatRenderer` pass the options to the component.
 
 Only the built-in widgets and formats are supported in v1: the compiled
 frontend has no renderer for custom `BaseWidget` / `BaseFormat` subclasses.

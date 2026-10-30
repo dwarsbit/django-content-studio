@@ -37,6 +37,14 @@ def derive_uuid(*parts) -> uuid.UUID:
     return uuid.uuid5(UUID_NAMESPACE, ":".join(str(part) for part in parts))
 
 
+def as_instance(obj):
+    """
+    A widget or format, given as a class or as an instance, as an
+    instance: a class is the instance without options.
+    """
+    return obj() if isinstance(obj, type) else obj
+
+
 def log(*args, **kwargs):
     console.print(*args, **kwargs)
 

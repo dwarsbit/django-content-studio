@@ -267,7 +267,7 @@ describe("FormField", () => {
       >
         <FormField
           formField={makeFormField("title", {
-            widget: FieldWidget.TextAreaWidget,
+            widget: { name: FieldWidget.TextAreaWidget },
           })}
           model={makeModel()}
         />
@@ -331,7 +331,7 @@ describe("FormField", () => {
       >
         <FormField
           formField={makeFormField("is_published", {
-            widget: FieldWidget.SwitchWidget,
+            widget: { name: FieldWidget.SwitchWidget },
           })}
           model={makeModel()}
         />

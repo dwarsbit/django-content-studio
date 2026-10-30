@@ -20,14 +20,14 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E003` | Two extensions with the same ID. Pass an `extension_id` to tell them apart. |
 | `content_studio.E004` | Two dashboard widgets with the same ID. Pass a `widget_id` to tell them apart. |
 | `content_studio.E005` | Two components with the same ID. Pass a `component_id` to tell them apart. |
-| `content_studio.E006` | `table_display` entries that are not field names or `TableColumn` objects, duplicate columns, columns that are not a model field, `__str__` or a studio method, and formats that are not `content_studio.formats` classes. Inlines are checked too. |
+| `content_studio.E006` | `table_display` entries that are not field names or `TableColumn` objects, duplicate columns, columns that are not a model field, `__str__` or a studio method, and formats that are not `content_studio.formats` classes or instances. Inlines are checked too. |
 | `content_studio.E007` | Bulk actions: an `actions` list with unknown or duplicate names, a `@bulk_action` that replaces the built-in delete or export, `"export"` in `actions` without export, or an unknown permission. |
 | `content_studio.E008` | `soft_delete` naming an unknown field, or a field that is not a nullable date or date and time. |
 | `content_studio.E009` | [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) without a `MEDIA_LIBRARY_MODEL`, or naming a field that is missing or not a `JSONField`. |
-| `content_studio.E010` | Edit page fields that are not model fields, which would show as empty read-only boxes, and `Field(widget=...)` values that are not `content_studio.widgets` classes. |
+| `content_studio.E010` | Edit page fields that are not model fields, which would show as empty read-only boxes, and `Field(widget=...)` values that are not `content_studio.widgets` classes or instances. |
 | `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that are not a field, and `list_item_display` values that are not a field or a model method. Inlines are checked too. |
 | `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key to the parent model. |
-| `content_studio.E013` | Values in the site's `default_widget_mapping` or `default_format_mapping` that are not widget or format classes. |
+| `content_studio.E013` | Values in the site's `default_widget_mapping` or `default_format_mapping` that are not widget or format classes or instances. |
 | `content_studio.E014` | A `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` that is not a list of extensions without the dot, or a `MEDIA_LIBRARY_MAX_UPLOAD_SIZE` that is not a positive number of bytes. |
 | `content_studio.E015` | `readonly_fields` entries that are not model fields. Inlines are checked too. |
 | `content_studio.E016` | `prepopulated_fields` that is not a mapping, fields or source fields that are not model fields, fields that cannot be prepopulated (`DateTimeField`, `ForeignKey`, `OneToOneField`, `ManyToManyField`) and fields in `readonly_fields`. Inlines are checked too. |

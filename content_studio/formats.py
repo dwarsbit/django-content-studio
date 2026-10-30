@@ -19,13 +19,29 @@ __all__ = [
 # Formats determine how fields are displayed in Django Content Studio.
 # Each Django model field has a default format, but this can be
 # overridden in the admin model.
+#
+# A format is given as a class, or as an instance to pass options. A
+# class is the instance without options.
 ###
 
 
 class BaseFormat:
-    @classmethod
-    def serialize(cls):
-        return {"name": cls.__name__}
+    def get_options(self) -> dict:
+        """
+        The format's options for the admin, as JSON-safe values. Unset
+        options (None) are left out.
+        """
+        return {}
+
+    def serialize(self):
+        return {
+            "name": self.__class__.__name__,
+            "options": {
+                key: value
+                for key, value in self.get_options().items()
+                if value is not None
+            },
+        }
 
 
 class ForeignKeyFormat(BaseFormat):

@@ -1,7 +1,7 @@
 import { type ComponentType, useMemo } from "react";
 
 import { useAdminInfo } from "@/hooks/use-admin-info";
-import { FieldFormat, type ModelField } from "@/types";
+import { FieldFormat, type FormatConfig, type ModelField } from "@/types";
 
 import { BlockFormat } from "./block-format";
 import { BooleanFormat } from "./boolean-format";
@@ -20,6 +20,7 @@ type FormatComponent = ComponentType<{
   value: unknown;
   field?: ModelField;
   emptyValue?: string | null;
+  options?: Record<string, unknown>;
 }>;
 
 const FORMATS: Partial<Record<FieldFormat, FormatComponent>> = {
@@ -39,21 +40,24 @@ export function FormatRenderer({
   value,
   field,
   emptyValue,
-  formatName,
+  format: formatOverride,
 }: {
   value: unknown;
   field?: ModelField;
   emptyValue?: string | null;
   // An explicit format (e.g. a table column's); overrides the
   // field-type driven resolution.
-  formatName?: FieldFormat;
+  format?: FormatConfig | null;
 }) {
   const { data: info } = useAdminInfo();
-  const formatClass =
-    field?.format_class ??
-    formatName ??
-    (field ? info?.formats[field.type]?.name : undefined) ??
-    FieldFormat.TextFormat;
+  const format: FormatConfig = (field?.format_class
+    ? { name: field.format_class }
+    : null) ??
+    formatOverride ??
+    (field ? info?.formats[field.type] : undefined) ?? {
+      name: FieldFormat.TextFormat,
+    };
+  const formatClass = format.name;
 
   const FormatComp = useMemo(() => {
     if (field?.choices) {
@@ -62,5 +66,12 @@ export function FormatRenderer({
     return FORMATS[formatClass] ?? TextFormat;
   }, [field?.choices, formatClass]);
 
-  return <FormatComp value={value} field={field} emptyValue={emptyValue} />;
+  return (
+    <FormatComp
+      value={value}
+      field={field}
+      emptyValue={emptyValue}
+      options={format.options}
+    />
+  );
 }

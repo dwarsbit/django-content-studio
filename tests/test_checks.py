@@ -340,6 +340,16 @@ def test_widget_override_produces_no_error():
     assert not [m for m in messages if m.id == "content_studio.E010"]
 
 
+def test_widget_instance_override_produces_no_error():
+    class Fine(ModelStudio):
+        edit_main = [Field("title", widget=widgets.TextAreaWidget(rows=4))]
+
+    with swapped_article_studio(Fine):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.E010"]
+
+
 # --- E011: list page lookups ------------------------------------------------
 
 
@@ -471,6 +481,21 @@ def test_non_format_mapping_value_surfaces_as_system_error():
     assert "default_format_mapping" in str(error)
 
 
+def test_widget_instance_mapping_value_produces_no_error():
+    original = admin_site.default_widget_mapping
+    admin_site.default_widget_mapping = {
+        **original,
+        models.TextField: widgets.TextAreaWidget(rows=4),
+    }
+
+    try:
+        messages = check_content_studio()
+    finally:
+        admin_site.default_widget_mapping = original
+
+    assert not [m for m in messages if m.id == "content_studio.E013"]
+
+
 # --- W002: required fields configured readonly -------------------------------
 
 
@@ -523,6 +548,18 @@ def test_choice_widget_on_choice_field_produces_no_warning():
     assert not [m for m in messages if m.id == "content_studio.W003"]
 
 
+def test_choice_widget_instance_without_choices_surfaces_as_warning():
+    class NoChoices(ModelStudio):
+        edit_main = [Field("title", widget=widgets.SelectWidget())]
+
+    with swapped_article_studio(NoChoices):
+        messages = check_content_studio()
+
+    warning = next(m for m in messages if m.id == "content_studio.W003")
+
+    assert "SelectWidget" in str(warning)
+
+
 # --- W019: CoverImageWidget on a field that is not a media relation ----------
 
 
@@ -537,6 +574,16 @@ def test_cover_image_widget_on_other_field_surfaces_as_warning():
 
     assert "title" in str(warning)
     assert "CoverImageWidget" in str(warning)
+
+
+def test_cover_image_widget_instance_on_other_field_surfaces_as_warning():
+    class Cover(ModelStudio):
+        edit_main = [Field("title", widget=widgets.CoverImageWidget())]
+
+    with swapped_article_studio(Cover):
+        messages = check_content_studio()
+
+    assert [m for m in messages if m.id == "content_studio.W019"]
 
 
 def test_cover_image_widget_on_media_relation_produces_no_warning():

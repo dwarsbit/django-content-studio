@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.0 (unreleased)
+
+- **Widget options.** Widgets take options: pass an instance instead of
+  the class, such as `Field("body", widget=widgets.TextAreaWidget(rows=12))`.
+  `InputWidget` takes `placeholder`, `prefix`, `suffix` and the number
+  limits `min_value`, `max_value` and `step`; `TextAreaWidget` takes
+  `rows` and `placeholder`; `RichTextWidget` takes `features`, which
+  limits the editor's formatting and its toolbar, and `heading_levels`;
+  `DateWidget` and `DateTimeWidget` take `min_date` and `max_date`, as a
+  date or a callable such as `datetime.date.today`. Invalid options raise
+  an error when the studio is defined. `default_widget_mapping`,
+  `default_format_mapping` and `TableColumn(format=...)` accept instances
+  too, and the system checks `content_studio.E006`, `E010` and `E013`
+  accept them.
+
 ## 1.3.0 (2026-10-30)
 
 - **Cover images.** `CoverImageWidget` shows the image of a `MediaField`

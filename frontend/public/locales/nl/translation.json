@@ -209,6 +209,12 @@
       "paragraph": "Paragraaf",
       "blockquote": "Citaat",
       "codeBlock": "Codeblok",
+      "bold": "Vet",
+      "italic": "Cursief",
+      "underline": "Onderstrepen",
+      "strike": "Doorhalen",
+      "ordered_list": "Genummerde lijst",
+      "bullet_list": "Opsommingslijst",
       "set_link": "Voeg link toe",
       "update_link": "Bewerk link",
       "remove_link": "Verwijder link"

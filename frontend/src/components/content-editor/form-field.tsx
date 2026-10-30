@@ -63,7 +63,7 @@ export function FormField({
 
   // Checkboxes render their label inline after the box, not above it.
   const widgetClass =
-    formField.widget ??
+    formField.widget?.name ??
     modelField?.widget_class ??
     info?.widgets[modelField?.type ?? ""]?.name;
   const isCheckbox =
@@ -108,7 +108,7 @@ export function FormField({
                 <WidgetRenderer
                   model={model}
                   {...field}
-                  widgetClass={formField.widget}
+                  widget={formField.widget}
                 />
               </FormControl>
             );

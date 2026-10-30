@@ -1,7 +1,12 @@
 import { type ComponentType, useMemo } from "react";
 
 import { useAdminInfo } from "@/hooks/use-admin-info";
-import { FieldWidget, type Model, type ModelField } from "@/types";
+import {
+  FieldWidget,
+  type Model,
+  type ModelField,
+  type WidgetConfig,
+} from "@/types";
 
 import { BlockWidget } from "./block-widget/block-widget";
 import { CheckboxWidget } from "./checkbox-widget";
@@ -32,6 +37,7 @@ type WidgetComponent = ComponentType<{
   model: Model;
   field: ModelField;
   name: string;
+  options?: Record<string, unknown>;
   // Form control wiring: the id associates the control with its label
   // (clicking the label toggles checkbox- and switch-based widgets);
   // the aria props tie help text and errors to the control.
@@ -74,7 +80,7 @@ export function WidgetRenderer({
   onChange,
   model,
   name,
-  widgetClass: widgetClassOverride,
+  widget: widgetOverride,
   id,
   "aria-describedby": ariaDescribedBy,
   "aria-invalid": ariaInvalid,
@@ -84,18 +90,19 @@ export function WidgetRenderer({
   model: Model;
   name: string;
   // Widget override from the form field's configuration.
-  widgetClass?: FieldWidget | null;
+  widget?: WidgetConfig | null;
   id?: string;
   "aria-describedby"?: string;
   "aria-invalid"?: boolean;
 }) {
   const { data: info } = useAdminInfo();
   const field = model.fields[name];
-  const widgetClass =
-    widgetClassOverride ??
-    field.widget_class ??
-    info?.widgets[field.type]?.name ??
+  const widget: WidgetConfig | null =
+    widgetOverride ??
+    (field.widget_class ? { name: field.widget_class } : null) ??
+    info?.widgets[field.type] ??
     null;
+  const widgetClass = widget?.name ?? null;
 
   const WidgetComp = useMemo<WidgetComponent>(() => {
     if (widgetClass === null) {
@@ -114,6 +121,7 @@ export function WidgetRenderer({
       model={model}
       field={field}
       name={name}
+      options={widget?.options}
       id={id}
       aria-describedby={ariaDescribedBy}
       aria-invalid={ariaInvalid}

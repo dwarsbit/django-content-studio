@@ -47,7 +47,13 @@ def test_field_serialization():
 def test_field_serialization_with_widget():
     data = Field("body", widget=widgets.TextAreaWidget).serialize()
 
-    assert data["widget"] == "TextAreaWidget"
+    assert data["widget"] == {"name": "TextAreaWidget", "options": {}}
+
+
+def test_field_serialization_with_widget_options():
+    data = Field("body", widget=widgets.TextAreaWidget(rows=8)).serialize()
+
+    assert data["widget"] == {"name": "TextAreaWidget", "options": {"rows": 8}}
 
 
 def test_field_layout_wraps_and_normalizes():

@@ -59,8 +59,10 @@ next to the main area. A field with `readonly=True` shows its value without
 an input.
 
 To edit one field with another widget, pass the widget class:
-`Field("body", widget=widgets.TextAreaWidget)`. See
-[Widgets](/docs/forms/widgets) for the widgets you can use.
+`Field("body", widget=widgets.TextAreaWidget)`, or an instance with
+options: `Field("body", widget=widgets.TextAreaWidget(rows=12))`. See
+[Widgets](/docs/forms/widgets) for the widgets you can use and their
+options.
 
 ## Page width
 

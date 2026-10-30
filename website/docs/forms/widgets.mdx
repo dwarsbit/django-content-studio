@@ -62,6 +62,68 @@ class ArticleStudio(ModelStudio):
 The widget only changes how the field is edited. Read-only fields keep
 showing their value through its format.
 
+## Widget options
+
+Some widgets take options. Pass an instance with the options instead of the
+class; a class is the same widget without options:
+
+```python
+# blog/admin.py
+import datetime
+
+from content_studio import register, widgets
+from content_studio.admin import ModelStudio
+from content_studio.form import Field, FormSet
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_main = [
+        FormSet(
+            fields=[
+                Field(
+                    "title",
+                    widget=widgets.InputWidget(placeholder="A short, clear title"),
+                ),
+                Field("body", widget=widgets.TextAreaWidget(rows=12)),
+                Field(
+                    "published_at",
+                    widget=widgets.DateTimeWidget(min_date=datetime.date.today),
+                ),
+            ],
+        ),
+    ]
+```
+
+Options are keyword arguments. An unknown option or an invalid value raises
+an error when the studio is defined, not when an editor opens the page.
+
+- **`InputWidget(placeholder=None, prefix=None, suffix=None, min_value=None, max_value=None, step=None)`**:
+  `prefix` and `suffix` are shown inside the box, around the value, for a
+  currency or a unit. `min_value`, `max_value` or `step` make it a number
+  input.
+- **`TextAreaWidget(rows=None, placeholder=None)`**: the textarea grows with
+  its text; `rows` sets the height it starts at.
+- **`RichTextWidget(features=None, heading_levels=None)`**: `features` limits
+  the editor to the listed formatting. Choose from `"heading"`,
+  `"blockquote"`, `"code_block"`, `"bold"`, `"italic"`, `"underline"`,
+  `"strike"`, `"ordered_list"`, `"bullet_list"` and `"link"`. Formatting
+  that is not listed has no button, and is removed from text that editors paste.
+  `heading_levels` limits the heading levels, such as `[2, 3]`.
+- **`DateWidget(min_date=None, max_date=None)`** and
+  **`DateTimeWidget(min_date=None, max_date=None)`**: limit the days the
+  picker offers. Pass a date, or a callable that returns one, such as
+  `datetime.date.today`, for a limit that moves with time.
+
+:::note
+Options guide editors; they do not validate. To enforce a range or a
+format, add [validators](https://docs.djangoproject.com/en/stable/ref/validators/)
+to the model field, such as `MinValueValidator`, and an `HTMLField`'s
+[sanitizer](/docs/settings#html_sanitizer) for the HTML it keeps.
+:::
+
 ## Cover images
 
 `CoverImageWidget` shows the image of a `MediaField` across the width of the
