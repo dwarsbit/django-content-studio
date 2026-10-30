@@ -7,6 +7,12 @@
   the README, the package metadata and the settings error messages point to
   the new address.
 
+### Fixes
+
+- `URLPathField` no longer accepts a value that ends with a line break,
+  which was saved as a path that looks like the one without it but
+  never matches.
+
 ## 1.2.0 (2026-10-29)
 
 - **Duplicate (save as new).** A studio with `allow_duplication = True`
