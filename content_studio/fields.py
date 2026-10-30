@@ -97,7 +97,7 @@ class URLPathField(models.CharField):
 
     default_validators = [
         RegexValidator(
-            "^[a-zA-Z0-9_/-]+$",
+            r"\A[a-zA-Z0-9_/-]+\Z",
             message=_(
                 "Only accepts letters, numbers, underscores, hyphens and slashes."
             ),
