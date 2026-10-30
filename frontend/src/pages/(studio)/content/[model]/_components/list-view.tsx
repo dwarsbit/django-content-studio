@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PiImage } from "react-icons/pi";
 import { useNavigate } from "react-router";
 
 import { PresenceIndicator } from "@/components/presence";
@@ -15,8 +17,9 @@ import type { ReorderProps } from "./table-view";
 
 /**
  * The list view: rows instead of a table. Each row is driven by the
- * resolved list display — a font-medium title, a muted description and a
- * meta badge — and opens the editor like a table row does.
+ * resolved list display — a thumbnail, a font-medium title, a muted
+ * description and a meta badge — and opens the editor like a table row
+ * does.
  */
 export function ListView({
   items,
@@ -42,6 +45,10 @@ export function ListView({
   // The other users who have objects open, by id.
   presence?: Record<string, PresenceUser[]>;
 }) {
+  // Once one item has a thumbnail, every row reserves the slot, so the
+  // titles stay aligned and items without one show a placeholder.
+  const thumbnails = items.some((item) => !!item.list_item_display?.thumbnail);
+
   return (
     <div className="w-full flex-1 border rounded-lg overflow-hidden">
       {items.length === 0 && (
@@ -65,6 +72,7 @@ export function ListView({
               selected={selected?.has(item.id)}
               onToggle={onToggle}
               presence={presence?.[String(item.id)]}
+              thumbnails={thumbnails}
             />
           ))}
         </Reorderable>
@@ -77,6 +85,7 @@ export function ListView({
             selected={selected?.has(item.id)}
             onToggle={onToggle}
             presence={presence?.[String(item.id)]}
+            thumbnails={thumbnails}
           />
         ))
       )}
@@ -106,6 +115,7 @@ function ListViewRow({
   sortable,
   edges,
   presence,
+  thumbnails,
 }: {
   item: Resource;
   model: Model;
@@ -117,6 +127,8 @@ function ListViewRow({
   sortable?: ReturnType<typeof useReorderableRow>;
   edges?: ReturnType<typeof getEdges>;
   presence?: PresenceUser[];
+  // Whether the rows reserve the thumbnail slot.
+  thumbnails?: boolean;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -161,6 +173,7 @@ function ListViewRow({
           />
         </span>
       )}
+      {thumbnails && <ListItemThumbnail src={display?.thumbnail} />}
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">
           {display?.title ?? item.__str__}
@@ -185,5 +198,34 @@ function ListViewRow({
         />
       )}
     </div>
+  );
+}
+
+/**
+ * The square on the left of a row: the item's image, or a placeholder
+ * when it has none or the image fails to load.
+ */
+function ListItemThumbnail({ src }: { src?: string }) {
+  // The source that failed to load, so a changed source is tried again.
+  const [failed, setFailed] = useState<string>();
+
+  return (
+    <span
+      data-testid="list-item-thumbnail"
+      className="size-10 shrink-0 overflow-hidden rounded-sm border bg-muted flex items-center justify-center text-muted-foreground"
+    >
+      {src && failed !== src ? (
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          draggable={false}
+          onError={() => setFailed(src)}
+          className="size-full object-cover"
+        />
+      ) : (
+        <PiImage aria-hidden className="size-4" />
+      )}
+    </span>
   );
 }

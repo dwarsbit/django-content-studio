@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 (unreleased)
+
+- **Thumbnails in the list view.** `list_item_display` takes a
+  `thumbnail`, shown as a square on the left of each list item. It names
+  an image or file field, a media field (images only) or a method or
+  property that returns an image URL; `ListItemDisplay` takes it as
+  `thumbnail`. Once one item on the page has a thumbnail, items without
+  one show a placeholder, so the titles stay aligned.
+
 ## 1.2.1 (2026-10-30)
 
 - **New documentation address.** The documentation moved to
