@@ -46,6 +46,10 @@ export interface AdminInfo {
 
 export type LoginBackend = UsernamePasswordBackend;
 
+// A studio's edit_width: "default" keeps the main column readable,
+// "wide" lets it fill the page.
+export type EditWidth = "default" | "wide";
+
 export enum LoginBackendType {
   UsernamePassword = "UsernamePasswordBackend",
 }
@@ -135,6 +139,8 @@ export interface Model {
       // Whether the edit page offers Duplicate (allow_duplication);
       // it also needs add permission.
       duplicate?: boolean;
+      // The width of the edit page and its dialogs (edit_width).
+      width?: EditWidth;
       inlines: {
         model: string;
         fk_name: string;
@@ -148,6 +154,9 @@ export interface Model {
         reorderable?: boolean;
         // Components in the header of an inline row's editor.
         header?: FormField[];
+        // The width of the inline's dialogs; the inline studio decides,
+        // not the inline model's own studio.
+        width?: EditWidth;
         // The inline studio's permissions; unset grants everything the
         // inline endpoints allow.
         permissions?: Permissions;

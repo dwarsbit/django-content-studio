@@ -8,6 +8,14 @@
   property that returns an image URL; `ListItemDisplay` takes it as
   `thumbnail`. Once one item on the page has a thumbnail, items without
   one show a placeholder, so the titles stay aligned.
+- **Edit pages keep a readable width.** The main column of the edit page
+  is now at most 800px wide, with the sidebar next to it, so fields no
+  longer stretch across the screen on a studio without a sidebar. The
+  dialogs of inline objects fit their editor: 848px without a sidebar,
+  1192px with one. For wide content, such as inlines with many columns,
+  set `edit_width = "wide"` on the studio to keep the previous width; on
+  an inline studio, it widens the inline's dialogs. System check
+  `content_studio.E024` reports any other value.
 
 ## 1.2.1 (2026-10-30)
 

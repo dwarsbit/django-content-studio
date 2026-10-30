@@ -18,16 +18,18 @@ import { useHttp } from "@/hooks/use-http";
 import { usePresence } from "@/hooks/use-presence";
 import { useShowResult } from "@/hooks/use-show-result";
 import { applyFieldErrors } from "@/lib/server-errors";
-import { getErrorMessage } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import type {
   ButtonResult,
   DuplicateInitial,
+  EditWidth,
   FormField,
   Model,
   Resource,
 } from "@/types";
 
 import { Aside } from "./aside";
+import { getMainColumnWidth } from "./edit-width";
 import { EditorReadOnlyContext } from "./editor-read-only";
 import { Header } from "./header";
 import { Main } from "./main";
@@ -52,6 +54,9 @@ export function Editor({
   // The header's components; defaults to the model's studio (inline
   // rows pass their inline's).
   headerComponents?: FormField[];
+  // The width of the page; defaults to the model's studio (inline
+  // dialogs pass their inline's).
+  width?: EditWidth;
   // Show the object without saving: every field read-only.
   readOnly?: boolean;
   canDelete?: boolean;
@@ -80,6 +85,7 @@ function EditorForm({
   initialValues = {},
   prepopulatedFields,
   headerComponents,
+  width,
   readOnly = false,
   canDelete,
   duplicateOf,
@@ -100,6 +106,9 @@ function EditorForm({
   // The header's components; defaults to the model's studio (inline
   // rows pass their inline's).
   headerComponents?: FormField[];
+  // The width of the page; defaults to the model's studio (inline
+  // dialogs pass their inline's).
+  width?: EditWidth;
   // Show the object without saving: every field read-only.
   readOnly?: boolean;
   canDelete?: boolean;
@@ -395,7 +404,12 @@ function EditorForm({
             />
             <div className="flex flex-col items-center overflow-y-auto scrollbar">
               <div className="flex p-6 w-full max-w-[1280px] gap-6 justify-center">
-                <div className="flex-1">
+                <div
+                  className={cn(
+                    "flex-1 min-w-0",
+                    getMainColumnWidth(width ?? model.admin.edit.width),
+                  )}
+                >
                   {isDuplicate && duplicate && !form.getValues("id") && (
                     <Alert className="mb-6">
                       <AlertDescription>

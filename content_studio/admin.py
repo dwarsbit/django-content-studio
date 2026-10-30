@@ -143,6 +143,11 @@ class BaseStudio(Generic[T]):
     # classic admin's prepopulated_fields: {"slug": ("title",)}.
     prepopulated_fields: dict[str, Sequence[str]] = {}
 
+    # The width of the edit page and its dialogs: "default" keeps the
+    # main column at a readable width, "wide" lets it fill the page for
+    # wide content such as inlines with many columns.
+    edit_width: str = "default"
+
     # Reordering, as an opt-in: the name of the field the list is
     # ordered by. Empty, the default, offers no reordering. The built-in
     # implementation rewrites a numeric field; override reorder() for
@@ -984,6 +989,7 @@ class AdminSerializer:
                 # Whether the edit page offers Duplicate; it also needs
                 # add permission.
                 "duplicate": is_duplicable(admin_class),
+                "width": admin_class.edit_width,
                 "inlines": [
                     {
                         "model": inline.model._meta.label_lower,
@@ -1006,6 +1012,9 @@ class AdminSerializer:
                             request,
                         ),
                         "header": serialize_edit_header(inline),
+                        # The inline studio sizes its dialogs, not the
+                        # inline model's own studio.
+                        "width": inline.edit_width,
                         "permissions": serialize_permissions(
                             inline(admin_class.model, admin_class.admin_site),
                             request,

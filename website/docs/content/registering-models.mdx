@@ -41,6 +41,7 @@ own studio for it to change how it looks.
 | `soft_delete` | The field that marks objects as trashed (see [below](#soft-delete-and-the-trash)) |
 | `reorder_field` | The field editors reorder objects by (see [below](#reordering)) |
 | `allow_duplication` | Whether editors can duplicate objects (see [below](#duplicating-objects)) |
+| `edit_width` | The width of the edit page: `"default"` or `"wide"` (see [Page width](/docs/forms/form-sets#page-width)) |
 | `presence` | Whether the edit and list pages show who else has an object open (default `True`, see [Presence](/docs/presence)) |
 | `icon` | The model's icon in the main menu, such as `"ph-bold ph-article"` |
 
@@ -99,7 +100,9 @@ class ArticleStudio(ModelStudio):
 ```
 
 When the inline model has more than one foreign key to the parent, name the
-one to use with `fk_name`. The inline's `table_display` sets its columns.
+one to use with `fk_name`. The inline's `table_display` sets its columns,
+and its `edit_width` the width of the dialog its objects open in (see
+[Page width](/docs/forms/form-sets#page-width)).
 Inline objects only exist within their parent: editors can only add them to
 parents they may view.
 
