@@ -29,6 +29,7 @@ import { useReorderableRow } from "@/hooks/use-reorderable-row";
 import { getEdges, type Move } from "@/lib/reorder";
 import { cn } from "@/lib/utils";
 import type {
+  EditWidth,
   FieldFormat,
   FormField,
   Id,
@@ -38,6 +39,7 @@ import type {
   Resource,
 } from "@/types";
 
+import { getEditorDialogWidth } from "./edit-width";
 import { Editor } from "./editor";
 
 export function Inline({
@@ -60,6 +62,7 @@ export function Inline({
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
     reorderable?: boolean;
     header?: FormField[];
+    width?: EditWidth;
     permissions?: Permissions;
   };
 }) {
@@ -120,7 +123,10 @@ export function Inline({
     <div className="space-y-4">
       <Dialog open={create} onOpenChange={setCreate}>
         <DialogContent
-          className="sm:max-w-[min(1200px,calc(100vw-48px))] p-0 overflow-hidden flex flex-col"
+          className={cn(
+            getEditorDialogWidth(model, adminModel.width),
+            "p-0 overflow-hidden flex flex-col",
+          )}
           showCloseButton={false}
         >
           <Editor
@@ -128,6 +134,7 @@ export function Inline({
             modelLabel={model.label}
             inlineOf={relModel}
             headerComponents={adminModel.header}
+            width={adminModel.width}
             initialValues={{
               [adminModel.fk_name]: { id: relId, __str__: relName },
               // The inline studio decides what is read-only, not the
@@ -303,6 +310,7 @@ function InlineRow({
     table_display: Model["admin"]["edit"]["inlines"][number]["table_display"];
     reorderable?: boolean;
     header?: FormField[];
+    width?: EditWidth;
     permissions?: Permissions;
   };
   onMove?: (id: Id, move: Move) => void;
@@ -318,7 +326,10 @@ function InlineRow({
       <Dialog key={resource.id} open={edit} onOpenChange={setEdit}>
         {!readOnly && (
           <DialogContent
-            className="sm:max-w-[min(1200px,calc(100vw-48px))] p-0 overflow-hidden flex flex-col"
+            className={cn(
+              getEditorDialogWidth(model, adminModel.width),
+              "p-0 overflow-hidden flex flex-col",
+            )}
             showCloseButton={false}
           >
             <Editor
@@ -326,6 +337,7 @@ function InlineRow({
               inlineOf={relModel}
               id={resource.id}
               headerComponents={adminModel.header}
+              width={adminModel.width}
               readOnly={!canChange}
               canDelete={adminModel.permissions?.delete_permission ?? true}
               initialValues={{

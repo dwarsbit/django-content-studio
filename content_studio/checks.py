@@ -978,6 +978,25 @@ def edit_header_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+EDIT_WIDTHS = ("default", "wide")
+
+
+def edit_width_errors(studio) -> list[tuple[str, str]]:
+    """
+    An edit_width that is not one of EDIT_WIDTHS, as (check id,
+    message) pairs. Inlines are checked too.
+    """
+    return [
+        (
+            "content_studio.E024",
+            f"{config_name(owner)}.edit_width must be one of "
+            f"{', '.join(repr(width) for width in EDIT_WIDTHS)}.",
+        )
+        for owner in [studio, *(getattr(studio, "inlines", None) or [])]
+        if getattr(owner, "edit_width", "default") not in EDIT_WIDTHS
+    ]
+
+
 def duplication_errors(studio) -> list[tuple[str, str]]:
     """
     A misconfigured duplicate_inlines, as (check id, message) pairs: it
@@ -1820,6 +1839,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in edit_header_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in edit_width_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in duplication_errors(studio):

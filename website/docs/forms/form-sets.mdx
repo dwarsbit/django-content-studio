@@ -62,6 +62,41 @@ To edit one field with another widget, pass the widget class:
 `Field("body", widget=widgets.TextAreaWidget)`. See
 [Widgets](/docs/forms/widgets) for the widgets you can use.
 
+## Page width
+
+The main column of the edit page is at most 800px wide, so fields stay easy
+to read whether or not the studio has a sidebar. The sidebar sits next to
+it. The dialogs that inline objects open in fit their editor in the same
+way.
+
+Some content needs more room, such as an inline table with many columns or
+rows of four fields. Set `edit_width = "wide"` on the studio to let the main
+column fill the page. On an inline studio, it widens the dialog the
+inline's objects open in:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import InlineModelStudio, ModelStudio
+
+from .models import Article, Review
+
+
+class ReviewInline(InlineModelStudio):
+    model = Review
+    table_display = ["text", "stars"]
+    edit_width = "wide"
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    inlines = [ReviewInline]
+    edit_width = "wide"
+```
+
+`edit_width` is `"default"` or `"wide"`. System check `content_studio.E024`
+reports any other value.
+
 ## Read-only fields
 
 Like the classic Django admin, a studio can list fields in
