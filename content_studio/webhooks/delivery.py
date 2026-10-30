@@ -194,6 +194,9 @@ def check_url(url: str):
         raise WebhookError("The URL must use https.")
 
 
+NAT64_PREFIX = ipaddress.ip_network("64:ff9b::/96")
+
+
 def _create_connection(host, allowed, sockets):
     def create_connection(address, timeout=None, source_address=None):
         """socket.create_connection, refusing non-public addresses
@@ -208,6 +211,10 @@ def _create_connection(host, allowed, sockets):
 
             if ip.version == 6 and ip.ipv4_mapped:
                 ip = ip.ipv4_mapped
+            elif ip in NAT64_PREFIX:
+                # A NAT64 gateway translates these to the IPv4 address
+                # in the low 32 bits.
+                ip = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
 
             if not allowed and (not ip.is_global or ip.is_multicast):
                 error = WebhookError(f"{host} resolves to a non-public address.")
