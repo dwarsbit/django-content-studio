@@ -115,3 +115,5 @@ known one, so its duration does not reveal which addresses exist either.
 On Django 5.2, which has no tasks framework, the
 [`django-tasks`](https://pypi.org/project/django-tasks/) package is used when
 installed; otherwise the email is sent during the request.
+`manage.py check --deploy` warns (`content_studio.W018`) while the emails
+are sent during the request.
