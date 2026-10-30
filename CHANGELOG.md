@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.3.0 (unreleased)
+## 1.3.0 (2026-10-30)
 
 - **Cover images.** `CoverImageWidget` shows the image of a `MediaField`
   large, in a 16:9 frame cropped around its focal point. Editors drop an
