@@ -97,6 +97,28 @@ def test_unknown_email_and_wrong_code_raise_the_same_error(user):
 
 
 @pytest.mark.django_db
+def test_expired_and_wrong_codes_raise_the_same_error(user):
+    import datetime
+
+    from django.utils import timezone
+
+    reset = PasswordResetCode.objects.create(email="a@example.com")
+    PasswordResetCode.objects.filter(pk=reset.pk).update(
+        created_at=timezone.now() - datetime.timedelta(minutes=11)
+    )
+
+    wrong = post(
+        CodeValidationView, {"code": "x" + reset.code[1:], "email": "a@example.com"}
+    )
+    expired = post(CodeValidationView, {"code": reset.code, "email": "a@example.com"})
+
+    assert wrong.status_code == expired.status_code == 400
+    assert wrong.data == expired.data
+    # Both count as a failed attempt; the record and its count stay.
+    assert PasswordResetCode.objects.get().attempts == 2
+
+
+@pytest.mark.django_db
 def test_submission_resets_the_password(user):
     code = PasswordResetCode.objects.create(email="a@example.com")
 

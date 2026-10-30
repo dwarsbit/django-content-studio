@@ -27,6 +27,10 @@
   an address that has an account. `manage.py check --deploy` now warns
   about this (`content_studio.W018`).
 
+- **Expired password reset codes answered differently.** An expired code
+  that was the right one got a different error than a wrong code. Both
+  now get the same error and count as a failed attempt.
+
 ### Fixes
 
 - `URLPathField` no longer accepts a value that ends with a line break,

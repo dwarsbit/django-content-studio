@@ -63,7 +63,6 @@ def get_reset_user(email):
 
 
 INVALID_CODE = "Invalid code."
-EXPIRED_CODE = "Expired code."
 
 
 def check_code(email, code):
@@ -73,9 +72,10 @@ def check_code(email, code):
 
     Validation is bound to the email so failed attempts can be counted
     on the code record: after MAX_ATTEMPTS wrong codes the code is
-    deleted and a new one has to be requested. Unknown emails and wrong
-    codes both get the same error, so the endpoint does not reveal
-    whether a code exists for an email.
+    deleted and a new one has to be requested. Unknown emails, wrong
+    codes and expired codes all get the same error and count the same,
+    so the endpoint does not reveal whether a code exists for an email,
+    or whether an expired code was the right one.
 
     The record is locked while it is checked, so concurrent guesses are
     checked one at a time against the attempt limit. The error is
@@ -94,14 +94,11 @@ def check_code(email, code):
             or existing.locked
             or not existing.code
             or not constant_time_compare(existing.code, code)
+            or existing.expired
         ):
             if existing and not existing.locked:
                 existing.register_failed_attempt()
             return None, INVALID_CODE
-
-        if existing.expired:
-            existing.delete()
-            return None, EXPIRED_CODE
 
     return existing, None
 
