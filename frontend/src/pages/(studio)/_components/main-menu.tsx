@@ -46,6 +46,7 @@ import { useHttp } from "@/hooks/use-http";
 import { useMe } from "@/hooks/use-me";
 import { NARROW_QUERY, useMediaQuery } from "@/hooks/use-media-query";
 import { useRunButton } from "@/hooks/use-run-button";
+import { safeStorage } from "@/lib/safe-storage";
 import { cn } from "@/lib/utils";
 import { useTenant } from "@/tenant";
 import {
@@ -71,12 +72,12 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
   const location = useLocation();
   const narrow = useMediaQuery(NARROW_QUERY);
   const [collapsedByUser, setCollapsedByUser] = useState(
-    () => localStorage.getItem("main-menu-collapsed") === "true",
+    () => safeStorage.get("main-menu-collapsed") === "true",
   );
   const collapsed = narrow || collapsedByUser;
 
   useEffect(() => {
-    localStorage.setItem("main-menu-collapsed", String(collapsedByUser));
+    safeStorage.set("main-menu-collapsed", String(collapsedByUser));
   }, [collapsedByUser]);
 
   // Links and buttons share one list, ordered by weight (lower first);

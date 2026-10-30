@@ -19,6 +19,7 @@ import { useHttp } from "@/hooks/use-http";
 import { useMoveResource } from "@/hooks/use-move-resource";
 import { usePresenceList } from "@/hooks/use-presence";
 import { getDownloadErrorMessage } from "@/lib/download";
+import { safeStorage } from "@/lib/safe-storage";
 import type { ExportFormat, Model, PaginatedResponse, Resource } from "@/types";
 
 import { ContentBulkBar } from "./_components/bulk-bar";
@@ -45,7 +46,7 @@ export function ModelListPage() {
   // Reads the remembered choice, falling back to the first offered
   // view when nothing (or a no longer offered view) is stored.
   const storedView = (label: string) => {
-    const remembered = localStorage.getItem(`__dcs_list_view__:${label}`);
+    const remembered = safeStorage.get(`__dcs_list_view__:${label}`);
 
     return remembered && views.includes(remembered) ? remembered : views[0];
   };
@@ -83,12 +84,12 @@ export function ModelListPage() {
     );
   };
   const storedOrdering = (label: string) =>
-    sanitizeOrdering(localStorage.getItem(`__dcs_list_ordering__:${label}`));
+    sanitizeOrdering(safeStorage.get(`__dcs_list_ordering__:${label}`));
   const storedFilters = (label: string) => {
     try {
       return sanitizeFilters(
         JSON.parse(
-          localStorage.getItem(`__dcs_list_filters__:${label}`) ?? "{}",
+          safeStorage.get(`__dcs_list_filters__:${label}`) ?? "{}",
         ) as Record<string, string>,
       );
     } catch {
@@ -137,7 +138,7 @@ export function ModelListPage() {
     setViewState(next);
 
     if (model) {
-      localStorage.setItem(`__dcs_list_view__:${model.label}`, next);
+      safeStorage.set(`__dcs_list_view__:${model.label}`, next);
     }
 
     // Selection is current-page: switching views resets it.
@@ -157,9 +158,9 @@ export function ModelListPage() {
 
     if (model) {
       if (next) {
-        localStorage.setItem(`__dcs_list_ordering__:${model.label}`, next);
+        safeStorage.set(`__dcs_list_ordering__:${model.label}`, next);
       } else {
-        localStorage.removeItem(`__dcs_list_ordering__:${model.label}`);
+        safeStorage.remove(`__dcs_list_ordering__:${model.label}`);
       }
     }
 
@@ -172,9 +173,9 @@ export function ModelListPage() {
 
     if (model) {
       if (R.isEmpty(next)) {
-        localStorage.removeItem(`__dcs_list_filters__:${model.label}`);
+        safeStorage.remove(`__dcs_list_filters__:${model.label}`);
       } else {
-        localStorage.setItem(
+        safeStorage.set(
           `__dcs_list_filters__:${model.label}`,
           JSON.stringify(next),
         );

@@ -1,6 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react";
 
+import { safeStorage } from "@/lib/safe-storage";
+
 export type Theme = "dark" | "light" | "system";
 type ResolvedTheme = "dark" | "light";
 
@@ -66,7 +68,7 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setThemeState] = React.useState<Theme>(() => {
-    const storedTheme = localStorage.getItem(storageKey);
+    const storedTheme = safeStorage.get(storageKey);
     if (isTheme(storedTheme)) {
       return storedTheme;
     }
@@ -76,7 +78,7 @@ export function ThemeProvider({
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
-      localStorage.setItem(storageKey, nextTheme);
+      safeStorage.set(storageKey, nextTheme);
       setThemeState(nextTheme);
     },
     [storageKey],

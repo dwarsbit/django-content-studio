@@ -1,4 +1,5 @@
 import { http } from "@/hooks/use-http";
+import { safeStorage } from "@/lib/safe-storage";
 
 /** Where the selected tenant is remembered between sessions. */
 export const TENANT_STORAGE_KEY = "__dcs_tenant__";
@@ -11,10 +12,10 @@ export const TENANT_HEADER = "X-DCS-Tenant";
  */
 export function storeTenant(tenantId: string | null) {
   if (tenantId) {
-    localStorage.setItem(TENANT_STORAGE_KEY, tenantId);
+    safeStorage.set(TENANT_STORAGE_KEY, tenantId);
     http.defaults.headers.common[TENANT_HEADER] = tenantId;
   } else {
-    localStorage.removeItem(TENANT_STORAGE_KEY);
+    safeStorage.remove(TENANT_STORAGE_KEY);
     delete http.defaults.headers.common[TENANT_HEADER];
   }
 }
