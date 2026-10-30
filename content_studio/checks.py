@@ -1393,6 +1393,54 @@ def choice_widget_warnings(studio) -> list[tuple[str, str]]:
     return warnings
 
 
+def cover_image_widget_warnings(studio) -> list[tuple[str, str]]:
+    """
+    CoverImageWidget on a field that is not a single relation to the
+    media library model, as (check id, message) pairs. The widget
+    edits one media item; on any other field it has nothing to show.
+    """
+    model = getattr(studio, "model", None)
+
+    if model is None:
+        return []
+
+    fields = {field.name: field for field in model._meta.get_fields()}
+    media_model = cs_settings.MEDIA_LIBRARY_MODEL
+    warnings = []
+
+    for field in iter_edit_fields(studio):
+        model_field = fields.get(field.name)
+
+        if model_field is None:
+            continue
+
+        widget = field.widget or getattr(model_field, "widget_class", None)
+
+        if not (
+            isinstance(widget, type) and issubclass(widget, widgets.CoverImageWidget)
+        ):
+            continue
+
+        is_media_relation = (
+            media_model is not None
+            and isinstance(model_field, models.ForeignKey)
+            and model_field.related_model is media_model
+        )
+
+        if not is_media_relation:
+            warnings.append(
+                (
+                    "content_studio.W019",
+                    f"{studio.__class__.__name__}: CoverImageWidget on "
+                    f"{field.name!r} edits a media item, but the field on "
+                    f"{model._meta.label_lower} is not a MediaField to the "
+                    "media library model.",
+                )
+            )
+
+    return warnings
+
+
 def sortable_by_warnings(studio) -> list[tuple[str, str]]:
     """
     sortable_by entries that are not table columns, as (check id,
@@ -1857,6 +1905,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in choice_widget_warnings(studio):
+            messages.append(checks.Warning(warning, obj=obj, id=check_id))
+
+        for check_id, warning in cover_image_widget_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in sortable_by_warnings(studio):

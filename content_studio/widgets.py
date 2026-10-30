@@ -2,6 +2,7 @@ __all__ = [
     "BaseWidget",
     "BlockWidget",
     "CheckboxWidget",
+    "CoverImageWidget",
     "DateTimeWidget",
     "DateWidget",
     "ForeignKeyWidget",
@@ -113,6 +114,16 @@ class MediaWidget(BaseWidget):
 
 
 class ManyMediaWidget(BaseWidget):
+    pass
+
+
+class CoverImageWidget(BaseWidget):
+    """
+    A single image shown large, in a 16:9 frame, for a MediaField: with
+    upload by drag and drop, the media item's alt text and its focal
+    point. Not used by default.
+    """
+
     pass
 
 

@@ -4,9 +4,9 @@ Content Studio registration for the demo project — the documented pattern:
 configured in CONTENT_STUDIO (demo.blog.studio.admin_site).
 """
 
-from content_studio import register
+from content_studio import register, widgets
 from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
-from content_studio.form import ActivityLog, FormSet
+from content_studio.form import ActivityLog, Field, FormSet
 from content_studio.actions import bulk_action
 
 from . import models
@@ -84,7 +84,13 @@ class ArticleStudio(ModelStudio):
         FormSet(
             title="Content",
             description="The article itself",
-            fields=["title", "body", "status", "categories", "cover"],
+            fields=[
+                Field("cover", widget=widgets.CoverImageWidget),
+                "title",
+                "body",
+                "status",
+                "categories",
+            ],
         ),
     ]
     edit_sidebar = ["published_at", "author", "featured", "views", ActivityLog()]

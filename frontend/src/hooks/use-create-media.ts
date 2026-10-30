@@ -15,6 +15,7 @@ export function useCreateMedia() {
       file,
       type,
       onProgress,
+      signal,
     }: {
       folder: string | null;
       name: string;
@@ -22,6 +23,8 @@ export function useCreateMedia() {
       type: string;
       /** Upload progress, 0-100. */
       onProgress?(progress: number): void;
+      /** Aborts the upload. */
+      signal?: AbortSignal;
     }) {
       const { data } = await http.postForm<MediaItem>(
         "/media-library/items",
@@ -35,6 +38,7 @@ export function useCreateMedia() {
           headers: {
             "Content-Type": "multipart/form-data",
           },
+          signal,
           onUploadProgress: (event) => {
             if (event.total) {
               onProgress?.(Math.round((event.loaded / event.total) * 100));

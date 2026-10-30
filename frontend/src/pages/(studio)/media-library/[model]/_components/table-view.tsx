@@ -1,10 +1,8 @@
-import bytes from "bytes";
-import * as R from "ramda";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { TbCaretDownFilled, TbCaretUpFilled } from "react-icons/tb";
 
-import { Thumb } from "@/components/media-library/file-meta";
+import { sizeOf, Thumb } from "@/components/media-library/file-meta";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -86,8 +84,7 @@ export function TableView({
       label: t("media_library.columns.size"),
       sortable: true,
       numeric: true,
-      render: (item) =>
-        !R.isNil(item.size) && item.size > 0 ? bytes(item.size * 1000) : "",
+      render: (item) => sizeOf(item),
       className: "hidden md:table-cell",
     },
     {

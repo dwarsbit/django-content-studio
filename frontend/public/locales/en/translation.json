@@ -223,6 +223,38 @@
       "remove": "Remove",
       "empty": "No file chosen yet."
     },
+    "cover_image_widget": {
+      "empty_title": "Add a cover image",
+      "empty_hint": "Drop an image here, or",
+      "choose": "Choose from library",
+      "upload": "Upload",
+      "drop": "Drop to upload",
+      "drop_hint": "The image is added to the media library.",
+      "uploading": "Uploading {{name}}",
+      "upload_progress": "Upload progress",
+      "no_image": "No cover image.",
+      "not_an_image": "Only images can be a cover image. Choose a PNG, JPEG or WebP file.",
+      "size_hint": "Use a landscape image. It is shown at 16:9.",
+      "focal_point": "Focal point",
+      "replace": "Replace",
+      "remove": "Remove cover image",
+      "alt_text": "Alt text",
+      "alt_text_hint": "Describes the image for people who cannot see it. Saved on the media item, so it changes wherever the image is used.",
+      "alt_text_saved": "Alt text saved",
+      "shared_hint": "Saved on the media item, for every place the image is used.",
+      "focal_point_dialog": {
+        "title": "Set the focal point",
+        "description": "Click the part of the image that must stay in view when it is cropped. Arrow keys move it.",
+        "target": "Focal point at {{x}}% from the left, {{y}}% from the top",
+        "unset": "Set the focal point",
+        "previews": "Previews",
+        "wide": "Wide · 21:9",
+        "card": "Card · 4:3",
+        "square": "Square · 1:1",
+        "reset": "Reset to center",
+        "save": "Save focal point"
+      }
+    },
     "tag_widget": {
       "placeholder": "Add a tag..."
     },

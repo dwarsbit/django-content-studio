@@ -5,6 +5,7 @@ import { FieldWidget, type Model, type ModelField } from "@/types";
 
 import { BlockWidget } from "./block-widget/block-widget";
 import { CheckboxWidget } from "./checkbox-widget";
+import { CoverImageWidget } from "./cover-image-widget/cover-image-widget";
 import { DateTimeWidget } from "./date-time-widget";
 import { DateWidget } from "./date-widget";
 import { FallbackWidget } from "./fallback-widget";
@@ -47,6 +48,7 @@ type WidgetComponent = ComponentType<{
 const WIDGETS = {
   [FieldWidget.BlockWidget]: BlockWidget,
   [FieldWidget.CheckboxWidget]: CheckboxWidget,
+  [FieldWidget.CoverImageWidget]: CoverImageWidget,
   [FieldWidget.DateWidget]: DateWidget,
   [FieldWidget.DateTimeWidget]: DateTimeWidget,
   [FieldWidget.ForeignKeyWidget]: ForeignKeyWidget,

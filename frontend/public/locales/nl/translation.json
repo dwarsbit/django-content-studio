@@ -222,6 +222,38 @@
       "remove": "Verwijderen",
       "empty": "Nog geen bestand gekozen."
     },
+    "cover_image_widget": {
+      "empty_title": "Coverafbeelding toevoegen",
+      "empty_hint": "Sleep een afbeelding hierheen, of",
+      "choose": "Kies uit bibliotheek",
+      "upload": "Uploaden",
+      "drop": "Loslaten om te uploaden",
+      "drop_hint": "De afbeelding wordt aan de mediabibliotheek toegevoegd.",
+      "uploading": "{{name}} uploaden",
+      "upload_progress": "Voortgang van de upload",
+      "no_image": "Geen coverafbeelding.",
+      "not_an_image": "Alleen afbeeldingen kunnen een coverafbeelding zijn. Kies een PNG-, JPEG- of WebP-bestand.",
+      "size_hint": "Gebruik een liggende afbeelding. Ze wordt getoond in 16:9.",
+      "focal_point": "Focuspunt",
+      "replace": "Vervangen",
+      "remove": "Coverafbeelding verwijderen",
+      "alt_text": "Alt-tekst",
+      "alt_text_hint": "Beschrijft de afbeelding voor wie haar niet kan zien. Opgeslagen bij het mediabestand, dus ze verandert overal waar de afbeelding wordt gebruikt.",
+      "alt_text_saved": "Alt-tekst opgeslagen",
+      "shared_hint": "Opgeslagen bij het mediabestand, voor elke plek waar de afbeelding wordt gebruikt.",
+      "focal_point_dialog": {
+        "title": "Focuspunt instellen",
+        "description": "Klik op het deel van de afbeelding dat in beeld moet blijven bij het bijsnijden. De pijltjestoetsen verplaatsen het.",
+        "target": "Focuspunt op {{x}}% van links, {{y}}% van boven",
+        "unset": "Focuspunt instellen",
+        "previews": "Voorbeelden",
+        "wide": "Breed · 21:9",
+        "card": "Kaart · 4:3",
+        "square": "Vierkant · 1:1",
+        "reset": "Terug naar het midden",
+        "save": "Focuspunt opslaan"
+      }
+    },
     "tag_widget": {
       "placeholder": "Voeg een tag toe..."
     },

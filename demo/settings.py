@@ -84,6 +84,7 @@ CONTENT_STUDIO = {
     "ADMIN_SITE": "demo.blog.studio.admin_site",
     "MEDIA_LIBRARY_MODEL": "demo.blog.models.MediaItem",
     "MEDIA_LIBRARY_FOLDER_MODEL": "demo.blog.models.MediaFolder",
+    "FOCAL_POINT_ATTR": "focal_point",
     # The default per-IP rate (10/min) is fine for humans; the e2e suite
     # drives several parallel browser contexts through the same login form.
     "LOGIN_THROTTLE_RATE": "60/min",

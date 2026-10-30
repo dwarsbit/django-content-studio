@@ -26,11 +26,13 @@ the widget from the field's type, so most models need no configuration.
 
 Fields with choices get a select. Fields of other types get a plain input.
 
-Two widgets are not used by default but are there to choose:
+Three widgets are not used by default but are there to choose:
 
 - **`SwitchWidget`**: a toggle switch, for a `BooleanField`.
 - **`ToggleGroupWidget`**: a row of buttons for a field with choices, of
   which exactly one is active.
+- **`CoverImageWidget`**: one image shown large, for a `MediaField` that
+  holds a cover or header image. See [Cover images](#cover-images).
 
 ## Use another widget for one field
 
@@ -59,6 +61,66 @@ class ArticleStudio(ModelStudio):
 
 The widget only changes how the field is edited. Read-only fields keep
 showing their value through its format.
+
+## Cover images
+
+`CoverImageWidget` shows the image of a `MediaField` across the width of the
+form, in a 16:9 frame, the way a cover or header image appears on a site.
+Use it for one field in `edit_main`:
+
+```python
+# blog/models.py
+from django.db import models
+
+from content_studio.media_library.fields import MediaField
+
+
+class Article(models.Model):
+    title = models.CharField(max_length=200)
+    cover = MediaField("blog.MediaItem")
+```
+
+```python
+# blog/admin.py
+from content_studio import register, widgets
+from content_studio.admin import ModelStudio
+from content_studio.form import Field, FormSet
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_main = [
+        FormSet(
+            fields=[
+                Field("cover", widget=widgets.CoverImageWidget),
+                "title",
+            ],
+        ),
+    ]
+```
+
+Editors drop an image on the frame, upload one or choose one from the
+[media library](/docs/media-library). Uploads are added to the top folder of
+the library, which needs the media model's add permission. Only images are
+accepted.
+
+Once an image is chosen, the frame crops it to 16:9 around its focal point.
+Below the image, editors edit its alt text, and from the frame they set its
+focal point:
+
+- **Alt text** is saved on the media item when the editor leaves the input.
+  It shows when the media item model has an `alt_text` field.
+- **Focal point** opens a dialog with previews of the image cropped to
+  21:9, 4:3 and 1:1. It shows when
+  [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) is set.
+
+Both belong to the media item, not to the article: a change applies wherever
+the image is used, and needs the media model's change permission.
+
+System check `content_studio.W019` reports a `CoverImageWidget` on a field
+that is not a `MediaField` to the media library model.
 
 ## Change the default for a field type
 

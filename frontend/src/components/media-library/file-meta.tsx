@@ -19,11 +19,9 @@ export function extensionOf(item: MediaItem): string {
   return match ? match[1].toUpperCase() : "";
 }
 
-/** The file's size, formatted; empty when unknown. */
-export function sizeOf(item: MediaItem): string {
-  return !R.isNil(item.size) && item.size > 0
-    ? (bytes(item.size * 1000) ?? "")
-    : "";
+/** The file's size (stored in bytes), formatted; empty when unknown. */
+export function sizeOf(item: Pick<MediaItem, "size">): string {
+  return !R.isNil(item.size) && item.size > 0 ? (bytes(item.size) ?? "") : "";
 }
 
 /** The meta line of a file: "PNG · 1.2 MB", the type where the name

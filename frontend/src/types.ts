@@ -374,6 +374,7 @@ export enum FieldWidget {
   JSONSchemaWidget = "JSONSchemaWidget",
   ManyToManyWidget = "ManyToManyWidget",
   MediaWidget = "MediaWidget",
+  CoverImageWidget = "CoverImageWidget",
   ManyMediaWidget = "ManyMediaWidget",
   MultiSelectWidget = "MultiSelectWidget",
   RadioButtonWidget = "RadioButtonWidget",
