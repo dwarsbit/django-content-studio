@@ -55,7 +55,11 @@ import { useCropMedia } from "@/hooks/use-crop-media";
 import { useDiscover } from "@/hooks/use-discover";
 import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
 import { useUpdateMedia } from "@/hooks/use-update-media";
-import { metadataOf } from "@/lib/media-metadata";
+import {
+  focalPointOf,
+  focalPointUpdate,
+  metadataOf,
+} from "@/lib/media-metadata";
 import { getErrorMessage } from "@/lib/utils";
 import type { CropValue, FocalPointValue, MediaItem } from "@/types";
 
@@ -129,17 +133,14 @@ function EditForm({
   // Crop and focal point only apply to images.
   const isImage = data.type === "image";
   const cropEnabled = isImage && (mediaLibrary?.crop ?? false);
-  const focalPointAttr = isImage ? (mediaLibrary?.focal_point ?? null) : null;
-  const focalPointValue = focalPointAttr
-    ? ((data as unknown as Record<string, FocalPointValue | null>)[
-        focalPointAttr
-      ] ?? null)
-    : null;
+  // The focal point is an image property, in the item's properties.
+  const focalPointAttr = isImage ? (mediaLibrary?.properties ?? null) : null;
+  const focalPointValue = focalPointOf(data, focalPointAttr);
 
   // The image dialog, opened on the crop or the focal point tab.
   const [imageTab, setImageTab] = useState<ImageTab | null>(null);
   // A crop selection is not stored on the item: undefined means no crop
-  // is sent. The focal point lives on the item's focal point attribute.
+  // is sent. The focal point lives in the item's properties.
   const [crop, setCrop] = useState<CropValue | undefined>(undefined);
   const [focalPoint, setFocalPoint] = useState<FocalPointValue | null>(
     focalPointValue,
@@ -164,10 +165,10 @@ function EditForm({
 
   const onSubmit = async (values: MediaItem) => {
     try {
-      // The focal point is a dynamic attribute on the item; merge the
-      // editor's value into the payload under its configured name.
+      // The focal point is one of the item's properties; merge the
+      // editor's value into them, keeping the others.
       const payload: MediaItem = focalPointAttr
-        ? { ...values, [focalPointAttr]: focalPoint }
+        ? { ...values, ...focalPointUpdate(data, focalPointAttr, focalPoint) }
         : values;
 
       await mutateAsync(payload);

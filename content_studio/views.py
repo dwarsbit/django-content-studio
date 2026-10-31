@@ -18,7 +18,7 @@ from . import __version__
 from .admin import AdminSerializer, ModelStudio, ModelGroup
 from .exceptions import NotConfigured
 from .extensions import MainMenuButton
-from .media_library.metadata import get_metadata_attr
+from .media_library.metadata import get_metadata_attr, get_properties_attr
 from .permissions import IsActiveStaff
 from .serializers import ModelSerializer, get_session_user_serializer
 from .settings import cs_settings
@@ -172,9 +172,9 @@ class AdminApiViewSet(ViewSet):
             # Cropping is offered when the site defines the
             # crop_image(obj, crop_info) hook.
             "crop": callable(getattr(self.admin_site, "crop_image", None)),
-            # The media item attribute holding the focal point; None
-            # disables the focal point editor.
-            "focal_point": cs_settings.FOCAL_POINT_ATTR,
+            # The media item attribute holding the properties editors set,
+            # such as an image's focal point; None when off.
+            "properties": get_properties_attr(),
             # The media item attribute holding the metadata read from its
             # file (such as an image's width and height); None when off.
             "metadata": get_metadata_attr(),

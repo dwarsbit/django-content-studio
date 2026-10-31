@@ -62,6 +62,13 @@ class Media(ContentModel):
         help_text=_("Read from the file, such as an image's width and height."),
     )
 
+    properties = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_("Properties"),
+        help_text=_("Set by editors for some types of media, such as a focal point."),
+    )
+
     type = models.CharField(
         choices={
             "image": _("Image"),

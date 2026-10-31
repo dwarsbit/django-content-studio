@@ -1,6 +1,8 @@
 """
-Tests for media metadata: what is read from a media item's file (an
-image's width and height by default) into MEDIA_METADATA_ATTR.
+Tests for the media item's JSON fields: metadata, read from the file (an
+image's width and height by default) into MEDIA_METADATA_ATTR, and
+properties, set by editors (such as the focal point) in
+MEDIA_PROPERTIES_ATTR.
 """
 
 import io
@@ -16,7 +18,11 @@ from rest_framework.test import APIClient
 
 from content_studio.admin import admin_site
 from content_studio.checks import check_content_studio
-from content_studio.media_library.metadata import get_metadata_attr, read_image_size
+from content_studio.media_library.metadata import (
+    get_metadata_attr,
+    get_properties_attr,
+    read_image_size,
+)
 from content_studio.media_library.models import Media
 from content_studio.token_backends.jwt import create_access_token
 
@@ -271,3 +277,110 @@ def test_check_accepts_a_json_field_and_the_default(settings):
         messages = check_content_studio()
 
     assert not [m for m in messages if m.id == "content_studio.E025"]
+
+
+# --- Properties --------------------------------------------------------------
+
+
+def patch(user, pk, data, format="json"):
+    with override_settings(CONTENT_STUDIO=SETTINGS):
+        return media_client(user).patch(
+            f"/api/media-library/items/{pk}", data, format=format
+        )
+
+
+@pytest.mark.django_db
+def test_editors_set_the_focal_point_in_properties(media_root):
+    user = make_superuser()
+    pk = upload(user, "heath.jpg", image_bytes(16, 9)).json()["id"]
+
+    response = patch(user, pk, {"properties": {"focal_point": {"x": 25, "y": 75.5}}})
+
+    assert response.status_code == 200, response.content
+    assert Media.objects.get(pk=pk).properties == {"focal_point": {"x": 25, "y": 75.5}}
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "properties",
+    [
+        {"focal_point": {"x": 101, "y": 0}},
+        {"focal_point": {"x": "10", "y": 0}},
+        {"focal_point": {"x": 10}},
+        {"focal_point": [10, 20]},
+        ["focal_point"],
+    ],
+)
+def test_invalid_properties_are_rejected(media_root, properties):
+    user = make_superuser()
+    pk = upload(user, "heath.jpg", image_bytes(16, 9)).json()["id"]
+
+    response = patch(user, pk, {"properties": properties})
+
+    assert response.status_code == 400
+    assert "properties" in response.json()
+
+
+@pytest.mark.django_db
+def test_a_cleared_focal_point_and_other_keys_are_kept_as_given(media_root):
+    user = make_superuser()
+    pk = upload(user, "heath.jpg", image_bytes(16, 9)).json()["id"]
+
+    response = patch(user, pk, {"properties": {"focal_point": None, "credit": "ANP"}})
+
+    assert response.status_code == 200, response.content
+    assert Media.objects.get(pk=pk).properties == {
+        "focal_point": None,
+        "credit": "ANP",
+    }
+
+
+@pytest.mark.django_db
+def test_replacing_the_file_keeps_the_properties(media_root):
+    user = make_superuser()
+    pk = upload(user, "heath.jpg", image_bytes(16, 9)).json()["id"]
+    patch(user, pk, {"properties": {"focal_point": {"x": 10, "y": 20}}})
+
+    response = patch(
+        user,
+        pk,
+        {"file": SimpleUploadedFile("dunes.jpg", image_bytes(30, 40))},
+        format="multipart",
+    )
+
+    assert response.status_code == 200, response.content
+    item = Media.objects.get(pk=pk)
+    assert item.metadata == {"width": 30, "height": 40}
+    assert item.properties == {"focal_point": {"x": 10, "y": 20}}
+
+
+def test_the_default_properties_field_is_used_when_the_media_model_has_it():
+    with override_settings(CONTENT_STUDIO=SETTINGS):
+        assert get_properties_attr() == "properties"
+
+    with override_settings(CONTENT_STUDIO=WITHOUT_FIELD):
+        assert get_properties_attr() is None
+
+
+@pytest.mark.parametrize(
+    "overrides, message",
+    [
+        ({"MEDIA_PROPERTIES_ATTR": "extra"}, "unknown field 'extra'"),
+        ({"MEDIA_PROPERTIES_ATTR": "name"}, "must name a JSONField"),
+    ],
+)
+def test_check_reports_a_misconfigured_properties_setting(overrides, message):
+    with override_settings(CONTENT_STUDIO={**SETTINGS, **overrides}):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E026")
+
+    assert message in str(error)
+
+
+@pytest.mark.parametrize("settings", [SETTINGS, WITHOUT_FIELD])
+def test_check_accepts_the_default_properties_setting(settings):
+    with override_settings(CONTENT_STUDIO=settings):
+        messages = check_content_studio()
+
+    assert not [m for m in messages if m.id == "content_studio.E026"]

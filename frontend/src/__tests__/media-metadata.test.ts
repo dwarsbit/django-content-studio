@@ -4,6 +4,8 @@ import { describeFile } from "@/components/media-library/file-meta";
 import {
   describeMetadata,
   dimensionsOf,
+  focalPointOf,
+  focalPointUpdate,
   formatDuration,
   metadataOf,
 } from "@/lib/media-metadata";
@@ -58,5 +60,27 @@ describe("media metadata", () => {
       "MP4 · 2KB · 1920 × 1080 px",
     );
     expect(describeFile(item, "Video")).toBe("MP4 · 2KB");
+  });
+});
+
+describe("media properties", () => {
+  const image = {
+    id: "2",
+    properties: { focal_point: { x: 10, y: 20 }, credit: "ANP" },
+  };
+
+  it("reads the focal point from the properties", () => {
+    expect(focalPointOf(image, "properties")).toEqual({ x: 10, y: 20 });
+    expect(focalPointOf({ id: "3" }, "properties")).toBeNull();
+    expect(focalPointOf(image, null)).toBeNull();
+  });
+
+  it("sets the focal point, keeping the other properties", () => {
+    expect(focalPointUpdate(image, "properties", { x: 50, y: 50 })).toEqual({
+      properties: { focal_point: { x: 50, y: 50 }, credit: "ANP" },
+    });
+    expect(focalPointUpdate({ id: "3" }, "properties", null)).toEqual({
+      properties: { focal_point: null },
+    });
   });
 });

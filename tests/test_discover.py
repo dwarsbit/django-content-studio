@@ -44,7 +44,8 @@ class DiscoverEndpointTests(TestCase):
         self.assertEqual(data["media_library"]["enabled"], False)
         self.assertEqual(data["media_library"]["folders"], False)
         self.assertEqual(data["media_library"]["crop"], False)
-        self.assertEqual(data["media_library"]["focal_point"], None)
+        self.assertEqual(data["media_library"]["properties"], None)
+        self.assertEqual(data["media_library"]["metadata"], None)
         self.assertEqual(data["media_library"]["models"]["media_model"], None)
         self.assertEqual(data["media_library"]["models"]["folder_model"], None)
         self.assertEqual(data["dashboard"], {"widgets": []})
@@ -102,22 +103,28 @@ class DiscoverEndpointTests(TestCase):
         self.assertEqual(data["media_library"]["models"]["media_model"], "auth.user")
         self.assertEqual(data["media_library"]["models"]["folder_model"], "auth.group")
 
-    def test_discover_announces_crop_and_focal_point(self):
+    def test_discover_announces_crop_metadata_and_properties(self):
         """Cropping is announced when the admin site defines a
-        crop_image method; the focal point as its attribute name."""
+        crop_image method; metadata and properties as their attribute
+        names, when the media model has them."""
         from content_studio.admin import admin_site
 
         admin_site.crop_image = lambda obj, crop_info: None
 
         try:
-            with override_settings(CONTENT_STUDIO={"FOCAL_POINT_ATTR": "focal_point"}):
+            with override_settings(
+                CONTENT_STUDIO={
+                    "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Media"
+                }
+            ):
                 response = self.client.get("/api/discover")
         finally:
             del admin_site.crop_image
 
         media_library = response.json()["media_library"]
         self.assertEqual(media_library["crop"], True)
-        self.assertEqual(media_library["focal_point"], "focal_point")
+        self.assertEqual(media_library["metadata"], "metadata")
+        self.assertEqual(media_library["properties"], "properties")
 
     def test_discover_lists_registered_models(self):
         """Discover includes the registered studios. Only the user model

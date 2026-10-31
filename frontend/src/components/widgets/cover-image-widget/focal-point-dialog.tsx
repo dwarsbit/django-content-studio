@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useUpdateMedia } from "@/hooks/use-update-media";
+import { focalPointOf, focalPointUpdate } from "@/lib/media-metadata";
 import { cn, getErrorMessage } from "@/lib/utils";
 import type { FocalPointValue, MediaItem } from "@/types";
 
@@ -40,7 +41,8 @@ export function FocalPointDialog({
   onOpenChange,
 }: {
   item: MediaItem;
-  // The media item attribute holding the focal point (FOCAL_POINT_ATTR).
+  // The media item attribute holding its properties, where the focal
+  // point is stored (MEDIA_PROPERTIES_ATTR).
   attr: string;
   open: boolean;
   onOpenChange(open: boolean): void;
@@ -72,7 +74,7 @@ function FocalPointEditor({
   const { t } = useTranslation();
   const { mutateAsync, isPending } = useUpdateMedia();
   const [point, setPoint] = useState<FocalPointValue | null>(
-    (item as unknown as Record<string, FocalPointValue | null>)[attr] ?? null,
+    focalPointOf(item, attr),
   );
   const position = focalPointPosition(point);
 
@@ -109,7 +111,10 @@ function FocalPointEditor({
 
   const save = async () => {
     try {
-      await mutateAsync({ id: item.id, [attr]: point });
+      await mutateAsync({
+        id: item.id,
+        ...focalPointUpdate(item, attr, point),
+      });
       onDone();
     } catch (e: unknown) {
       toast.error(getErrorMessage(e));

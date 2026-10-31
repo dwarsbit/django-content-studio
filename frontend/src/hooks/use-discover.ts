@@ -27,9 +27,9 @@ export function useDiscover() {
           folders: boolean;
           // Offered when the admin site defines crop_image.
           crop: boolean;
-          // The media item attribute holding the focal point; null
-          // disables the focal point editor.
-          focal_point: string | null;
+          // The media item attribute holding the properties editors set
+          // (MediaProperties, such as the focal point); null when off.
+          properties?: string | null;
           // The media item attribute holding the metadata read from its
           // file (MediaMetadata); null when off.
           metadata?: string | null;
