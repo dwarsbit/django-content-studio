@@ -6,7 +6,6 @@ from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
-from .fields import CropField
 from ..fields import TagField
 from ..models import ContentModel
 
@@ -50,8 +49,6 @@ class Media(ContentModel):
         related_name="media",
         verbose_name=_("Folder"),
     )
-
-    crop = CropField(verbose_name=_("Crop"))
 
     size = models.PositiveBigIntegerField(
         null=True, verbose_name=_("File size"), editable=False

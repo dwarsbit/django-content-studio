@@ -26,6 +26,11 @@
   have. The admin shows the metadata in a file's details, and the cover
   image widget uses the stored size. System check `content_studio.E025`
   reports a misconfigured `MEDIA_METADATA_ATTR` you set.
+- **The built-in `Media` model has no `crop` field.** Content Studio never
+  wrote it: cropping goes through the site's `crop_image` hook, which
+  decides where a crop is stored. Run `migrate` to drop the column; a
+  `crop_image` method that stored crops in it needs a field of your own
+  media model. `CropField` stays available for your models.
 - **Cover image options.** `CoverImageWidget` takes `aspect_ratio`, such
   as `"21:9"` or `"1:1"`, for the frame's shape (16:9 when unset), and
   `min_width` and `min_height` in pixels: a smaller image gets a warning,
