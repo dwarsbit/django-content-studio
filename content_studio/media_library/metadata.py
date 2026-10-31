@@ -4,6 +4,9 @@ width and height, stored in the JSONField that MEDIA_METADATA_ATTR names.
 What is read comes from ContentStudioSite.get_media_metadata.
 """
 
+from django.core.exceptions import FieldDoesNotExist
+from django.db import models
+
 from content_studio.settings import cs_settings
 
 # EXIF orientations that turn the image a quarter: the image shows with
@@ -41,13 +44,35 @@ def read_image_size(file) -> dict:
     return {"width": width, "height": height}
 
 
+def get_metadata_attr():
+    """
+    The media item field metadata is stored in: MEDIA_METADATA_ATTR,
+    when the media model has a JSONField by that name. None otherwise,
+    which turns metadata off: the default name applies to every media
+    model, and one without the field simply has no metadata. A name
+    set explicitly but missing is reported by system check E025.
+    """
+    attr = cs_settings.MEDIA_METADATA_ATTR
+    media_model = cs_settings.MEDIA_LIBRARY_MODEL
+
+    if not attr or not media_model:
+        return None
+
+    try:
+        field = media_model._meta.get_field(attr)
+    except FieldDoesNotExist:
+        return None
+
+    return attr if isinstance(field, models.JSONField) else None
+
+
 def get_metadata_values(file, media_type) -> dict:
     """
     The metadata to save with an item whose file is file, as model field
-    values: {MEDIA_METADATA_ATTR: {...}}, or nothing when the setting is
+    values: {MEDIA_METADATA_ATTR: {...}}, or nothing when metadata is
     off or there is no file.
     """
-    attr = cs_settings.MEDIA_METADATA_ATTR
+    attr = get_metadata_attr()
 
     if not attr or not file:
         return {}

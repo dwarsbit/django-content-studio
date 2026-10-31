@@ -39,9 +39,10 @@ DEFAULTS = {
     # focal point editor.
     "FOCAL_POINT_ATTR": None,
     # Attribute on the media item model holding the metadata read from
-    # its file (a JSONField, e.g. {"width": 1600, "height": 900}); None
-    # turns reading metadata off.
-    "MEDIA_METADATA_ATTR": None,
+    # its file (a JSONField, e.g. {"width": 1600, "height": 900}). Used
+    # when the media model has a JSONField by that name; None turns
+    # reading metadata off.
+    "MEDIA_METADATA_ATTR": "metadata",
     # File extensions the media library accepts (lowercase, without the
     # dot); None accepts every extension.
     "MEDIA_LIBRARY_ALLOWED_EXTENSIONS": [

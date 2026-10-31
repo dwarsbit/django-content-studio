@@ -1,11 +1,14 @@
 """
 Read the metadata of media items that have none, such as the width and
-height of images uploaded before MEDIA_METADATA_ATTR was set.
+height of images uploaded before metadata was stored.
 """
 
 from django.core.management.base import BaseCommand, CommandError
 
-from content_studio.media_library.metadata import get_metadata_values
+from content_studio.media_library.metadata import (
+    get_metadata_attr,
+    get_metadata_values,
+)
 from content_studio.settings import cs_settings
 
 
@@ -24,13 +27,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         media_model = cs_settings.MEDIA_LIBRARY_MODEL
-        attr = cs_settings.MEDIA_METADATA_ATTR
+        attr = get_metadata_attr()
 
         if not media_model:
             raise CommandError("MEDIA_LIBRARY_MODEL is not set.")
 
         if not attr:
-            raise CommandError("MEDIA_METADATA_ATTR is not set.")
+            raise CommandError(
+                f"{media_model._meta.label_lower} has no JSONField named by "
+                f"MEDIA_METADATA_ATTR ({cs_settings.MEDIA_METADATA_ATTR!r})."
+            )
 
         updated = failed = 0
 

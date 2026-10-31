@@ -16,7 +16,7 @@ from rest_framework.test import APIClient
 
 from content_studio.admin import admin_site
 from content_studio.checks import check_content_studio
-from content_studio.media_library.metadata import read_image_size
+from content_studio.media_library.metadata import get_metadata_attr, read_image_size
 from content_studio.media_library.models import Media
 from content_studio.token_backends.jwt import create_access_token
 
@@ -24,7 +24,12 @@ SETTINGS = {
     "ADMIN_SITE": "content_studio.admin.admin_site",
     "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Media",
     "MEDIA_LIBRARY_FOLDER_MODEL": "content_studio.media_library.models.Folder",
-    "MEDIA_METADATA_ATTR": "metadata",
+}
+
+# A media model without a metadata field (for these tests, any model will do).
+WITHOUT_FIELD = {
+    **SETTINGS,
+    "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Folder",
 }
 
 
@@ -205,16 +210,40 @@ def test_command_reports_files_it_cannot_read(media_root):
             )
 
 
-def test_command_needs_the_setting():
-    with override_settings(CONTENT_STUDIO={**SETTINGS, "MEDIA_METADATA_ATTR": None}):
-        with pytest.raises(CommandError, match="MEDIA_METADATA_ATTR"):
+@pytest.mark.parametrize(
+    "settings", [{**SETTINGS, "MEDIA_METADATA_ATTR": None}, WITHOUT_FIELD]
+)
+def test_command_needs_a_metadata_field(settings):
+    with override_settings(CONTENT_STUDIO=settings):
+        with pytest.raises(CommandError, match="no JSONField named"):
             call_command("content_studio_media_metadata")
+
+
+def test_the_default_field_is_used_when_the_media_model_has_it():
+    with override_settings(CONTENT_STUDIO=SETTINGS):
+        assert get_metadata_attr() == "metadata"
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        WITHOUT_FIELD,
+        {**SETTINGS, "MEDIA_METADATA_ATTR": None},
+        {**SETTINGS, "MEDIA_LIBRARY_MODEL": None},
+    ],
+)
+def test_metadata_is_off_without_the_field(settings):
+    with override_settings(CONTENT_STUDIO=settings):
+        assert get_metadata_attr() is None
 
 
 @pytest.mark.parametrize(
     "overrides, message",
     [
-        ({"MEDIA_LIBRARY_MODEL": None}, "MEDIA_LIBRARY_MODEL is not"),
+        (
+            {"MEDIA_METADATA_ATTR": "metadata", "MEDIA_LIBRARY_MODEL": None},
+            "MEDIA_LIBRARY_MODEL is not",
+        ),
         ({"MEDIA_METADATA_ATTR": "dimensions"}, "unknown field 'dimensions'"),
         ({"MEDIA_METADATA_ATTR": "name"}, "must name a JSONField"),
     ],
@@ -228,8 +257,17 @@ def test_check_reports_a_misconfigured_setting(overrides, message):
     assert message in str(error)
 
 
-def test_check_accepts_a_json_field():
-    with override_settings(CONTENT_STUDIO=SETTINGS):
+@pytest.mark.parametrize(
+    "settings",
+    [
+        SETTINGS,
+        {**SETTINGS, "MEDIA_METADATA_ATTR": "metadata"},
+        # The default name on a media model without the field: no metadata.
+        WITHOUT_FIELD,
+    ],
+)
+def test_check_accepts_a_json_field_and_the_default(settings):
+    with override_settings(CONTENT_STUDIO=settings):
         messages = check_content_studio()
 
     assert not [m for m in messages if m.id == "content_studio.E025"]
