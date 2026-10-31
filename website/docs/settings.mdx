@@ -153,10 +153,11 @@ field without a media library model, or one that is missing or not a
 The field on the media item model that stores the
 [metadata read from its file](/docs/media-library#metadata), such as an
 image's width and height. The field must be a `JSONField`; editors cannot
-change it. Default: `None`, which turns reading metadata off. The built-in
-`Media` model has a `metadata` field for it. System check
-`content_studio.E025` reports a metadata field without a media library model,
-or one that is missing or not a `JSONField`.
+change it. Default: `"metadata"`, the field of the built-in `Media` model. A
+media model without a `JSONField` by that name has no metadata; `None` turns
+reading metadata off. When you set this setting, system check
+`content_studio.E025` reports a value without a media library model, or one
+naming a field that is missing or not a `JSONField`.
 
 ## Multi-tenancy
 

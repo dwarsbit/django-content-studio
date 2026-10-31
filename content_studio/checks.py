@@ -653,18 +653,20 @@ def webhook_setting_errors() -> list[tuple[str, str]]:
     return errors
 
 
-def media_json_attr_errors(setting, check_id, purpose) -> list[tuple[str, str]]:
+def media_json_attr_errors(
+    setting, check_id, purpose, explicit_only=False
+) -> list[tuple[str, str]]:
     """
     A misconfigured setting naming a JSONField on the media item model
     (FOCAL_POINT_ATTR, MEDIA_METADATA_ATTR), as (check id, message)
     pairs. The attribute must exist on the media item model and be a
-    JSONField.
+    JSONField. With explicit_only, a default value is not checked.
     """
     errors = []
 
     attr = getattr(cs_settings, setting)
 
-    if not attr:
+    if not attr or (explicit_only and setting not in cs_settings.user_settings):
         return errors
 
     media_model = cs_settings.MEDIA_LIBRARY_MODEL
@@ -716,10 +718,12 @@ def focal_point_errors() -> list[tuple[str, str]]:
 def media_metadata_errors() -> list[tuple[str, str]]:
     """
     A misconfigured MEDIA_METADATA_ATTR, as (check id, message) pairs.
-    Uploads store the metadata read from the file in it.
+    Uploads store the metadata read from the file in it. Only a value
+    set explicitly is checked: the default ("metadata") applies to every
+    media model, and one without that field has no metadata.
     """
     return media_json_attr_errors(
-        "MEDIA_METADATA_ATTR", "content_studio.E025", "metadata"
+        "MEDIA_METADATA_ATTR", "content_studio.E025", "metadata", explicit_only=True
     )
 
 

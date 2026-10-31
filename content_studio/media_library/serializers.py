@@ -4,6 +4,8 @@ from rest_framework import serializers
 
 from content_studio.settings import cs_settings
 
+from .metadata import get_metadata_attr
+
 # Leading bytes that mark markup (HTML, SVG, XML): browsers may render
 # such a file as a page when it is served from the site's own domain.
 MARKUP_SNIFF_BYTES = 512
@@ -70,11 +72,7 @@ def build_media_item_serializer(media_model):
             model = media_model
             fields = admin_site.get_media_serializer_fields(media_model)
             # Metadata is read from the file, never edited.
-            read_only_fields = (
-                [cs_settings.MEDIA_METADATA_ATTR]
-                if cs_settings.MEDIA_METADATA_ATTR
-                else []
-            )
+            read_only_fields = [get_metadata_attr()] if get_metadata_attr() else []
 
         def validate_file(self, file):
             return validate_media_upload(file)

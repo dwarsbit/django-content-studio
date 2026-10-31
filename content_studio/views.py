@@ -18,6 +18,7 @@ from . import __version__
 from .admin import AdminSerializer, ModelStudio, ModelGroup
 from .exceptions import NotConfigured
 from .extensions import MainMenuButton
+from .media_library.metadata import get_metadata_attr
 from .permissions import IsActiveStaff
 from .serializers import ModelSerializer, get_session_user_serializer
 from .settings import cs_settings
@@ -176,7 +177,7 @@ class AdminApiViewSet(ViewSet):
             "focal_point": cs_settings.FOCAL_POINT_ATTR,
             # The media item attribute holding the metadata read from its
             # file (such as an image's width and height); None when off.
-            "metadata": cs_settings.MEDIA_METADATA_ATTR,
+            "metadata": get_metadata_attr(),
             "models": {
                 "media_model": (media_model._meta.label_lower if media_model else None),
                 "folder_model": (

@@ -134,7 +134,7 @@ CONTENT_STUDIO = {
     'MEDIA_LIBRARY_MAX_UPLOAD_SIZE': 50 * 1024 * 1024,
     'HTML_SANITIZER': None,
     'FOCAL_POINT_ATTR': None,  # JSONField on the media model for the focal point
-    'MEDIA_METADATA_ATTR': None,  # JSONField for metadata read on upload (site.get_media_metadata)
+    'MEDIA_METADATA_ATTR': 'metadata',  # JSONField for metadata read on upload (site.get_media_metadata); off when the media model lacks it
     'TENANT_MODEL': None,
     'PRESENCE': True,  # who has an object open; a studio opts out with presence = False
     'PRESENCE_CACHE': 'default',  # must be a shared cache across processes

@@ -31,6 +31,8 @@ A media item model needs these fields:
   `ArrayField` or the built-in `TagField`. Searched together with the name.
 - A focal point field (optional): a `JSONField`, named in
   [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr).
+- `metadata` (optional): a `JSONField` for the [metadata](#metadata) read
+  from the file.
 
 A folder model needs a `name` and a `parent` foreign key to itself. System
 check `content_studio.W007` reports missing fields. Without the
@@ -162,27 +164,39 @@ The admin shows them in the file's details, and the
 [cover image widget](/docs/forms/widgets#cover-images) uses an image's size
 to warn about images that are too small.
 
-1. Add a `JSONField` to your media item model, or use the built-in `Media`
-   model, which has a `metadata` field.
-2. Name the field in [`MEDIA_METADATA_ATTR`](/docs/settings#media_metadata_attr):
+1. Give your media item model a `JSONField` named `metadata`. The built-in
+   `Media` model has one. To use a field by another name, name it in
+   [`MEDIA_METADATA_ATTR`](/docs/settings#media_metadata_attr):
 
    ```python
-   # mysite/settings.py
-   CONTENT_STUDIO = {
-       "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Media",
-       "MEDIA_LIBRARY_FOLDER_MODEL": "content_studio.media_library.models.Folder",
-       "MEDIA_METADATA_ATTR": "metadata",
-   }
+   # blog/models.py
+   from django.db import models
+
+
+   class MediaItem(models.Model):
+       class Type(models.TextChoices):
+           IMAGE = "image", "Image"
+           VIDEO = "video", "Video"
+           AUDIO = "audio", "Audio"
+           FILE = "file", "File"
+
+       file = models.FileField(upload_to="media/")
+       name = models.CharField(max_length=255, blank=True)
+       type = models.CharField(max_length=10, choices=Type.choices, default=Type.FILE)
+       metadata = models.JSONField(default=dict, blank=True, editable=False)
+
+       def __str__(self):
+           return self.name
    ```
 
-3. Install Content Studio with the `images` extra, which adds
+2. Install Content Studio with the `images` extra, which adds
    [Pillow](https://python-pillow.org/) to read the size of images:
 
    ```bash
    pip install "django-content-studio[images]"
    ```
 
-4. Read the metadata of the files you already have:
+3. Read the metadata of the files you already have:
 
    ```bash
    python manage.py content_studio_media_metadata
