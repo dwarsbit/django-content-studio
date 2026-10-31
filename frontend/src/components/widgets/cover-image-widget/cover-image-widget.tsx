@@ -21,11 +21,10 @@ import { useCreateMedia } from "@/hooks/use-create-media";
 import { useDiscover } from "@/hooks/use-discover";
 import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
 import { useUpdateMedia } from "@/hooks/use-update-media";
-import { dimensionsOf, metadataOf } from "@/lib/media-metadata";
+import { dimensionsOf, focalPointOf, metadataOf } from "@/lib/media-metadata";
 import { cn, getErrorMessage } from "@/lib/utils";
 import type {
   CoverImageWidgetOptions,
-  FocalPointValue,
   MediaItem,
   ModelField,
   WidgetProps,
@@ -70,7 +69,8 @@ export function CoverImageWidget({
   const { min_width: minWidth, min_height: minHeight } = options;
   const [ratioWidth, ratioHeight] = parseAspectRatio(options.aspect_ratio);
   const { data: discover } = useDiscover();
-  const focalPointAttr = discover?.media_library.focal_point ?? null;
+  // The focal point is an image property, in the item's properties.
+  const focalPointAttr = discover?.media_library.properties ?? null;
   const readonly = !!field.readonly;
 
   const itemId = value?.id != null ? String(value.id) : "";
@@ -173,11 +173,7 @@ export function CoverImageWidget({
         : "widgets.cover_image_widget.size_hint_square",
     { ratio },
   );
-  const focalPoint = focalPointAttr
-    ? ((
-        item as unknown as Record<string, FocalPointValue | null> | undefined
-      )?.[focalPointAttr] ?? null)
-    : null;
+  const focalPoint = focalPointOf(item, focalPointAttr);
 
   const chooser = (label: ReactNode, className?: string) => (
     <SelectDialog

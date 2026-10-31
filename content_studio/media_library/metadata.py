@@ -1,7 +1,11 @@
 """
-Media metadata: facts read from a media item's file, such as an image's
-width and height, stored in the JSONField that MEDIA_METADATA_ATTR names.
-What is read comes from ContentStudioSite.get_media_metadata.
+The media item's JSON fields:
+
+- metadata (MEDIA_METADATA_ATTR): facts read from the file, such as an
+  image's width and height. What is read comes from
+  ContentStudioSite.get_media_metadata; editors never change it.
+- properties (MEDIA_PROPERTIES_ATTR): values editors set for some types
+  of media, such as an image's focal point. Kept when the file changes.
 """
 
 from django.core.exceptions import FieldDoesNotExist
@@ -44,15 +48,15 @@ def read_image_size(file) -> dict:
     return {"width": width, "height": height}
 
 
-def get_metadata_attr():
+def get_media_json_attr(setting):
     """
-    The media item field metadata is stored in: MEDIA_METADATA_ATTR,
-    when the media model has a JSONField by that name. None otherwise,
-    which turns metadata off: the default name applies to every media
-    model, and one without the field simply has no metadata. A name
-    set explicitly but missing is reported by system check E025.
+    The media item field the setting names, when the media model has a
+    JSONField by that name. None otherwise, which turns the feature
+    off: the default names apply to every media model, and one without
+    the field simply goes without. A name set explicitly but missing is
+    reported by a system check (E025, E026).
     """
-    attr = cs_settings.MEDIA_METADATA_ATTR
+    attr = getattr(cs_settings, setting)
     media_model = cs_settings.MEDIA_LIBRARY_MODEL
 
     if not attr or not media_model:
@@ -64,6 +68,61 @@ def get_metadata_attr():
         return None
 
     return attr if isinstance(field, models.JSONField) else None
+
+
+def get_metadata_attr():
+    """The media item field metadata is stored in, or None."""
+    return get_media_json_attr("MEDIA_METADATA_ATTR")
+
+
+def get_properties_attr():
+    """The media item field properties are stored in, or None."""
+    return get_media_json_attr("MEDIA_PROPERTIES_ATTR")
+
+
+def validate_focal_point(value):
+    """
+    A focal point: {"x": 0-100, "y": 0-100}, percentages of the image's
+    width and height from its top left; None for none. Raises
+    ValueError otherwise.
+    """
+    if value is None:
+        return None
+
+    if not isinstance(value, dict) or set(value) != {"x", "y"}:
+        raise ValueError('A focal point is {"x": 0-100, "y": 0-100}.')
+
+    for key in ("x", "y"):
+        number = value[key]
+
+        if (
+            isinstance(number, bool)
+            or not isinstance(number, (int, float))
+            or not 0 <= number <= 100
+        ):
+            raise ValueError(f"The focal point's {key} must be a number from 0 to 100.")
+
+    return value
+
+
+# The properties Content Studio knows, with their validators. Other keys
+# are kept as they are, for a site's own use.
+PROPERTY_VALIDATORS = {"focal_point": validate_focal_point}
+
+
+def validate_properties(value):
+    """
+    A media item's properties: a JSON object whose known keys hold
+    valid values. Raises ValueError otherwise.
+    """
+    if not isinstance(value, dict):
+        raise ValueError("Properties must be a JSON object.")
+
+    for key, validator in PROPERTY_VALIDATORS.items():
+        if key in value:
+            validator(value[key])
+
+    return value
 
 
 def get_metadata_values(file, media_type) -> dict:

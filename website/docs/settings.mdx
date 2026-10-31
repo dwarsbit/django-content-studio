@@ -138,16 +138,6 @@ whatever their extension.
 The maximum size of an upload, in bytes. Default: `52428800` (50 MB). `None`
 removes the limit; your web server's own request size limit still applies.
 
-### FOCAL_POINT_ATTR {#focal_point_attr}
-
-The field on the media item model that stores the focal point, which turns
-on the focal point editor of the [media library](/docs/media-library). The
-field must be a `JSONField`; the editor stores `{"x": 0-100, "y": 0-100}`,
-percentages of the image's width and height. Default: `None`, which turns
-the editor off. System check `content_studio.E009` reports a focal point
-field without a media library model, or one that is missing or not a
-`JSONField`.
-
 ### MEDIA_METADATA_ATTR {#media_metadata_attr}
 
 The field on the media item model that stores the
@@ -158,6 +148,17 @@ media model without a `JSONField` by that name has no metadata; `None` turns
 reading metadata off. When you set this setting, system check
 `content_studio.E025` reports a value without a media library model, or one
 naming a field that is missing or not a `JSONField`.
+
+### MEDIA_PROPERTIES_ATTR {#media_properties_attr}
+
+The field on the media item model that stores the
+[properties editors set](/docs/media-library#properties) for some types of
+media, such as an image's focal point. The field must be a `JSONField`.
+Default: `"properties"`, the field of the built-in `Media` model. A media
+model without a `JSONField` by that name has no properties, and the admin
+offers no focal point; `None` turns properties off. When you set this
+setting, system check `content_studio.E026` reports a value without a media
+library model, or one naming a field that is missing or not a `JSONField`.
 
 ## Multi-tenancy
 

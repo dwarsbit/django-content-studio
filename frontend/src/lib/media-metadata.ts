@@ -1,15 +1,53 @@
-import type { MediaMetadata } from "@/types";
+import type { FocalPointValue, MediaMetadata, MediaProperties } from "@/types";
+
+/** A JSON object field of an item, by attribute; null without. */
+function objectOf(
+  item: object | undefined,
+  attr: string | null | undefined,
+): Record<string, unknown> | null {
+  const value = item && attr ? (item as Record<string, unknown>)[attr] : null;
+
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
 
 /** An item's metadata under the configured attribute; null without. */
 export function metadataOf(
   item: object | undefined,
   attr: string | null | undefined,
 ): MediaMetadata | null {
-  const value = item && attr ? (item as Record<string, unknown>)[attr] : null;
+  return objectOf(item, attr) as MediaMetadata | null;
+}
 
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as MediaMetadata)
-    : null;
+/** An item's properties under the configured attribute; null without. */
+export function propertiesOf(
+  item: object | undefined,
+  attr: string | null | undefined,
+): MediaProperties | null {
+  return objectOf(item, attr) as MediaProperties | null;
+}
+
+/** An item's focal point, from its properties; null without one. */
+export function focalPointOf(
+  item: object | undefined,
+  attr: string | null | undefined,
+): FocalPointValue | null {
+  return propertiesOf(item, attr)?.focal_point ?? null;
+}
+
+/**
+ * The update that sets an item's focal point: its properties with the
+ * new focal point, keeping the other properties.
+ */
+export function focalPointUpdate(
+  item: object,
+  attr: string,
+  focalPoint: FocalPointValue | null,
+): Record<string, MediaProperties> {
+  return {
+    [attr]: { ...propertiesOf(item, attr), focal_point: focalPoint },
+  };
 }
 
 const isNumber = (value: unknown): value is number =>

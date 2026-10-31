@@ -658,7 +658,7 @@ def media_json_attr_errors(
 ) -> list[tuple[str, str]]:
     """
     A misconfigured setting naming a JSONField on the media item model
-    (FOCAL_POINT_ATTR, MEDIA_METADATA_ATTR), as (check id, message)
+    (MEDIA_METADATA_ATTR, MEDIA_PROPERTIES_ATTR), as (check id, message)
     pairs. The attribute must exist on the media item model and be a
     JSONField. With explicit_only, a default value is not checked.
     """
@@ -707,11 +707,35 @@ def media_json_attr_errors(
 
 def focal_point_errors() -> list[tuple[str, str]]:
     """
-    A misconfigured FOCAL_POINT_ATTR, as (check id, message) pairs. The
-    frontend stores the focal point in it as {"x": 0-100, "y": 0-100}.
+    FOCAL_POINT_ATTR still set, as (check id, message) pairs. The
+    setting is removed: the focal point is a media item property
+    (properties["focal_point"]), so a site's own field is no longer
+    read.
+    """
+    if "FOCAL_POINT_ATTR" not in cs_settings.user_settings:
+        return []
+
+    return [
+        (
+            "content_studio.E009",
+            "FOCAL_POINT_ATTR is removed: the focal point is stored in the "
+            "media item's properties (MEDIA_PROPERTIES_ATTR), as "
+            'properties["focal_point"]. Move existing focal points there '
+            "and remove the setting.",
+        )
+    ]
+
+
+def media_properties_errors() -> list[tuple[str, str]]:
+    """
+    A misconfigured MEDIA_PROPERTIES_ATTR, as (check id, message) pairs.
+    Only a value set explicitly is checked, as for MEDIA_METADATA_ATTR.
     """
     return media_json_attr_errors(
-        "FOCAL_POINT_ATTR", "content_studio.E009", "focal point"
+        "MEDIA_PROPERTIES_ATTR",
+        "content_studio.E026",
+        "properties",
+        explicit_only=True,
     )
 
 
@@ -1968,6 +1992,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in media_metadata_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in media_properties_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in media_upload_errors():

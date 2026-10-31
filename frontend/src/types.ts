@@ -494,6 +494,16 @@ export interface MediaMetadata {
   [key: string]: unknown;
 }
 
+/**
+ * Values editors set for some types of media, under the attribute the
+ * discover's media_library.properties names. Other keys are a site's
+ * own and kept as they are.
+ */
+export interface MediaProperties {
+  focal_point?: FocalPointValue | null;
+  [key: string]: unknown;
+}
+
 export interface MediaFolder {
   id: string;
   name: string;

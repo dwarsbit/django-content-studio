@@ -230,58 +230,15 @@ def test_clean_bulk_actions_produce_no_errors():
     assert not [m for m in messages if m.id == "content_studio.E007"]
 
 
-@pytest.mark.django_db
-def test_focal_point_attr_without_media_model_is_an_error():
-    """FOCAL_POINT_ATTR needs a media item model to point at."""
+def test_removed_focal_point_attr_is_an_error():
+    """FOCAL_POINT_ATTR is removed: a site still setting it is told where
+    the focal point lives now."""
     with override_settings(CONTENT_STUDIO={"FOCAL_POINT_ATTR": "focal_point"}):
         messages = check_content_studio()
 
     error = next(m for m in messages if m.id == "content_studio.E009")
 
-    assert "MEDIA_LIBRARY_MODEL" in str(error)
-
-
-@pytest.mark.django_db
-def test_focal_point_attr_must_exist_on_the_media_model():
-    with override_settings(
-        CONTENT_STUDIO={
-            "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
-            "FOCAL_POINT_ATTR": "focal_point",
-        }
-    ):
-        messages = check_content_studio()
-
-    error = next(m for m in messages if m.id == "content_studio.E009")
-
-    assert "unknown field 'focal_point'" in str(error)
-
-
-@pytest.mark.django_db
-def test_focal_point_attr_must_be_a_json_field():
-    with override_settings(
-        CONTENT_STUDIO={
-            "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
-            "FOCAL_POINT_ATTR": "name",
-        }
-    ):
-        messages = check_content_studio()
-
-    error = next(m for m in messages if m.id == "content_studio.E009")
-
-    assert "must name a JSONField" in str(error)
-
-
-@pytest.mark.django_db
-def test_focal_point_attr_on_a_json_field_produces_no_error():
-    with override_settings(
-        CONTENT_STUDIO={
-            "MEDIA_LIBRARY_MODEL": "test_media_library.ItemModel",
-            "FOCAL_POINT_ATTR": "tags",
-        }
-    ):
-        messages = check_content_studio()
-
-    assert not [m for m in messages if m.id == "content_studio.E009"]
+    assert "MEDIA_PROPERTIES_ATTR" in str(error)
 
 
 def test_focal_point_attr_unset_produces_no_error():

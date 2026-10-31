@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from content_studio.settings import cs_settings
 
-from .metadata import get_metadata_attr
+from .metadata import get_metadata_attr, get_properties_attr, validate_properties
 
 # Leading bytes that mark markup (HTML, SVG, XML): browsers may render
 # such a file as a page when it is served from the site's own domain.
@@ -76,6 +76,17 @@ def build_media_item_serializer(media_model):
 
         def validate_file(self, file):
             return validate_media_upload(file)
+
+        def validate(self, attrs):
+            attr = get_properties_attr()
+
+            if attr and attr in attrs:
+                try:
+                    validate_properties(attrs[attr])
+                except ValueError as e:
+                    raise serializers.ValidationError({attr: str(e)})
+
+            return super().validate(attrs)
 
         def get_thumbnail(self, obj):
             admin_site = cs_settings.ADMIN_SITE

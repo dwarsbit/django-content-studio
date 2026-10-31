@@ -34,10 +34,11 @@ DEFAULTS = {
     # Sanitizer applied to HTMLField content on save: a callable or a
     # dotted import path; None uses the built-in allowlist sanitizer.
     "HTML_SANITIZER": None,
-    # Attribute on the media item model holding the focal point (a
-    # JSONField of {"x": <0-100>, "y": <0-100>}); None disables the
-    # focal point editor.
-    "FOCAL_POINT_ATTR": None,
+    # Attribute on the media item model holding the properties editors
+    # set for some types of media, such as an image's focal point (a
+    # JSONField). Used when the media model has a JSONField by that
+    # name; None turns properties off.
+    "MEDIA_PROPERTIES_ATTR": "properties",
     # Attribute on the media item model holding the metadata read from
     # its file (a JSONField, e.g. {"width": 1600, "height": 900}). Used
     # when the media model has a JSONField by that name; None turns

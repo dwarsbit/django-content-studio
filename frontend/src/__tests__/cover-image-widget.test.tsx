@@ -55,14 +55,14 @@ function makeField(overrides: Partial<ModelField> = {}): ModelField {
   return { type: "MediaField" as FieldType, required: false, ...overrides };
 }
 
-function setup(focalPoint: string | null, item = makeMediaItem()) {
+function setup(propertiesAttr: string | null, item = makeMediaItem()) {
   useDiscoverMock.mockReturnValue({
     data: {
       media_library: {
         enabled: true,
         folders: false,
         crop: false,
-        focal_point: focalPoint,
+        properties: propertiesAttr,
         models: { media_model: "media.image", folder_model: null },
       },
     },
@@ -142,8 +142,10 @@ describe("CoverImageWidget", () => {
 
   it("shows the image at its focal point with the item's details", async () => {
     setup(
-      "focal_point",
-      makeMediaItem({ focal_point: { x: 72, y: 60 } } as Partial<MediaItem>),
+      "properties",
+      makeMediaItem({
+        properties: { focal_point: { x: 72, y: 60 } },
+      } as Partial<MediaItem>),
     );
     renderWidget({ value: relatedValue });
 
@@ -286,7 +288,7 @@ describe("CoverImageWidget", () => {
   });
 
   it("saves the focal point on the media item", async () => {
-    setup("focal_point");
+    setup("properties");
     renderWidget({ value: relatedValue });
 
     await userEvent.click(
@@ -316,7 +318,7 @@ describe("CoverImageWidget", () => {
     await waitFor(() =>
       expect(httpMock.patch).toHaveBeenCalledWith(
         "/media-library/items/media-1",
-        { id: "media-1", focal_point: { x: 60, y: 49 } },
+        { id: "media-1", properties: { focal_point: { x: 60, y: 49 } } },
       ),
     );
   });
@@ -409,7 +411,7 @@ describe("CoverImageWidget metadata", () => {
           enabled: true,
           folders: false,
           crop: false,
-          focal_point: null,
+          properties: null,
           metadata: "metadata",
           models: { media_model: "media.image", folder_model: null },
         },

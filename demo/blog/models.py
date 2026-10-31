@@ -59,9 +59,12 @@ class MediaItem(models.Model):
     file = models.FileField(upload_to="media/")
     alt_text = models.CharField(max_length=200, blank=True)
     size = models.PositiveIntegerField(default=0)
-    crop = models.JSONField(default=list, blank=True)
-    # The focal point, {"x": 0-100, "y": 0-100}; see FOCAL_POINT_ATTR.
-    focal_point = models.JSONField(null=True, blank=True)
+    # Read from the file, such as an image's width and height; see
+    # MEDIA_METADATA_ATTR.
+    metadata = models.JSONField(default=dict, blank=True, editable=False)
+    # Set by editors, such as an image's focal point ({"focal_point":
+    # {"x": 0-100, "y": 0-100}}); see MEDIA_PROPERTIES_ATTR.
+    properties = models.JSONField(default=dict, blank=True)
     folder = models.ForeignKey(
         MediaFolder,
         null=True,

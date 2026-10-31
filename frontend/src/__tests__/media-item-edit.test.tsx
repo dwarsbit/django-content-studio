@@ -45,7 +45,7 @@ function makeMediaItem(overrides: Partial<MediaItem> = {}): MediaItem {
 }
 
 function discoverWith(
-  mediaLibrary: { crop: boolean; focal_point: string | null },
+  mediaLibrary: { crop: boolean; properties: string | null },
   item: MediaItem,
 ) {
   useDiscoverMock.mockReturnValue({
@@ -85,7 +85,7 @@ beforeEach(() => {
 
 describe("ItemEdit", () => {
   it("shows a plain preview without crop or focal point", async () => {
-    discoverWith({ crop: false, focal_point: null }, makeMediaItem());
+    discoverWith({ crop: false, properties: null }, makeMediaItem());
     renderEdit();
 
     await waitFor(() => expect(screen.getByRole("img")).toBeInTheDocument());
@@ -98,7 +98,7 @@ describe("ItemEdit", () => {
   });
 
   it("offers crop and focal point tabs when both are enabled", async () => {
-    discoverWith({ crop: true, focal_point: "focal_point" }, makeMediaItem());
+    discoverWith({ crop: true, properties: "properties" }, makeMediaItem());
     renderEdit();
 
     // The image dialog opens from the sheet's Crop button.
@@ -118,7 +118,7 @@ describe("ItemEdit", () => {
   });
 
   it("saves the focal point under its attribute name", async () => {
-    discoverWith({ crop: false, focal_point: "focal_point" }, makeMediaItem());
+    discoverWith({ crop: false, properties: "properties" }, makeMediaItem());
     renderEdit();
 
     // The focal point is set in the image dialog, opened from the sheet.
@@ -145,15 +145,15 @@ describe("ItemEdit", () => {
     await waitFor(() => expect(httpMock.patch).toHaveBeenCalled());
 
     const payload = httpMock.patch.mock.calls[0][1];
-    expect(payload.focal_point).toEqual({ x: 25, y: 50 });
+    expect(payload.properties).toEqual({ focal_point: { x: 25, y: 50 } });
   });
 
   it("clears a focal point on remove and saves null", async () => {
     const item = {
       ...makeMediaItem(),
-      focal_point: { x: 10, y: 20 },
+      properties: { focal_point: { x: 10, y: 20 }, credit: "ANP" },
     } as unknown as MediaItem;
-    discoverWith({ crop: false, focal_point: "focal_point" }, item);
+    discoverWith({ crop: false, properties: "properties" }, item);
     renderEdit();
 
     fireEvent.click(
@@ -173,11 +173,12 @@ describe("ItemEdit", () => {
     await waitFor(() => expect(httpMock.patch).toHaveBeenCalled());
 
     const payload = httpMock.patch.mock.calls[0][1];
-    expect(payload.focal_point).toBeNull();
+    // The other properties are kept.
+    expect(payload.properties).toEqual({ focal_point: null, credit: "ANP" });
   });
 
   it("does not call the crop endpoint without a crop selection", async () => {
-    discoverWith({ crop: true, focal_point: null }, makeMediaItem());
+    discoverWith({ crop: true, properties: null }, makeMediaItem());
     renderEdit();
 
     fireEvent.click(await screen.findByRole("button", { name: "common.save" }));

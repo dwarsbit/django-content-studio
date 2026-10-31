@@ -29,10 +29,15 @@ A media item model needs these fields:
   the preview.
 - `tags` (optional): a list of strings, such as a `JSONField`, an
   `ArrayField` or the built-in `TagField`. Searched together with the name.
-- A focal point field (optional): a `JSONField`, named in
-  [`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr).
+- `alt_text` (optional): a short text alternative for the file.
 - `metadata` (optional): a `JSONField` for the [metadata](#metadata) read
   from the file.
+- `properties` (optional): a `JSONField` for the [properties](#properties)
+  editors set, such as an image's focal point.
+
+The fields above apply to every type of media. A value that applies to only some
+types of media, such as an image's focal point, belongs in `metadata` when
+it is read from the file, and in `properties` when editors set it.
 
 A folder model needs a `name` and a `parent` foreign key to itself. System
 check `content_studio.W007` reports missing fields. Without the
@@ -150,10 +155,8 @@ image:
 What a crop does is up to your method: create a derivative, resize the file
 in place or store the selection. The edit page then shows the updated item.
 
-A focal point is stored on the item itself. Name its `JSONField` in
-[`FOCAL_POINT_ATTR`](/docs/settings#focal_point_attr) and editors can click
-the image to set it; it is saved as `{"x": 0-100, "y": 0-100}`, percentages
-of the image's width and height. The [cover image widget](/docs/forms/widgets#cover-images)
+A focal point is one of the image's [properties](#properties): editors click
+the image to set it. The [cover image widget](/docs/forms/widgets#cover-images)
 sets the same focal point from the edit page.
 
 ## Metadata
@@ -272,3 +275,53 @@ The admin shows `width` and `height` in pixels, `duration` in seconds as
 minutes and seconds, and `frame_rate` in frames per second. Other keys are
 stored for your own templates and code. The method runs during the upload
 request, so keep it fast; an exception in it fails the upload.
+
+## Properties
+
+Properties are values editors set for some types of media, stored in a
+`JSONField` on the media item. The built-in `Media` model has a `properties`
+field; give your own media model a `JSONField` named `properties`, or name
+another one in [`MEDIA_PROPERTIES_ATTR`](/docs/settings#media_properties_attr):
+
+```python
+# blog/models.py
+from django.db import models
+
+
+class MediaItem(models.Model):
+    class Type(models.TextChoices):
+        IMAGE = "image", "Image"
+        VIDEO = "video", "Video"
+        AUDIO = "audio", "Audio"
+        FILE = "file", "File"
+
+    file = models.FileField(upload_to="media/")
+    name = models.CharField(max_length=255, blank=True)
+    type = models.CharField(max_length=10, choices=Type.choices, default=Type.FILE)
+    properties = models.JSONField(default=dict, blank=True)
+
+    def __str__(self):
+        return self.name
+```
+
+The admin sets these properties:
+
+- **`focal_point`**: the part of an image that stays in view when it is
+  cropped, as `{"x": 0-100, "y": 0-100}`, percentages of the image's width
+  and height from its top left. `None` when it is removed.
+
+Unlike [metadata](#metadata), properties are kept when an item's file is
+replaced. Other keys are kept as they are, so your own code can store values
+there too. Read them in templates like any dictionary:
+
+```django
+{# blog/templates/blog/article_detail.html #}
+{% with point=article.cover.properties.focal_point %}
+  <img
+    src="{{ article.cover.file.url }}"
+    alt="{{ article.cover.alt_text }}"
+    style="object-fit: cover; object-position: {{ point.x|default:50 }}% {{ point.y|default:50 }}%"
+  >
+{% endwith %}
+```
+

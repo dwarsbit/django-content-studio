@@ -26,6 +26,29 @@
   have. The admin shows the metadata in a file's details, and the cover
   image widget uses the stored size. System check `content_studio.E025`
   reports a misconfigured `MEDIA_METADATA_ATTR` you set.
+- **Media properties.** Values editors set for some types of media are
+  stored in the media model's `properties` `JSONField` (another name can
+  be set with the new `MEDIA_PROPERTIES_ATTR` setting). Unlike metadata,
+  properties are kept when the file is replaced, and their known keys are
+  validated. The built-in `Media` model has a `properties` field (run
+  `migrate`). System check `content_studio.E026` reports a misconfigured
+  `MEDIA_PROPERTIES_ATTR` you set.
+- ⚠️ **Breaking:** the focal point is a media property,
+  `properties["focal_point"]`, and the `FOCAL_POINT_ATTR` setting is
+  removed; system check `content_studio.E009` now reports it when it is
+  still set. To keep your focal points, add a `properties` `JSONField` to
+  your media model, copy the values into it in a data migration and remove
+  the setting:
+
+  ```python
+  def move_focal_points(apps, schema_editor):
+      MediaItem = apps.get_model("blog", "MediaItem")
+
+      for item in MediaItem.objects.exclude(focal_point=None):
+          item.properties = {**item.properties, "focal_point": item.focal_point}
+          item.save(update_fields=["properties"])
+  ```
+
 - **The built-in `Media` model has no `crop` field.** Content Studio never
   wrote it: cropping goes through the site's `crop_image` hook, which
   decides where a crop is stored. Run `migrate` to drop the column; a
