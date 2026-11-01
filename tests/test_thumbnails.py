@@ -14,11 +14,13 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import CommandError, call_command
 from django.test import override_settings
 from PIL import Image
 from rest_framework.test import APIClient
 
 from content_studio.admin import admin_site
+from content_studio.checks import check_content_studio
 from content_studio.media_library.models import Media
 from content_studio.thumbnails import SIZES, thumbnail_name
 from content_studio.token_backends.jwt import create_access_token
@@ -338,3 +340,126 @@ def test_deleting_an_item_deletes_its_thumbnails(
         item.delete()
 
     assert not any(path.exists() for path in paths)
+
+
+TWO_CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "thumbnails": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "thumbnails",
+    },
+}
+
+
+@pytest.mark.django_db
+def test_the_cache_setting_names_the_cache(media_root):
+    from django.core.cache import caches
+
+    item = make_item(image_bytes(1000, 1000))
+
+    with override_settings(
+        CACHES=TWO_CACHES,
+        CONTENT_STUDIO={**SETTINGS, "THUMBNAIL_CACHE": "thumbnails"},
+    ):
+        caches["thumbnails"].clear()
+        admin_site.get_thumbnail(item)
+
+        assert len(caches["thumbnails"]._cache) == 1
+        assert len(caches["default"]._cache) == 0
+
+
+def check_ids():
+    return [message.id for message in check_content_studio()]
+
+
+def test_check_reports_a_cache_that_is_not_configured():
+    with override_settings(CONTENT_STUDIO={**SETTINGS, "THUMBNAIL_CACHE": "missing"}):
+        assert "content_studio.E027" in check_ids()
+
+
+def test_check_accepts_a_configured_cache_or_thumbnails_off():
+    assert "content_studio.E027" not in check_ids()
+
+    with override_settings(
+        CONTENT_STUDIO={
+            **SETTINGS,
+            "THUMBNAIL_CACHE": "missing",
+            "THUMBNAIL_FOLDER": None,
+        }
+    ):
+        assert "content_studio.E027" not in check_ids()
+
+
+def run_command(*args):
+    out, err = io.StringIO(), io.StringIO()
+    call_command("content_studio_thumbnails", *args, stdout=out, stderr=err)
+    return out.getvalue(), err.getvalue()
+
+
+@pytest.mark.django_db
+def test_command_makes_missing_thumbnails(media_root, monkeypatch):
+    first = make_item(image_bytes(1000, 1000))
+    second = make_item(image_bytes(800, 600))
+    make_item(b"%PDF-1.4", name="manual.pdf", type="file")
+    admin_site.get_thumbnail(first, "small")
+
+    out, _ = run_command()
+
+    assert "Checked 2 image(s) and made 3 thumbnail(s)." in out
+    assert all(
+        stored(media_root, item, size).exists()
+        for item in (first, second)
+        for size in SIZES
+    )
+
+    # Shown afterwards, nothing is made.
+    monkeypatch.setattr(
+        "content_studio.thumbnails.render_thumbnail",
+        lambda *args: pytest.fail("made again"),
+    )
+    admin_site.get_thumbnail(second, "large")
+
+
+@pytest.mark.django_db
+def test_command_all_makes_every_thumbnail_again(media_root):
+    item = make_item(image_bytes(1000, 1000))
+    run_command()
+    (media_root / item.file.name).write_bytes(image_bytes(500, 250))
+
+    out, _ = run_command("--all")
+
+    assert "made 2 thumbnail(s)" in out
+
+    with Image.open(stored(media_root, item, "large")) as image:
+        assert image.size == (500, 250)
+
+
+@pytest.mark.django_db
+def test_command_reports_images_it_cannot_read(media_root):
+    make_item(b"not an image")
+    make_item(image_bytes(100, 100))
+
+    with pytest.raises(CommandError, match="1 image"):
+        run_command()
+
+    assert len(list((media_root / "content_studio" / "thumbnails").iterdir())) == 2
+
+
+@pytest.mark.parametrize(
+    "overrides, message",
+    [
+        ({"MEDIA_LIBRARY_MODEL": None}, "MEDIA_LIBRARY_MODEL is not set"),
+        ({"THUMBNAIL_FOLDER": None}, "THUMBNAIL_FOLDER is None"),
+    ],
+)
+def test_command_needs_thumbnails_on(overrides, message):
+    with override_settings(CONTENT_STUDIO={**SETTINGS, **overrides}):
+        with pytest.raises(CommandError, match=message):
+            run_command()
+
+
+def test_command_needs_pillow(monkeypatch):
+    monkeypatch.setitem(sys.modules, "PIL", None)
+
+    with pytest.raises(CommandError, match="Pillow"):
+        run_command()

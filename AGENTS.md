@@ -44,7 +44,7 @@ content_studio/
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E026, W001-W019)
+├── checks.py            # System checks (content_studio.E001-E027, W001-W019)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
@@ -135,6 +135,7 @@ CONTENT_STUDIO = {
     'MEDIA_LIBRARY_MAX_UPLOAD_SIZE': 50 * 1024 * 1024,
     'HTML_SANITIZER': None,
     'THUMBNAIL_FOLDER': 'content_studio/thumbnails',  # in the image's storage; None: the file itself
+    'THUMBNAIL_CACHE': 'default',  # remembers which thumbnails exist; must be shared across processes
     'MEDIA_METADATA_ATTR': 'metadata',  # JSONField: read from the file on upload (site.get_media_metadata), read-only; off when the media model lacks it
     'MEDIA_PROPERTIES_ATTR': 'properties',  # JSONField: set by editors (focal_point), kept when the file changes; off when the media model lacks it
     'TENANT_MODEL': None,

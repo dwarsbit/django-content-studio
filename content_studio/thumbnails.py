@@ -9,7 +9,7 @@ image's own storage under THUMBNAIL_FOLDER, named after the image's
 file name and the size, so replacing the file gives new thumbnails.
 
 Thumbnails are made when first asked for (the upload response asks for
-both) and remembered in Django's default cache, so listing a folder
+both) and remembered in the THUMBNAIL_CACHE cache, so listing a folder
 does not check the storage for every item.
 """
 
@@ -17,7 +17,7 @@ import hashlib
 import io
 import logging
 
-from django.core.cache import cache
+from django.core.cache import caches
 from django.core.files.base import ContentFile
 
 from content_studio.settings import cs_settings
@@ -39,6 +39,10 @@ CACHE_PREFIX = "content_studio:thumbnail:"
 CACHE_TIMEOUT = 24 * 60 * 60
 FAILED_CACHE_TIMEOUT = 60 * 60
 FAILED = "failed"
+
+
+def get_cache():
+    return caches[cs_settings.THUMBNAIL_CACHE]
 
 
 def pillow_available() -> bool:
@@ -97,6 +101,40 @@ def render_thumbnail(source, box: int) -> bytes:
     return buffer.getvalue()
 
 
+def make_thumbnail(file, size: str, force: bool = False) -> bool:
+    """
+    Save the file's thumbnail of the given size in its storage, unless it
+    exists (or force is set), and remember it in the cache. True when
+    it was made; False when it existed or thumbnails are off. Errors
+    reading or saving the image are raised.
+    """
+    name = thumbnail_name(file.name, size)
+
+    if not name or not pillow_available():
+        return False
+
+    storage = file.storage
+    made = force or not storage.exists(name)
+
+    if made:
+        with storage.open(file.name, "rb") as source:
+            content = render_thumbnail(source, SIZES[size])
+
+        if force:
+            storage.delete(name)
+
+        saved = storage.save(name, ContentFile(content))
+
+        # Made at the same time elsewhere: the storage gave this one
+        # another name, which nothing points to.
+        if saved != name:
+            storage.delete(saved)
+
+    get_cache().set(_cache_key(storage, name), True, CACHE_TIMEOUT)
+
+    return made
+
+
 def get_thumbnail_url(file, size: str = "small") -> str | None:
     """
     The URL of the file's thumbnail, made first when missing. None when
@@ -113,6 +151,7 @@ def get_thumbnail_url(file, size: str = "small") -> str | None:
 
     storage = file.storage
     key = _cache_key(storage, name)
+    cache = get_cache()
 
     try:
         state = cache.get(key)
@@ -121,18 +160,7 @@ def get_thumbnail_url(file, size: str = "small") -> str | None:
             return None
 
         if state is None:
-            if not storage.exists(name):
-                with storage.open(file.name, "rb") as source:
-                    content = render_thumbnail(source, SIZES[size])
-
-                saved = storage.save(name, ContentFile(content))
-
-                # Made at the same time elsewhere: the storage gave this
-                # one another name, which nothing points to.
-                if saved != name:
-                    storage.delete(saved)
-
-            cache.set(key, True, CACHE_TIMEOUT)
+            make_thumbnail(file, size)
 
         return storage.url(name)
     except Exception:
@@ -155,7 +183,7 @@ def delete_thumbnails(file) -> None:
             return
 
         try:
-            cache.delete(_cache_key(storage, name))
+            get_cache().delete(_cache_key(storage, name))
             storage.delete(name)
         except Exception:
             logger.warning("Could not delete the thumbnail %s.", name, exc_info=True)

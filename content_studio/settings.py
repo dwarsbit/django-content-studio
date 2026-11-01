@@ -83,6 +83,10 @@ DEFAULTS = {
     # media library images are saved in (made with Pillow, from the
     # [images] extra); None turns them off and shows the file itself.
     "THUMBNAIL_FOLDER": "content_studio/thumbnails",
+    # The cache alias that remembers which thumbnails exist. Across
+    # several processes or servers it must be a shared cache (Redis,
+    # Memcached, database).
+    "THUMBNAIL_CACHE": "default",
     "TENANT_MODEL": None,
     # Whether edit and list pages show which users have an object open;
     # a studio opts out with presence = False.

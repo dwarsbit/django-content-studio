@@ -168,6 +168,14 @@ saved in. Default: `"content_studio/thumbnails"`. Thumbnails need Pillow,
 from the `images` extra. `None` turns them off: the admin shows the image
 file itself.
 
+### THUMBNAIL_CACHE {#thumbnail_cache}
+
+The alias of the cache in `CACHES` that remembers which thumbnails exist.
+Default: `"default"`. With several worker processes or servers, it must be a
+shared cache, such as Redis, Memcached or the database cache. System check
+`content_studio.E027` reports an alias that is not in `CACHES` while
+thumbnails are on.
+
 ## Multi-tenancy
 
 ### TENANT_MODEL {#tenant_model}

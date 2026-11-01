@@ -67,6 +67,10 @@
   by default; `None` turns them off). They are made when an image is
   uploaded, replaced or cropped, or first shown, and removed with it.
   Without Pillow, the admin shows the image file itself.
+  `manage.py content_studio_thumbnails` makes the thumbnails of the images
+  you already have. Which thumbnails exist is remembered in the cache set
+  by the new `THUMBNAIL_CACHE` setting (`"default"` by default); system
+  check `content_studio.E027` reports an alias that is not in `CACHES`.
 - ⚠️ **Breaking:** the site's `get_thumbnail` hook takes the size:
   `get_thumbnail(obj, size="small")`, where `size` is `"small"` or
   `"large"`. Add the argument to your override.
