@@ -27,7 +27,10 @@ class DjangoContentStudioConfig(AppConfig):
     def ready(self):
         from django.utils.module_loading import autodiscover_modules
 
+        from django.db.models.signals import post_delete
+
         from . import checks  # noqa: F401 -- registers the system checks
+        from .thumbnails import delete_thumbnails_of_deleted_item
         from .utils import log
 
         # Import every app's admin module (where Content Studio
@@ -35,6 +38,12 @@ class DjangoContentStudioConfig(AppConfig):
         # position of apps in INSTALLED_APPS does not affect what is
         # registered.
         autodiscover_modules("admin")
+
+        # A deleted media item's thumbnails go with it.
+        post_delete.connect(
+            delete_thumbnails_of_deleted_item,
+            dispatch_uid="content_studio_delete_thumbnails",
+        )
 
         # Set up the admin site routes and content CRUD APIs in every
         # context (runserver, WSGI/ASGI, management commands, tests) so

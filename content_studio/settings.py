@@ -79,6 +79,10 @@ DEFAULTS = {
     # Maximum upload size of a media library file in bytes; None for no
     # limit.
     "MEDIA_LIBRARY_MAX_UPLOAD_SIZE": 50 * 1024 * 1024,
+    # Folder, inside each image's own storage, that the thumbnails of
+    # media library images are saved in (made with Pillow, from the
+    # [images] extra); None turns them off and shows the file itself.
+    "THUMBNAIL_FOLDER": "content_studio/thumbnails",
     "TENANT_MODEL": None,
     # Whether edit and list pages show which users have an object open;
     # a studio opts out with presence = False.

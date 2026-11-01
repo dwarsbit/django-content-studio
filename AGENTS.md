@@ -49,6 +49,7 @@ content_studio/
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
 ├── throttling.py        # ClientIPMixin: throttles identify clients by REMOTE_ADDR unless NUM_PROXIES is set
+├── thumbnails.py        # Thumbnails of media images (Pillow, "small"/"large" WebP under THUMBNAIL_FOLDER)
 ├── presence.py          # Presence: who has an object open, kept in Django's cache (PRESENCE, PRESENCE_CACHE)
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions
@@ -133,6 +134,7 @@ CONTENT_STUDIO = {
     'MEDIA_LIBRARY_ALLOWED_EXTENSIONS': [...],  # images (no SVG), video, audio, documents
     'MEDIA_LIBRARY_MAX_UPLOAD_SIZE': 50 * 1024 * 1024,
     'HTML_SANITIZER': None,
+    'THUMBNAIL_FOLDER': 'content_studio/thumbnails',  # in the image's storage; None: the file itself
     'MEDIA_METADATA_ATTR': 'metadata',  # JSONField: read from the file on upload (site.get_media_metadata), read-only; off when the media model lacks it
     'MEDIA_PROPERTIES_ATTR': 'properties',  # JSONField: set by editors (focal_point), kept when the file changes; off when the media model lacks it
     'TENANT_MODEL': None,

@@ -137,7 +137,7 @@ function FocalPointEditor({
           <div className="relative rounded-md overflow-hidden border bg-muted">
             <img
               alt=""
-              src={item.thumbnail}
+              src={item.thumbnail_large ?? item.thumbnail}
               draggable={false}
               className="block w-full select-none"
             />
@@ -187,7 +187,7 @@ function FocalPointEditor({
               >
                 <img
                   alt=""
-                  src={item.thumbnail}
+                  src={item.thumbnail_large ?? item.thumbnail}
                   draggable={false}
                   className={cn(
                     "w-full rounded-sm border object-cover",

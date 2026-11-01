@@ -58,6 +58,18 @@
   as `"21:9"` or `"1:1"`, for the frame's shape (16:9 when unset), and
   `min_width` and `min_height` in pixels: a smaller image gets a warning,
   and the image's size shows next to its file size.
+- **Thumbnails.** With the `images` extra installed, Content Studio makes
+  thumbnails of media library images in two sizes: small (fits 480
+  pixels) for the media library, pickers and list pages, and large (fits
+  1600 pixels) for the cover image widget, cropping and the focal point.
+  They are WebP images saved in the image's own storage, in the folder
+  set by the new `THUMBNAIL_FOLDER` setting (`"content_studio/thumbnails"`
+  by default; `None` turns them off). They are made when an image is
+  uploaded, replaced or cropped, or first shown, and removed with it.
+  Without Pillow, the admin shows the image file itself.
+- ⚠️ **Breaking:** the site's `get_thumbnail` hook takes the size:
+  `get_thumbnail(obj, size="small")`, where `size` is `"small"` or
+  `"large"`. Add the argument to your override.
 
 ## 1.3.0 (2026-10-30)
 

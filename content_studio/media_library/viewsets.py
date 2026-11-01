@@ -15,6 +15,7 @@ from rest_framework.viewsets import ModelViewSet
 from content_studio.paginators import ContentPagination
 from content_studio.exceptions import NotConfigured
 from content_studio.settings import cs_settings
+from content_studio.thumbnails import delete_thumbnails
 from content_studio.signals import (
     CREATED,
     DELETED,
@@ -194,6 +195,11 @@ class MediaLibraryViewSet(ModelViewSet):
         previous = getattr(serializer.instance, "file", None)
         previous_name = previous.name if previous else None
 
+        # The thumbnails of a replaced file go now: they can be made
+        # again, and the file may keep its name.
+        if "file" in serializer.validated_data:
+            delete_thumbnails(previous)
+
         obj = serializer.save(**self.get_metadata_values(serializer))
         record_change(self.request, obj, UPDATED)
 
@@ -291,6 +297,9 @@ class MediaLibraryViewSet(ModelViewSet):
             )
 
         obj = self.get_object()
+        # The cropped image gets new thumbnails, also when crop_image
+        # keeps the file's name.
+        delete_thumbnails(obj.file)
         crop_image(obj, crop_info)
         record_change(request, obj, UPDATED, "Cropped.")
 
