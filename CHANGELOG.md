@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.0 (unreleased)
+## 1.4.0 (2026-11-01)
 
 - **Widget options.** Widgets take options: pass an instance instead of
   the class, such as `Field("body", widget=widgets.TextAreaWidget(rows=12))`.
