@@ -478,6 +478,17 @@ export interface MediaItem {
   alt_text: string;
   type: "file" | "image" | "video" | "audio";
   size: number;
+  // A cropped image's original and the crop on it, as percentages of
+  // the original; null when the image is not cropped.
+  original?: { url: string; crop: CropBox } | null;
+}
+
+// A crop as the server stores it: numbers, percentages of the original.
+export interface CropBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 /**

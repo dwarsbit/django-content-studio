@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from content_studio.settings import cs_settings
 
+from .cropping import get_crop
 from .metadata import get_metadata_attr, get_properties_attr, validate_properties
 
 # Leading bytes that mark markup (HTML, SVG, XML): browsers may render
@@ -87,6 +88,30 @@ def build_media_item_serializer(media_model):
                     raise serializers.ValidationError({attr: str(e)})
 
             return super().validate(attrs)
+
+        def to_representation(self, obj):
+            data = super().to_representation(obj)
+            data["original"] = self.get_original(obj)
+
+            return data
+
+        def get_original(self, obj):
+            """
+            A cropped image's original and the crop box on it, for
+            the crop editor; None when the image is not cropped.
+            """
+            crop = get_crop(obj)
+
+            if not crop:
+                return None
+
+            url = obj.file.storage.url(crop["original"])
+            request = self.context.get("request")
+
+            return {
+                "url": request.build_absolute_uri(url) if request else url,
+                "crop": crop["box"],
+            }
 
         def get_thumbnail(self, obj):
             admin_site = cs_settings.ADMIN_SITE

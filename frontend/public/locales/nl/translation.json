@@ -176,6 +176,10 @@
       "tags": "Tags"
     },
     "crop": "Bijsnijden",
+    "reset_crop": "Origineel herstellen",
+    "reset_crop_confirm_title": "Origineel herstellen?",
+    "reset_crop_confirm_description": "De uitsnede wordt verwijderd en de originele afbeelding wordt weer gebruikt.",
+    "crop_reset_done": "Origineel hersteld",
     "focal_point": {
       "title": "Focuspunt",
       "set": "Focuspunt instellen",

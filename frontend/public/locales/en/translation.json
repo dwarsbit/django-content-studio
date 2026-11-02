@@ -177,6 +177,10 @@
       "tags": "Tags"
     },
     "crop": "Crop",
+    "reset_crop": "Reset to original",
+    "reset_crop_confirm_title": "Reset to the original?",
+    "reset_crop_confirm_description": "The crop is removed and the original image is used again.",
+    "crop_reset_done": "Reset to the original",
     "focal_point": {
       "title": "Focus point",
       "set": "Set focal point",

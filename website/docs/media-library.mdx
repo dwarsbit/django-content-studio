@@ -110,7 +110,7 @@ editors' sessions.
 
 ## Customize with site hooks
 
-Four methods on the site change how the media library behaves. Add them to
+Five methods on the site change how the media library behaves. Add them to
 your site subclass:
 
 ```python
@@ -138,26 +138,87 @@ admin_site = BlogStudioSite()
 - **`get_media_serializer_fields(media_model)`** returns the fields of a
   media item the admin works with. By default, all fields; leave out fields
   editors should not see.
-- **`crop_image(obj, crop_info)`** turns on cropping (see below).
+- **`crop_image(obj, crop_info)`** crops an image. By default, the
+  [built-in crop](#cropping-and-focal-points); override it to crop another
+  way.
+- **`reset_crop(obj)`** undoes a crop. By default, it puts the original back
+  that the built-in crop kept.
 - **`get_media_metadata(file, type)`** returns the [metadata](#metadata) to
   store for an uploaded file.
 
 ## Cropping and focal points
 
-Cropping appears once the site defines `crop_image`. When an editor saves a
-crop selection, the admin passes it to the method as percentages of the
-image:
+A crop removes what must never be shown, such as a watermark or a bystander;
+the focal point decides which part of an image stays in view where your site
+shows it smaller or in another shape.
 
-```python
-{"x": "10.00", "y": "20.00", "width": "50.00", "height": "40.00", "unit": "%"}
+### Cropping
+
+Images can be cropped once Content Studio can read them: install the
+`images` extra, and give your media model a [metadata](#metadata) field (the
+built-in `Media` model has one):
+
+```bash
+pip install "django-content-studio[images]"
 ```
 
-What a crop does is up to your method: create a derivative, resize the file
-in place or store the selection. The edit page then shows the updated item.
+Editors crop an image from its details. A crop is cut from the image at full
+size and is never resized. The crop becomes the item's file, so
+`{{ item.file.url }}` and everything else that shows the file shows the crop.
+The original is kept: cropping again starts from the original, and
+**Reset to original** puts it back. An image has one original and one crop.
+
+The item's metadata names the original and the crop, as percentages of the
+original:
+
+```python
+{
+    "width": 1200,
+    "height": 800,
+    "crop": {
+        "original": "3f1c0b8e-…",
+        "width": 4000,
+        "height": 3000,
+        "box": {"x": 10.0, "y": 20.0, "width": 30.0, "height": 26.67},
+    },
+}
+```
+
+`width` and `height` are the crop's size; `crop` holds the original's
+storage name and size. Replacing an item's file removes its crop and its
+original, and so does deleting the item. Animated images cannot be cropped.
+
+To crop another way, override `crop_image` on your site. It receives the
+item and the editor's selection, as percentages of the image:
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+
+
+class BlogStudioSite(ContentStudioSite):
+    def crop_image(self, obj, crop_info):
+        # {"x": "10.00", "y": "20.00", "width": "50.00", "height": "40.00", "unit": "%"}
+        # Store the selection, for a template tag of your own to apply.
+        obj.properties = {**obj.properties, "crop": crop_info}
+        obj.save(update_fields=["properties"])
+
+
+admin_site = BlogStudioSite()
+```
+
+Your method decides what a crop does: create a derivative, change the file
+or store the selection. Your site's method also turns cropping on without
+Pillow or a metadata field. Override `reset_crop(obj)` as well to offer
+**Reset to original** for your own crops.
+
+### Focal points
 
 A focal point is one of the image's [properties](#properties): editors click
 the image to set it. The [cover image widget](/docs/forms/widgets#cover-images)
-sets the same focal point from the edit page.
+sets the same focal point from the edit page. The focal point is relative to
+the image as it is shown, so the built-in crop and reset move it along; a
+focal point outside a new crop moves to the crop's nearest edge.
 
 ## Metadata
 

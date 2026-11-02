@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.5.0 (unreleased)
+
+- **Image cropping, built in.** With the `images` extra installed and a
+  `metadata` field on the media model (the built-in `Media` model has one),
+  editors can crop images without a `crop_image` hook of your own. A crop is
+  cut from the image at full size, never resized, and becomes the item's
+  file; the original is kept and named in the item's metadata under
+  `"crop"`, together with the crop as percentages of the original. Cropping
+  again starts from the original, and **Reset to original** in the crop
+  dialog puts it back. The focal point moves along with a crop or reset; a
+  focal point outside a new crop moves to its nearest edge. Replacing or
+  deleting the item removes the original, and
+  `manage.py content_studio_media_metadata --all` keeps the crop. Your own
+  `crop_image` method still replaces the built-in crop, and the new
+  `reset_crop(obj)` hook undoes a crop.
+
 ## 1.4.0 (2026-11-01)
 
 - **Widget options.** Widgets take options: pass an instance instead of

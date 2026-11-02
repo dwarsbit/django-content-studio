@@ -3,6 +3,7 @@ import { useState } from "react";
 import { type Resolver, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
+  PiArrowCounterClockwiseBold,
   PiCropBold,
   PiCrosshairBold,
   PiDownloadSimpleBold,
@@ -51,7 +52,8 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TagInput } from "@/components/ui/tag-input";
-import { useCropMedia } from "@/hooks/use-crop-media";
+import useConfirmDialog from "@/hooks/use-confirm-dialog";
+import { useCropMedia, useResetCrop } from "@/hooks/use-crop-media";
 import { useDiscover } from "@/hooks/use-discover";
 import { useRetrieveMedia } from "@/hooks/use-retrieve-media";
 import { useUpdateMedia } from "@/hooks/use-update-media";
@@ -61,7 +63,7 @@ import {
   metadataOf,
 } from "@/lib/media-metadata";
 import { getErrorMessage } from "@/lib/utils";
-import type { CropValue, FocalPointValue, MediaItem } from "@/types";
+import type { CropBox, CropValue, FocalPointValue, MediaItem } from "@/types";
 
 /**
  * A file's details, in a sheet from the right: the preview, the quick
@@ -113,6 +115,28 @@ function ItemEditContent({
 
 type ImageTab = "crop" | "focus";
 
+/** A stored crop as the crop editor's selection. */
+function cropValueOf(box: CropBox | undefined): CropValue | undefined {
+  return box
+    ? {
+        x: box.x.toFixed(2),
+        y: box.y.toFixed(2),
+        width: box.width.toFixed(2),
+        height: box.height.toFixed(2),
+        unit: "%",
+      }
+    : undefined;
+}
+
+function sameCrop(a: CropValue | undefined, b: CropValue | undefined) {
+  return (
+    a?.x === b?.x &&
+    a?.y === b?.y &&
+    a?.width === b?.width &&
+    a?.height === b?.height
+  );
+}
+
 function EditForm({
   data,
   onClose,
@@ -124,6 +148,8 @@ function EditForm({
   const { data: discover } = useDiscover();
   const { mutateAsync } = useUpdateMedia();
   const { mutateAsync: cropMedia } = useCropMedia();
+  const { mutateAsync: resetCrop, isPending: isResetting } = useResetCrop();
+  const confirm = useConfirmDialog();
   const { remove, isPending: isDeleting } = useDeleteItem();
   const [, copy] = useCopyToClipboard();
 
@@ -133,15 +159,21 @@ function EditForm({
   // Crop and focal point only apply to images.
   const isImage = data.type === "image";
   const cropEnabled = isImage && (mediaLibrary?.crop ?? false);
+  // A cropped image is cropped again from its original, starting from
+  // the current crop; reset puts the original back.
+  const savedCrop = cropValueOf(data.original?.crop);
+  const cropImage = data.original?.url ?? data.thumbnail;
+  const canReset =
+    cropEnabled && !!data.original && (mediaLibrary?.crop_reset ?? false);
   // The focal point is an image property, in the item's properties.
   const focalPointAttr = isImage ? (mediaLibrary?.properties ?? null) : null;
   const focalPointValue = focalPointOf(data, focalPointAttr);
 
   // The image dialog, opened on the crop or the focal point tab.
   const [imageTab, setImageTab] = useState<ImageTab | null>(null);
-  // A crop selection is not stored on the item: undefined means no crop
-  // is sent. The focal point lives in the item's properties.
-  const [crop, setCrop] = useState<CropValue | undefined>(undefined);
+  // The crop selection, starting from the current crop: it is sent only
+  // when it changed. The focal point lives in the item's properties.
+  const [crop, setCrop] = useState<CropValue | undefined>(savedCrop);
   const [focalPoint, setFocalPoint] = useState<FocalPointValue | null>(
     focalPointValue,
   );
@@ -176,7 +208,7 @@ function EditForm({
       // The crop is applied after the update: it goes through the
       // site's crop_image hook rather than the item's own fields. A
       // failed crop keeps the sheet open, so it can be retried.
-      if (cropEnabled && crop) {
+      if (cropEnabled && crop && !sameCrop(crop, savedCrop)) {
         try {
           await cropMedia({ id: data.id, crop });
         } catch (e: unknown) {
@@ -190,6 +222,49 @@ function EditForm({
       toast.error(getErrorMessage(e));
     }
   };
+
+  const onResetCrop = async () => {
+    const confirmed = await confirm({
+      title: t("media_library.reset_crop_confirm_title"),
+      description: t("media_library.reset_crop_confirm_description"),
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const item = await resetCrop(data.id);
+      // The original has no crop, and the focal point moved with it.
+      setCrop(undefined);
+      setFocalPoint(focalPointOf(item, focalPointAttr));
+      toast.success(t("media_library.crop_reset_done"));
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e));
+    }
+  };
+
+  const cropField = (className: string) => (
+    <div className="w-full space-y-3">
+      <CropField
+        value={crop}
+        onChange={setCrop}
+        image={cropImage}
+        className={className}
+      />
+      {canReset && (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isResetting}
+          onClick={onResetCrop}
+        >
+          <PiArrowCounterClockwiseBold />
+          {t("media_library.reset_crop")}
+        </Button>
+      )}
+    </div>
+  );
 
   const typeLabel = t(`media_library.file_types.${data.type}`);
 
@@ -390,12 +465,7 @@ function EditForm({
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="crop">
-                  <CropField
-                    value={crop}
-                    onChange={setCrop}
-                    image={data.thumbnail}
-                    className="size-auto object-contain rounded-md"
-                  />
+                  {cropField("size-auto object-contain rounded-md")}
                 </TabsContent>
                 <TabsContent value="focus">
                   <FocalPointField
@@ -406,12 +476,7 @@ function EditForm({
                 </TabsContent>
               </Tabs>
             ) : cropEnabled ? (
-              <CropField
-                value={crop}
-                onChange={setCrop}
-                image={data.thumbnail}
-                className="w-full"
-              />
+              cropField("w-full")
             ) : focalPointAttr ? (
               <FocalPointField
                 value={focalPoint}

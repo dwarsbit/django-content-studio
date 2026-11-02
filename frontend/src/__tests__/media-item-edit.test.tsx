@@ -21,6 +21,10 @@ vi.mock("@/hooks/use-discover", () => ({
   useDiscover: useDiscoverMock,
 }));
 
+vi.mock("@/hooks/use-confirm-dialog", () => ({
+  default: () => () => Promise.resolve(true),
+}));
+
 vi.mock("sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
@@ -45,7 +49,11 @@ function makeMediaItem(overrides: Partial<MediaItem> = {}): MediaItem {
 }
 
 function discoverWith(
-  mediaLibrary: { crop: boolean; properties: string | null },
+  mediaLibrary: {
+    crop: boolean;
+    crop_reset?: boolean;
+    properties: string | null;
+  },
   item: MediaItem,
 ) {
   useDiscoverMock.mockReturnValue({
@@ -189,5 +197,72 @@ describe("ItemEdit", () => {
       "/media-library/items/media-1/crop",
       expect.anything(),
     );
+  });
+
+  const cropped = makeMediaItem({
+    original: {
+      url: "/media/original.png",
+      crop: { x: 10, y: 20, width: 50, height: 40 },
+    },
+  });
+
+  it("crops a cropped image from its original, from the current crop", async () => {
+    discoverWith({ crop: true, crop_reset: true, properties: null }, cropped);
+    renderEdit();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "media_library.crop" }),
+    );
+
+    const dialog = await screen.findByRole("dialog", {
+      name: "media_library.crop",
+    });
+    const images = Array.from(dialog.querySelectorAll("img"));
+    expect(images.map((img) => img.getAttribute("src"))).toContain(
+      "/media/original.png",
+    );
+
+    // An unchanged crop is not sent again.
+    fireEvent.click(screen.getByRole("button", { name: "common.done" }));
+    fireEvent.click(await screen.findByRole("button", { name: "common.save" }));
+
+    await waitFor(() => expect(httpMock.patch).toHaveBeenCalled());
+    expect(httpMock.post).not.toHaveBeenCalled();
+  });
+
+  it("resets a cropped image to its original", async () => {
+    discoverWith({ crop: true, crop_reset: true, properties: null }, cropped);
+    httpMock.delete.mockResolvedValue({ data: makeMediaItem() });
+    renderEdit();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "media_library.crop" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "media_library.reset_crop" }),
+    );
+
+    await waitFor(() =>
+      expect(httpMock.delete).toHaveBeenCalledWith(
+        "/media-library/items/media-1/crop",
+      ),
+    );
+  });
+
+  it("offers no reset for an image that is not cropped", async () => {
+    discoverWith(
+      { crop: true, crop_reset: true, properties: null },
+      makeMediaItem(),
+    );
+    renderEdit();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "media_library.crop" }),
+    );
+    await screen.findByRole("dialog", { name: "media_library.crop" });
+
+    expect(
+      screen.queryByRole("button", { name: "media_library.reset_crop" }),
+    ).not.toBeInTheDocument();
   });
 });
