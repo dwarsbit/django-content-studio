@@ -34,7 +34,7 @@ admin_site = ContentStudioSite()
 #     return obj.file.url
 #
 # def crop_image(self, obj, crop_info):
-#     """Cropping, enabled by its mere presence."""
+#     """Crop another way than the built-in crop."""
 #     ...
 '''
 

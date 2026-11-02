@@ -23,6 +23,7 @@ from .actions import (
 )
 from .admin import (
     AdminSerializer,
+    ContentStudioSite,
     declares,
     get_is_singleton,
     get_table_display_columns,
@@ -1796,11 +1797,13 @@ def crop_hook_warnings() -> list[tuple[str, str]]:
     model it is dead code.
     """
     site = cs_settings.ADMIN_SITE
+    hook = getattr(site, "crop_image", None)
+    # The built-in crop_image is not the site's own: it is simply off.
+    own = callable(hook) and getattr(hook, "__func__", None) is not getattr(
+        ContentStudioSite, "crop_image", None
+    )
 
-    if (
-        callable(getattr(site, "crop_image", None))
-        and not cs_settings.MEDIA_LIBRARY_MODEL
-    ):
+    if own and not cs_settings.MEDIA_LIBRARY_MODEL:
         return [
             (
                 "content_studio.W008",

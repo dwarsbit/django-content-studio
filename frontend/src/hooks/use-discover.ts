@@ -25,8 +25,11 @@ export function useDiscover() {
         media_library: {
           enabled: boolean;
           folders: boolean;
-          // Offered when the admin site defines crop_image.
+          // Offered when the admin site's crop_image hook can run: the
+          // built-in one (with Pillow and metadata) or the site's own.
           crop: boolean;
+          // Offered when the admin site's reset_crop hook can run.
+          crop_reset?: boolean;
           // The media item attribute holding the properties editors set
           // (MediaProperties, such as the focal point); null when off.
           properties?: string | null;

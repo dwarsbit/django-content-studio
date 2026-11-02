@@ -23,6 +23,7 @@ from content_studio.signals import (
     collect_changes,
     record_change,
 )
+from .cropping import delete_original_on_commit, get_crop, get_crop_hook
 from .metadata import get_metadata_values
 from .serializers import build_media_folder_serializer, build_media_item_serializer
 
@@ -58,7 +59,8 @@ class MediaLibraryPermissions(DjangoModelPermissions):
     only: the actions enforce their own permissions (delete for
     deleting, change for moving), mirroring the content bulk
     endpoint. Cropping is gated on change: DjangoModelPermissions
-    would map the crop action's POST to the add permission. Reading
+    would map the crop action's POST to the add permission, and its
+    DELETE (the reset) to the delete permission. Reading
     requires view (or change) permission, which DjangoModelPermissions
     does not check.
     """
@@ -194,6 +196,8 @@ class MediaLibraryViewSet(ModelViewSet):
         # it. A file field by another name is not the item's upload.
         previous = getattr(serializer.instance, "file", None)
         previous_name = previous.name if previous else None
+        # A cropped item's original goes with the file it was cut from.
+        previous_crop = get_crop(serializer.instance)
 
         # The thumbnails of a replaced file go now: they can be made
         # again, and the file may keep its name.
@@ -209,6 +213,9 @@ class MediaLibraryViewSet(ModelViewSet):
                 lambda: storage.delete(previous_name),
                 using=router.db_for_write(type(obj)),
             )
+
+            if previous_crop:
+                delete_original_on_commit(obj, previous_crop)
 
     def perform_destroy(self, instance):
         using = router.db_for_write(type(instance))
@@ -266,42 +273,63 @@ class MediaLibraryViewSet(ModelViewSet):
 
         return Response(sorted(tags, key=lambda tag: (tag.lower(), tag)))
 
-    @action(methods=["post"], detail=True, url_path="crop")
+    @action(methods=["post", "delete"], detail=True, url_path="crop")
     def crop(self, request, id=None):
         """
-        Apply a crop to a media item: {"crop": {...}}. The crop info is
-        handed to the admin site's crop_image(obj, crop_info) hook,
-        which decides what cropping means for the project — it is only
-        offered when the site defines the method. Returns the updated
-        item, so the frontend can refresh the thumbnail.
+        POST {"crop": {...}} crops a media item: the crop info is handed
+        to the admin site's crop_image(obj, crop_info) hook, the
+        built-in one or the site's own. DELETE undoes the crop through
+        reset_crop(obj). Either is offered only when its hook can run.
+        Returns the updated item, so the frontend can refresh the
+        thumbnail.
         """
         model = self.get_media_model()
 
         if not model:
             raise NotFound("The media library model is not defined.")
 
-        crop_image = getattr(cs_settings.ADMIN_SITE, "crop_image", None)
+        resetting = request.method == "DELETE"
+        hook = get_crop_hook(
+            cs_settings.ADMIN_SITE, "reset_crop" if resetting else "crop_image"
+        )
 
-        if not callable(crop_image):
+        if hook is None:
             raise NotConfigured(
-                "Cropping requires a crop_image(obj, crop_info) method on "
-                "the admin site."
+                "Cropping requires Pillow and a metadata field on the media "
+                "model, or a crop_image(obj, crop_info) method on the admin "
+                "site."
             )
 
-        crop_info = request.data.get("crop", None)
+        if not resetting:
+            crop_info = request.data.get("crop", None)
 
-        if not isinstance(crop_info, dict) or not crop_info:
-            raise ValidationError(
-                "A crop requires a non-empty crop info object, like "
-                '{"x": 0, "y": 0, "width": 50, "height": 50, "unit": "%"}.'
-            )
+            if not isinstance(crop_info, dict) or not crop_info:
+                raise ValidationError(
+                    "A crop requires a non-empty crop info object, like "
+                    '{"x": 0, "y": 0, "width": 50, "height": 50, "unit": "%"}.'
+                )
 
         obj = self.get_object()
-        # The cropped image gets new thumbnails, also when crop_image
-        # keeps the file's name.
-        delete_thumbnails(obj.file)
-        crop_image(obj, crop_info)
-        record_change(request, obj, UPDATED, "Cropped.")
+
+        # One crop at a time per item: the row is locked while the hook
+        # replaces the file.
+        with transaction.atomic(using=router.db_for_write(model)):
+            obj = model._default_manager.select_for_update().get(pk=obj.pk)
+            # The cropped (or reset) image gets new thumbnails, also when
+            # the hook keeps the file's name.
+            delete_thumbnails(obj.file)
+
+            try:
+                if resetting:
+                    hook(obj)
+                else:
+                    hook(obj, crop_info)
+            except DjangoValidationError as e:
+                raise ValidationError(e.messages)
+
+            record_change(
+                request, obj, UPDATED, "Crop reset." if resetting else "Cropped."
+            )
 
         return Response(self.get_serializer(obj).data)
 
