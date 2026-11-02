@@ -221,7 +221,7 @@ function EditForm({
           {isImage ? (
             <img
               alt={data.alt_text}
-              src={data.thumbnail}
+              src={data.thumbnail_large ?? data.thumbnail}
               className="size-full object-contain"
             />
           ) : (
@@ -393,7 +393,7 @@ function EditForm({
                   <CropField
                     value={crop}
                     onChange={setCrop}
-                    image={data.thumbnail}
+                    image={data.thumbnail_large ?? data.thumbnail}
                     className="size-auto object-contain rounded-md"
                   />
                 </TabsContent>
@@ -401,7 +401,7 @@ function EditForm({
                   <FocalPointField
                     value={focalPoint}
                     onChange={setFocalPoint}
-                    image={data.thumbnail}
+                    image={data.thumbnail_large ?? data.thumbnail}
                   />
                 </TabsContent>
               </Tabs>
@@ -409,14 +409,14 @@ function EditForm({
               <CropField
                 value={crop}
                 onChange={setCrop}
-                image={data.thumbnail}
+                image={data.thumbnail_large ?? data.thumbnail}
                 className="w-full"
               />
             ) : focalPointAttr ? (
               <FocalPointField
                 value={focalPoint}
                 onChange={setFocalPoint}
-                image={data.thumbnail}
+                image={data.thumbnail_large ?? data.thumbnail}
               />
             ) : null}
           </div>

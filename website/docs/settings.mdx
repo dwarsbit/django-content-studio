@@ -160,6 +160,22 @@ offers no focal point; `None` turns properties off. When you set this
 setting, system check `content_studio.E026` reports a value without a media
 library model, or one naming a field that is missing or not a `JSONField`.
 
+### THUMBNAIL_FOLDER {#thumbnail_folder}
+
+The folder, inside each image's storage, that the
+[thumbnails of media library images](/docs/media-library#thumbnails) are
+saved in. Default: `"content_studio/thumbnails"`. Thumbnails need Pillow,
+from the `images` extra. `None` turns them off: the admin shows the image
+file itself.
+
+### THUMBNAIL_CACHE {#thumbnail_cache}
+
+The alias of the cache in `CACHES` that remembers which thumbnails exist.
+Default: `"default"`. With several worker processes or servers, it must be a
+shared cache, such as Redis, Memcached or the database cache. System check
+`content_studio.E027` reports an alias that is not in `CACHES` while
+thumbnails are on.
+
 ## Multi-tenancy
 
 ### TENANT_MODEL {#tenant_model}

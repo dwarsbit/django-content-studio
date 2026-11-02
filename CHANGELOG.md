@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.5.0 (unreleased)
+
+- **Thumbnails.** With the `images` extra installed, Content Studio makes
+  thumbnails of media library images in two sizes: small (fits 480
+  pixels) for the media library, pickers and list pages, and large (fits
+  1600 pixels) for the cover image widget, cropping and the focal point.
+  They are WebP images saved in the image's own storage, in the folder
+  set by the new `THUMBNAIL_FOLDER` setting (`"content_studio/thumbnails"`
+  by default; `None` turns them off). They are made when an image is
+  uploaded, replaced or cropped, or first shown, and removed with it.
+  Without Pillow, the admin shows the image file itself.
+  `manage.py content_studio_thumbnails` makes the thumbnails of the images
+  you already have. Which thumbnails exist is remembered in the cache set
+  by the new `THUMBNAIL_CACHE` setting (`"default"` by default); system
+  check `content_studio.E027` reports an alias that is not in `CACHES`.
+- ⚠️ **Breaking:** the site's `get_thumbnail` hook takes the size:
+  `get_thumbnail(obj, size="small")`, where `size` is `"small"` or
+  `"large"`. Add the argument to your override.
+
 ## 1.4.0 (2026-11-01)
 
 - **Widget options.** Widgets take options: pass an instance instead of

@@ -680,11 +680,23 @@ class ContentStudioSite:
         if not self.is_registered(user_model):
             self.register(user_model)
 
-    def get_thumbnail(self, obj) -> str:
+    def get_thumbnail(self, obj, size: str = "small") -> str:
         """
-        Method for getting and manipulating the image path (or URL).
-        By default, this returns the image path as is.
+        The thumbnail URL of a media library image. size is "small"
+        (grids, pickers and list rows; fits 480px) or "large" (the cover
+        image widget, cropping and the focal point; fits 1600px). With
+        Pillow installed (the [images] extra), a scaled-down WebP saved
+        under THUMBNAIL_FOLDER; otherwise, or when it cannot be made,
+        the file's own URL. Override to serve thumbnails another way.
         """
+        from .thumbnails import get_thumbnail_url
+
+        if getattr(obj, "type", "image") == "image":
+            url = get_thumbnail_url(obj.file, size)
+
+            if url:
+                return url
+
         return obj.file.url
 
     def get_media_metadata(self, file, type: str) -> dict:

@@ -67,6 +67,7 @@ def build_media_item_serializer(media_model):
 
     class MediaItemSerializer(serializers.ModelSerializer):
         thumbnail = serializers.SerializerMethodField()
+        thumbnail_large = serializers.SerializerMethodField()
 
         class Meta:
             model = media_model
@@ -89,10 +90,16 @@ def build_media_item_serializer(media_model):
             return super().validate(attrs)
 
         def get_thumbnail(self, obj):
+            return self._thumbnail(obj, "small")
+
+        def get_thumbnail_large(self, obj):
+            return self._thumbnail(obj, "large")
+
+        def _thumbnail(self, obj, size):
             admin_site = cs_settings.ADMIN_SITE
 
             if admin_site and obj.type == "image":
-                return admin_site.get_thumbnail(obj)
+                return admin_site.get_thumbnail(obj, size)
 
             return None
 
