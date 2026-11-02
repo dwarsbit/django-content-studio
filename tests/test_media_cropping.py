@@ -22,6 +22,7 @@ from content_studio.media_library.cropping import (
     validate_crop_box,
 )
 from content_studio.media_library.models import Media
+from content_studio.thumbnails import thumbnail_name
 from content_studio.token_backends.jwt import create_access_token
 
 SETTINGS = {
@@ -123,7 +124,8 @@ def test_crop_keeps_the_original_and_cuts_at_full_size(
     assert item.size == len(storage.open(item.file.name).read())
 
     data = response.json()
-    assert data["original"]["url"].endswith(original_name)
+    # The crop editor gets the original's large thumbnail.
+    assert data["original"]["url"].endswith(thumbnail_name(original_name, "large"))
     assert data["original"]["crop"] == item.metadata["crop"]["box"]
     assert data["metadata"]["width"] == 100
 
@@ -316,11 +318,17 @@ def test_deleting_the_item_removes_the_original(
     item.refresh_from_db()
     storage = item.file.storage
 
+    # The crop editor made the original's thumbnail.
+    client.get(f"/api/media-library/items/{item.pk}")
+    original_thumbnail = thumbnail_name(original_name, "large")
+    assert storage.exists(original_thumbnail)
+
     with django_capture_on_commit_callbacks(execute=True):
         response = client.delete(f"/api/media-library/items/{item.pk}")
 
     assert response.status_code == 204
     assert not storage.exists(original_name)
+    assert not storage.exists(original_thumbnail)
 
 
 def test_rereading_metadata_keeps_the_crop(

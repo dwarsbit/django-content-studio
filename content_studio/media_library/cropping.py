@@ -188,6 +188,30 @@ def delete_on_commit(obj, storage, name):
     )
 
 
+def original_file(obj, crop):
+    """The item's original, as a file of its file field."""
+    from django.db.models.fields.files import FieldFile
+
+    return FieldFile(obj, obj.file.field, crop["original"])
+
+
+def delete_original_now(obj, crop):
+    """Remove an item's original and its thumbnails from storage."""
+    from content_studio.thumbnails import delete_thumbnails
+
+    file = original_file(obj, crop)
+    delete_thumbnails(file)
+    file.storage.delete(file.name)
+
+
+def delete_original_on_commit(obj, crop, using=None):
+    """Remove an item's original once the change is committed."""
+    transaction.on_commit(
+        lambda: delete_original_now(obj, crop),
+        using=using or router.db_for_write(type(obj)),
+    )
+
+
 def crop_media(obj, crop_info):
     """
     Crop an image item to the selection, from its original. The first
@@ -309,5 +333,4 @@ def delete_original(sender, instance, using, **kwargs):
     if not crop:
         return
 
-    storage, name = instance.file.storage, crop["original"]
-    transaction.on_commit(lambda: storage.delete(name), using=using)
+    delete_original_on_commit(instance, crop, using=using)

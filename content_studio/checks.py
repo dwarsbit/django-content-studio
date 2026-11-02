@@ -1802,6 +1802,29 @@ def presence_errors() -> list[tuple[str, str]]:
     return []
 
 
+def thumbnail_errors() -> list[tuple[str, str]]:
+    """
+    A THUMBNAIL_CACHE that names no configured cache while thumbnails
+    are on, as (check id, message) pairs: every thumbnail would fail.
+    """
+    if not cs_settings.THUMBNAIL_FOLDER:
+        return []
+
+    alias = cs_settings.THUMBNAIL_CACHE
+
+    if not isinstance(alias, str) or alias not in getattr(settings, "CACHES", {}):
+        return [
+            (
+                "content_studio.E027",
+                f"THUMBNAIL_CACHE is {alias!r}, which is not a cache in the "
+                "CACHES setting; name a configured cache or set "
+                "THUMBNAIL_FOLDER to None.",
+            )
+        ]
+
+    return []
+
+
 def presence_warnings() -> list[tuple[str, str]]:
     """
     Presence stored in the dummy cache, as (check id, message) pairs:
@@ -2007,6 +2030,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in presence_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in thumbnail_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, warning in dashboard_widget_warnings(site):

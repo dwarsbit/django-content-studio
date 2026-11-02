@@ -15,6 +15,7 @@ from rest_framework.viewsets import ModelViewSet
 from content_studio.paginators import ContentPagination
 from content_studio.exceptions import NotConfigured
 from content_studio.settings import cs_settings
+from content_studio.thumbnails import delete_thumbnails
 from content_studio.signals import (
     CREATED,
     DELETED,
@@ -22,7 +23,7 @@ from content_studio.signals import (
     collect_changes,
     record_change,
 )
-from .cropping import delete_on_commit, get_crop, get_crop_hook
+from .cropping import delete_original_on_commit, get_crop, get_crop_hook
 from .metadata import get_metadata_values
 from .serializers import build_media_folder_serializer, build_media_item_serializer
 
@@ -198,6 +199,11 @@ class MediaLibraryViewSet(ModelViewSet):
         # A cropped item's original goes with the file it was cut from.
         previous_crop = get_crop(serializer.instance)
 
+        # The thumbnails of a replaced file go now: they can be made
+        # again, and the file may keep its name.
+        if "file" in serializer.validated_data:
+            delete_thumbnails(previous)
+
         obj = serializer.save(**self.get_metadata_values(serializer))
         record_change(self.request, obj, UPDATED)
 
@@ -209,7 +215,7 @@ class MediaLibraryViewSet(ModelViewSet):
             )
 
             if previous_crop:
-                delete_on_commit(obj, storage, previous_crop["original"])
+                delete_original_on_commit(obj, previous_crop)
 
     def perform_destroy(self, instance):
         using = router.db_for_write(type(instance))
@@ -309,6 +315,9 @@ class MediaLibraryViewSet(ModelViewSet):
         # replaces the file.
         with transaction.atomic(using=router.db_for_write(model)):
             obj = model._default_manager.select_for_update().get(pk=obj.pk)
+            # The cropped (or reset) image gets new thumbnails, also when
+            # the hook keeps the file's name.
+            delete_thumbnails(obj.file)
 
             try:
                 if resetting:

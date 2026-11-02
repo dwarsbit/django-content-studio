@@ -4,7 +4,9 @@ from rest_framework import serializers
 
 from content_studio.settings import cs_settings
 
-from .cropping import get_crop
+from content_studio.thumbnails import get_thumbnail_url
+
+from .cropping import get_crop, original_file
 from .metadata import get_metadata_attr, get_properties_attr, validate_properties
 
 # Leading bytes that mark markup (HTML, SVG, XML): browsers may render
@@ -68,6 +70,7 @@ def build_media_item_serializer(media_model):
 
     class MediaItemSerializer(serializers.ModelSerializer):
         thumbnail = serializers.SerializerMethodField()
+        thumbnail_large = serializers.SerializerMethodField()
 
         class Meta:
             model = media_model
@@ -105,7 +108,10 @@ def build_media_item_serializer(media_model):
             if not crop:
                 return None
 
-            url = obj.file.storage.url(crop["original"])
+            # A large thumbnail when thumbnails are on: the crop editor
+            # needs no full-size image.
+            original = original_file(obj, crop)
+            url = get_thumbnail_url(original, "large") or original.url
             request = self.context.get("request")
 
             return {
@@ -114,10 +120,16 @@ def build_media_item_serializer(media_model):
             }
 
         def get_thumbnail(self, obj):
+            return self._thumbnail(obj, "small")
+
+        def get_thumbnail_large(self, obj):
+            return self._thumbnail(obj, "large")
+
+        def _thumbnail(self, obj, size):
             admin_site = cs_settings.ADMIN_SITE
 
             if admin_site and obj.type == "image":
-                return admin_site.get_thumbnail(obj)
+                return admin_site.get_thumbnail(obj, size)
 
             return None
 

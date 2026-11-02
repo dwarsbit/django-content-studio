@@ -162,7 +162,8 @@ function EditForm({
   // A cropped image is cropped again from its original, starting from
   // the current crop; reset puts the original back.
   const savedCrop = cropValueOf(data.original?.crop);
-  const cropImage = data.original?.url ?? data.thumbnail;
+  const cropImage =
+    data.original?.url ?? data.thumbnail_large ?? data.thumbnail;
   const canReset =
     cropEnabled && !!data.original && (mediaLibrary?.crop_reset ?? false);
   // The focal point is an image property, in the item's properties.
@@ -296,7 +297,7 @@ function EditForm({
           {isImage ? (
             <img
               alt={data.alt_text}
-              src={data.thumbnail}
+              src={data.thumbnail_large ?? data.thumbnail}
               className="size-full object-contain"
             />
           ) : (
@@ -471,7 +472,7 @@ function EditForm({
                   <FocalPointField
                     value={focalPoint}
                     onChange={setFocalPoint}
-                    image={data.thumbnail}
+                    image={data.thumbnail_large ?? data.thumbnail}
                   />
                 </TabsContent>
               </Tabs>
@@ -481,7 +482,7 @@ function EditForm({
               <FocalPointField
                 value={focalPoint}
                 onChange={setFocalPoint}
-                image={data.thumbnail}
+                image={data.thumbnail_large ?? data.thumbnail}
               />
             ) : null}
           </div>

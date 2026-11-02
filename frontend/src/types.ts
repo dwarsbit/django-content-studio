@@ -472,7 +472,10 @@ export interface MediaItem {
   id: string;
   folder: string | null;
   name: string;
+  // Fits 480px: grids, pickers and list rows.
   thumbnail: string;
+  // Fits 1600px: the cover image, cropping and the focal point.
+  thumbnail_large?: string | null;
   file: string;
   tags: string[];
   alt_text: string;

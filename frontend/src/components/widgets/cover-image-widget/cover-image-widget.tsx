@@ -137,7 +137,10 @@ export function CoverImageWidget({
       setError(t("widgets.cover_image_widget.not_an_image")),
   });
 
-  const thumbnail = value?.thumbnail ?? item?.thumbnail;
+  // The large thumbnail of the retrieved item; the related value's
+  // (small) thumbnail while it loads.
+  const thumbnail =
+    item?.thumbnail_large ?? item?.thumbnail ?? value?.thumbnail;
   // The image's size: from its stored metadata, or else measured on
   // the file (thumbnails are scaled down) when a minimum size needs it.
   const storedSize = dimensionsOf(
