@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.0 (unreleased)
+## 1.5.0 (2026-11-02)
 
 - **Task dashboard.** `TaskDashboard` is a dashboard page with the state of
   a task backend: statistics such as queued, running and failed tasks, the
