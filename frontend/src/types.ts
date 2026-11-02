@@ -379,14 +379,30 @@ export interface FormField {
   // model field's default widget when null.
   widget: WidgetConfig | null;
   component_id: string;
-  component_type: "Link" | "LinkButton" | "Button" | "ActivityLog";
+  component_type:
+    | "Link"
+    | "LinkButton"
+    | "Button"
+    | "ActivityLog"
+    | "Title"
+    | "Subtitle"
+    | "Text"
+    | "Callout";
   copy: boolean;
   icon: string;
   title?: string | null;
   // Button: a question to confirm first, and the destructive style.
   confirm?: string | null;
   destructive?: boolean;
+  // Text components: static text, or null when it is computed for the
+  // object (per_object) and fetched from the component's endpoint.
+  text?: string | null;
+  per_object?: boolean;
+  // Callout: its variant (the color and default icon).
+  variant?: CalloutVariant;
 }
+
+export type CalloutVariant = "info" | "success" | "warning" | "danger";
 
 // What a server-side button reports back: a message, and optionally a
 // value shown once (such as a generated secret).

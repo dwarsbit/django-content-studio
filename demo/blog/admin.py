@@ -6,7 +6,7 @@ configured in CONTENT_STUDIO (demo.blog.studio.admin_site).
 
 from content_studio import register, widgets
 from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
-from content_studio.form import ActivityLog, Field, FormSet
+from content_studio.form import ActivityLog, Callout, Field, FormSet, Subtitle, Text
 from content_studio.actions import bulk_action
 
 from . import models
@@ -51,6 +51,14 @@ class MediaFolderStudio(ModelStudio):
     table_display = ["name"]
 
 
+class ReadingTime(Callout):
+    title = "Reading time"
+
+    def get_text(self, obj, request):
+        minutes = max(1, len(obj.body.split()) // 200)
+        return f"About **{minutes} min** to read."
+
+
 @register(models.Article)
 class ArticleStudio(ModelStudio):
     table_display = ["title", "status", "featured", "views", "author", "published_at"]
@@ -87,13 +95,22 @@ class ArticleStudio(ModelStudio):
             fields=[
                 Field("cover", widget=widgets.CoverImageWidget),
                 "title",
+                Text("Write for the web: short paragraphs, **one idea** each."),
                 "body",
+                Subtitle("Publishing"),
                 "status",
                 "categories",
             ],
         ),
     ]
-    edit_sidebar = ["published_at", "author", "featured", "views", ActivityLog()]
+    edit_sidebar = [
+        ReadingTime(),
+        "published_at",
+        "author",
+        "featured",
+        "views",
+        ActivityLog(),
+    ]
 
     @bulk_action(
         label="Publish",

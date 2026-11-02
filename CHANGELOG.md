@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.0 (unreleased)
+
+- **Text components.** The new form components `Title`, `Subtitle`, `Text`
+  and `Callout` show information on the edit page, between the fields of
+  `edit_main`, `edit_sidebar` and form sets. `Text` and `Callout` take
+  Markdown (bold, italic, links, lists; HTML is not rendered). A `Callout`
+  has an optional `title`, a `variant` of `"info"`, `"success"`,
+  `"warning"` or `"danger"` with a matching icon, and an optional `icon`.
+  Override `get_text(obj, request)` to show text computed for the object.
+  System check `content_studio.E020` reports text components in
+  `edit_header`.
+
 ## 1.6.0 (2026-11-02)
 
 - **Image sizes.** The new `IMAGE_SIZES` setting names the sizes every media

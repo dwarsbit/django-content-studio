@@ -16,13 +16,17 @@ __all__ = [
     "Button",
     "ButtonLink",
     "ButtonResult",
+    "Callout",
     "Component",
     "Field",
     "FieldLayout",
     "FormSet",
     "FormSetGroup",
     "Link",
+    "Subtitle",
     "TableColumn",
+    "Text",
+    "Title",
 ]
 
 
@@ -392,4 +396,131 @@ class ActivityLog(Component):
         return {
             **super().serialize(),
             "title": str(self.title),
+        }
+
+
+class BaseText(Component):
+    """
+    The base of the display-only text components (Title, Subtitle, Text
+    and Callout): text shown on the edit page, not an input.
+
+    The text is static (passed in or set as a class attribute), or
+    computed for the object being edited by overriding
+    get_text(obj, request). Per-object text is fetched through the
+    component's endpoint, so it only shows once the object is saved.
+    """
+
+    text: Optional[str] = None
+
+    def __init__(self, text=None, *, component_id=None):
+        # Set before super().__init__(): get_id_parts() reads it.
+        if text is not None:
+            self.text = text
+
+        if self.text is None and not self.per_object:
+            raise ValueError(
+                f"{self.__class__.__name__} needs a text, or a "
+                "get_text(obj, request) method."
+            )
+
+        super().__init__(component_id)
+
+    @property
+    def per_object(self) -> bool:
+        """Whether the text comes from an overridden get_text."""
+        return type(self).get_text is not BaseText.get_text
+
+    def get_id_parts(self):
+        return ("" if self.text is None else str(self.text),)
+
+    def get_text(self, obj: Model, request) -> Optional[str]:
+        return self.text
+
+    def handle_request(self, obj: Model, request):
+        text = self.get_text(obj, request)
+
+        return Response(data={"text": None if text is None else str(text)})
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            # Per-object text is fetched from the component's endpoint.
+            "text": None if self.per_object else str(self.text),
+            "per_object": self.per_object,
+        }
+
+
+class Title(BaseText):
+    """A heading on the edit page. Plain text."""
+
+    component_type = "Title"
+
+
+class Subtitle(BaseText):
+    """A smaller heading on the edit page. Plain text."""
+
+    component_type = "Subtitle"
+
+
+class Text(BaseText):
+    """A paragraph of text on the edit page, written in Markdown."""
+
+    component_type = "Text"
+
+
+CALLOUT_VARIANTS = ("info", "success", "warning", "danger")
+
+
+class Callout(BaseText):
+    """
+    Highlighted text on the edit page, written in Markdown, with an
+    optional title. The variant (info, success, warning or danger) sets
+    the color and the default icon; icon replaces the icon with a
+    Phosphor icon class, such as "ph-bold ph-lightbulb".
+    """
+
+    component_type = "Callout"
+    title: Optional[str] = None
+    variant: str = "info"
+    icon: Optional[str] = None
+
+    def __init__(
+        self,
+        text=None,
+        *,
+        title=None,
+        variant=None,
+        icon=None,
+        component_id=None,
+    ):
+        # Set before super().__init__(): get_id_parts() reads them.
+        if title is not None:
+            self.title = title
+
+        if variant is not None:
+            self.variant = variant
+
+        if icon is not None:
+            self.icon = icon
+
+        if self.variant not in CALLOUT_VARIANTS:
+            raise ValueError(
+                f"Callout variant must be one of {', '.join(CALLOUT_VARIANTS)}, "
+                f"not {self.variant!r}."
+            )
+
+        super().__init__(text, component_id=component_id)
+
+    def get_id_parts(self):
+        return (
+            *super().get_id_parts(),
+            "" if self.title is None else str(self.title),
+        )
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "title": None if self.title is None else str(self.title),
+            "variant": self.variant,
+            "icon": self.icon,
         }
