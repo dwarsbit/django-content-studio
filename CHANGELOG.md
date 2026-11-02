@@ -12,7 +12,6 @@
 - **Widget refresh.** A dashboard widget's `refresh_interval` reloads its
   data every so many seconds while it is shown. System check
   `content_studio.E029` reports an interval that is not a positive number.
-
 - **Thumbnails.** With the `images` extra installed, Content Studio makes
   thumbnails of media library images in two sizes: small (fits 480
   pixels) for the media library, pickers and list pages, and large (fits
