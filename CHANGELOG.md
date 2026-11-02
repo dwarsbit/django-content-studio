@@ -2,6 +2,13 @@
 
 ## 1.5.0 (unreleased)
 
+- **Task dashboard.** `TaskDashboard` is a dashboard page with the state of
+  a task backend: statistics such as queued, running and failed tasks, the
+  periodic tasks and the latest runs. It works with any backend through a
+  `TaskAdapter` you write; Content Studio ships none for a real backend
+  yet. Only superusers see it by default. Its widgets,
+  `TaskStatisticWidget` and `TaskListWidget`, also work on other
+  dashboards. The demo project has one with made-up data.
 - **Dashboard pages.** The new `DashboardPage` extension adds a page to
   the admin with a dashboard of its own: a `path`, a `title`, an optional
   `description` and a `Dashboard` with its widgets. `is_visible(request)`

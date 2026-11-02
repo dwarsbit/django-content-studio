@@ -126,6 +126,98 @@ Your own widgets subclass one of these: the admin can only show the built-in
 widget types. System check `content_studio.W012` reports a widget that does
 not.
 
+## Task dashboard
+
+`TaskDashboard` is a [dashboard page](/docs/extensions#dashboardpage) with
+the state of your task backend: a statistic tile per number, the periodic
+tasks with their latest run, and the latest runs. Content Studio does not
+know your backend. You connect it with an adapter: a subclass of
+`TaskAdapter` that implements the methods your backend supports.
+
+```python
+# mysite/tasks_dashboard.py
+from content_studio.dashboard.tasks import (
+    TaskAdapter,
+    TaskRow,
+    TaskStatistic,
+    TaskStatus,
+)
+
+
+class QueueAdapter(TaskAdapter):
+    statistics = ("queued", "running", "succeeded", "failed")
+
+    def get_statistics(self, request):
+        counts = my_queue.counts()
+        return {key: TaskStatistic(counts[key]) for key in self.statistics}
+
+    def get_recent_tasks(self, request, limit):
+        return [
+            TaskRow(
+                title=run.name,
+                status=TaskStatus.SUCCESS if run.ok else TaskStatus.FAILURE,
+                last_run_at=run.finished_at,
+                duration=run.seconds,
+                error_message=run.error,
+            )
+            for run in my_queue.latest_runs(limit)
+        ]
+```
+
+Add the page to the site's extensions, with a menu link to its path:
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+from content_studio.dashboard.tasks import TaskDashboard
+from content_studio.extensions import UserMenuLink
+
+from .tasks_dashboard import QueueAdapter
+
+
+class BlogStudioSite(ContentStudioSite):
+    extensions = [
+        TaskDashboard(adapter=QueueAdapter()),
+        UserMenuLink(url="/tasks/", label="Tasks", icon="ph-bold ph-queue"),
+    ]
+```
+
+The page lives at `tasks/` with the title "Tasks"; pass `path`, `title` and
+`description` to change them. Its widgets reload every 10 seconds.
+
+An adapter implements any of these methods. The page leaves out the
+widgets of the ones it does not implement.
+
+- **`get_statistics(request)`**: a dictionary from statistic key to a
+  `TaskStatistic(value, trend=None)`, for every key in the adapter's
+  `statistics`. The keys are `queued`, `scheduled`, `running`,
+  `succeeded`, `failed` and `retried`; tiles show in the order of
+  `statistics`. `succeeded`, `failed` and `retried` count over the
+  adapter's `window` (24 hours by default), which shows in their title.
+  `trend` is a change in percent; a rise in failures shows as bad news.
+- **`get_periodic_tasks(request)`**: a list of `TaskRow`, one per task that
+  runs on a schedule, with its latest run and its next.
+- **`get_recent_tasks(request, limit)`**: a list of at most `limit`
+  `TaskRow`, the latest first.
+
+A `TaskRow` has a `title` and a `status` (a `TaskStatus`), and optionally a
+`description`, `last_run_at`, `next_run_at`, a `duration` in seconds and an
+`error_message`.
+
+:::caution
+Task names and error messages can reveal how your project works. Only
+superusers see the task dashboard; override `is_visible(request)` on a
+subclass to show it to more users.
+:::
+
+The page is built from two widgets that also work on any other dashboard,
+such as the start page: `TaskStatisticWidget(adapter, statistic)` and
+`TaskListWidget(adapter, kind)`, where `kind` is `"periodic"` or
+`"recent"`. Override `get_widgets()` on a `TaskDashboard` subclass to
+change its layout. When a site uses two adapters of the same class, such as
+for two queues, override the adapter's `get_id()` so their widgets get
+different IDs.
+
 ## Widget identity
 
 Each widget gets an ID from its class and its `name`, so every worker of a
