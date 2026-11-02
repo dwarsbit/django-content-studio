@@ -105,6 +105,8 @@ DEFAULTS = {
     "WEBHOOK_DELIVERY_RETENTION": 30,
     # Days read notifications are kept; None keeps them.
     "NOTIFICATION_RETENTION": 90,
+    # Days unread notifications are kept; None (the default) keeps them.
+    "NOTIFICATION_UNREAD_RETENTION": None,
     "PASSWORD_RESET_EXPIRATION_TIME": 10,
     # Rate limit for the password reset endpoints, per IP; None disables
     # throttling.

@@ -5,7 +5,8 @@ from ...pruning import prune
 
 class Command(BaseCommand):
     help = (
-        "Remove read notifications older than NOTIFICATION_RETENTION days, "
+        "Remove read notifications older than NOTIFICATION_RETENTION days "
+        "and unread ones older than NOTIFICATION_UNREAD_RETENTION days, "
         "follows of objects that no longer exist, and subscriptions to "
         "models that no longer exist. Run it periodically, for example "
         "daily from cron."

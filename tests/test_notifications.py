@@ -743,6 +743,31 @@ class PruneTests(NotificationTestCase):
             "Removed 1 notifications, 1 follows and 1 subscriptions", out.getvalue()
         )
 
+    def test_unread_retention_prunes_old_unread_notifications(self):
+        now = timezone.now()
+        unread_old = Notification.objects.create(recipient=self.anna, event="x.y")
+        unread_new = Notification.objects.create(recipient=self.anna, event="x.y")
+        read_mid = Notification.objects.create(
+            recipient=self.anna, event="x.y", read_at=now
+        )
+        Notification.objects.filter(pk=unread_old.pk).update(
+            updated_at=now - timedelta(days=91)
+        )
+        Notification.objects.filter(pk=read_mid.pk).update(
+            updated_at=now - timedelta(days=31)
+        )
+
+        with override_settings(
+            CONTENT_STUDIO={
+                "ADMIN_SITE": "content_studio.admin.admin_site",
+                "NOTIFICATION_RETENTION": 30,
+                "NOTIFICATION_UNREAD_RETENTION": 90,
+            }
+        ):
+            call_command("content_studio_prune_notifications", stdout=StringIO())
+
+        self.assertEqual(list(Notification.objects.all()), [unread_new])
+
     def test_retention_none_keeps_notifications(self):
         old = timezone.now() - timedelta(days=1000)
         Notification.objects.create(recipient=self.anna, event="x.y", read_at=old)
@@ -772,6 +797,18 @@ class CheckTests(TestCase):
                 CONTENT_STUDIO={
                     "ADMIN_SITE": "content_studio.admin.admin_site",
                     "NOTIFICATION_RETENTION": value,
+                }
+            ):
+                ids = [m.id for m in check_content_studio()]
+
+            self.assertEqual("content_studio.E030" in ids, expected, value)
+
+    def test_e030_reports_a_malformed_unread_retention(self):
+        for value, expected in ((0, True), ("90", True), (None, False), (90, False)):
+            with override_settings(
+                CONTENT_STUDIO={
+                    "ADMIN_SITE": "content_studio.admin.admin_site",
+                    "NOTIFICATION_UNREAD_RETENTION": value,
                 }
             ):
                 ids = [m.id for m in check_content_studio()]

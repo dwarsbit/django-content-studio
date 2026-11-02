@@ -15,10 +15,11 @@
   subscribers or to given users and groups.
 - **Pruning notifications.** `content_studio_prune_notifications` removes
   read notifications older than the new `NOTIFICATION_RETENTION` setting
-  (90 days by default; `None` keeps them), and follows and subscriptions of
-  objects and models that no longer exist. System check
-  `content_studio.E030` reports a retention that is not a positive whole
-  number of days, and `content_studio.E031` an event registered with a
+  (90 days by default), unread ones older than
+  `NOTIFICATION_UNREAD_RETENTION` (`None` by default, which keeps them),
+  and follows and subscriptions of objects and models that no longer
+  exist. System check `content_studio.E030` reports a retention that is not
+  `None` or a positive whole number of days, and `content_studio.E031` an event registered with a
   malformed key or twice with different definitions.
 
 ## 1.5.0 (2026-11-02)

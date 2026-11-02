@@ -44,7 +44,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E027` | A [`THUMBNAIL_CACHE`](/docs/settings#thumbnail_cache) that is not a cache in `CACHES`, while thumbnails are on. |
 | `content_studio.E028` | A [`DashboardPage`](/docs/extensions#dashboardpage) path that one of the admin's own pages uses, such as `content/` or `media-library/`. |
 | `content_studio.E029` | A dashboard widget's `refresh_interval` that is not a positive number of seconds or `None`. |
-| `content_studio.E030` | A [`NOTIFICATION_RETENTION`](/docs/settings#notification_retention) that is not a positive whole number of days or `None`. |
+| `content_studio.E030` | A [`NOTIFICATION_RETENTION`](/docs/settings#notification_retention) or [`NOTIFICATION_UNREAD_RETENTION`](/docs/settings#notification_unread_retention) that is not a positive whole number of days or `None`. |
 | `content_studio.E031` | A notification event registered with `register_event` whose key is not lowercase dotted words (like `blog.article_submitted`), starts with `content.`, has an unknown level, or is registered twice with different definitions. |
 
 ## Warnings

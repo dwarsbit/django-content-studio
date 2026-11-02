@@ -658,21 +658,23 @@ def webhook_setting_errors() -> list[tuple[str, str]]:
 
 def notification_errors() -> list[tuple[str, str]]:
     """
-    A malformed NOTIFICATION_RETENTION (E030), and notification events
+    A malformed NOTIFICATION_RETENTION or NOTIFICATION_UNREAD_RETENTION
+    (E030), and notification events
     registered with a malformed key or twice with different definitions
     (E031), as (check id, message) pairs.
     """
     errors = []
-    retention = cs_settings.NOTIFICATION_RETENTION
 
-    if retention is not None and not _is_positive_number(retention, integer=True):
-        errors.append(
-            (
-                "content_studio.E030",
-                "NOTIFICATION_RETENTION must be None or a positive whole number "
-                "of days.",
+    for setting in ("NOTIFICATION_RETENTION", "NOTIFICATION_UNREAD_RETENTION"):
+        retention = getattr(cs_settings, setting)
+
+        if retention is not None and not _is_positive_number(retention, integer=True):
+            errors.append(
+                (
+                    "content_studio.E030",
+                    f"{setting} must be None or a positive whole number of days.",
+                )
             )
-        )
 
     from django.apps import apps
 

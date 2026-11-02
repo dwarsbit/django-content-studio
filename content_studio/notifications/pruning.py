@@ -9,17 +9,23 @@ from .permissions import load_objects
 
 
 def prune_notifications() -> int:
-    """Remove read notifications older than NOTIFICATION_RETENTION days;
-    unread ones are kept."""
-    retention = cs_settings.NOTIFICATION_RETENTION
+    """Remove read notifications older than NOTIFICATION_RETENTION days
+    and unread ones older than NOTIFICATION_UNREAD_RETENTION days; None
+    keeps them."""
+    deleted = 0
 
-    if retention is None:
-        return 0
+    for retention, unread in (
+        (cs_settings.NOTIFICATION_RETENTION, False),
+        (cs_settings.NOTIFICATION_UNREAD_RETENTION, True),
+    ):
+        if retention is None:
+            continue
 
-    cutoff = timezone.now() - timedelta(days=retention)
-    deleted, _ = Notification.objects.filter(
-        read_at__isnull=False, updated_at__lt=cutoff
-    ).delete()
+        cutoff = timezone.now() - timedelta(days=retention)
+        deleted += Notification.objects.filter(
+            read_at__isnull=unread, updated_at__lt=cutoff
+        ).delete()[0]
+
     return deleted
 
 
