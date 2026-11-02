@@ -10,6 +10,7 @@ import {
 
 import { BlockWidget } from "./block-widget/block-widget";
 import { CheckboxWidget } from "./checkbox-widget";
+import { ColorPickerWidget } from "./color-picker-widget";
 import { CoverImageWidget } from "./cover-image-widget/cover-image-widget";
 import { DateTimeWidget } from "./date-time-widget";
 import { DateWidget } from "./date-widget";
@@ -54,6 +55,7 @@ type WidgetComponent = ComponentType<{
 const WIDGETS = {
   [FieldWidget.BlockWidget]: BlockWidget,
   [FieldWidget.CheckboxWidget]: CheckboxWidget,
+  [FieldWidget.ColorPickerWidget]: ColorPickerWidget,
   [FieldWidget.CoverImageWidget]: CoverImageWidget,
   [FieldWidget.DateWidget]: DateWidget,
   [FieldWidget.DateTimeWidget]: DateTimeWidget,

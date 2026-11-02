@@ -13,7 +13,7 @@
 ### Design Principles
 
 - **Not a CMS**: Content Studio manages the models you already have. Like the classic Django admin, it works with any plain Django model — register it and it is manageable.
-- **Batteries included, never imposed**: Content Studio ships optional content fields (`content_studio.fields`: `HTMLField`, `TagField`, `FlexField`, ...) and base models (`content_studio.models`: `ContentModel`, `SingletonModel`, `SoftDeletableModel`, ...), formerly provided by the now-merged and deprecated django-blueprint. Every capability must also be achievable with plain Django models and fields; never make a built-in field or model the only path to a feature.
+- **Batteries included, never imposed**: Content Studio ships optional content fields (`content_studio.fields`: `HTMLField`, `TagField`, `FlexField`, `ColorField`, ...) and base models (`content_studio.models`: `ContentModel`, `SingletonModel`, `SoftDeletableModel`, ...), formerly provided by the now-merged and deprecated django-blueprint. Every capability must also be achievable with plain Django models and fields; never make a built-in field or model the only path to a feature.
 - **The internal API stays internal**: the generated Django REST Framework backend is plumbing for the React app, not a public feature. Users who need an API for their own clients should use django-headless. Never document or expose API internals (endpoints, wire formats, the tenant header) in user-facing documentation.
 
 ---
@@ -41,7 +41,8 @@ content_studio/
 ├── managers.py          # Managers for the base models (SingletonManager, SoftDeletableManager)
 ├── sanitizers.py        # HTML sanitizer (allowlist based on nh3)
 ├── uniqueness.py        # Duplicate check for unique_together and multi-field UniqueConstraints
-├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
+├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator, ColorValidator)
+├── colors.py            # Color parsing and conversion (hex/rgb/hsl) for ColorField; mirrored by frontend/src/lib/colors.ts
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
 ├── checks.py            # System checks (content_studio.E001-E033, W001-W022)
@@ -302,7 +303,7 @@ Content Studio uses a widget system to render fields. Default mappings are defin
 - `HTMLField` → `RichTextWidget` (built into Content Studio)
 - `TagField` → `TagWidget` (built into Content Studio)
 - `BlockField` → `BlockWidget` (built into Content Studio; blocks declare plain model fields and are not models)
-- `FlexField` → `JSONSchemaWidget`, `MultipleChoiceField` → `MultiSelectWidget`, `URLPathField` → `URLPathWidget` (built into Content Studio)
+- `FlexField` → `JSONSchemaWidget`, `MultipleChoiceField` → `MultiSelectWidget`, `URLPathField` → `URLPathWidget`, `ColorField` → `ColorPickerWidget` (built into Content Studio)
 - `MediaField` / `ManyMediaField` → media picker widgets (built into the optional `content_studio.media_library` app)
 
 The content fields and base models formerly provided by django-blueprint are merged into Content Studio itself (`content_studio.fields`, `content_studio.models`); django-blueprint is deprecated. Never import the external `blueprint` package.

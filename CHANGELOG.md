@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.7.0 (unreleased)
+
+- **Colors.** The new `ColorField` stores a CSS color in the notation set
+  with `color_format`: `"hex"` (the default), `"rgb"` or `"hsl"`.
+  `alpha=True` allows transparent colors and saves every color with its
+  alpha. Colors in any of the three notations are accepted and converted
+  to the field's on save; anything else is rejected. `ColorValidator`
+  validates colors on any field, in one notation or all three.
+- **Color picker.** `ColorPickerWidget`, the default widget of `ColorField`,
+  shows a swatch that opens a color picker, with a transparency slider
+  when the field allows it. `show_input=False` leaves out the text input
+  next to the swatch, and `swatches` offers preset colors, such as a brand
+  palette. On the list page, `ColorFormat` shows a swatch next to the
+  value.
+
 ## 1.6.0 (2026-11-02)
 
 - **Image sizes.** The new `IMAGE_SIZES` setting names the sizes every media

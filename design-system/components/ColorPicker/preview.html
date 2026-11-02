@@ -1,0 +1,21 @@
+<!-- @dsCard group="Forms" height=320 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>ColorPicker preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.col{display:flex;flex-direction:column;gap:12px;max-width:280px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+var BRAND = ["#0f172a", "#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea", "#f1f5f9", "#ffffff"];
+function Demo() {
+  var a = React.useState("#2563eb"), b = React.useState("rgba(22, 163, 74, 0.6)");
+  return h("div", { className: "col" },
+    h(C.ColorPicker, { value: a[0], onChange: a[1], swatches: BRAND }),
+    h(C.ColorPicker, { value: b[0], onChange: b[1], format: "rgb", alpha: true, showInput: false }));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(h(Demo));
+</script>
+</body>
+</html>

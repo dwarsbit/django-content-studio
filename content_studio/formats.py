@@ -2,6 +2,7 @@ __all__ = [
     "BaseFormat",
     "BlockFormat",
     "BooleanFormat",
+    "ColorFormat",
     "DateFormat",
     "DateTimeFormat",
     "FileSizeFormat",
@@ -66,6 +67,10 @@ class HtmlFormat(BaseFormat):
 
 class BooleanFormat(BaseFormat):
     pass
+
+
+class ColorFormat(BaseFormat):
+    """A color swatch with the color's value."""
 
 
 class DateFormat(BaseFormat):

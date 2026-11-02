@@ -235,6 +235,10 @@ export interface ModelField {
   related_model?: string;
   json_schema?: Record<string, unknown>;
   multiple?: boolean;
+  // ColorField, or a field with a ColorValidator: the notation colors are
+  // saved in and whether they may be translucent.
+  color_format?: "hex" | "rgb" | "hsl";
+  alpha?: boolean;
   // BlockField: the block types and the limits on the number of blocks.
   blocks?: BlockDefinition[];
   min_num?: number | null;
@@ -310,6 +314,13 @@ export interface CoverImageWidgetOptions {
   // Pixels: smaller images get a warning.
   min_width?: number;
   min_height?: number;
+}
+
+export interface ColorPickerWidgetOptions {
+  // Unset: true.
+  show_input?: boolean;
+  // Colors offered below the picker.
+  swatches?: string[];
 }
 
 export interface DateWidgetOptions {
@@ -399,6 +410,7 @@ export enum FieldType {
   BlockField = "BlockField",
   BooleanField = "BooleanField",
   CharField = "CharField",
+  ColorField = "ColorField",
   DateField = "DateField",
   DateTimeField = "DateTimeField",
   DecimalField = "DecimalField",
@@ -417,6 +429,7 @@ export enum FieldType {
 export enum FieldFormat {
   BlockFormat = "BlockFormat",
   BooleanFormat = "BooleanFormat",
+  ColorFormat = "ColorFormat",
   DateFormat = "DateFormat",
   DateTimeFormat = "DateTimeFormat",
   FileFormat = "FileFormat",
@@ -434,6 +447,7 @@ export enum FieldFormat {
 export enum FieldWidget {
   BlockWidget = "BlockWidget",
   CheckboxWidget = "CheckboxWidget",
+  ColorPickerWidget = "ColorPickerWidget",
   DateTimeWidget = "DateTimeWidget",
   DateWidget = "DateWidget",
   ForeignKeyWidget = "ForeignKeyWidget",
