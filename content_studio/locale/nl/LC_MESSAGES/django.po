@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-04 11:15+0100\n"
+"POT-Creation-Date: 2026-11-02 18:08+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,238 +18,615 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: contrib/password_reset/views.py:44
-msgid "Your password reset code"
-msgstr "Je wachtwoord-herstelcode"
+#: actions.py:154
+msgid "Delete"
+msgstr "Verwijderen"
 
-#: contrib/password_reset/views.py:45
-msgid "Your password reset code is: "
-msgstr "Je wachtwoord-herstelcode is: "
+#: actions.py:156
+msgid "Are you sure you want to delete the selected items?"
+msgstr "Weet je zeker dat je de geselecteerde items wilt verwijderen?"
 
-#: contrib/password_reset/views.py:100
-msgid "Your password has been reset"
-msgstr "Je wachtwoord is gewijzigd"
-
-#: contrib/password_reset/views.py:102
-msgid ""
-"Your password has been reset. If you did not do this, please contact your "
-"administrator."
-msgstr ""
-"Je wachtwoord is gewijzigd. Neem contact op met je administrator als jij dit"
-" niet hebt gedaan."
-
-#: dashboard/scheduled_tasks.py:23
-msgid "Scheduled tasks"
-msgstr "Geplande taken"
-
-#: dashboard/scheduled_tasks.py:26
-msgid "Monitor and manage automated tasks"
-msgstr "Monitor en beheer geautomatiseerde taken"
-
-#: views.py:188
-msgid "Content"
-msgstr "Content"
-
-#: actions.py:129
+#: actions.py:165
 msgid ""
 "The selected items will be moved to the trash, where they can be restored. "
 "Are you sure you want to delete?"
 msgstr ""
-"De geselecteerde items worden verplaatst naar de prullenbak, waar ze "
-"hersteld kunnen worden. Weet je zeker dat je ze wilt verwijderen?"
+"De geselecteerde items worden verplaatst naar de prullenbak, waar ze hersteld"
+" kunnen worden. Weet je zeker dat je ze wilt verwijderen?"
 
-#: form.py:227
+#: actions.py:194
+msgid "Export"
+msgstr "Exporteren"
+
+#: admin.py:505 admin.py:506
+msgid "Content Studio"
+msgstr "Content Studio"
+
+#: blocks.py:229
+msgid "Unknown related item."
+msgstr "Onbekend gerelateerd item."
+
+#: blocks.py:270
+#, python-format
+msgid "block %(number)s"
+msgstr "blok %(number)s"
+
+#: blocks.py:272
+#, python-format
+msgid "Block %(number)s"
+msgstr "Blok %(number)s"
+
+#: blocks.py:478
+msgid "Enter a list of blocks."
+msgstr "Voer een lijst met blokken in."
+
+#: blocks.py:488
+#, python-format
+msgid "Block %(number)s is not a valid block."
+msgstr "Blok %(number)s is geen geldig blok."
+
+#: blocks.py:492
+#, python-format
+msgid "Block %(number)s has an unknown type: %(type)s."
+msgstr "Blok %(number)s heeft een onbekend type: %(type)s."
+
+#: blocks.py:497
+#, python-format
+msgid "Block %(number)s has the same id as another block."
+msgstr "Blok %(number)s heeft dezelfde id als een ander blok."
+
+#: blocks.py:508
+#, python-format
+msgid "Add at least %(num)d block."
+msgid_plural "Add at least %(num)d blocks."
+msgstr[0] "Voeg minstens %(num)d blok toe."
+msgstr[1] "Voeg minstens %(num)d blokken toe."
+
+#: blocks.py:518
+#, python-format
+msgid "Use at most %(num)d block."
+msgid_plural "Use at most %(num)d blocks."
+msgstr[0] "Gebruik hoogstens %(num)d blok."
+msgstr[1] "Gebruik hoogstens %(num)d blokken."
+
+#: contrib/huey.py:32 dashboard/tasks.py:74 webhooks/models.py:124
+msgid "Failed"
+msgstr "Mislukt"
+
+#: contrib/huey.py:33
+msgid "Timed out"
+msgstr "Time-out"
+
+#: contrib/huey.py:34
+msgid "Interrupted"
+msgstr "Onderbroken"
+
+#: contrib/huey.py:35
+msgid "Canceled"
+msgstr "Geannuleerd"
+
+#: contrib/huey.py:36
+msgid "Revoked"
+msgstr "Ingetrokken"
+
+#: contrib/huey.py:37
+msgid "Expired"
+msgstr "Verlopen"
+
+#: contrib/huey.py:38
+msgid "Locked"
+msgstr "Vergrendeld"
+
+#: contrib/huey.py:39
+msgid "Rate-limited"
+msgstr "Gelimiteerd"
+
+#: contrib/password_reset/tasks.py:65
+msgid "Your password reset code"
+msgstr "Je wachtwoord-herstelcode"
+
+#: contrib/password_reset/tasks.py:66
+msgid "Your password reset code is: "
+msgstr "Je wachtwoord-herstelcode is: "
+
+#: contrib/password_reset/tasks.py:84
+msgid "Your password has been reset"
+msgstr "Je wachtwoord is gewijzigd"
+
+#: contrib/password_reset/tasks.py:86
+msgid ""
+"Your password has been reset. If you did not do this, please contact your "
+"administrator."
+msgstr ""
+"Je wachtwoord is gewijzigd. Neem contact op met je administrator als jij dit "
+"niet hebt gedaan."
+
+#: dashboard/scheduled_tasks.py:27
+msgid "Scheduled tasks"
+msgstr "Geplande taken"
+
+#: dashboard/scheduled_tasks.py:30
+msgid "Monitor and manage automated tasks"
+msgstr "Monitor en beheer geautomatiseerde taken"
+
+#: dashboard/tasks.py:70
+msgid "Queued"
+msgstr "In de wachtrij"
+
+#: dashboard/tasks.py:71
+msgid "Scheduled"
+msgstr "Gepland"
+
+#: dashboard/tasks.py:72
+msgid "Running"
+msgstr "Bezig"
+
+#: dashboard/tasks.py:73
+msgid "Succeeded"
+msgstr "Geslaagd"
+
+#: dashboard/tasks.py:75
+msgid "Retried"
+msgstr "Opnieuw geprobeerd"
+
+#: dashboard/tasks.py:83
+msgid "Periodic tasks"
+msgstr "Periodieke taken"
+
+#: dashboard/tasks.py:84
+msgid "Tasks that run on a schedule, with their latest run"
+msgstr "Taken die volgens een schema draaien, met hun laatste run"
+
+#: dashboard/tasks.py:88
+msgid "Recent runs"
+msgstr "Recente runs"
+
+#: dashboard/tasks.py:89
+msgid "The latest tasks the workers ran"
+msgstr "De laatste taken die de workers hebben uitgevoerd"
+
+#: dashboard/tasks.py:268
+msgid "Tasks"
+msgstr "Taken"
+
+#: export.py:191
+msgid "Yes"
+msgstr "Ja"
+
+#: export.py:191
+msgid "No"
+msgstr "Nee"
+
+#: fields.py:102
+msgid "Only accepts letters, numbers, underscores, hyphens and slashes."
+msgstr ""
+"Alleen letters, cijfers, underscores, koppeltekens en slashes zijn "
+"toegestaan."
+
+#: fields.py:108
+msgid "Consecutive slashes are not allowed."
+msgstr "Opeenvolgende slashes zijn niet toegestaan."
+
+#: form.py:385
 msgid "Activity"
 msgstr "Activiteit"
 
-#: webhooks/admin.py
+#: media_library/apps.py:11
+msgid "Media Library"
+msgstr "Mediabibliotheek"
+
+#: media_library/models.py:25 media_library/models.py:26
+msgid "Media"
+msgstr "Media"
+
+#: media_library/models.py:28 media_library/models.py:77
+msgid "File"
+msgstr "Bestand"
+
+#: media_library/models.py:31 media_library/models.py:133 webhooks/models.py:53
+msgid "Name"
+msgstr "Naam"
+
+#: media_library/models.py:38
+msgid "Alt text"
+msgstr "Alt-tekst"
+
+#: media_library/models.py:39
+msgid "Describes a picture for screen readers"
+msgstr "Beschrijft een afbeelding voor schermlezers"
+
+#: media_library/models.py:42
+msgid "Tags"
+msgstr "Tags"
+
+#: media_library/models.py:50 media_library/models.py:128
+msgid "Folder"
+msgstr "Map"
+
+#: media_library/models.py:54
+msgid "File size"
+msgstr "Bestandsgrootte"
+
+#: media_library/models.py:61
+msgid "Metadata"
+msgstr "Metadata"
+
+#: media_library/models.py:62
+msgid "Read from the file, such as an image's width and height."
+msgstr ""
+"Uit het bestand gelezen, zoals de breedte en hoogte van een afbeelding."
+
+#: media_library/models.py:68
+msgid "Properties"
+msgstr "Eigenschappen"
+
+#: media_library/models.py:69
+msgid "Set by editors for some types of media, such as a focal point."
+msgstr ""
+"Door redacteuren ingesteld voor sommige soorten media, zoals een focuspunt."
+
+#: media_library/models.py:74
+msgid "Image"
+msgstr "Afbeelding"
+
+#: media_library/models.py:75
+msgid "Video"
+msgstr "Video"
+
+#: media_library/models.py:76
+msgid "Audio"
+msgstr "Audio"
+
+#: media_library/models.py:80
+msgid "File type"
+msgstr "Bestandstype"
+
+#: media_library/models.py:129
+msgid "Folders"
+msgstr "Mappen"
+
+#: media_library/serializers.py:49 media_library/serializers.py:57
+msgid "Files of this type cannot be uploaded."
+msgstr "Bestanden van dit type kunnen niet worden geüpload."
+
+#: media_library/serializers.py:53
+#, python-format
+msgid "The file is larger than %(size)s."
+msgstr "Het bestand is groter dan %(size)s."
+
+#: media_library/serializers.py:171
+msgid "A folder cannot be moved into itself or its subfolders."
+msgstr ""
+"Een map kan niet naar zichzelf of een van zijn submappen worden verplaatst."
+
+#: models.py:40
+msgid "Created at"
+msgstr "Aangemaakt op"
+
+#: models.py:42
+msgid "Modified at"
+msgstr "Gewijzigd op"
+
+#: models.py:55
+msgid "Edited by"
+msgstr "Bewerkt door"
+
+#: models.py:65
+msgid "Order key"
+msgstr "Volgordesleutel"
+
+#: models.py:97
+msgid "Removed at"
+msgstr "Verwijderd op"
+
+#: models.py:137
+msgid "Singleton"
+msgstr "Singleton"
+
+#: notifications/apps.py:11 notifications/dashboard.py:46
+#: notifications/models.py:24
+msgid "Notifications"
+msgstr "Meldingen"
+
+#: notifications/dashboard.py:47
+msgid "Your latest notifications"
+msgstr "Je laatste meldingen"
+
+#: notifications/digest.py:123
+msgid "Someone"
+msgstr "Iemand"
+
+#: notifications/digest.py:137
+#, python-format
+msgid "%(actor)s created the %(model)s %(object)s"
+msgstr "%(actor)s heeft %(object)s (%(model)s) aangemaakt"
+
+#: notifications/digest.py:138
+#, python-format
+msgid "%(actor)s updated the %(model)s %(object)s"
+msgstr "%(actor)s heeft %(object)s (%(model)s) bijgewerkt"
+
+#: notifications/digest.py:139
+#, python-format
+msgid "%(actor)s deleted the %(model)s %(object)s"
+msgstr "%(actor)s heeft %(object)s (%(model)s) verwijderd"
+
+#: notifications/digest.py:140
+#, python-format
+msgid "%(actor)s restored the %(model)s %(object)s"
+msgstr "%(actor)s heeft %(object)s (%(model)s) hersteld"
+
+#: notifications/digest.py:141
+#, python-format
+msgid "%(actor)s moved the %(model)s %(object)s"
+msgstr "%(actor)s heeft %(object)s (%(model)s) verplaatst"
+
+#: notifications/digest.py:146
+#, python-format
+msgid "%(actor)s created %(count)s %(models)s"
+msgid_plural "%(actor)s created %(count)s %(models)s"
+msgstr[0] "%(actor)s heeft %(count)s %(models)s aangemaakt"
+msgstr[1] "%(actor)s heeft %(count)s %(models)s aangemaakt"
+
+#: notifications/digest.py:151
+#, python-format
+msgid "%(actor)s updated %(count)s %(models)s"
+msgid_plural "%(actor)s updated %(count)s %(models)s"
+msgstr[0] "%(actor)s heeft %(count)s %(models)s bijgewerkt"
+msgstr[1] "%(actor)s heeft %(count)s %(models)s bijgewerkt"
+
+#: notifications/digest.py:156
+#, python-format
+msgid "%(actor)s deleted %(count)s %(models)s"
+msgid_plural "%(actor)s deleted %(count)s %(models)s"
+msgstr[0] "%(actor)s heeft %(count)s %(models)s verwijderd"
+msgstr[1] "%(actor)s heeft %(count)s %(models)s verwijderd"
+
+#: notifications/digest.py:161
+#, python-format
+msgid "%(actor)s restored %(count)s %(models)s"
+msgid_plural "%(actor)s restored %(count)s %(models)s"
+msgstr[0] "%(actor)s heeft %(count)s %(models)s hersteld"
+msgstr[1] "%(actor)s heeft %(count)s %(models)s hersteld"
+
+#: notifications/digest.py:166
+#, python-format
+msgid "%(actor)s reordered %(count)s %(models)s"
+msgid_plural "%(actor)s reordered %(count)s %(models)s"
+msgstr[0] "%(actor)s heeft %(count)s %(models)s herordend"
+msgstr[1] "%(actor)s heeft %(count)s %(models)s herordend"
+
+#: notifications/digest.py:235
+#, python-format
+msgid "%(count)s change"
+msgid_plural "%(count)s changes"
+msgstr[0] "%(count)s wijziging"
+msgstr[1] "%(count)s wijzigingen"
+
+#: notifications/digest.py:255
+#, python-format
+msgid "and %(count)s more"
+msgid_plural "and %(count)s more"
+msgstr[0] "en %(count)s meer"
+msgstr[1] "en %(count)s meer"
+
+#: notifications/digest.py:283
+#: templates/content_studio/notifications/digest.html:12
+#, python-format
+msgid "You have %(count)s unread notification"
+msgid_plural "You have %(count)s unread notifications"
+msgstr[0] "Je hebt %(count)s ongelezen melding"
+msgstr[1] "Je hebt %(count)s ongelezen meldingen"
+
+#: notifications/models.py:23
+msgid "Notification"
+msgstr "Melding"
+
+#: notifications/models.py:38
+msgid "Info"
+msgstr "Info"
+
+#: notifications/models.py:39 webhooks/models.py:123
+msgid "Success"
+msgstr "Geslaagd"
+
+#: notifications/models.py:40
+msgid "Warning"
+msgstr "Waarschuwing"
+
+#: notifications/models.py:41 webhooks/models.py:146
+msgid "Error"
+msgstr "Fout"
+
+#: notifications/models.py:47
+msgid "Recipient"
+msgstr "Ontvanger"
+
+#: notifications/models.py:50 notifications/models.py:171
+msgid "Event"
+msgstr "Gebeurtenis"
+
+#: notifications/models.py:55
+msgid "Level"
+msgstr "Niveau"
+
+#: notifications/models.py:64
+msgid "Actor"
+msgstr "Actor"
+
+#: notifications/models.py:74 notifications/models.py:169
+#: notifications/models.py:214
+msgid "Model"
+msgstr "Model"
+
+#: notifications/models.py:136
+msgid "Notification subscription"
+msgstr "Meldingsabonnement"
+
+#: notifications/models.py:137
+msgid "Notification subscriptions"
+msgstr "Meldingsabonnementen"
+
+#: notifications/models.py:154
+msgid "All objects"
+msgstr "Alle objecten"
+
+#: notifications/models.py:155
+msgid "Objects I created"
+msgstr "Objecten die ik heb aangemaakt"
+
+#: notifications/models.py:161 notifications/models.py:208
+msgid "User"
+msgstr "Gebruiker"
+
+#: notifications/models.py:177
+msgid "Scope"
+msgstr "Bereik"
+
+#: notifications/models.py:179
+msgid "Enabled"
+msgstr "Ingeschakeld"
+
+#: notifications/models.py:192
+msgid "Follow"
+msgstr "Volgrelatie"
+
+#: notifications/models.py:193
+msgid "Follows"
+msgstr "Volgrelaties"
+
+#: templates/content_studio/notifications/digest.html:13
+#: templates/content_studio/notifications/digest.txt:1
+#, python-format
+msgid "Hello %(name)s,"
+msgstr "Hallo %(name)s,"
+
+#: templates/content_studio/notifications/digest.html:22
+#: templates/content_studio/notifications/digest.txt:9
+#, python-format
+msgid "And %(count)s more."
+msgid_plural "And %(count)s more."
+msgstr[0] "En %(count)s meer."
+msgstr[1] "En %(count)s meer."
+
+#: templates/content_studio/notifications/digest.html:25
+msgid "See all notifications"
+msgstr "Alle meldingen bekijken"
+
+#: templates/content_studio/notifications/digest.html:28
+msgid "You get this email because these notifications are unread."
+msgstr "Je krijgt deze e-mail omdat deze meldingen ongelezen zijn."
+
+#: templates/content_studio/notifications/digest.html:28
+msgid "Turn these emails off in your notification settings."
+msgstr "Zet deze e-mails uit in je instellingen voor meldingen."
+
+#: templates/content_studio/notifications/digest.txt:3
+#, python-format
+msgid "You have %(count)s unread notification in %(site_name)s:"
+msgid_plural "You have %(count)s unread notifications in %(site_name)s:"
+msgstr[0] "Je hebt %(count)s ongelezen melding in %(site_name)s:"
+msgstr[1] "Je hebt %(count)s ongelezen meldingen in %(site_name)s:"
+
+#: templates/content_studio/notifications/digest.txt:11
+msgid "See all notifications:"
+msgstr "Alle meldingen bekijken:"
+
+#: templates/content_studio/notifications/digest.txt:13
+msgid ""
+"You get this email because these notifications are unread. Turn these emails "
+"off in your notification settings:"
+msgstr ""
+"Je krijgt deze e-mail omdat deze meldingen ongelezen zijn. Zet deze e-mails "
+"uit in je instellingen voor meldingen:"
+
+#: validators.py:15
+msgid "Enter a valid value."
+msgstr "Voer een geldige waarde in."
+
+#: validators.py:47
+msgid "One or more values are not valid choices."
+msgstr "Een of meer waarden zijn geen geldige keuzes."
+
+#: views.py:285
+msgid "Content"
+msgstr "Content"
+
+#: webhooks/admin.py:29
+#, python-format
+msgid "Delivered: the webhook responded with %(status)s."
+msgstr "Afgeleverd: de webhook antwoordde met %(status)s."
+
+#: webhooks/admin.py:34
+#, python-format
+msgid "The delivery failed and is retried later: %(error)s"
+msgstr "De levering is mislukt en wordt later opnieuw geprobeerd: %(error)s"
+
+#: webhooks/admin.py:38
+#, python-format
+msgid "The delivery failed: %(error)s"
+msgstr "De levering is mislukt: %(error)s"
+
+#: webhooks/admin.py:42
 msgid "Trigger now"
 msgstr "Nu aanroepen"
 
-#: webhooks/admin.py
+#: webhooks/admin.py:57
 msgid "Regenerate secret"
 msgstr "Geheim opnieuw genereren"
 
-#: webhooks/admin.py
+#: webhooks/admin.py:60
 msgid ""
-"Requests are signed with the new secret from now on: receivers that check "
-"the signature need the new secret. Regenerate it?"
+"Requests are signed with the new secret from now on: receivers that check the"
+" signature need the new secret. Regenerate it?"
 msgstr ""
 "Verzoeken worden vanaf nu met het nieuwe geheim ondertekend: ontvangers die "
 "de handtekening controleren, hebben het nieuwe geheim nodig. Opnieuw "
 "genereren?"
 
-#: webhooks/admin.py
+#: webhooks/admin.py:70
 msgid "The secret was regenerated."
 msgstr "Het geheim is opnieuw gegenereerd."
 
-#: webhooks/admin.py
+#: webhooks/admin.py:74
 msgid "Retry"
 msgstr "Opnieuw proberen"
 
-#: webhooks/admin.py
+#: webhooks/admin.py:87
 msgid "The delivery is already being retried."
 msgstr "De levering wordt al opnieuw geprobeerd."
 
-#: webhooks/admin.py
-#, python-format
-msgid "Delivered: the webhook responded with %(status)s."
-msgstr "Afgeleverd: de webhook antwoordde met %(status)s."
-
-#: webhooks/admin.py
-#, python-format
-msgid "The delivery failed and is retried later: %(error)s"
-msgstr "De levering is mislukt en wordt later opnieuw geprobeerd: %(error)s"
-
-#: webhooks/admin.py
-#, python-format
-msgid "The delivery failed: %(error)s"
-msgstr "De levering is mislukt: %(error)s"
-
-#: webhooks/admin.py
+#: webhooks/admin.py:139
 msgid "The webhook was created. Copy its secret now: it is not shown again."
 msgstr ""
 "De webhook is aangemaakt. Kopieer nu het geheim: het wordt niet opnieuw "
 "getoond."
 
-#: webhooks/apps.py
+#: webhooks/apps.py:11 webhooks/dashboard.py:28 webhooks/models.py:50
 msgid "Webhooks"
 msgstr "Webhooks"
 
-#: webhooks/models.py
-msgid "Webhook"
-msgstr "Webhook"
-
-#: webhooks/models.py
-msgid "Name"
-msgstr "Naam"
-
-#: webhooks/models.py
-msgid "URL"
-msgstr "URL"
-
-#: webhooks/models.py
-msgid "Secret"
-msgstr "Geheim"
-
-#: webhooks/models.py
-msgid "Signs every request, so the receiver can verify it."
-msgstr "Ondertekent elk verzoek, zodat de ontvanger het kan controleren."
-
-#: webhooks/models.py
-msgid "Events"
-msgstr "Gebeurtenissen"
-
-#: webhooks/models.py
-msgid "The changes that trigger the webhook; empty for all."
-msgstr "De wijzigingen die de webhook aanroepen; leeg voor alle."
-
-#: webhooks/models.py
-msgid "Models"
-msgstr "Modellen"
-
-#: webhooks/models.py
-msgid "The models whose changes trigger the webhook; empty for all."
-msgstr "De modellen waarvan wijzigingen de webhook aanroepen; leeg voor alle."
-
-#: webhooks/models.py
-msgid "Tenant"
-msgstr "Tenant"
-
-#: webhooks/models.py
-msgid "Only changes in this tenant trigger the webhook; empty for all."
-msgstr ""
-"Alleen wijzigingen in deze tenant roepen de webhook aan; leeg voor alle."
-
-#: webhooks/models.py
-msgid "Active"
-msgstr "Actief"
-
-#: webhooks/models.py
-msgid "Created"
-msgstr "Aangemaakt"
-
-#: webhooks/models.py
-msgid "Updated"
-msgstr "Gewijzigd"
-
-#: webhooks/models.py
-msgid "Deleted"
-msgstr "Verwijderd"
-
-#: webhooks/models.py
-msgid "Restored"
-msgstr "Hersteld"
-
-#: webhooks/models.py
-msgid "Reordered"
-msgstr "Opnieuw gesorteerd"
-
-#: webhooks/models.py
-msgid "Webhook delivery"
-msgstr "Webhook-levering"
-
-#: webhooks/models.py
-msgid "Webhook deliveries"
-msgstr "Webhook-leveringen"
-
-#: webhooks/models.py
-msgid "Pending"
-msgstr "In afwachting"
-
-#: webhooks/models.py
-msgid "Success"
-msgstr "Geslaagd"
-
-#: webhooks/models.py
-msgid "Failed"
-msgstr "Mislukt"
-
-#: webhooks/models.py
-msgid "Payload"
-msgstr "Inhoud"
-
-#: webhooks/models.py
-msgid "Status"
-msgstr "Status"
-
-#: webhooks/models.py
-msgid "Attempts"
-msgstr "Pogingen"
-
-#: webhooks/models.py
-msgid "Response status"
-msgstr "Antwoordstatus"
-
-#: webhooks/models.py
-msgid "Response"
-msgstr "Antwoord"
-
-#: webhooks/models.py
-msgid "Error"
-msgstr "Fout"
-
-#: webhooks/dashboard.py
+#: webhooks/dashboard.py:29
 msgid "The latest delivery of each webhook"
 msgstr "De laatste levering van elke webhook"
 
-#: webhooks/dashboard.py
+#: webhooks/dashboard.py:67
 msgid "Paused"
 msgstr "Gepauzeerd"
 
-#: webhooks/extensions.py
+#: webhooks/extensions.py:26
 msgid "Deploy"
 msgstr "Publiceren"
 
-#: webhooks/extensions.py
+#: webhooks/extensions.py:28
 msgid "Trigger the webhooks to rebuild the site?"
 msgstr "De webhooks aanroepen om de site opnieuw op te bouwen?"
 
-#: webhooks/extensions.py
+#: webhooks/extensions.py:75
 msgid "There are no active webhooks to trigger."
 msgstr "Er zijn geen actieve webhooks om aan te roepen."
 
-#: webhooks/extensions.py
+#: webhooks/extensions.py:81
 #, python-format
 msgid "Triggered %(count)d webhook. Its delivery log shows how it responded."
 msgid_plural ""
@@ -258,3 +635,122 @@ msgstr[0] ""
 "%(count)d webhook aangeroepen. Het leveringslog toont hoe hij antwoordde."
 msgstr[1] ""
 "%(count)d webhooks aangeroepen. Hun leveringslogs tonen hoe ze antwoordden."
+
+#: webhooks/failures.py:31
+msgid "Webhook delivery failed"
+msgstr "Webhook-levering mislukt"
+
+#: webhooks/failures.py:33
+msgid ""
+"A webhook delivery failed after its last attempt. Only editors who may change"
+" webhooks are notified."
+msgstr ""
+"Een webhook-levering is na de laatste poging mislukt. Alleen redacteuren die "
+"webhooks mogen wijzigen, krijgen een melding."
+
+#: webhooks/failures.py:89
+#, python-format
+msgid "Webhook %(name)s failed"
+msgstr "Webhook %(name)s is mislukt"
+
+#: webhooks/failures.py:90
+#, python-format
+msgid "The last attempt failed: %(error)s"
+msgstr "De laatste poging is mislukt: %(error)s"
+
+#: webhooks/models.py:34
+msgid "Created"
+msgstr "Aangemaakt"
+
+#: webhooks/models.py:35
+msgid "Updated"
+msgstr "Gewijzigd"
+
+#: webhooks/models.py:36
+msgid "Deleted"
+msgstr "Verwijderd"
+
+#: webhooks/models.py:37
+msgid "Restored"
+msgstr "Hersteld"
+
+#: webhooks/models.py:38
+msgid "Reordered"
+msgstr "Opnieuw gesorteerd"
+
+#: webhooks/models.py:49 webhooks/models.py:131
+msgid "Webhook"
+msgstr "Webhook"
+
+#: webhooks/models.py:55
+msgid "URL"
+msgstr "URL"
+
+#: webhooks/models.py:60
+msgid "Secret"
+msgstr "Geheim"
+
+#: webhooks/models.py:61
+msgid "Signs every request, so the receiver can verify it."
+msgstr "Ondertekent elk verzoek, zodat de ontvanger het kan controleren."
+
+#: webhooks/models.py:65
+msgid "Events"
+msgstr "Gebeurtenissen"
+
+#: webhooks/models.py:66
+msgid "The changes that trigger the webhook; empty for all."
+msgstr "De wijzigingen die de webhook aanroepen; leeg voor alle."
+
+#: webhooks/models.py:72
+msgid "Models"
+msgstr "Modellen"
+
+#: webhooks/models.py:73
+msgid "The models whose changes trigger the webhook; empty for all."
+msgstr "De modellen waarvan wijzigingen de webhook aanroepen; leeg voor alle."
+
+#: webhooks/models.py:81
+msgid "Tenant"
+msgstr "Tenant"
+
+#: webhooks/models.py:82
+msgid "Only changes in this tenant trigger the webhook; empty for all."
+msgstr ""
+"Alleen wijzigingen in deze tenant roepen de webhook aan; leeg voor alle."
+
+#: webhooks/models.py:84
+msgid "Active"
+msgstr "Actief"
+
+#: webhooks/models.py:116
+msgid "Webhook delivery"
+msgstr "Webhook-levering"
+
+#: webhooks/models.py:117
+msgid "Webhook deliveries"
+msgstr "Webhook-leveringen"
+
+#: webhooks/models.py:122
+msgid "Pending"
+msgstr "In afwachting"
+
+#: webhooks/models.py:133
+msgid "Payload"
+msgstr "Inhoud"
+
+#: webhooks/models.py:138
+msgid "Status"
+msgstr "Status"
+
+#: webhooks/models.py:140
+msgid "Attempts"
+msgstr "Pogingen"
+
+#: webhooks/models.py:143
+msgid "Response status"
+msgstr "Antwoordstatus"
+
+#: webhooks/models.py:145
+msgid "Response"
+msgstr "Antwoord"

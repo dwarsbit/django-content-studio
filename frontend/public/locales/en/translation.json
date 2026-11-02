@@ -52,7 +52,7 @@
   "reset_password": {
     "title": "Reset your password",
     "subtitle": "You will receive an email with a reset code.",
-    "enter_Code": "Enter the reset code",
+    "enter_code": "Enter the reset code",
     "submit": "Reset password",
     "password_placeholder": "Enter a password",
     "success_message": "Your password has been changed. You can now log in with your new password."
