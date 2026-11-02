@@ -2,6 +2,17 @@
 
 ## 1.5.0 (unreleased)
 
+- **Dashboard pages.** The new `DashboardPage` extension adds a page to
+  the admin with a dashboard of its own: a `path`, a `title`, an optional
+  `description` and a `Dashboard` with its widgets. `is_visible(request)`
+  decides who sees the page, and its widgets load their data only for
+  them. Widget IDs must be unique across the start page and the dashboard
+  pages (`content_studio.E004`); system check `content_studio.E028`
+  reports a path that one of the admin's own pages uses.
+- **Widget refresh.** A dashboard widget's `refresh_interval` reloads its
+  data every so many seconds while it is shown. System check
+  `content_studio.E029` reports an interval that is not a positive number.
+
 - **Thumbnails.** With the `images` extra installed, Content Studio makes
   thumbnails of media library images in two sizes: small (fits 480
   pixels) for the media library, pickers and list pages, and large (fits
