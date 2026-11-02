@@ -53,10 +53,42 @@ import {
   type ButtonResult,
   ExtensionType,
   type MainMenuButtonExtension,
+  type MainMenuLinkExtension,
   type ModelGroup,
+  type UserMenuButtonExtension,
+  type UserMenuLinkExtension,
 } from "@/types";
 
+type MenuExtension =
+  | MainMenuLinkExtension
+  | MainMenuButtonExtension
+  | UserMenuLinkExtension
+  | UserMenuButtonExtension;
+
 import { TenantSelector } from "./tenant-selector";
+
+/** Whether a link's url leaves the admin: those open in a new tab. */
+function isExternalUrl(url: Partial<Path> | string | undefined) {
+  return typeof url === "string" && /^https?:\/\//i.test(url);
+}
+
+/**
+ * Links and buttons of the given types, ordered by weight (lower
+ * first); equal weights keep the order of the site's extensions.
+ */
+function useMenuExtensions<T extends MenuExtension["extension_type"]>(
+  types: T[],
+) {
+  const { data: discover } = useDiscover();
+
+  return R.sortBy(
+    (extension) => extension.config.weight ?? 0,
+    discover?.extensions.filter(
+      (extension): extension is Extract<MenuExtension, { extension_type: T }> =>
+        (types as string[]).includes(extension.extension_type),
+    ) ?? [],
+  );
+}
 
 /**
  * The main menu: the site (or the tenant), the search trigger, the
@@ -80,16 +112,10 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
     safeStorage.set("main-menu-collapsed", String(collapsedByUser));
   }, [collapsedByUser]);
 
-  // Links and buttons share one list, ordered by weight (lower first);
-  // equal weights keep the order of the site's extensions.
-  const menuExtensions = R.sortBy(
-    (extension) => extension.config.weight ?? 0,
-    discover?.extensions.filter(
-      (extension) =>
-        extension.extension_type === ExtensionType.MainMenuLink ||
-        extension.extension_type === ExtensionType.MainMenuButton,
-    ) ?? [],
-  );
+  const menuExtensions = useMenuExtensions([
+    ExtensionType.MainMenuLink,
+    ExtensionType.MainMenuButton,
+  ]);
 
   // The group holding the current model: /content/<model>. It is open
   // whatever its configuration, until the user closes it by hand.
@@ -419,14 +445,18 @@ function MenuItem({
   title?: string;
   onClick?(): void;
 }) {
-  const Comp = to ? Link : "button";
-  const match = useMatch(`${to ?? ""}`);
-  const active = !R.isNil(to) && !!match;
+  const external = isExternalUrl(to);
+  const Comp = external ? "a" : to ? Link : "button";
+  const match = useMatch(external ? "" : `${to ?? ""}`);
+  const active = !R.isNil(to) && !external && !!match;
 
   const item = (
     <Comp
       // @ts-expect-error due to mixed component
-      to={to ?? undefined}
+      to={to && !external ? to : undefined}
+      href={external ? (to as string) : undefined}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
       type={to ? undefined : "button"}
       title={title}
       aria-current={active ? "page" : undefined}
@@ -480,6 +510,10 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
   const { data: adminInfo } = useAdminInfo();
   const { data: discover } = useDiscover();
   const { theme, setTheme } = useTheme();
+  const menuExtensions = useMenuExtensions([
+    ExtensionType.UserMenuLink,
+    ExtensionType.UserMenuButton,
+  ]);
 
   if (!me) {
     return null;
@@ -575,6 +609,26 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
               </ToggleGroup>
             </div>
             <DropdownMenuSeparator />
+            {menuExtensions.length > 0 && (
+              <>
+                {menuExtensions.map((extension) =>
+                  extension.extension_type === ExtensionType.UserMenuLink ? (
+                    <UserMenuLinkItem
+                      key={extension.extension_id}
+                      url={extension.config.url}
+                      label={extension.config.label}
+                      icon={extension.config.icon}
+                    />
+                  ) : (
+                    <UserMenuButtonItem
+                      key={extension.extension_id}
+                      extension={extension}
+                    />
+                  ),
+                )}
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem
               onClick={() => {
                 logout().then((loggedOut) => {
@@ -597,5 +651,65 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+  );
+}
+
+/** A UserMenuLink extension: a path in the admin, or a new tab. */
+function UserMenuLinkItem({
+  url,
+  label,
+  icon,
+}: {
+  url: string;
+  label: string;
+  icon: string | null;
+}) {
+  const content = (
+    <>
+      <span className="first-letter:uppercase">{label}</span>
+      {icon && <span className={cn(icon, "text-muted-foreground")} />}
+    </>
+  );
+
+  return (
+    <DropdownMenuItem asChild>
+      {isExternalUrl(url) ? (
+        <a href={url} target="_blank" rel="noopener noreferrer">
+          {content}
+        </a>
+      ) : (
+        <Link to={url}>{content}</Link>
+      )}
+    </DropdownMenuItem>
+  );
+}
+
+/**
+ * A UserMenuButton extension: runs the button's handle() on the server
+ * like a MainMenuButton.
+ */
+function UserMenuButtonItem({
+  extension,
+}: {
+  extension: UserMenuButtonExtension;
+}) {
+  const http = useHttp();
+  const { extension_id, config } = extension;
+  const run = useCallback(async () => {
+    const { data } = await http.post<ButtonResult>(
+      `/extensions/${extension_id}/run`,
+    );
+
+    return data;
+  }, [http, extension_id]);
+  const { trigger, isPending } = useRunButton({ confirm: config.confirm, run });
+
+  return (
+    <DropdownMenuItem disabled={isPending} onClick={trigger}>
+      <span className="first-letter:uppercase">{config.label}</span>
+      {config.icon && (
+        <span className={cn(config.icon, "text-muted-foreground")} />
+      )}
+    </DropdownMenuItem>
   );
 }

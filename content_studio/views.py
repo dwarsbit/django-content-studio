@@ -306,12 +306,11 @@ def get_health_check_path():
 
 
 def get_extensions(request):
-    """The site's extensions, without the buttons the request may not
-    see."""
+    """The site's extensions, without those the request may not see."""
     admin_site = cs_settings.ADMIN_SITE
 
     return [
         extension.serialize()
         for extension in getattr(admin_site, "extensions", None) or []
-        if not isinstance(extension, MainMenuButton) or extension.is_visible(request)
+        if extension.is_visible(request)
     ]

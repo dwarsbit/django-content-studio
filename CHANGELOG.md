@@ -2,6 +2,13 @@
 
 ## 1.5.0 (unreleased)
 
+- **User menu extensions.** `UserMenuLink` and `UserMenuButton` add links
+  and buttons to the user menu, between the theme and logging out. They
+  take the same options as `MainMenuLink` and `MainMenuButton`.
+- **Hiding links.** Links take `is_visible(request)`, like buttons: a
+  subclass that returns `False` hides the link from that user.
+- **External links open in a new tab.** Menu links whose `url` starts with
+  `http://` or `https://` open in a new tab; paths stay in the admin.
 - **Thumbnails.** With the `images` extra installed, Content Studio makes
   thumbnails of media library images in two sizes: small (fits 480
   pixels) for the media library, pickers and list pages, and large (fits
