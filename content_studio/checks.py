@@ -1720,6 +1720,26 @@ def dashboard_widget_warnings(site) -> list[tuple[str, str]]:
     return warnings
 
 
+def task_adapter_warnings(site) -> list[tuple[str, str]]:
+    """
+    The warnings of the task adapters behind the dashboard widgets, as
+    (check id, message) pairs, once per adapter.
+    """
+    warnings = []
+    seen = set()
+
+    for widget in iter_dashboard_widgets(site):
+        adapter = getattr(widget, "adapter", None)
+        check = getattr(adapter, "check", None)
+
+        if not callable(check) or id(adapter) in seen:
+            continue
+        seen.add(id(adapter))
+        warnings.extend(check())
+
+    return warnings
+
+
 def model_group_warnings(site) -> list[tuple[str, str]]:
     """
     Model groups listing unregistered models, as (check id, message)
@@ -2105,6 +2125,11 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, warning in dashboard_widget_warnings(site):
+        messages.append(
+            checks.Warning(warning, obj=site.__class__.__name__, id=check_id)
+        )
+
+    for check_id, warning in task_adapter_warnings(site):
         messages.append(
             checks.Warning(warning, obj=site.__class__.__name__, id=check_id)
         )

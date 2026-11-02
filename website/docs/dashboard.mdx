@@ -218,6 +218,69 @@ change its layout. When a site uses two adapters of the same class, such as
 for two queues, override the adapter's `get_id()` so their widgets get
 different IDs.
 
+An adapter can report problems with its setup by overriding `check()`: it
+returns a list of `(check_id, message)` pairs, which the system checks show
+as warnings.
+
+### Huey
+
+Content Studio ships an adapter for [Huey](https://huey.readthedocs.io/):
+`HueyAdapter` in `content_studio.contrib.huey`. Install it with the `huey`
+extra:
+
+```bash
+pip install "django-content-studio[huey]"
+```
+
+Add the page with a menu link, and Huey's stats app to `INSTALLED_APPS`:
+
+```python
+# mysite/settings.py
+INSTALLED_APPS = [
+    # ...
+    "huey.contrib.djhuey",
+    "huey.contrib.djhuey.stats",
+    "content_studio",
+]
+```
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+from content_studio.contrib.huey import HueyAdapter
+from content_studio.dashboard.tasks import TaskDashboard
+from content_studio.extensions import UserMenuLink
+
+
+class BlogStudioSite(ContentStudioSite):
+    extensions = [
+        TaskDashboard(adapter=HueyAdapter()),
+        UserMenuLink(url="/tasks/", label="Tasks", icon="ph-bold ph-queue"),
+    ]
+```
+
+The adapter reports djhuey's `HUEY`; pass `HueyAdapter(huey=...)` for
+another Huey instance. The page shows:
+
+- **Statistics**: the queued and scheduled tasks, from Huey's storage; and
+  the running tasks and the succeeded, failed and retried runs of the last
+  24 hours, from the stats app. Pass `statistics` to show fewer, and
+  `window` to count over another period.
+- **Periodic tasks**: every periodic task with its latest run and its next
+  one. Huey cannot describe a schedule, so the description is the first
+  line of the task's docstring, or its module. Override
+  `get_task_description(task_class)` to describe the schedules yourself.
+- **Recent runs**: the latest runs the workers finished. Runs that ended
+  without completing, such as revoked, expired or locked ones, show as
+  failed, with the reason. Django tasks run by Huey's Django tasks backend,
+  such as [webhook](/docs/webhooks) deliveries, show under their own name.
+
+Huey's stats app records what the workers do; without it, the page only
+shows the queued and scheduled tasks, and the periodic tasks without their
+runs, and system check `content_studio.W020` warns. The stats app keeps
+48 hours and at most 2000 events by default (its `HUEY_STATS` setting);
+on a busy queue, the counts cover less than the window.
+
 ## Widget identity
 
 Each widget gets an ID from its class and its `name`, so every worker of a
