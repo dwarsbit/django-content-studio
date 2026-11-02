@@ -55,6 +55,7 @@ Changelog = "https://github.com/dwarsbit/django-content-studio/blob/main/CHANGEL
 [project.optional-dependencies]
 excel = ["openpyxl (>=3.1,<4)"]
 images = ["pillow (>=10)"]
+huey = ["huey[stats] (>=3.5,<4)"]
 
 [tool.poetry]
 packages = [{include = "content_studio"}]

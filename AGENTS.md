@@ -44,7 +44,7 @@ content_studio/
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E029, W001-W019)
+├── checks.py            # System checks (content_studio.E001-E029, W001-W020)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
@@ -67,6 +67,7 @@ content_studio/
 ├── token_backends/
 │   └── jwt.py           # JWT token backend
 ├── contrib/
+│   ├── huey.py          # HueyAdapter: the task dashboard for a Huey queue
 │   └── password_reset/  # Password reset functionality
 ├── static/              # Static files (compiled frontend)
 ├── templates/           # Django templates

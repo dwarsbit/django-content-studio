@@ -24,6 +24,7 @@ PUBLIC_MODULES = [
     "content_studio.dashboard.activity_log",
     "content_studio.dashboard.scheduled_tasks",
     "content_studio.dashboard.tasks",
+    "content_studio.contrib.huey",
     "content_studio.extensions",
     "content_studio.widgets",
     "content_studio.formats",

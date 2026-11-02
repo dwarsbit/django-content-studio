@@ -1,8 +1,8 @@
 """
 A task dashboard that works with any task backend: an adapter reports
 the statistics and tasks of the backend, and the widgets and the
-TaskDashboard page show them. Content Studio ships no adapter for a
-real backend; write one by subclassing TaskAdapter.
+TaskDashboard page show them. Content Studio ships one for Huey
+(content_studio.contrib.huey); for another backend, subclass TaskAdapter.
 """
 
 from dataclasses import asdict, dataclass
@@ -128,6 +128,13 @@ class TaskAdapter:
 
     def get_recent_tasks(self, request, limit: int) -> list[TaskRow]:
         raise NotImplementedError
+
+    def check(self) -> list[tuple[str, str]]:
+        """
+        Problems with the adapter's setup, as (check id, message) pairs
+        that the system checks report as warnings. None by default.
+        """
+        return []
 
     def implements(self, method: str) -> bool:
         """Whether the adapter overrides one of the methods above."""

@@ -5,10 +5,15 @@
 - **Task dashboard.** `TaskDashboard` is a dashboard page with the state of
   a task backend: statistics such as queued, running and failed tasks, the
   periodic tasks and the latest runs. It works with any backend through a
-  `TaskAdapter` you write; Content Studio ships none for a real backend
-  yet. Only superusers see it by default. Its widgets,
+  `TaskAdapter`. Only superusers see it by default. Its widgets,
   `TaskStatisticWidget` and `TaskListWidget`, also work on other
-  dashboards. The demo project has one with made-up data.
+  dashboards. The demo project has one with made-up data. An adapter
+  reports setup problems as system check warnings through `check()`.
+- **Huey adapter.** `content_studio.contrib.huey.HueyAdapter` shows a Huey
+  queue on the task dashboard: its counts, periodic tasks and latest runs,
+  recorded by Huey's stats app. Install it with the `huey` extra. Without
+  the stats app, system check `content_studio.W020` warns that runs are not
+  shown.
 - **Dashboard pages.** The new `DashboardPage` extension adds a page to
   the admin with a dashboard of its own: a `path`, a `title`, an optional
   `description` and a `Dashboard` with its widgets. `is_visible(request)`
