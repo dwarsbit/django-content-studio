@@ -201,6 +201,9 @@ class AdminApiViewSet(ViewSet):
             "enabled": apps.is_installed("content_studio.notifications"),
             "retention": cs_settings.NOTIFICATION_RETENTION,
             "unread_retention": cs_settings.NOTIFICATION_UNREAD_RETENTION,
+            "digest": bool(
+                cs_settings.NOTIFICATION_EMAIL_DIGEST and cs_settings.ADMIN_URL
+            ),
         }
 
         multitenancy = cs_settings.TENANT_MODEL is not None

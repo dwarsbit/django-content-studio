@@ -22,6 +22,23 @@ export type NotificationLevel = "info" | "success" | "warning" | "error";
 
 export type NotificationFilter = "unread" | "all";
 
+/** The notifications page's filters; empty values filter nothing. */
+export interface NotificationQuery {
+  // A model label.
+  model?: string;
+  // An event key.
+  event?: string;
+  // Words that each appear in the object, the text or the actor.
+  q?: string;
+}
+
+export interface NotificationFilterOptions {
+  // The model labels of the user's notifications.
+  models: string[];
+  // Their events; a registered event's label, null for content changes.
+  events: { key: string; label: string | null }[];
+}
+
 export interface NotificationActor {
   id: Id;
   name: string;
@@ -84,10 +101,18 @@ export interface FollowedObject {
   created_at: string;
 }
 
+export interface DigestSettings {
+  enabled: boolean;
+  // Where the digest goes; empty when the account has no address.
+  email: string;
+}
+
 export interface NotificationSettings {
   models: ModelSettings[];
   events: EventSettings[];
   follows: FollowedObject[];
+  // Null when the site sends no email digest.
+  digest?: DigestSettings | null;
 }
 
 export interface FollowState {
@@ -147,28 +172,59 @@ export function useNotificationStatus() {
   });
 }
 
-/** The user's notifications, a page at a time. */
-export function useNotificationList(filter: NotificationFilter) {
+/** The query's filters that are set, as request parameters. */
+export function queryParams(query: NotificationQuery = {}) {
+  return Object.fromEntries(
+    Object.entries(query).filter(([, value]) => !!value?.trim()),
+  ) as NotificationQuery;
+}
+
+/** The user's notifications, a page at a time, optionally filtered. */
+export function useNotificationList(
+  filter: NotificationFilter,
+  query: NotificationQuery = {},
+) {
   const http = useHttp();
   const enabled = useNotificationsEnabled();
   const tenant = useTenantKey();
+  const params = queryParams(query);
 
   return useInfiniteQuery({
     enabled,
     retry: false,
-    queryKey: ["notifications", tenant, "list", filter],
+    queryKey: ["notifications", tenant, "list", filter, params],
     async queryFn({ pageParam }) {
       const { data } = await http.get<{
         results: Notification[];
         next: number | null;
       }>("/notifications", {
-        params: { filter, offset: pageParam, limit: PAGE_SIZE },
+        params: { filter, ...params, offset: pageParam, limit: PAGE_SIZE },
       });
 
       return data;
     },
     initialPageParam: 0,
     getNextPageParam: (page: { next: number | null }) => page.next,
+  });
+}
+
+/** The models and events the notifications page can filter by. */
+export function useNotificationFilterOptions() {
+  const http = useHttp();
+  const enabled = useNotificationsEnabled();
+  const tenant = useTenantKey();
+
+  return useQuery({
+    enabled,
+    retry: false,
+    queryKey: ["notifications", tenant, "filters"],
+    async queryFn() {
+      const { data } = await http.get<NotificationFilterOptions>(
+        "/notifications/filters",
+      );
+
+      return data;
+    },
   });
 }
 
@@ -349,6 +405,17 @@ export function useSaveEventSettings() {
       events: settings.events.map((event) =>
         event.key === key ? { ...event, enabled } : event,
       ),
+    }),
+  );
+}
+
+export function useSaveDigestSettings() {
+  return useSettingsMutation<{ enabled: boolean }>(
+    (http, { enabled }) =>
+      http.put("/notifications/settings/digest", { enabled }),
+    (settings, { enabled }) => ({
+      ...settings,
+      digest: settings.digest ? { ...settings.digest, enabled } : null,
     }),
   );
 }

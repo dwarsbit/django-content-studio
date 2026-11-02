@@ -397,7 +397,12 @@ class FlagTests(AdminTestCase):
 
         self.assertEqual(
             data["notifications"],
-            {"enabled": True, "retention": 90, "unread_retention": None},
+            {
+                "enabled": True,
+                "retention": 90,
+                "unread_retention": None,
+                "digest": False,
+            },
         )
 
     def test_studio_flag(self):

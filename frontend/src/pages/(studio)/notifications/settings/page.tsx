@@ -30,6 +30,7 @@ import {
   type ModelSettings,
   setToastsEnabled,
   useNotificationSettings,
+  useSaveDigestSettings,
   useSaveEventSettings,
   useSaveModelSettings,
   useUnfollow,
@@ -216,11 +217,16 @@ export function NotificationSettingsPage() {
   const saveModel = useSaveModelSettings();
   const saveEvent = useSaveEventSettings();
   const unfollow = useUnfollow();
+  const saveDigest = useSaveDigestSettings();
   const [toasts, setToasts] = useState(getToastsEnabled);
   const [saved, setSaved] = useState(false);
   const models = discover?.models ?? [];
   const onSaved = { onSuccess: () => setSaved(true) };
-  const failed = saveModel.isError || saveEvent.isError || unfollow.isError;
+  const failed =
+    saveModel.isError ||
+    saveEvent.isError ||
+    unfollow.isError ||
+    saveDigest.isError;
 
   // The grid follows the main menu's groups; models in none come last.
   const groups = (() => {
@@ -412,6 +418,34 @@ export function NotificationSettingsPage() {
             </ul>
           )}
         </Card>
+
+        {settings.digest && (
+          <section className="bg-card border rounded-xl shadow-md flex items-center gap-4 p-4">
+            <div className="flex-1 min-w-0">
+              <label
+                htmlFor="notification-digest"
+                className="text-sm font-semibold"
+              >
+                {t("notifications.settings.digest_title")}
+              </label>
+              <div className="text-sm text-muted-foreground">
+                {settings.digest.email
+                  ? t("notifications.settings.digest_description", {
+                      email: settings.digest.email,
+                    })
+                  : t("notifications.settings.digest_no_email")}
+              </div>
+            </div>
+            <Switch
+              id="notification-digest"
+              checked={settings.digest.enabled}
+              disabled={!settings.digest.email}
+              onCheckedChange={(enabled) =>
+                saveDigest.mutate({ enabled }, onSaved)
+              }
+            />
+          </section>
+        )}
 
         <section className="bg-card border rounded-xl shadow-md flex items-center gap-4 p-4">
           <div className="flex-1 min-w-0">

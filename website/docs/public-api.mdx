@@ -34,7 +34,12 @@ The public API consists of:
   command, and the requests its webhooks send: the payload with its
   `version`, and the `X-Content-Studio-*` headers;
 - the `content_studio.notifications` app's
-  `content_studio_prune_notifications` command.
+  `content_studio_prune_notifications` command, and its
+  `content_studio_send_notification_digest` command with its `--delay`
+  option;
+- the email digest's templates,
+  `content_studio/notifications/digest.txt` and `digest.html`, and the
+  context they get.
 
 Everything else may change in any release, including any name that is not
 on this page, even when you can import it.

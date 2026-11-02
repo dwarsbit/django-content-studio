@@ -44,7 +44,7 @@ content_studio/
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E031, W001-W021)
+├── checks.py            # System checks (content_studio.E001-E032, W001-W021)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
@@ -60,7 +60,7 @@ content_studio/
 │   ├── activity_log.py  # Activity logging for dashboard
 │   ├── scheduled_tasks.py
 │   └── tasks.py         # Task dashboard: TaskAdapter, its widgets and the TaskDashboard page
-├── notifications/       # Optional notifications app: models, the content_changed fan-out, register_event/notify, read filter, prune command, the admin endpoints (viewsets.py), site defaults (defaults.py), the dashboard widget
+├── notifications/       # Optional notifications app: models, the content_changed fan-out, register_event/notify, read filter, prune command, the admin endpoints (viewsets.py, with the page's filters and search), site defaults (defaults.py), the dashboard widget, the email digest (digest.py, templates in templates/content_studio/notifications)
 ├── media_library/       # Optional built-in media library app (models, migrations)
 │   └── viewsets.py      # Media library API endpoints
 ├── login_backends/

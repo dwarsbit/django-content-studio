@@ -1,0 +1,14 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate with name=name %}Hello {{ name }},{% endblocktranslate %}
+
+{% blocktranslate count count=count %}You have {{ count }} unread notification in {{ site_name }}:{% plural %}You have {{ count }} unread notifications in {{ site_name }}:{% endblocktranslate %}
+{% for item in items %}
+- {{ item.text }}{% if item.detail %}
+  {{ item.detail }}{% endif %}{% if item.url %}
+  {{ item.url }}{% endif %}
+{% endfor %}{% if rest %}
+{% blocktranslate count count=rest %}And {{ count }} more.{% plural %}And {{ count }} more.{% endblocktranslate %}
+{% endif %}
+{% translate "See all notifications:" %} {{ notifications_url }}
+
+{% translate "You get this email because these notifications are unread. Turn these emails off in your notification settings:" %} {{ settings_url }}
+{% endautoescape %}

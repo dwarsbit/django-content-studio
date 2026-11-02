@@ -242,6 +242,18 @@ How many days unread notifications are kept.
 `content_studio_prune_notifications` removes older ones. Default: `None`,
 which keeps every unread notification.
 
+### NOTIFICATION_EMAIL_DIGEST {#notification_email_digest}
+
+Whether `content_studio_send_notification_digest` emails editors the
+notifications they left unread. It needs [`ADMIN_URL`](#admin_url) for the
+links in the emails. Default: `False`. See
+[Email digest](/docs/notifications#email-digest).
+
+### ADMIN_URL {#admin_url}
+
+The admin's absolute URL, like `"https://example.com/admin/"`, for links in
+emails, which are sent outside a request. Default: `None`.
+
 ## Password reset
 
 ### PASSWORD_RESET_EXPIRATION_TIME {#password_reset_expiration_time}

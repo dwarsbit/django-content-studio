@@ -13,10 +13,12 @@ from __future__ import annotations
 from datetime import datetime
 
 from django.contrib.admin.models import ADDITION, LogEntry
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Q, TextField
+from django.db.models.functions import Cast
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework.decorators import action
@@ -31,6 +33,7 @@ from ..presence import describe_user
 from ..settings import cs_settings
 from ..utils import get_tenant_field_name, get_tenant_scoped_queryset
 from .defaults import get_defaults
+from .digest import digest_available, digest_enabled, get_email, set_digest_enabled
 from .events import CONTENT_EVENTS, get_event, get_events
 from .models import Follow, Notification, NotificationSubscription
 from .permissions import load_objects, notifications_enabled
@@ -44,6 +47,9 @@ SINGLETON_ACTIONS = ("updated",)
 PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 MAX_IDS = 500
+# A search matches every word; longer queries are cut.
+MAX_SEARCH_WORDS = 5
+MAX_SEARCH_LENGTH = 100
 
 
 def get_studio_for_label(label: str):
@@ -88,6 +94,62 @@ def parse_time(value) -> datetime:
         parsed = timezone.make_aware(parsed)
 
     return parsed
+
+
+def actor_fields() -> list[str]:
+    """The user fields a search looks at: the username and, when the
+    user model has them, the names and the email address."""
+    User = get_user_model()
+    names = {field.name for field in User._meta.get_fields()}
+    fields = [User.USERNAME_FIELD]
+
+    for name in ("first_name", "last_name", User.get_email_field_name()):
+        if name in names and name not in fields:
+            fields.append(name)
+
+    return [f"actor__{name}" for name in fields]
+
+
+def filter_notifications(queryset, params):
+    """
+    The list's filters: ?model= a model label, ?event= an event key, and
+    ?q= words that each appear in the object's name, the text, the named
+    objects or the actor.
+    """
+    label = params.get("model")
+
+    if label:
+        app_label, _, model_name = label.partition(".")
+
+        try:
+            content_type = ContentType.objects.get_by_natural_key(app_label, model_name)
+        except ContentType.DoesNotExist:
+            return queryset.none()
+
+        queryset = queryset.filter(content_type=content_type)
+
+    event = params.get("event")
+
+    if event:
+        queryset = queryset.filter(event=event)
+
+    words = (params.get("q") or "")[:MAX_SEARCH_LENGTH].split()[:MAX_SEARCH_WORDS]
+
+    if words:
+        fields = ["object_repr", "title", "body", "params_text", *actor_fields()]
+        queryset = queryset.annotate(
+            params_text=Cast("params", output_field=TextField())
+        )
+
+        for word in words:
+            match = Q()
+
+            for field in fields:
+                match |= Q(**{f"{field}__icontains": word})
+
+            queryset = queryset.filter(match)
+
+    return queryset
 
 
 def serialize_notifications(request, notifications) -> list[dict]:
@@ -178,12 +240,15 @@ class NotificationViewSet(ViewSet):
         """
         A page of the user's notifications, newest first: ?filter=unread
         (the default) or all, ?offset and ?limit; ?since leaves out the
-        ones not changed after that time (the new ones of a poll).
+        ones not changed after that time (the new ones of a poll); ?model,
+        ?event and ?q narrow it down (see filter_notifications).
         """
         queryset = visible_notifications(request).select_related("actor")
 
         if request.query_params.get("filter", "unread") == "unread":
             queryset = queryset.filter(read_at=None)
+
+        queryset = filter_notifications(queryset, request.query_params)
 
         since = request.query_params.get("since")
 
@@ -227,6 +292,40 @@ class NotificationViewSet(ViewSet):
                 "latest": latest,
             }
         )
+
+    @action(methods=["get"], detail=False, url_path="filters")
+    def filters(self, request):
+        """
+        What the page's filters offer: the models and the events of the
+        user's visible notifications, with the label of each registered
+        event (content changes are labelled by the admin).
+        """
+        visible = visible_notifications(request).order_by()
+        content_type_ids = (
+            visible.exclude(content_type=None)
+            .values_list("content_type_id", flat=True)
+            .distinct()
+        )
+        models = sorted(
+            f"{content_type.app_label}.{content_type.model}"
+            for content_type in (
+                ContentType.objects.get_for_id(pk) for pk in set(content_type_ids)
+            )
+        )
+        events = []
+
+        for key in sorted(set(visible.values_list("event", flat=True).distinct())):
+            label = None
+
+            if not key.startswith("content."):
+                try:
+                    label = str(get_event(key).label)
+                except ValueError:
+                    label = key
+
+            events.append({"key": key, "label": label})
+
+        return Response({"models": models, "events": events})
 
     @action(methods=["post"], detail=False, url_path="read")
     def read(self, request):
@@ -337,7 +436,19 @@ class NotificationViewSet(ViewSet):
             )
 
         return Response(
-            {"models": grid, "events": events, "follows": self._follows(request)}
+            {
+                "models": grid,
+                "events": events,
+                "follows": self._follows(request),
+                "digest": (
+                    {
+                        "enabled": digest_enabled(request.user),
+                        "email": get_email(request.user),
+                    }
+                    if digest_available()
+                    else None
+                ),
+            }
         )
 
     def _follows(self, request) -> list[dict]:
@@ -462,6 +573,21 @@ class NotificationViewSet(ViewSet):
             tenant=request_tenant(request),
             defaults={"enabled": enabled},
         )
+
+        return Response(status=204)
+
+    @action(methods=["put"], detail=False, url_path="settings/digest")
+    def digest_settings(self, request):
+        """Turn the email digest on or off: {"enabled": bool}."""
+        if not digest_available():
+            raise NotFound("The email digest is off.")
+
+        enabled = request.data.get("enabled")
+
+        if not isinstance(enabled, bool):
+            raise ValidationError("enabled must be true or false.")
+
+        set_digest_enabled(request.user, enabled)
 
         return Response(status=204)
 
