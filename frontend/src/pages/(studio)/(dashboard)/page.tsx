@@ -1,35 +1,12 @@
-import { type ComponentType, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { PageBody } from "@/components/ui/page-header";
 import { useDiscover } from "@/hooks/use-discover";
 import { useMe } from "@/hooks/use-me";
-import { cn, getTimeOfDay } from "@/lib/utils";
-import { type DashboardWidget, DashboardWidgetType } from "@/types";
+import { getTimeOfDay } from "@/lib/utils";
 
-import { ActivityLogWidget } from "./_components/activity-log-widget";
-import { ContentListWidget } from "./_components/content-list-widget";
-import { ScheduledTasksWidget } from "./_components/scheduled-tasks-widget";
-import { StatisticWidget } from "./_components/statistic-widget";
-
-const WIDGET_COMPONENTS: Partial<
-  Record<DashboardWidgetType, ComponentType<{ widget: DashboardWidget }>>
-> = {
-  [DashboardWidgetType.ActivityLogWidget]: ActivityLogWidget,
-  [DashboardWidgetType.StatisticWidget]: StatisticWidget,
-  [DashboardWidgetType.ScheduledTasksWidget]: ScheduledTasksWidget,
-  [DashboardWidgetType.ContentListWidget]: ContentListWidget,
-};
-
-// The grid has four columns at xl and two at md: a widget's `col_span`
-// is clamped to the columns available, so wide widgets fill the row
-// instead of overflowing it.
-const COL_SPAN: Record<number, string> = {
-  1: "",
-  2: "md:col-span-2",
-  3: "md:col-span-2 xl:col-span-3",
-  4: "md:col-span-2 xl:col-span-4",
-};
+import { DashboardGrid } from "./_components/dashboard-grid";
 
 /**
  * The dashboard: the greeting with today's date as its title, and the
@@ -67,23 +44,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
-        {discover.dashboard.widgets.map((widget) => {
-          const Comp = widget.widget_type
-            ? WIDGET_COMPONENTS[widget.widget_type]
-            : undefined;
-          const span = Math.min(Math.max(widget.col_span, 1), 4);
-
-          return Comp ? (
-            <div
-              key={widget.widget_id}
-              className={cn("min-w-0", COL_SPAN[span])}
-            >
-              <Comp widget={widget} />
-            </div>
-          ) : null;
-        })}
-      </div>
+      <DashboardGrid widgets={discover.dashboard.widgets} />
     </PageBody>
   );
 }

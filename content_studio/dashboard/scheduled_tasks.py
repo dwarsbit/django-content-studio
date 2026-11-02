@@ -43,6 +43,7 @@ class ScheduledTasksWidget(DashboardWidget):
     name = "ScheduledTasksWidget"
 
     col_span = 2
+    refresh_interval = 10
 
     def get_data(self, request):
         raise NotImplementedError("You need to implement get_data for your widget.")

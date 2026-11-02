@@ -537,6 +537,9 @@ export interface DashboardWidget {
   widget_type: DashboardWidgetType | null;
   widget_id: string;
   col_span: number;
+  // Seconds between reloads of the widget's data; null reloads only on
+  // focus and reconnect.
+  refresh_interval?: number | null;
 }
 
 export enum DashboardWidgetType {
@@ -592,6 +595,13 @@ export interface IFramePageConfig {
   sandbox: string | null;
 }
 
+export interface DashboardPageConfig {
+  path: string;
+  title: string;
+  description: string | null;
+  widgets: DashboardWidget[];
+}
+
 export interface MainMenuLinkExtension {
   extension_id: string;
   extension_type: ExtensionType.MainMenuLink;
@@ -604,6 +614,12 @@ export interface IFramePageExtension {
   config: IFramePageConfig;
 }
 
+export interface DashboardPageExtension {
+  extension_id: string;
+  extension_type: ExtensionType.DashboardPage;
+  config: DashboardPageConfig;
+}
+
 export interface MainMenuButtonExtension {
   extension_id: string;
   extension_type: ExtensionType.MainMenuButton;
@@ -611,10 +627,14 @@ export interface MainMenuButtonExtension {
 }
 
 export type Extension =
-  MainMenuLinkExtension | MainMenuButtonExtension | IFramePageExtension;
+  | MainMenuLinkExtension
+  | MainMenuButtonExtension
+  | IFramePageExtension
+  | DashboardPageExtension;
 
 export enum ExtensionType {
   MainMenuLink = "MainMenuLink",
   MainMenuButton = "MainMenuButton",
   IFramePage = "IFramePage",
+  DashboardPage = "DashboardPage",
 }

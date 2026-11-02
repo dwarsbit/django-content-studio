@@ -644,6 +644,16 @@ class ContentStudioSite:
 
             del self._registry[model]
 
+    def get_dashboard_pages(self) -> list:
+        """The site's DashboardPage extensions."""
+        from .extensions import DashboardPage
+
+        return [
+            extension
+            for extension in self.extensions or []
+            if isinstance(extension, DashboardPage)
+        ]
+
     def is_registered(self, model) -> bool:
         """
         Check the registry for the given model.
@@ -661,10 +671,13 @@ class ContentStudioSite:
         # Add login backend's view set to the
         # Content Studio router.
         self.login_backend.set_up_router()
-        # Add dashboard's view set to the
-        # Content Studio router.
-        if self.dashboard:
-            self.dashboard.set_up_router()
+        # Add the dashboards' view set to the Content Studio router:
+        # it serves the widgets of the site dashboard and of the
+        # dashboard pages.
+        if self.dashboard or self.get_dashboard_pages():
+            from .dashboard import set_up_router
+
+            set_up_router()
 
         # Global search for the command palette.
         from .router import content_studio_router

@@ -6,6 +6,7 @@ import { Link } from "react-router";
 import { useHttp } from "@/hooks/use-http";
 import { type DashboardWidget } from "@/types";
 
+import { widgetRefetchInterval } from "./refresh";
 import { ViewAll, Widget, WidgetEmpty, WidgetLoading } from "./widget";
 
 /**
@@ -17,6 +18,7 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
   const http = useHttp();
   const { data } = useQuery({
     retry: false,
+    refetchInterval: widgetRefetchInterval(widget),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     queryKey: ["dashboard", "widg", widget.widget_id],

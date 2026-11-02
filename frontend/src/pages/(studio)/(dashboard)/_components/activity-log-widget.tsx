@@ -9,6 +9,7 @@ import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
 import { type ActivityLogEntry, type DashboardWidget } from "@/types";
 
+import { widgetRefetchInterval } from "./refresh";
 import { Widget, WidgetEmpty, WidgetLoading } from "./widget";
 
 /**
@@ -22,6 +23,7 @@ export function ActivityLogWidget({ widget }: { widget: DashboardWidget }) {
   const { data: discover } = useDiscover();
   const { data } = useQuery({
     retry: false,
+    refetchInterval: widgetRefetchInterval(widget),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     queryKey: ["dashboard", "widg", widget.widget_id],

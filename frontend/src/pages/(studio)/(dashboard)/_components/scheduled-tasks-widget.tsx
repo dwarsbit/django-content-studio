@@ -15,6 +15,7 @@ import { useHttp } from "@/hooks/use-http";
 import { cn } from "@/lib/utils";
 import { type DashboardWidget, type DateTimeString } from "@/types";
 
+import { widgetRefetchInterval } from "./refresh";
 import { Widget, WidgetEmpty, WidgetLoading } from "./widget";
 
 dayjs.extend(relativeTime);
@@ -32,7 +33,7 @@ export function ScheduledTasksWidget({ widget }: { widget: DashboardWidget }) {
   const { t } = useTranslation();
   const { data } = useQuery({
     retry: false,
-    refetchInterval: 10_000,
+    refetchInterval: widgetRefetchInterval(widget),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     queryKey: ["dashboard", "widg", widget.widget_id],

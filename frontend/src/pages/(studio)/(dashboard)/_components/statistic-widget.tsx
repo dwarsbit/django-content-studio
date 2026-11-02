@@ -6,6 +6,8 @@ import { useHttp } from "@/hooks/use-http";
 import { cn } from "@/lib/utils";
 import { type DashboardWidget } from "@/types";
 
+import { widgetRefetchInterval } from "./refresh";
+
 /**
  * One number with its title and, when the widget reports one, the
  * trend as a percentage colored by its sentiment.
@@ -14,6 +16,7 @@ export function StatisticWidget({ widget }: { widget: DashboardWidget }) {
   const http = useHttp();
   const { data } = useQuery({
     retry: false,
+    refetchInterval: widgetRefetchInterval(widget),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     queryKey: ["dashboard", "widg", widget.widget_id],
