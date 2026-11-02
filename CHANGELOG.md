@@ -66,6 +66,10 @@
 - **Notifications page filters and search.** The notifications page filters
   by model and event and searches the object's name, the text, the named
   objects and who made the change. The filters are kept in the address.
+- **Dutch translations.** The notifications strings (models, digest email,
+  admin UI) and other untranslated strings are translated into Dutch.
+  The reset-code label on the password reset page now shows its English
+  text instead of its key.
 
 ## 1.5.0 (2026-11-02)
 

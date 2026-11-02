@@ -100,6 +100,7 @@
     "default_ordering": "Standaard volgorde",
     "sort_ascending": "Oplopend sorteren",
     "sort_descending": "Aflopend sorteren",
+    "trash": "Prullenbak",
     "filters": {
       "all": "Alle",
       "yes": "Ja",
@@ -415,6 +416,9 @@
     "empty_unread_description": "Nieuwe meldingen verschijnen hier. Eerdere blijven onder Alle staan.",
     "empty_all_title": "Nog geen meldingen",
     "empty_all_description": "Wijzigingen die andere redacteuren maken aan wat jij hebt aangemaakt of volgt, verschijnen hier.",
+    "empty_filtered_title": "Geen meldingen gevonden",
+    "empty_filtered_description": "Probeer andere woorden of filters.",
+    "clear_filters": "Filters wissen",
     "error_title": "De meldingen konden niet worden geladen",
     "error_description": "Controleer je verbinding en probeer het opnieuw.",
     "retry": "Opnieuw proberen",
@@ -493,10 +497,24 @@
       "followed_description": "Je krijgt een melding bij elke wijziging hieraan, wat je hierboven ook kiest.",
       "followed_empty": "Je volgt nog niets. Gebruik Volgen op een bewerkpagina.",
       "unfollow_label": "{{name}} niet meer volgen",
+      "digest_title": "Ongelezen meldingen naar mij e-mailen",
+      "digest_description": "Meldingen die je een tijdje ongelezen laat, worden naar {{email}} gestuurd, elk één keer.",
+      "digest_no_email": "Je account heeft geen e-mailadres, dus er kan geen e-mail worden verstuurd.",
       "toasts_title": "Nieuwe meldingen tonen zodra ze binnenkomen op dit apparaat",
       "toasts_description": "Een kort bericht in de hoek van de admin, alleen in deze browser. Meldingen staan altijd in de lijst."
     },
     "widget_unread_one": "{{count}} ongelezen melding",
-    "widget_unread_other": "{{count}} ongelezen meldingen"
+    "widget_unread_other": "{{count}} ongelezen meldingen",
+    "filters": {
+      "model": "Model",
+      "any_model": "Alle modellen",
+      "event": "Gebeurtenis",
+      "any_event": "Alle gebeurtenissen",
+      "created": "Aangemaakt",
+      "updated": "Bijgewerkt",
+      "deleted": "Verwijderd",
+      "restored": "Hersteld",
+      "reordered": "Verplaatst"
+    }
   }
 }
