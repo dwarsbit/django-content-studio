@@ -36,6 +36,7 @@ from django.utils import timezone
 
 from .. import VERSION
 from ..settings import cs_settings
+from .failures import notify_failure
 from .models import Webhook, WebhookDelivery
 
 try:
@@ -371,6 +372,16 @@ def deliver(delivery_id, last=False) -> bool:
         )
 
     WebhookDelivery.objects.filter(pk=delivery.pk).update(**fields)
+
+    if fields.get("status") == WebhookDelivery.Status.FAILED:
+        delivery.error = fields["error"]
+
+        try:
+            notify_failure(delivery)
+        except Exception:
+            logger.exception(
+                "Could not notify about the failed webhook delivery %s", delivery.pk
+            )
 
     return True
 

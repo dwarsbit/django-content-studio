@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet } from "react-router";
 
 import { CommandPalette } from "@/components/command-palette";
+import { NotificationSync } from "@/components/notifications/sync";
 import { NotificationToasts } from "@/components/notifications/toasts";
 import { useNotificationsEnabled } from "@/hooks/use-notifications";
 import { TenantProvider } from "@/tenant";
@@ -36,7 +37,12 @@ export function StudioLayout() {
           </main>
         </div>
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-        {notifications && <NotificationToasts />}
+        {notifications && (
+          <>
+            <NotificationSync />
+            <NotificationToasts />
+          </>
+        )}
       </>
     </TenantProvider>
   );

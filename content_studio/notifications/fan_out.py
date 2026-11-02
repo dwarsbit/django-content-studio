@@ -4,7 +4,8 @@ The content_changed receiver: who is notified about a batch of changes.
 A user is notified about a change when they follow the object, when
 they subscribed to the event on every object of the model, or when they
 created the object and get that event for their own objects (without a
-stored choice: updated, deleted and restored). Never about their own
+stored choice: updated, deleted and restored, or what the site's
+get_default_subscriptions hook gives them). Never about their own
 changes, and only on models they may view.
 
 A batch writes at most one notification per recipient, model, action
@@ -30,6 +31,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
+from .defaults import DefaultsCache
 from .events import CONTENT_EVENTS, DEFAULT_CONTENT_ACTIONS, FOLLOW_ONLY_ACTIONS
 from .models import Follow, Notification, NotificationSubscription
 from .permissions import (
@@ -127,11 +129,27 @@ def fan_out(changes: list[FlatChange]) -> int:
     # for every model, with or without a creator field. Your own
     # creation never notifies you, and reorders only notify followers.
     creators = {}
-    creator_actions = set(DEFAULT_CONTENT_ACTIONS) | {
-        row.event.removeprefix("content.")
-        for row in subscriptions.values()
-        if row.enabled
-    }
+    defaults = DefaultsCache()
+    staff = None
+
+    if defaults.overridden:
+        # The site's defaults can notify anyone without a stored choice,
+        # so every active staff user is a candidate; their groups are
+        # prefetched for the hook.
+        staff = {
+            user.pk: user
+            for user in get_user_model()
+            ._default_manager.filter(is_active=True, is_staff=True)
+            .prefetch_related("groups")
+        }
+        creator_actions = set(CONTENT_EVENTS)
+    else:
+        creator_actions = set(DEFAULT_CONTENT_ACTIONS) | {
+            row.event.removeprefix("content.")
+            for row in subscriptions.values()
+            if row.enabled
+        }
+
     creator_actions -= {"created", *FOLLOW_ONLY_ACTIONS}
 
     if any(key[1] in creator_actions for key in groups):
@@ -147,6 +165,7 @@ def fan_out(changes: list[FlatChange]) -> int:
 
     for (content_type_id, action, tenant), group in groups.items():
         event = CONTENT_EVENTS[action]
+        model = ContentType.objects.get_for_id(content_type_id).model_class()
         recipients: dict[Any, list[FlatChange]] = defaultdict(list)
         everything = set()
 
@@ -163,13 +182,29 @@ def fan_out(changes: list[FlatChange]) -> int:
                 and row.scope == NotificationSubscription.Scope.ALL
             }
 
+            if staff is not None:
+                everything |= {
+                    user_id
+                    for user_id, user in staff.items()
+                    if (user_id, content_type_id, event, tenant) not in subscriptions
+                    and defaults.get(user).for_model(model).includes(action)
+                }
+
         for object_id, change in group.items():
             users = set(everything) | followers.get((content_type_id, object_id), set())
             creator = creators.get((content_type_id, object_id))
 
             if creator is not None and action not in FOLLOW_ONLY_ACTIONS:
                 row = subscriptions.get((creator, content_type_id, event, tenant))
-                enabled = row.enabled if row else action in DEFAULT_CONTENT_ACTIONS
+
+                if row is not None:
+                    enabled = row.enabled
+                elif staff is not None:
+                    enabled = creator in staff and defaults.get(
+                        staff[creator]
+                    ).for_model(model).includes(action, creator=True)
+                else:
+                    enabled = action in DEFAULT_CONTENT_ACTIONS
 
                 if enabled:
                     users.add(creator)
@@ -186,12 +221,16 @@ def fan_out(changes: list[FlatChange]) -> int:
         return 0
 
     user_ids = {user_id for recipients in matches.values() for user_id in recipients}
-    users = {
-        user.pk: user
-        for user in get_user_model()._default_manager.filter(
-            pk__in=user_ids, is_active=True, is_staff=True
-        )
-    }
+
+    if staff is not None:
+        users = staff
+    else:
+        users = {
+            user.pk: user
+            for user in get_user_model()._default_manager.filter(
+                pk__in=user_ids, is_active=True, is_staff=True
+            )
+        }
 
     notifications = []
 

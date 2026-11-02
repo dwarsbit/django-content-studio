@@ -18,7 +18,7 @@ The public API consists of:
   `get_relation_display`, `get_created_result`, `get_duplicate_initial`,
   `get_tenants`,
   `get_thumbnail`, `get_media_serializer_fields`, `get_media_metadata`,
-  `crop_image` and `reset_crop`;
+  `get_default_subscriptions`, `crop_image` and `reset_crop`;
 - the documented options and methods of blocks: the `Meta` options of
   `Block`, `get_context` and `get_template_name`, and the
   [values of a block field](/docs/content/block-fields#render-blocks-in-templates)
@@ -284,6 +284,12 @@ The notifications app's events: register an event, and notify users of it.
 
 - `notify`
 - `register_event`
+
+## `content_studio.notifications.dashboard`
+
+The notifications app's dashboard widget.
+
+- `NotificationsWidget`
 
 ## `content_studio.notifications.models`
 

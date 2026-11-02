@@ -243,7 +243,8 @@ A response with a 2xx status code counts as delivered. Anything else, such as
 a timeout or a 503, is retried by `content_studio_deliver_webhooks`, after 1,
 4, 16 and 64 minutes. After [`WEBHOOK_MAX_ATTEMPTS`](/docs/settings#webhook_max_attempts)
 attempts, the delivery is marked as failed and a warning is logged to the
-`content_studio.webhooks` logger. **Retry** in the delivery log makes one
+`content_studio.webhooks` logger. With the [notifications app](/docs/notifications#built-in-events)
+installed, editors who may change the webhook are also notified. **Retry** in the delivery log makes one
 more attempt. The same command removes finished
 deliveries after [`WEBHOOK_DELIVERY_RETENTION`](/docs/settings#webhook_delivery_retention)
 days.

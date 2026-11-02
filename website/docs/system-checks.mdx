@@ -71,3 +71,4 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.W018` | [Password reset](/docs/authentication#password-reset) emails sent during the request, because no task backend runs Django tasks in a worker. A deployment check: `manage.py check --deploy` reports it. |
 | `content_studio.W019` | `CoverImageWidget` on a field that is not a `MediaField` to the media library model. The widget edits one media item. |
 | `content_studio.W020` | A [Huey task dashboard](/docs/dashboard#huey) without Huey's stats app, so it cannot show runs, durations or errors. |
+| `content_studio.W021` | A [`NotificationsWidget`](/docs/notifications#a-dashboard-widget) on a site without `content_studio.notifications` in `INSTALLED_APPS`; it is not shown. |

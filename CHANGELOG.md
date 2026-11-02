@@ -36,6 +36,23 @@
   saved as they are made.
 - **Follow.** The edit page's header has a Follow button: following an
   object notifies the editor about every change to it.
+- **One polling tab per browser.** With several tabs of the admin open, one
+  visible tab asks for new notifications and shares the answer with the
+  others; marking notifications as read in one tab updates them all.
+  Browsers without `BroadcastChannel` or Web Locks keep polling in every
+  visible tab.
+- **Notification defaults.** Override
+  `ContentStudioSite.get_default_subscriptions(user)` to set what editors
+  get before they choose, per model (which changes, about every object or
+  their own) and per registered event, for example per group. An editor's
+  own choice always wins, and the settings page shows the defaults.
+- **Webhook failures notify.** With both apps installed, a webhook delivery
+  that fails after its last attempt notifies the editors who may change the
+  webhook (event `webhooks.delivery_failed`, on by default). A webhook that
+  keeps failing bumps its unread notification.
+- **Notifications widget.** `NotificationsWidget` shows the editor's latest
+  notifications on a dashboard, with the unread count. System check
+  `content_studio.W021` reports it on a site without the notifications app.
 
 ## 1.5.0 (2026-11-02)
 

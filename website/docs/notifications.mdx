@@ -57,7 +57,35 @@ editor gets a notification settings page.
   change to that object. On narrow screens it is in the more actions menu.
 
 The admin asks for new notifications every 30 seconds while the browser tab
-is visible, and pauses while it is in the background.
+is visible, and pauses while it is in the background. With several tabs of
+the admin open in one browser, one visible tab asks and shares the answer
+with the others, and marking a notification as read in one tab marks it in
+all of them.
+
+## A dashboard widget
+
+`NotificationsWidget` shows the editor's latest notifications on the
+dashboard, unread ones marked, with the number of unread ones and a link to
+all of them. It updates when a new notification arrives. `limit` sets how
+many it shows, 5 by default and at most 20; `title` and `description`
+replace its texts.
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+from content_studio.dashboard import Dashboard
+from content_studio.notifications.dashboard import NotificationsWidget
+
+
+class BlogStudioSite(ContentStudioSite):
+    dashboard = Dashboard(widgets=[NotificationsWidget(limit=8)])
+
+
+admin_site = BlogStudioSite()
+```
+
+System check `content_studio.W021` reports the widget on a site without the
+notifications app.
 
 ## What notifies whom
 
@@ -76,6 +104,50 @@ On their notification settings page, editors choose per model:
 Every change on the page is saved as it is made. Followed objects notify
 the editor about every change, whatever the settings say, and are listed on
 the same page with a button to stop following them.
+
+## Change the defaults
+
+Override `get_default_subscriptions(user)` on your site to change what an
+editor gets before they choose, for example per group. It returns a dict: a
+model maps to the changes and whose objects they are about, a registered
+event's key to `True` or `False`.
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+
+from blog.models import Article
+
+
+class BlogStudioSite(ContentStudioSite):
+    def get_default_subscriptions(self, user):
+        if any(group.name == "Editors" for group in user.groups.all()):
+            return {
+                Article: {"events": ["created", "updated"], "scope": "all"},
+                "blog.article_submitted": True,
+            }
+
+        return {}
+
+
+admin_site = BlogStudioSite()
+```
+
+- `events`: any of `"created"`, `"updated"`, `"deleted"` and
+  `"restored"`.
+- `scope`: `"all"` for every object of the model, or `"mine"` (the default)
+  for the objects the editor created.
+
+Models and events you leave out keep the defaults above. An editor's own
+choice always wins, and the settings page shows the defaults until they make
+one, so changing the method changes what every editor without a choice of
+their own gets. Required events stay on.
+
+The method is called for every active staff user when a change notifies
+anyone, with the user's groups loaded: keep it to what it can read from the
+user, as in the example, without queries of its own per user.
+
+## Rules that always hold
 
 Some rules hold whatever editors choose:
 
@@ -187,6 +259,14 @@ def submit_for_review(request, article):
 Only active staff users are notified. Called inside a transaction, `notify`
 writes the notifications once the transaction commits, and not at all when
 it rolls back.
+
+## Built-in events
+
+With the [webhooks app](/docs/webhooks) installed, **Webhook delivery
+failed** notifies the editors who may change a webhook when one of its
+deliveries fails after the last attempt. It is on by default, and editors
+turn it off on the settings page. A webhook that keeps failing bumps its
+unread notification rather than adding one per delivery.
 
 ## Retention
 

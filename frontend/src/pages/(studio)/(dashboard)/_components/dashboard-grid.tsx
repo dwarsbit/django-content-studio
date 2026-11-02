@@ -5,6 +5,7 @@ import { type DashboardWidget, DashboardWidgetType } from "@/types";
 
 import { ActivityLogWidget } from "./activity-log-widget";
 import { ContentListWidget } from "./content-list-widget";
+import { NotificationsWidget } from "./notifications-widget";
 import { ScheduledTasksWidget } from "./scheduled-tasks-widget";
 import { StatisticWidget } from "./statistic-widget";
 
@@ -15,6 +16,7 @@ const WIDGET_COMPONENTS: Partial<
   [DashboardWidgetType.StatisticWidget]: StatisticWidget,
   [DashboardWidgetType.ScheduledTasksWidget]: ScheduledTasksWidget,
   [DashboardWidgetType.ContentListWidget]: ContentListWidget,
+  [DashboardWidgetType.NotificationsWidget]: NotificationsWidget,
 };
 
 // The grid has four columns at xl and two at md: a widget's `col_span`

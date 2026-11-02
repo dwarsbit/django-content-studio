@@ -13,8 +13,15 @@ test("the dashboard shows the configured widgets", async ({ page }) => {
     page.getByRole("heading", { name: "Latest articles" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: /Hello, Content Studio/ }),
+    page.getByRole("link", { name: /^Hello, Content Studio/ }),
   ).toBeVisible();
+
+  // Notifications widget with the seeded notification
+  const notifications = page.locator("section", {
+    has: page.getByRole("heading", { name: "Notifications" }),
+  });
+  await expect(notifications.getByText("1 unread notification")).toBeVisible();
+  await expect(notifications.getByRole("listitem")).toHaveCount(1);
 });
 
 test("the task dashboard shows the demo adapter's tasks", async ({ page }) => {

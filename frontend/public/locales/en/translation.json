@@ -471,7 +471,7 @@
       "error": "The notification settings could not be loaded",
       "tenant": "These choices apply to {{tenant}}.",
       "content_title": "Content changes",
-      "content_description": "Get notified when other editors change content. Your own changes never notify you. Until you choose otherwise, you are notified when objects you created are updated, deleted or restored.",
+      "content_description": "Get notified when other editors change content. Your own changes never notify you. Until you choose otherwise, the defaults shown below apply: usually updates, deletions and restores of the objects you created.",
       "model": "Model",
       "which": "Which ones",
       "scope_all": "All",
@@ -496,6 +496,8 @@
       "unfollow_label": "Unfollow {{name}}",
       "toasts_title": "Show new notifications as they arrive on this device",
       "toasts_description": "A short message in the corner of the admin, in this browser only. Notifications always appear in the list."
-    }
+    },
+    "widget_unread_one": "{{count}} unread notification",
+    "widget_unread_other": "{{count}} unread notifications"
   }
 }

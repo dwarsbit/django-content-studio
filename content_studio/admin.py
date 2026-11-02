@@ -783,6 +783,28 @@ class ContentStudioSite:
         """
         return tenant_model.objects.all()
 
+    def get_default_subscriptions(self, user) -> dict:
+        """
+        What the user is notified about without a choice of their own
+        (with the notifications app installed). Return a dict: a model
+        class maps to the changes and whose objects they are about,
+
+            {Article: {"events": ["created", "updated"], "scope": "all"}}
+
+        with changes from "created", "updated", "deleted" and "restored"
+        and scope "all" (every object) or "mine" (the objects the user
+        created, the default); a registered event's key maps to True or
+        False. Models and events left out keep the built-in default:
+        updates, deletions and restores of the objects the user created,
+        and the event's own default. A user's own choice on the
+        notification settings page always wins, and required events stay
+        on.
+
+        Called for every active staff user when a change is fanned out,
+        so keep it cheap: the user's groups are prefetched there.
+        """
+        return {}
+
 
 admin_site = ContentStudioSite()
 

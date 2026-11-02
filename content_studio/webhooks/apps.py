@@ -13,7 +13,9 @@ class ContentStudioWebhooksConfig(AppConfig):
     def ready(self):
         from ..signals import content_changed
         from .delivery import create_deliveries
+        from .failures import register_failure_event
 
         content_changed.connect(
             create_deliveries, dispatch_uid="content_studio_webhooks"
         )
+        register_failure_event()

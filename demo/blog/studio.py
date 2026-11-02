@@ -10,6 +10,7 @@ from content_studio.admin import ContentStudioSite
 from content_studio.dashboard import Dashboard
 from content_studio.dashboard.tasks import TaskDashboard
 from content_studio.extensions import UserMenuLink
+from content_studio.notifications.dashboard import NotificationsWidget
 
 from .dashboard import ArticleCountWidget, LatestArticlesWidget
 from .task_queue import DemoTaskAdapter
@@ -17,7 +18,11 @@ from .task_queue import DemoTaskAdapter
 
 class DemoStudioSite(ContentStudioSite):
     dashboard = Dashboard(
-        widgets=[ArticleCountWidget(), LatestArticlesWidget()],
+        widgets=[
+            ArticleCountWidget(),
+            LatestArticlesWidget(),
+            NotificationsWidget(),
+        ],
     )
     extensions = [
         TaskDashboard(adapter=DemoTaskAdapter()),

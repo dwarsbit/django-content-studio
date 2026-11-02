@@ -550,6 +550,7 @@ export enum DashboardWidgetType {
   ActivityLogWidget = "ActivityLogWidget",
   ScheduledTasksWidget = "ScheduledTasksWidget",
   ContentListWidget = "ContentListWidget",
+  NotificationsWidget = "NotificationsWidget",
 }
 
 export interface ActivityLogEntry {

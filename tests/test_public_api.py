@@ -43,6 +43,7 @@ PUBLIC_MODULES = [
     "content_studio.webhooks.extensions",
     "content_studio.notifications",
     "content_studio.notifications.models",
+    "content_studio.notifications.dashboard",
 ]
 
 

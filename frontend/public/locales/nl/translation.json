@@ -470,7 +470,7 @@
       "error": "De instellingen voor meldingen konden niet worden geladen",
       "tenant": "Deze keuzes gelden voor {{tenant}}.",
       "content_title": "Wijzigingen aan content",
-      "content_description": "Krijg een melding als andere redacteuren content wijzigen. Je eigen wijzigingen geven je nooit een melding. Tot je iets anders kiest, krijg je een melding als objecten die jij hebt aangemaakt worden bijgewerkt, verwijderd of hersteld.",
+      "content_description": "Krijg een melding als andere redacteuren content wijzigen. Je eigen wijzigingen geven je nooit een melding. Tot je iets anders kiest, gelden de standaardinstellingen hieronder: meestal bijwerkingen, verwijderingen en herstellingen van objecten die jij hebt aangemaakt.",
       "model": "Model",
       "which": "Welke",
       "scope_all": "Alle",
@@ -495,6 +495,8 @@
       "unfollow_label": "{{name}} niet meer volgen",
       "toasts_title": "Nieuwe meldingen tonen zodra ze binnenkomen op dit apparaat",
       "toasts_description": "Een kort bericht in de hoek van de admin, alleen in deze browser. Meldingen staan altijd in de lijst."
-    }
+    },
+    "widget_unread_one": "{{count}} ongelezen melding",
+    "widget_unread_other": "{{count}} ongelezen meldingen"
   }
 }
