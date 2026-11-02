@@ -64,12 +64,14 @@ def test_dashboard_serializes_widgets():
                 "widget_type": "StatisticWidget",
                 "widget_id": TotalArticlesWidget().widget_id,
                 "col_span": 1,
+                "refresh_interval": None,
             },
             {
                 "name": "SpacingWidget",
                 "widget_type": "SpacingWidget",
                 "widget_id": SpacingWidget().widget_id,
                 "col_span": 2,
+                "refresh_interval": None,
             },
         ]
     }

@@ -31,13 +31,7 @@ class Dashboard:
         self.widgets = kwargs.get("widgets", [])
 
     def set_up_router(self):
-        from content_studio.router import content_studio_router
-
-        content_studio_router.register(
-            "api/dashboard",
-            DashboardViewSet,
-            basename="content_studio_dashboard",
-        )
+        set_up_router()
 
     def serialize(self):
         return {
@@ -47,6 +41,7 @@ class Dashboard:
                     "widget_type": w.widget_type,
                     "widget_id": w.widget_id,
                     "col_span": w.col_span,
+                    "refresh_interval": w.refresh_interval,
                 }
                 for w in self.widgets
             ]
@@ -66,17 +61,31 @@ class DashboardViewSet(ViewSet):
         admin_site = cs_settings.ADMIN_SITE
 
         self.dashboard = admin_site.dashboard
+        self.extensions = getattr(admin_site, "extensions", None) or []
         self.authentication_classes = [
             admin_site.token_backend.active_backend.authentication_class
         ]
 
+    def get_widgets(self, request):
+        """
+        The widgets the request may load: the site dashboard's and
+        those of the dashboard pages the request may see.
+        """
+        from content_studio.extensions import DashboardPage
+
+        if self.dashboard:
+            yield from self.dashboard.widgets or []
+
+        for extension in self.extensions:
+            if isinstance(extension, DashboardPage) and extension.is_visible(request):
+                yield from extension.dashboard.widgets or []
+
     @action(detail=False, url_path="widgets/(?P<widget_id>[^/.]+)")
     def get(self, request, widget_id=None):
-        widget = None
-
-        for w in self.dashboard.widgets:
-            if widget_id == str(w.widget_id):
-                widget = w
+        widget = next(
+            (w for w in self.get_widgets(request) if widget_id == str(w.widget_id)),
+            None,
+        )
 
         if not widget:
             raise NotFound()
@@ -90,6 +99,17 @@ class DashboardViewSet(ViewSet):
         return Response(data=data)
 
 
+def set_up_router():
+    """Register the widget data endpoint, shared by every dashboard."""
+    from content_studio.router import content_studio_router
+
+    content_studio_router.register(
+        "api/dashboard",
+        DashboardViewSet,
+        basename="content_studio_dashboard",
+    )
+
+
 class DashboardWidget:
     # How the admin shows the widget: one of the built-in widget types.
     # Set by the built-in widgets; subclasses inherit it.
@@ -97,6 +117,9 @@ class DashboardWidget:
     # The widget's name, part of its derived ID; subclasses may change it.
     name = None
     col_span = 1
+    # Seconds between reloads of the widget's data while it is shown;
+    # None reloads only when the editor returns to the admin.
+    refresh_interval = None
     widget_id = None
 
     def __init__(self, widget_id=None):

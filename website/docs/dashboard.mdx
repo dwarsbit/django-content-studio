@@ -79,6 +79,25 @@ CONTENT_STUDIO = {
 serializer that validates it. A widget's `col_span` sets how many grid
 columns it spans.
 
+A widget loads its data when the dashboard opens and when the editor returns
+to the admin. Set `refresh_interval` to reload it every so many seconds
+while it is shown, such as the length of a task queue:
+
+```python
+class QueuedTasksWidget(StatisticWidget):
+    refresh_interval = 10
+
+    def get_data(self, request):
+        return {"title": "Queued tasks", "value": count_queued_tasks()}
+```
+
+`ScheduledTasksWidget` reloads every 10 seconds by default. System check
+`content_studio.E029` reports an interval that is not a positive number.
+
+The start page is not the only dashboard: a
+[`DashboardPage`](/docs/extensions#dashboardpage) adds a page to the admin
+with a dashboard of its own.
+
 ## Built-in widgets
 
 - **`StatisticWidget`**: one number with a title. `get_data` returns

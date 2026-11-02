@@ -30,6 +30,7 @@ class DjangoContentStudioConfig(AppConfig):
         from django.db.models.signals import post_delete
 
         from . import checks  # noqa: F401 -- registers the system checks
+        from .media_library.cropping import delete_original
         from .thumbnails import delete_thumbnails_of_deleted_item
         from .utils import log
 
@@ -50,6 +51,11 @@ class DjangoContentStudioConfig(AppConfig):
         # the routes always exist.
         admin_site = cs_settings.ADMIN_SITE
         admin_site.setup()
+
+        # A cropped media item's original goes with the item.
+        post_delete.connect(
+            delete_original, dispatch_uid="content_studio_delete_media_original"
+        )
         self._create_crud_api()
 
         # The boot log and PyPI version check are decorative: show them

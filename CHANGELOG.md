@@ -2,6 +2,16 @@
 
 ## 1.5.0 (unreleased)
 
+- **Dashboard pages.** The new `DashboardPage` extension adds a page to
+  the admin with a dashboard of its own: a `path`, a `title`, an optional
+  `description` and a `Dashboard` with its widgets. `is_visible(request)`
+  decides who sees the page, and its widgets load their data only for
+  them. Widget IDs must be unique across the start page and the dashboard
+  pages (`content_studio.E004`); system check `content_studio.E028`
+  reports a path that one of the admin's own pages uses.
+- **Widget refresh.** A dashboard widget's `refresh_interval` reloads its
+  data every so many seconds while it is shown. System check
+  `content_studio.E029` reports an interval that is not a positive number.
 - **User menu extensions.** `UserMenuLink` and `UserMenuButton` add links
   and buttons to the user menu, between the theme and logging out. They
   take the same options as `MainMenuLink` and `MainMenuButton`.
@@ -25,6 +35,19 @@
 - ⚠️ **Breaking:** the site's `get_thumbnail` hook takes the size:
   `get_thumbnail(obj, size="small")`, where `size` is `"small"` or
   `"large"`. Add the argument to your override.
+- **Image cropping, built in.** With the `images` extra installed and a
+  `metadata` field on the media model (the built-in `Media` model has one),
+  editors can crop images without a `crop_image` hook of your own. A crop is
+  cut from the image at full size, never resized, and becomes the item's
+  file; the original is kept and named in the item's metadata under
+  `"crop"`, together with the crop as percentages of the original. Cropping
+  again starts from the original, and **Reset to original** in the crop
+  dialog puts it back. The focal point moves along with a crop or reset; a
+  focal point outside a new crop moves to its nearest edge. Replacing or
+  deleting the item removes the original, and
+  `manage.py content_studio_media_metadata --all` keeps the crop. Your own
+  `crop_image` method still replaces the built-in crop, and the new
+  `reset_crop(obj)` hook undoes a crop.
 
 ## 1.4.0 (2026-11-01)
 

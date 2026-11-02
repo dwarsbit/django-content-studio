@@ -481,6 +481,17 @@ export interface MediaItem {
   alt_text: string;
   type: "file" | "image" | "video" | "audio";
   size: number;
+  // A cropped image's original and the crop on it, as percentages of
+  // the original; null when the image is not cropped.
+  original?: { url: string; crop: CropBox } | null;
+}
+
+// A crop as the server stores it: numbers, percentages of the original.
+export interface CropBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 /**
@@ -526,6 +537,9 @@ export interface DashboardWidget {
   widget_type: DashboardWidgetType | null;
   widget_id: string;
   col_span: number;
+  // Seconds between reloads of the widget's data; null reloads only on
+  // focus and reconnect.
+  refresh_interval?: number | null;
 }
 
 export enum DashboardWidgetType {
@@ -582,6 +596,13 @@ export interface IFramePageConfig {
   sandbox: string | null;
 }
 
+export interface DashboardPageConfig {
+  path: string;
+  title: string;
+  description: string | null;
+  widgets: DashboardWidget[];
+}
+
 export interface MainMenuLinkExtension {
   extension_id: string;
   extension_type: ExtensionType.MainMenuLink;
@@ -592,6 +613,12 @@ export interface IFramePageExtension {
   extension_id: string;
   extension_type: ExtensionType.IFramePage;
   config: IFramePageConfig;
+}
+
+export interface DashboardPageExtension {
+  extension_id: string;
+  extension_type: ExtensionType.DashboardPage;
+  config: DashboardPageConfig;
 }
 
 export interface MainMenuButtonExtension {
@@ -617,7 +644,8 @@ export type Extension =
   | MainMenuButtonExtension
   | UserMenuLinkExtension
   | UserMenuButtonExtension
-  | IFramePageExtension;
+  | IFramePageExtension
+  | DashboardPageExtension;
 
 export enum ExtensionType {
   MainMenuLink = "MainMenuLink",
@@ -625,4 +653,5 @@ export enum ExtensionType {
   UserMenuLink = "UserMenuLink",
   UserMenuButton = "UserMenuButton",
   IFramePage = "IFramePage",
+  DashboardPage = "DashboardPage",
 }

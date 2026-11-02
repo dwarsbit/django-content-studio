@@ -18,6 +18,7 @@ from . import __version__
 from .admin import AdminSerializer, ModelStudio, ModelGroup
 from .exceptions import NotConfigured
 from .extensions import MainMenuButton
+from .media_library.cropping import get_crop_hook
 from .media_library.metadata import get_metadata_attr, get_properties_attr
 from .permissions import IsActiveStaff
 from .serializers import ModelSerializer, get_session_user_serializer
@@ -169,9 +170,11 @@ class AdminApiViewSet(ViewSet):
         data["media_library"] = {
             "enabled": media_model is not None,
             "folders": folder_model is not None,
-            # Cropping is offered when the site defines the
-            # crop_image(obj, crop_info) hook.
-            "crop": callable(getattr(self.admin_site, "crop_image", None)),
+            # Cropping is offered when the site's crop_image hook can
+            # run: its own, or the built-in one (Pillow and metadata).
+            "crop": get_crop_hook(self.admin_site, "crop_image") is not None,
+            # Resetting a crop, through the site's reset_crop hook.
+            "crop_reset": get_crop_hook(self.admin_site, "reset_crop") is not None,
             # The media item attribute holding the properties editors set,
             # such as an image's focal point; None when off.
             "properties": get_properties_attr(),

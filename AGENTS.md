@@ -44,7 +44,7 @@ content_studio/
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E027, W001-W019)
+├── checks.py            # System checks (content_studio.E001-E029, W001-W019)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
@@ -309,7 +309,7 @@ Forms are defined using `FormSet`, `FormSetGroup`, `Field` and `Component` class
 
 ### Extensions
 
-Content Studio supports extensions for adding custom functionality: `MainMenuLink` and `IFramePage` in `extensions.py` (base class `BaseExtension`, internal).
+Content Studio supports extensions for adding custom functionality: `MainMenuLink`, `MainMenuButton`, `IFramePage` and `DashboardPage` in `extensions.py` (base class `BaseExtension`, internal).
 
 ### Deterministic IDs
 

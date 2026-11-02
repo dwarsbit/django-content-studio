@@ -1,10 +1,11 @@
 import uuid
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from .form import ButtonResult
 from .utils import derive_uuid
 
 __all__ = [
+    "DashboardPage",
     "IFramePage",
     "MainMenuButton",
     "MainMenuLink",
@@ -261,5 +262,79 @@ class IFramePage(BaseExtension):
                 "path": self.path,
                 "iframe_url": self.iframe_url,
                 "sandbox": self.sandbox,
+            },
+        }
+
+
+class DashboardPage(BaseExtension):
+    """
+    A page in the admin with its own dashboard: a title, an optional
+    description and a grid of dashboard widgets.
+
+        class BlogStudioSite(ContentStudioSite):
+            extensions = [
+                DashboardPage(
+                    path="reports/",
+                    title=_("Reports"),
+                    dashboard=Dashboard(widgets=[TotalArticlesWidget()]),
+                ),
+            ]
+
+    Link to the page with a menu link to its path. is_visible(request)
+    decides who sees the page; it is checked again whenever one of its
+    widgets loads its data.
+    """
+
+    extension_type = "DashboardPage"
+    path: str
+    title: str
+    description: Optional[str] = None
+    dashboard: Any
+
+    def __init__(
+        self,
+        path: str = None,
+        title: str = None,
+        dashboard: Any = None,
+        description: str = None,
+        extension_id: uuid.UUID = None,
+    ):
+        # Arguments override the class attributes, so subclasses can
+        # set defaults. Set before super().__init__(): get_id_parts()
+        # reads the path.
+        if path is not None:
+            self.path = path
+        if title is not None:
+            self.title = title
+        if dashboard is not None:
+            self.dashboard = dashboard
+        if description is not None:
+            self.description = description
+
+        if not getattr(self, "path", None):
+            raise ValueError("A dashboard page needs a path.")
+        if not getattr(self, "title", None):
+            raise ValueError("A dashboard page needs a title.")
+        if getattr(self, "dashboard", None) is None:
+            raise ValueError("A dashboard page needs a dashboard.")
+
+        super().__init__(extension_id)
+
+    def get_id_parts(self):
+        return (self.path,)
+
+    def is_visible(self, request) -> bool:
+        return True
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "config": {
+                "path": self.path,
+                "title": str(self.title),
+                "description": (
+                    None if self.description is None else str(self.description)
+                ),
+                **self.dashboard.serialize(),
             },
         }

@@ -5,8 +5,8 @@ sidebar_position: 10
 # 🔌 Extensions
 
 Extensions add links, buttons and pages to the admin's menus: a link to an
-external tool, a button that runs your code, or another web application shown
-inside the admin.
+external tool, a button that runs your code, another web application shown
+inside the admin, or a page with a dashboard of its own.
 
 ```python
 # mysite/studio.py
@@ -150,6 +150,54 @@ IFramePage(
 
 You choose the page the iframe shows, so the admin trusts it to that extent:
 a page that may navigate the admin or open dialogs needs `sandbox=None`.
+
+## DashboardPage
+
+A page in the admin with a [dashboard](/docs/dashboard) of its own, such as a
+screen of task queue statistics next to the start page. `path` is the page's
+address under the admin's URL prefix, `title` its heading and `dashboard` a
+`Dashboard` with its widgets. An optional `description` shows under the
+title. Link to the page with a menu link to its path.
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+from content_studio.dashboard import Dashboard
+from content_studio.extensions import DashboardPage
+
+from blog.dashboard import LatestArticlesWidget, PublishedArticlesWidget
+
+
+class ReportsPage(DashboardPage):
+    def is_visible(self, request):
+        return request.user.is_superuser
+
+
+class BlogStudioSite(ContentStudioSite):
+    extensions = [
+        ReportsPage(
+            path="reports/",
+            title="Reports",
+            description="How the blog is doing.",
+            dashboard=Dashboard(
+                widgets=[PublishedArticlesWidget(), LatestArticlesWidget()]
+            ),
+        ),
+    ]
+
+
+admin_site = BlogStudioSite()
+```
+
+`is_visible(request)` decides who sees the page. By default every staff user
+does. Content Studio checks it again whenever one of the page's widgets loads
+its data, so the widgets of a hidden page show nothing.
+
+The page's widgets work as on the start page. Their IDs must be unique
+across the start page and every dashboard page; system check
+`content_studio.E004` reports duplicates. A path that one of the admin's own
+pages uses, such as `content/` or `media-library/`, is reported by system
+check `content_studio.E028`.
 
 ## Identity
 

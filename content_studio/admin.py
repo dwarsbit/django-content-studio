@@ -644,6 +644,16 @@ class ContentStudioSite:
 
             del self._registry[model]
 
+    def get_dashboard_pages(self) -> list:
+        """The site's DashboardPage extensions."""
+        from .extensions import DashboardPage
+
+        return [
+            extension
+            for extension in self.extensions or []
+            if isinstance(extension, DashboardPage)
+        ]
+
     def is_registered(self, model) -> bool:
         """
         Check the registry for the given model.
@@ -661,10 +671,13 @@ class ContentStudioSite:
         # Add login backend's view set to the
         # Content Studio router.
         self.login_backend.set_up_router()
-        # Add dashboard's view set to the
-        # Content Studio router.
-        if self.dashboard:
-            self.dashboard.set_up_router()
+        # Add the dashboards' view set to the Content Studio router:
+        # it serves the widgets of the site dashboard and of the
+        # dashboard pages.
+        if self.dashboard or self.get_dashboard_pages():
+            from .dashboard import set_up_router
+
+            set_up_router()
 
         # Global search for the command palette.
         from .router import content_studio_router
@@ -698,6 +711,30 @@ class ContentStudioSite:
                 return url
 
         return obj.file.url
+
+    def crop_image(self, obj, crop_info):
+        """
+        Crop an image media item to the editor's selection: crop_info
+        holds x, y, width and height as percentages of the image. By
+        default, the crop is cut from the original at full size (it is
+        never resized) and becomes the item's file; the original is kept
+        and named in the item's metadata, so a later crop starts from it
+        and reset_crop puts it back. The default needs Pillow (the
+        images extra) and a metadata field on the media model; without
+        them cropping is off. Override to crop another way.
+        """
+        from .media_library.cropping import crop_media
+
+        crop_media(obj, crop_info)
+
+    def reset_crop(self, obj):
+        """
+        Undo the crop of an image media item: by default, put the
+        original the built-in crop kept back in place.
+        """
+        from .media_library.cropping import reset_media_crop
+
+        reset_media_crop(obj)
 
     def get_media_metadata(self, file, type: str) -> dict:
         """

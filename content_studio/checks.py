@@ -23,6 +23,7 @@ from .actions import (
 )
 from .admin import (
     AdminSerializer,
+    ContentStudioSite,
     declares,
     get_is_singleton,
     get_table_display_columns,
@@ -31,6 +32,7 @@ from .admin import (
     resolve_table_display,
 )
 from .export import is_exportable
+from .extensions import DashboardPage
 from .form import Component, Field, TableColumn
 from .settings import cs_settings
 from .utils import as_instance, flatten, get_tenant_field_name
@@ -421,20 +423,21 @@ def duplicate_id_errors(site) -> list[tuple[str, str]]:
             )
         seen[key] = extension.__class__.__name__
 
-    if site.dashboard:
-        seen = {}
-        for widget in site.dashboard.widgets or []:
-            key = str(widget.widget_id)
-            if key in seen:
-                errors.append(
-                    (
-                        "content_studio.E004",
-                        f"Duplicate dashboard widget ID {key}: "
-                        f"{seen[key]} and {widget.__class__.__name__}. "
-                        "Pass widget_id to disambiguate.",
-                    )
+    # One endpoint serves the widgets of every dashboard, so their IDs
+    # must be unique across the site dashboard and the dashboard pages.
+    seen = {}
+    for widget in iter_dashboard_widgets(site):
+        key = str(widget.widget_id)
+        if key in seen:
+            errors.append(
+                (
+                    "content_studio.E004",
+                    f"Duplicate dashboard widget ID {key}: "
+                    f"{seen[key]} and {widget.__class__.__name__}. "
+                    "Pass widget_id to disambiguate.",
                 )
-            seen[key] = widget.__class__.__name__
+            )
+        seen[key] = widget.__class__.__name__
 
     seen = {}
     for model, studio in site._registry.items():
@@ -1630,16 +1633,80 @@ BUILT_IN_WIDGET_TYPES = {
 }
 
 
+def iter_dashboard_widgets(site):
+    """The widgets of the site dashboard and of the dashboard pages."""
+    dashboard = getattr(site, "dashboard", None)
+
+    yield from getattr(dashboard, "widgets", None) or []
+
+    for extension in getattr(site, "extensions", None) or []:
+        if isinstance(extension, DashboardPage):
+            yield from getattr(extension.dashboard, "widgets", None) or []
+
+
+# The first path segments of the admin's own pages, which a dashboard
+# page's path cannot use.
+RESERVED_PAGE_PATHS = {
+    "content",
+    "media-library",
+    "login",
+    "forgot-password",
+    "reset-password",
+}
+
+
+def dashboard_page_errors(site) -> list[tuple[str, str]]:
+    """
+    Dashboard pages and widgets the admin cannot show, as (check id,
+    message) pairs: a page path taken by one of the admin's own pages,
+    and refresh intervals that are not a positive number of seconds.
+    """
+    errors = []
+
+    for extension in getattr(site, "extensions", None) or []:
+        if not isinstance(extension, DashboardPage):
+            continue
+
+        segment = str(extension.path).strip("/").split("/")[0]
+
+        if not segment or segment in RESERVED_PAGE_PATHS:
+            errors.append(
+                (
+                    "content_studio.E028",
+                    f"The dashboard page path {extension.path!r} is taken by "
+                    "one of the admin's own pages; choose another path.",
+                )
+            )
+
+    for widget in iter_dashboard_widgets(site):
+        interval = getattr(widget, "refresh_interval", None)
+
+        if interval is not None and (
+            isinstance(interval, bool)
+            or not isinstance(interval, (int, float))
+            or interval <= 0
+        ):
+            errors.append(
+                (
+                    "content_studio.E029",
+                    f"The dashboard widget {widget.__class__.__name__} has "
+                    f"refresh_interval {interval!r}; set it to a positive "
+                    "number of seconds or None.",
+                )
+            )
+
+    return errors
+
+
 def dashboard_widget_warnings(site) -> list[tuple[str, str]]:
     """
     Dashboard widgets the admin cannot show, as (check id, message)
     pairs: only the built-in widget types have a display, so a widget
     that does not subclass one of them shows nothing.
     """
-    dashboard = getattr(site, "dashboard", None)
     warnings = []
 
-    for widget in getattr(dashboard, "widgets", None) or []:
+    for widget in iter_dashboard_widgets(site):
         if getattr(widget, "widget_type", None) not in BUILT_IN_WIDGET_TYPES:
             warnings.append(
                 (
@@ -1730,11 +1797,13 @@ def crop_hook_warnings() -> list[tuple[str, str]]:
     model it is dead code.
     """
     site = cs_settings.ADMIN_SITE
+    hook = getattr(site, "crop_image", None)
+    # The built-in crop_image is not the site's own: it is simply off.
+    own = callable(hook) and getattr(hook, "__func__", None) is not getattr(
+        ContentStudioSite, "crop_image", None
+    )
 
-    if (
-        callable(getattr(site, "crop_image", None))
-        and not cs_settings.MEDIA_LIBRARY_MODEL
-    ):
+    if own and not cs_settings.MEDIA_LIBRARY_MODEL:
         return [
             (
                 "content_studio.W008",
@@ -2006,6 +2075,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
     for check_id, error in duplicate_id_errors(site):
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in dashboard_page_errors(site):
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in mapping_errors(site):
