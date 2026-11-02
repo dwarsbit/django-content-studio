@@ -30,7 +30,8 @@ from ..permissions import IsActiveStaff
 from ..presence import describe_user
 from ..settings import cs_settings
 from ..utils import get_tenant_field_name, get_tenant_scoped_queryset
-from .events import CONTENT_EVENTS, DEFAULT_CONTENT_ACTIONS, get_event, get_events
+from .defaults import get_defaults
+from .events import CONTENT_EVENTS, get_event, get_events
 from .models import Follow, Notification, NotificationSubscription
 from .permissions import load_objects, notifications_enabled
 from .reading import request_tenant, unread_count, visible_notifications
@@ -274,6 +275,7 @@ class NotificationViewSet(ViewSet):
             rows[(row.content_type_id, row.event, row.tenant)] = row
 
         grid = []
+        defaults = get_defaults(request.user)
 
         for model, studio in models:
             content_type = content_types[model]
@@ -283,9 +285,10 @@ class NotificationViewSet(ViewSet):
                 action: rows.get((content_type.pk, CONTENT_EVENTS[action], tenant))
                 for action in actions
             }
+            default = defaults.for_model(model._meta.concrete_model)
             scope = next(
                 (row.scope for row in stored.values() if row is not None),
-                NotificationSubscription.Scope.MINE,
+                default.scope,
             )
             grid.append(
                 {
@@ -295,7 +298,7 @@ class NotificationViewSet(ViewSet):
                         action: (
                             row.enabled
                             if row is not None
-                            else action in DEFAULT_CONTENT_ACTIONS
+                            else action in default.actions
                         )
                         for action, row in stored.items()
                     },
@@ -324,7 +327,11 @@ class NotificationViewSet(ViewSet):
                     "enabled": (
                         True
                         if event.required
-                        else (row.enabled if row is not None else event.default)
+                        else (
+                            row.enabled
+                            if row is not None
+                            else defaults.for_event(event)
+                        )
                     ),
                 }
             )
@@ -409,6 +416,7 @@ class NotificationViewSet(ViewSet):
 
         content_type = ContentType.objects.get_for_model(model)
         tenant = model_tenant(request, model)
+        default = get_defaults(request.user).for_model(model._meta.concrete_model)
 
         with transaction.atomic():
             for action_name in actions:
@@ -420,7 +428,7 @@ class NotificationViewSet(ViewSet):
                     defaults={
                         "scope": scope,
                         "enabled": events.get(
-                            action_name, action_name in DEFAULT_CONTENT_ACTIONS
+                            action_name, action_name in default.actions
                         ),
                     },
                 )

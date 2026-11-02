@@ -79,7 +79,7 @@ export function NotificationIcon({
   );
 }
 
-function NotificationRow({
+export function NotificationRow({
   notification,
   onNavigate,
 }: {

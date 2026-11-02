@@ -70,7 +70,9 @@ def resolve_recipients(recipients) -> set:
 def subscriber_ids(event, tenant: str) -> set:
     """The users who get an event sent to its subscribers: everyone for
     a required event, else the users who subscribed, plus everyone who
-    did not opt out when the event is on by default."""
+    did not opt out when the event is on by default (or the site's
+    get_default_subscriptions turns it on for them)."""
+    from .defaults import get_defaults, site_overrides_defaults
     from .models import NotificationSubscription
 
     User = get_user_model()
@@ -82,6 +84,16 @@ def subscriber_ids(event, tenant: str) -> set:
     rows = NotificationSubscription.objects.filter(
         content_type=None, event=event.key, tenant=tenant
     )
+
+    if site_overrides_defaults():
+        # Each user without a stored choice gets the site's default.
+        stored = dict(rows.values_list("user_id", "enabled"))
+
+        return {
+            user.pk
+            for user in staff.prefetch_related("groups")
+            if stored.get(user.pk, get_defaults(user).for_event(event))
+        }
 
     if event.default:
         return set(

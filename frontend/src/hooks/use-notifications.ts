@@ -7,6 +7,7 @@ import {
 
 import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
+import { announceChange, usePollLeader } from "@/lib/notification-sync";
 import { safeStorage } from "@/lib/safe-storage";
 import { useTenant } from "@/tenant";
 import type { Id } from "@/types";
@@ -121,18 +122,20 @@ function useTenantKey() {
 
 /**
  * The unread count and the time the newest notification changed,
- * polled every 30 seconds while the tab is visible.
+ * polled every 30 seconds while the tab is visible: by one tab per
+ * browser, which shares the answer with the others (NotificationSync).
  */
 export function useNotificationStatus() {
   const http = useHttp();
   const enabled = useNotificationsEnabled();
   const tenant = useTenantKey();
+  const leader = usePollLeader();
 
   return useQuery({
     enabled,
     retry: false,
     queryKey: ["notifications", tenant, "status"],
-    refetchInterval: NOTIFICATIONS_INTERVAL,
+    refetchInterval: leader ? NOTIFICATIONS_INTERVAL : false,
     refetchIntervalInBackground: false,
     async queryFn() {
       const { data } = await http.get<NotificationStatus>(
@@ -260,6 +263,8 @@ export function useMarkRead() {
       );
     },
     onSettled() {
+      announceChange(tenant);
+
       return queryClient.invalidateQueries({
         queryKey: ["notifications", tenant],
       });
@@ -312,6 +317,9 @@ function useSettingsMutation<T>(
       if (context?.previous) {
         queryClient.setQueryData(queryKey, context.previous);
       }
+    },
+    onSuccess() {
+      announceChange(tenant);
     },
   });
 }
@@ -376,6 +384,7 @@ export function useFollow(model: string, id: Id | null | undefined) {
       return data;
     },
     onSuccess(data) {
+      announceChange(tenant);
       queryClient.setQueryData(queryKey, data);
       void queryClient.invalidateQueries({
         queryKey: ["notifications", tenant, "settings"],

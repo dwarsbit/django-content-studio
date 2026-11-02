@@ -1657,6 +1657,7 @@ def list_display_warnings(studio) -> list[tuple[str, str]]:
 BUILT_IN_WIDGET_TYPES = {
     "ActivityLogWidget",
     "ContentListWidget",
+    "NotificationsWidget",
     "ScheduledTasksWidget",
     "SpacingWidget",
     "StatisticWidget",
@@ -1679,6 +1680,7 @@ def iter_dashboard_widgets(site):
 RESERVED_PAGE_PATHS = {
     "content",
     "media-library",
+    "notifications",
     "login",
     "forgot-password",
     "reset-password",
@@ -1732,12 +1734,26 @@ def dashboard_widget_warnings(site) -> list[tuple[str, str]]:
     """
     Dashboard widgets the admin cannot show, as (check id, message)
     pairs: only the built-in widget types have a display, so a widget
-    that does not subclass one of them shows nothing.
+    that does not subclass one of them shows nothing, and the
+    notifications widget needs the notifications app.
     """
     warnings = []
 
     for widget in iter_dashboard_widgets(site):
-        if getattr(widget, "widget_type", None) not in BUILT_IN_WIDGET_TYPES:
+        widget_type = getattr(widget, "widget_type", None)
+
+        if widget_type == "NotificationsWidget" and not apps.is_installed(
+            "content_studio.notifications"
+        ):
+            warnings.append(
+                (
+                    "content_studio.W021",
+                    f"The dashboard widget {widget.__class__.__name__} shows "
+                    "notifications, but content_studio.notifications is not in "
+                    "INSTALLED_APPS; it is not shown.",
+                )
+            )
+        elif widget_type not in BUILT_IN_WIDGET_TYPES:
             warnings.append(
                 (
                     "content_studio.W012",
