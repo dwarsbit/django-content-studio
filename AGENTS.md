@@ -60,7 +60,7 @@ content_studio/
 │   ├── activity_log.py  # Activity logging for dashboard
 │   ├── scheduled_tasks.py
 │   └── tasks.py         # Task dashboard: TaskAdapter, its widgets and the TaskDashboard page
-├── notifications/       # Optional notifications app: models, the content_changed fan-out, register_event/notify, read filter, prune command
+├── notifications/       # Optional notifications app: models, the content_changed fan-out, register_event/notify, read filter, prune command, the admin endpoints (viewsets.py)
 ├── media_library/       # Optional built-in media library app (models, migrations)
 │   └── viewsets.py      # Media library API endpoints
 ├── login_backends/

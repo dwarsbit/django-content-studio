@@ -4,6 +4,10 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { PiArrowLeftBold, PiDotsThreeBold } from "react-icons/pi";
 
+import {
+  FollowButton,
+  FollowMenuItem,
+} from "@/components/notifications/follow-button";
 import { PresenceAvatars } from "@/components/presence";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -73,6 +77,12 @@ export function Header({
   const form = useFormContext();
   const isCreate = !resource?.id;
   const isSingleton = model?.admin.is_singleton ?? false;
+  // Follow, with the notifications app; not in dialogs (inline rows and
+  // related objects are followed through their own pages).
+  const canFollow =
+    !!model?.admin.notifications && !dialog && !isCreate && !!resource;
+  const showDuplicate = !isSingleton && !!onDuplicate;
+  const showDelete = !isSingleton && canDelete;
   const { isDirty } = form.formState;
   const editedAt =
     resource && info
@@ -161,6 +171,14 @@ export function Header({
             actions={
               <>
                 <PresenceAvatars users={presence} />
+                {canFollow && (
+                  <FollowButton
+                    model={model}
+                    id={resource.id}
+                    name={resource.__str__}
+                    className="hidden lg:inline-flex"
+                  />
+                )}
                 {isDirty && !readOnly ? (
                   <div className="hidden lg:flex items-center gap-1.5 text-muted-foreground text-sm mr-2 select-none">
                     <span className="size-1.5 rounded-full bg-warning" />
@@ -178,25 +196,37 @@ export function Header({
                     model={model}
                   />
                 ))}
-                {!isSingleton && !isCreate && (canDelete || onDuplicate) && (
+                {!isCreate && (showDelete || showDuplicate || canFollow) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         size="icon"
                         variant="ghost"
                         aria-label={t("editor.more_actions")}
+                        // Only Follow inside: the header shows it wide.
+                        className={cn(
+                          !showDelete && !showDuplicate && "lg:hidden",
+                        )}
                       >
                         <PiDotsThreeBold />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {onDuplicate && (
-                        <DropdownMenuItem onSelect={onDuplicate}>
+                      {canFollow && (
+                        <FollowMenuItem
+                          model={model}
+                          id={resource.id}
+                          name={resource.__str__}
+                          className="lg:hidden"
+                        />
+                      )}
+                      {showDuplicate && (
+                        <DropdownMenuItem onSelect={onDuplicate!}>
                           {t("editor.duplicate")}
                         </DropdownMenuItem>
                       )}
-                      {onDuplicate && canDelete && <DropdownMenuSeparator />}
-                      {canDelete && (
+                      {showDuplicate && showDelete && <DropdownMenuSeparator />}
+                      {showDelete && (
                         <DropdownMenuItem
                           className="text-destructive"
                           onSelect={async () => {

@@ -18,6 +18,13 @@ export function useDiscover() {
         model_groups: ModelGroup[];
         models: Model[];
         user_model: string;
+        // The notifications app; absent from older servers.
+        notifications?: {
+          enabled: boolean;
+          // Days read (and unread) notifications are kept; null: kept.
+          retention: number | null;
+          unread_retention: number | null;
+        };
         multitenancy: {
           enabled: boolean;
           tenant_model: string | null;

@@ -19,6 +19,8 @@ import { ContentIndexPage } from "@/pages/(studio)/content/[model]/page";
 import { ContentTrashPage } from "@/pages/(studio)/content/[model]/trash/page";
 import { StudioLayout } from "@/pages/(studio)/layout";
 import { MediaLibraryPage } from "@/pages/(studio)/media-library/[model]/page";
+import { NotificationsPage } from "@/pages/(studio)/notifications/page";
+import { NotificationSettingsPage } from "@/pages/(studio)/notifications/settings/page";
 import { UIPage } from "@/pages/(studio)/ui/page";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,14 @@ const router = createBrowserRouter(
                 {
                   path: "media-library",
                   element: <MediaLibraryPage />,
+                },
+                {
+                  path: "notifications",
+                  element: <NotificationsPage />,
+                },
+                {
+                  path: "notifications/settings",
+                  element: <NotificationSettingsPage />,
                 },
                 ...(uiShowcaseEnabled
                   ? [{ path: "ui", element: <UIPage /> }]

@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { Outlet } from "react-router";
 
 import { CommandPalette } from "@/components/command-palette";
+import { NotificationToasts } from "@/components/notifications/toasts";
+import { useNotificationsEnabled } from "@/hooks/use-notifications";
 import { TenantProvider } from "@/tenant";
 
 import { MainMenu } from "./_components/main-menu";
 
 export function StudioLayout() {
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const notifications = useNotificationsEnabled();
 
   // ⌘K on macOS, Ctrl+K elsewhere, toggles the command palette.
   useEffect(() => {
@@ -33,6 +36,7 @@ export function StudioLayout() {
           </main>
         </div>
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+        {notifications && <NotificationToasts />}
       </>
     </TenantProvider>
   );

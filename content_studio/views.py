@@ -1,5 +1,6 @@
 import uuid
 
+from django.apps import apps
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
 from django.utils.decorators import method_decorator
@@ -193,6 +194,14 @@ class AdminApiViewSet(ViewSet):
             data["dashboard"] = self.admin_site.dashboard.serialize()
         else:
             data["dashboard"] = {"widgets": []}
+
+        # The notifications app: the main menu item, the settings page
+        # and the retention line under the list.
+        data["notifications"] = {
+            "enabled": apps.is_installed("content_studio.notifications"),
+            "retention": cs_settings.NOTIFICATION_RETENTION,
+            "unread_retention": cs_settings.NOTIFICATION_UNREAD_RETENTION,
+        }
 
         multitenancy = cs_settings.TENANT_MODEL is not None
 
