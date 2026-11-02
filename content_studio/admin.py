@@ -1,5 +1,6 @@
 from typing import Type, TypeVar, Generic, Any, Optional, Sequence, Union
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
@@ -691,6 +692,16 @@ class ContentStudioSite:
             "api/search", SearchViewSet, basename="content_studio_search"
         )
 
+        # The notification endpoints, with the optional app installed.
+        if apps.is_installed("content_studio.notifications"):
+            from .notifications.viewsets import NotificationViewSet
+
+            content_studio_router.register(
+                "api/notifications",
+                NotificationViewSet,
+                basename="content_studio_notifications",
+            )
+
     def _register_default_user_studio(self):
         user_model = get_user_model()
 
@@ -971,6 +982,19 @@ def serialize_prepopulated_fields(studio, request: HttpRequest) -> dict[str, lis
     }
 
 
+def is_notifications_enabled(admin_class) -> bool:
+    """
+    Whether a studio's edit page offers Follow and its model is on the
+    notification settings: the notifications app is installed and the
+    studio does not opt out with notifications = False.
+    """
+    return (
+        apps.is_installed("content_studio.notifications")
+        and isinstance(admin_class, ModelStudio)
+        and bool(getattr(admin_class, "notifications", True))
+    )
+
+
 def get_is_singleton(admin_class) -> bool:
     """
     Return the effective singleton state of a model studio.
@@ -1045,6 +1069,9 @@ class AdminSerializer:
             # Whether the edit and list pages show who else has an
             # object open.
             "presence": is_presence_enabled(admin_class),
+            # Whether the edit page offers Follow: the notifications app
+            # is installed and the studio does not opt out.
+            "notifications": is_notifications_enabled(admin_class),
             "edit": {
                 "header": serialize_edit_header(admin_class),
                 "main": self.serialize_edit_main(request),

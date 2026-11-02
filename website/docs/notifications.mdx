@@ -1,0 +1,198 @@
+---
+sidebar_position: 10.7
+---
+
+# 🔔 Notifications
+
+Notifications tell editors in the admin what other editors changed. An
+editor hears about changes to the objects they created, to every object of
+a model they subscribed to, and to the objects they follow. Your project can
+add events of its own, such as an article submitted for review, and send
+them from Python.
+
+Notifications are an optional app, in the admin only: Content Studio sends
+no email.
+
+## Set up notifications
+
+1. Add the notifications app to your project:
+
+   ```python
+   # mysite/settings.py
+   INSTALLED_APPS = [
+       # ...
+       "content_studio",
+       "content_studio.notifications",
+   ]
+   ```
+
+2. Run `manage.py migrate` to create its tables.
+3. Schedule the prune command, which removes old notifications and the
+   follows of objects that no longer exist. For example, once a night from
+   cron:
+
+   ```text
+   0 3 * * * /srv/mysite/venv/bin/python /srv/mysite/manage.py content_studio_prune_notifications
+   ```
+
+The main menu then shows **Notifications** under the dashboard, and every
+editor gets a notification settings page.
+
+## What editors see
+
+- **The main menu item** shows the number of unread notifications. It opens
+  the list, with an **Unread** and an **All** tab. On narrow screens it
+  opens the list as a page.
+- **The list** names who did what to which object, and links to the object
+  while it exists; deleted objects are named but not linked. Opening a
+  notification marks it as read. The dot beside an unread one marks it as
+  read without opening it, and **Mark all as read** marks every unread one
+  the editor has seen. Notifications that arrive while the list is open wait
+  behind a button at the top, so the rows do not move under the pointer.
+- **Toasts** announce new notifications in the corner of the admin. They
+  never show the notifications that were there when the admin loaded, show
+  at most three at a time and combine more into one. An editor turns them
+  off on the settings page; the choice applies to that browser only.
+- **Follow**, in the edit page's header, notifies the editor about every
+  change to that object. On narrow screens it is in the more actions menu.
+
+The admin asks for new notifications every 30 seconds while the browser tab
+is visible, and pauses while it is in the background.
+
+## What notifies whom
+
+Without a choice of their own, editors are notified when another editor
+updates, deletes or restores an object they created. Who created an object
+comes from the classic Django admin's activity log, so this works for every
+model created in the admin, with or without a creator field.
+
+On their notification settings page, editors choose per model:
+
+- **Which ones**: every object of the model, or the objects they created.
+- **Which changes**: created, updated, deleted and restored. Creating an
+  object never notifies its creator, so with "Created by me" there is no
+  created column. A singleton only has updated.
+
+Every change on the page is saved as it is made. Followed objects notify
+the editor about every change, whatever the settings say, and are listed on
+the same page with a button to stop following them.
+
+Some rules hold whatever editors choose:
+
+- Nobody is notified about their own changes.
+- Editors are only notified about models they may view, and only see
+  notifications about models and objects they may still view: a revoked
+  permission hides old notifications, a restored one shows them again. See
+  [Access control](/docs/permissions).
+- A bulk action notifies each editor once per model and change, with a
+  summary that names the first few objects and links to the list.
+- An unread notification about one object is bumped, not repeated, when the
+  object changes again: twenty saves are one notification that counts
+  twenty changes.
+- Reordering a list only notifies the followers of the objects that moved.
+- With [multi-tenancy](/docs/multi-tenancy), notifications and settings are
+  kept per tenant for tenant-scoped models, and the settings page names the
+  tenant the choices apply to.
+
+## Leave a model out
+
+Set `notifications = False` on a studio to leave its model out: its changes
+notify nobody, it is not on the settings page and its edit page has no
+Follow button.
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Review
+
+
+@register(Review)
+class ReviewStudio(ModelStudio):
+    notifications = False
+```
+
+## Add events of your own
+
+Register an event with `register_event`, in your app's `ready()`, so it
+appears on the settings page. Then send it with `notify`.
+
+```python
+# blog/apps.py
+from django.apps import AppConfig
+from django.utils.translation import gettext_lazy as _
+
+
+class BlogConfig(AppConfig):
+    name = "blog"
+
+    def ready(self):
+        from content_studio.notifications import register_event
+
+        register_event(
+            "blog.article_submitted",
+            _("Article submitted for review"),
+            description=_("An author asks for a review before publishing."),
+        )
+```
+
+```python
+# blog/views.py
+from django.contrib.auth.models import Group
+from django.utils.translation import gettext_lazy as _
+
+from content_studio.notifications import notify
+
+
+def submit_for_review(request, article):
+    notify(
+        "blog.article_submitted",
+        title=_("%(title)s is ready for review"),
+        params={"title": article.title},
+        target=article,
+        actor=request.user,
+        recipients=Group.objects.filter(name="Editors"),
+    )
+```
+
+`register_event` takes:
+
+- `key`: lowercase dotted words, like `"blog.article_submitted"`. Keys that
+  start with `content.` are taken by content changes.
+- `label` and `description`: shown on the settings page.
+- `level`: `"info"` (the default), `"success"`, `"warning"` or `"error"`,
+  which sets the icon in the list and the toast.
+- `default`: whether editors get the event until they turn it off (the
+  default, `True`) or only after they turn it on.
+- `required`: delivered to everyone, without a switch to turn it off. The
+  settings page shows it as required.
+
+`notify` takes:
+
+- `title` and `body`: the text, translated when the notification is read,
+  in the reader's language, and filled in with `params`. Use
+  `gettext_lazy`, as in the example.
+- `target`: the object it is about. The notification then links to its edit
+  page, and only editors who may view the object are notified. Without a
+  target, `url` sets where it leads: a path in the admin or a full URL.
+- `recipients`: users, groups, or querysets of either. Without recipients,
+  the event goes to the editors who have it on: everyone who did not turn
+  it off for a default event, everyone for a required one.
+- `actor`: who did it. The actor is never notified.
+- `key`: an unread notification of the same event with the same key is
+  bumped instead of repeated, like "3 comments await moderation".
+- `level`: overrides the event's level.
+
+Only active staff users are notified. Called inside a transaction, `notify`
+writes the notifications once the transaction commits, and not at all when
+it rolls back.
+
+## Retention
+
+`content_studio_prune_notifications` removes read notifications older than
+[`NOTIFICATION_RETENTION`](/docs/settings#notification_retention) days, 90
+by default, and unread ones older than
+[`NOTIFICATION_UNREAD_RETENTION`](/docs/settings#notification_unread_retention)
+days, which keeps them by default. The list's footer tells editors how long
+read notifications are kept.

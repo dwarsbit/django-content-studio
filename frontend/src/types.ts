@@ -107,6 +107,8 @@ export interface Model {
     icon: string | null;
     // Whether the edit and list pages show who else has an object open.
     presence?: boolean;
+    // Whether the edit page offers Follow (the notifications app).
+    notifications?: boolean;
     list: {
       per_page: number;
       description: string;

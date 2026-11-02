@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -134,4 +135,26 @@ class Command(BaseCommand):
             Review.objects.create(article=article, text="Nice first article!", stars=5)
             self.stdout.write("Created demo article.")
 
+            if apps.is_installed("content_studio.notifications"):
+                self.seed_notifications(user, editor, article)
+
         self.stdout.write("Demo seed complete.")
+
+    def seed_notifications(self, user, editor, article):
+        """An unread notification for admin: the editor updated the demo
+        article twice."""
+        from django.contrib.contenttypes.models import ContentType
+
+        from content_studio.notifications.models import Notification
+
+        Notification.objects.create(
+            recipient=user,
+            event="content.updated",
+            actor=editor,
+            content_type=ContentType.objects.get_for_model(Article),
+            object_id=str(article.pk),
+            object_repr=str(article),
+            count=2,
+            key=f"{ContentType.objects.get_for_model(Article).pk}:{article.pk}",
+        )
+        self.stdout.write("Created a sample notification.")

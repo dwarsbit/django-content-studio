@@ -23,6 +23,7 @@ import {
 } from "react-router";
 
 import { useAuth } from "@/auth";
+import { NotificationsMenuItem } from "@/components/notifications/menu-item";
 import { type Theme, useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -178,6 +179,9 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
           icon={<PiHouseSimpleBold />}
           label={t("main_menu.dashboard")}
         />
+        {discover?.notifications?.enabled && (
+          <NotificationsMenuItem collapsed={collapsed} />
+        )}
         {discover?.media_library.enabled && (
           <MenuItem
             collapsed={collapsed}

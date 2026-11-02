@@ -22,6 +22,21 @@
   `None` or a positive whole number of days, and `content_studio.E031` an event registered with a
   malformed key or twice with different definitions.
 
+- **Notifications in the admin.** With `content_studio.notifications`
+  installed, the main menu shows **Notifications** with the number of unread
+  ones. It opens a list with Unread and All tabs, where editors open a
+  notification, mark it as read or mark all as read; on narrow screens it
+  opens as a page. New notifications appear as toasts, at most three at a
+  time and never the ones there when the admin loaded. The admin asks for
+  them every 30 seconds while its tab is visible.
+- **Notification settings.** A settings page lets editors choose per model
+  which changes notify them, about every object or the ones they created;
+  turn the registered events on and off (required ones stay on); stop
+  following objects; and turn toasts off in their browser. Changes are
+  saved as they are made.
+- **Follow.** The edit page's header has a Follow button: following an
+  object notifies the editor about every change to it.
+
 ## 1.5.0 (2026-11-02)
 
 - **Task dashboard.** `TaskDashboard` is a dashboard page with the state of
