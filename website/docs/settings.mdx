@@ -228,6 +228,14 @@ How many days delivered and failed webhook deliveries are kept.
 `content_studio_deliver_webhooks` removes older ones; pending deliveries are
 always kept. Default: `30`. `None` keeps every delivery.
 
+## Notifications
+
+### NOTIFICATION_RETENTION {#notification_retention}
+
+How many days read notifications are kept.
+`content_studio_prune_notifications` removes older ones; unread notifications
+are always kept. Default: `90`. `None` keeps every notification.
+
 ## Password reset
 
 ### PASSWORD_RESET_EXPIRATION_TIME {#password_reset_expiration_time}

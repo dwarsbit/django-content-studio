@@ -32,7 +32,9 @@ The public API consists of:
   `content_studio_thumbnails` commands, with their `--all` option;
 - the `content_studio.webhooks` app's `content_studio_deliver_webhooks`
   command, and the requests its webhooks send: the payload with its
-  `version`, and the `X-Content-Studio-*` headers.
+  `version`, and the `X-Content-Studio-*` headers;
+- the `content_studio.notifications` app's
+  `content_studio_prune_notifications` command.
 
 Everything else may change in any release, including any name that is not
 on this page, even when you can import it.
@@ -275,3 +277,19 @@ The webhooks app's dashboard widget.
 The webhooks app's main menu button.
 
 - `DeployButton`
+
+## `content_studio.notifications`
+
+The notifications app's events: register an event, and notify users of it.
+
+- `notify`
+- `register_event`
+
+## `content_studio.notifications.models`
+
+The notifications app's models: the notifications, the users'
+subscriptions and the objects they follow.
+
+- `Follow`
+- `Notification`
+- `NotificationSubscription`

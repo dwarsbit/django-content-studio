@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.6.0 (unreleased)
+
+- **Notifications (backend).** The new optional app
+  `content_studio.notifications` notifies editors about changes made in the
+  admin. Without a choice of their own, editors hear about updates,
+  deletions and restores of the objects they created; they can subscribe to
+  an event on every object of a model, or follow one object to hear about
+  every change to it. Nobody is notified about their own changes, or about
+  models they may not view. A bulk action writes one summary per editor, and
+  an unread notification is bumped rather than repeated when the same object
+  changes again. A studio opts a model out with `notifications = False`.
+  `register_event` adds events of your own, and `notify` sends them to their
+  subscribers or to given users and groups.
+- **Pruning notifications.** `content_studio_prune_notifications` removes
+  read notifications older than the new `NOTIFICATION_RETENTION` setting
+  (90 days by default; `None` keeps them), and follows and subscriptions of
+  objects and models that no longer exist. System check
+  `content_studio.E030` reports a retention that is not a positive whole
+  number of days, and `content_studio.E031` an event registered with a
+  malformed key or twice with different definitions.
+
 ## 1.5.0 (2026-11-02)
 
 - **Task dashboard.** `TaskDashboard` is a dashboard page with the state of
