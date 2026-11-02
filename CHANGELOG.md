@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.6.0 (unreleased)
+## 1.6.0 (2026-11-02)
 
 - **Image sizes.** The new `IMAGE_SIZES` setting names the sizes every media
   library image is also made in, for your site and other consumers: a
