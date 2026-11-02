@@ -8,14 +8,21 @@ would be circular.
 
 from content_studio.admin import ContentStudioSite
 from content_studio.dashboard import Dashboard
+from content_studio.dashboard.tasks import TaskDashboard
+from content_studio.extensions import UserMenuLink
 
 from .dashboard import ArticleCountWidget, LatestArticlesWidget
+from .task_queue import DemoTaskAdapter
 
 
 class DemoStudioSite(ContentStudioSite):
     dashboard = Dashboard(
         widgets=[ArticleCountWidget(), LatestArticlesWidget()],
     )
+    extensions = [
+        TaskDashboard(adapter=DemoTaskAdapter()),
+        UserMenuLink(url="/tasks/", label="Tasks", icon="ph-bold ph-queue"),
+    ]
 
 
 admin_site = DemoStudioSite()
