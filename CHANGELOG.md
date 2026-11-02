@@ -53,6 +53,19 @@
 - **Notifications widget.** `NotificationsWidget` shows the editor's latest
   notifications on a dashboard, with the unread count. System check
   `content_studio.W021` reports it on a site without the notifications app.
+- **Notification email digest.** With `NOTIFICATION_EMAIL_DIGEST` on and the
+  new `ADMIN_URL` setting set to the admin's address,
+  `content_studio_send_notification_digest` emails each editor the
+  notifications they left unread for an hour (`--delay` changes it), once,
+  in one email with links to the admin. Editors turn it off on their
+  notification settings page. The email's templates can be overridden.
+  System check `content_studio.E032` reports a malformed
+  `NOTIFICATION_EMAIL_DIGEST` or `ADMIN_URL`, or the digest without
+  `ADMIN_URL`. Run `manage.py migrate` for the notifications app's new
+  migration.
+- **Notifications page filters and search.** The notifications page filters
+  by model and event and searches the object's name, the text, the named
+  objects and who made the change. The filters are kept in the address.
 
 ## 1.5.0 (2026-11-02)
 

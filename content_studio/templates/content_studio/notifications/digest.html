@@ -1,0 +1,30 @@
+{% load i18n %}<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ site_name }}</title>
+</head>
+<body style="margin:0;padding:24px 16px;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#18181b;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e4e4e7;border-radius:12px;">
+<tr><td style="padding:24px 24px 8px;">
+<p style="margin:0 0 4px;font-size:13px;color:#71717a;">{{ site_name }}</p>
+<h1 style="margin:0 0 12px;font-size:18px;font-weight:600;">{% blocktranslate count count=count %}You have {{ count }} unread notification{% plural %}You have {{ count }} unread notifications{% endblocktranslate %}</h1>
+<p style="margin:0;font-size:14px;">{% blocktranslate with name=name %}Hello {{ name }},{% endblocktranslate %}</p>
+</td></tr>
+<tr><td style="padding:8px 24px;">
+<ul style="margin:0;padding:0;list-style:none;">
+{% for item in items %}<li style="padding:10px 0;border-top:1px solid #e4e4e7;font-size:14px;line-height:20px;">
+{% if item.url %}<a href="{{ item.url }}" style="color:#18181b;font-weight:600;text-decoration:none;">{{ item.text }}</a>{% else %}<span style="font-weight:600;">{{ item.text }}</span>{% endif %}
+{% if item.detail %}<br><span style="font-size:13px;color:#71717a;">{{ item.detail }}</span>{% endif %}
+</li>{% endfor %}
+</ul>
+{% if rest %}<p style="margin:8px 0 0;font-size:13px;color:#71717a;">{% blocktranslate count count=rest %}And {{ count }} more.{% plural %}And {{ count }} more.{% endblocktranslate %}</p>{% endif %}
+</td></tr>
+<tr><td style="padding:16px 24px 24px;">
+<a href="{{ notifications_url }}" style="display:inline-block;padding:8px 14px;background:#18181b;color:#ffffff;border-radius:8px;font-size:14px;font-weight:500;text-decoration:none;">{% translate "See all notifications" %}</a>
+</td></tr>
+</table>
+<p style="max-width:560px;margin:16px auto 0;font-size:12px;line-height:18px;color:#71717a;text-align:center;">{% translate "You get this email because these notifications are unread." %} <a href="{{ settings_url }}" style="color:#71717a;">{% translate "Turn these emails off in your notification settings." %}</a></p>
+</body>
+</html>

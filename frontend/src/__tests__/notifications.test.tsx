@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationsMenuItem } from "@/components/notifications/menu-item";
 import { NotificationToasts } from "@/components/notifications/toasts";
 import { setToastsEnabled } from "@/hooks/use-notifications";
+import { NotificationsPage } from "@/pages/(studio)/notifications/page";
 import { NotificationSettingsPage } from "@/pages/(studio)/notifications/settings/page";
 
 const httpMock = vi.hoisted(() => ({
@@ -87,14 +88,17 @@ function notification(id: number, fields: Record<string, unknown> = {}) {
   };
 }
 
-function renderWithRouter(element: React.ReactElement) {
+function renderWithRouter(element: React.ReactElement, path = "/") {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const router = createMemoryRouter([
-    { path: "/", element },
-    { path: "*", element: <div>elsewhere</div> },
-  ]);
+  const router = createMemoryRouter(
+    [
+      { path: "/", element },
+      { path: "*", element: <div>elsewhere</div> },
+    ],
+    { initialEntries: [path] },
+  );
 
   return {
     queryClient,
@@ -428,5 +432,160 @@ describe("the settings page", () => {
       params: { model: "blog.article", id: "7" },
     });
     await waitFor(() => expect(screen.queryByText("Spring menu")).toBeNull());
+  });
+});
+
+describe("the notifications page", () => {
+  // The rows on screen, by where they lead.
+  const rows = () =>
+    screen
+      .queryAllByRole("link", { name: /notifications\.content/ })
+      .map((link) => link.getAttribute("href"));
+
+  beforeEach(() => {
+    list = [
+      notification(1),
+      notification(2, { event: "content.deleted", object_repr: "Old menu" }),
+    ];
+    httpMock.get.mockImplementation(
+      async (url: string, config?: { params?: Record<string, unknown> }) => {
+        if (url === "/notifications/status") {
+          return { data: status };
+        }
+
+        if (url === "/notifications/filters") {
+          return {
+            data: {
+              models: ["blog.article"],
+              events: [
+                { key: "blog.failed", label: "Build failed" },
+                { key: "content.deleted", label: null },
+              ],
+            },
+          };
+        }
+
+        if (url === "/notifications") {
+          const params = config?.params ?? {};
+          const results = list.filter(
+            (n) =>
+              (!params.event || n.event === params.event) &&
+              (!params.q ||
+                n.object_repr
+                  .toLowerCase()
+                  .includes(String(params.q).toLowerCase())),
+          );
+          return { data: { results, next: null } };
+        }
+
+        throw new Error(`unexpected GET ${url}`);
+      },
+    );
+  });
+
+  it("sends the filters in the URL with the list request", async () => {
+    renderWithRouter(
+      <NotificationsPage />,
+      "/?search=old&event=content.deleted&model=blog.article",
+    );
+
+    await waitFor(() => expect(rows()).toEqual(["/content/blog.article/2"]));
+    expect(httpMock.get).toHaveBeenCalledWith("/notifications", {
+      params: {
+        filter: "unread",
+        q: "old",
+        model: "blog.article",
+        event: "content.deleted",
+        offset: 0,
+        limit: 20,
+      },
+    });
+    expect(
+      screen.getByRole("combobox", { name: "notifications.filters.event" }),
+    ).toHaveTextContent("notifications.filters.deleted");
+    expect(
+      screen.getByRole("combobox", { name: "notifications.filters.model" }),
+    ).toHaveTextContent("articles");
+  });
+
+  it("searches as the editor types", async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<NotificationsPage />);
+
+    await waitFor(() => expect(rows()).toHaveLength(2));
+    await user.type(screen.getByPlaceholderText("common.search"), "old");
+
+    await waitFor(() => expect(rows()).toEqual(["/content/blog.article/2"]));
+  });
+
+  it("offers to clear filters that match nothing", async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<NotificationsPage />, "/?search=nothing");
+
+    expect(
+      await screen.findByText("notifications.empty_filtered_title"),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "notifications.clear_filters" }),
+    );
+
+    await waitFor(() => expect(rows()).toHaveLength(2));
+  });
+});
+
+describe("the digest switch", () => {
+  function settings(digest: unknown) {
+    httpMock.get.mockImplementation(async (url: string) => {
+      if (url === "/notifications/settings") {
+        return { data: { models: [], events: [], follows: [], digest } };
+      }
+
+      throw new Error(`unexpected GET ${url}`);
+    });
+    httpMock.put.mockResolvedValue({ data: null });
+  }
+
+  it("turns the email digest off", async () => {
+    settings({ enabled: true, email: "bob@example.com" });
+    const user = userEvent.setup();
+    renderWithRouter(<NotificationSettingsPage />);
+
+    await user.click(
+      await screen.findByRole("switch", {
+        name: "notifications.settings.digest_title",
+      }),
+    );
+
+    expect(httpMock.put).toHaveBeenCalledWith(
+      "/notifications/settings/digest",
+      { enabled: false },
+    );
+  });
+
+  it("is disabled without an email address and absent when off", async () => {
+    settings({ enabled: true, email: "" });
+    const { unmount } = renderWithRouter(<NotificationSettingsPage />);
+
+    expect(
+      await screen.findByRole("switch", {
+        name: "notifications.settings.digest_title",
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText("notifications.settings.digest_no_email"),
+    ).toBeInTheDocument();
+    unmount();
+
+    settings(null);
+    renderWithRouter(<NotificationSettingsPage />);
+
+    expect(
+      await screen.findByText("notifications.settings.followed_title"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("switch", {
+        name: "notifications.settings.digest_title",
+      }),
+    ).toBeNull();
   });
 });

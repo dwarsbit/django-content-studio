@@ -107,6 +107,12 @@ DEFAULTS = {
     "NOTIFICATION_RETENTION": 90,
     # Days unread notifications are kept; None (the default) keeps them.
     "NOTIFICATION_UNREAD_RETENTION": None,
+    # Whether content_studio_send_notification_digest emails editors their
+    # unread notifications; it needs ADMIN_URL for the links.
+    "NOTIFICATION_EMAIL_DIGEST": False,
+    # The admin's absolute URL, like "https://example.com/admin/", for
+    # links in emails.
+    "ADMIN_URL": None,
     "PASSWORD_RESET_EXPIRATION_TIME": 10,
     # Rate limit for the password reset endpoints, per IP; None disables
     # throttling.

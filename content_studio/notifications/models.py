@@ -92,6 +92,8 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     read_at = models.DateTimeField(null=True, blank=True)
+    # When the email digest included it; None while it was not mailed.
+    emailed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.get_title() or self.event

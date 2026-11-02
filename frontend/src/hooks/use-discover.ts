@@ -24,6 +24,8 @@ export function useDiscover() {
           // Days read (and unread) notifications are kept; null: kept.
           retention: number | null;
           unread_retention: number | null;
+          // Whether the site emails a digest of unread notifications.
+          digest?: boolean;
         };
         multitenancy: {
           enabled: boolean;

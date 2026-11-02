@@ -416,6 +416,9 @@
     "empty_unread_description": "New ones appear here. Earlier ones stay under All.",
     "empty_all_title": "No notifications yet",
     "empty_all_description": "Changes other editors make to what you created or follow appear here.",
+    "empty_filtered_title": "No notifications match",
+    "empty_filtered_description": "Try other words or filters.",
+    "clear_filters": "Clear filters",
     "error_title": "The notifications could not be loaded",
     "error_description": "Check your connection, then try again.",
     "retry": "Try again",
@@ -494,10 +497,24 @@
       "followed_description": "You are notified about every change to these, whatever you chose above.",
       "followed_empty": "You follow nothing yet. Use Follow on an edit page.",
       "unfollow_label": "Unfollow {{name}}",
+      "digest_title": "Email me unread notifications",
+      "digest_description": "Notifications you leave unread for a while are sent to {{email}}, each once.",
+      "digest_no_email": "Your account has no email address, so no email can be sent.",
       "toasts_title": "Show new notifications as they arrive on this device",
       "toasts_description": "A short message in the corner of the admin, in this browser only. Notifications always appear in the list."
     },
     "widget_unread_one": "{{count}} unread notification",
-    "widget_unread_other": "{{count}} unread notifications"
+    "widget_unread_other": "{{count}} unread notifications",
+    "filters": {
+      "model": "Model",
+      "any_model": "All models",
+      "event": "Event",
+      "any_event": "All events",
+      "created": "Created",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "restored": "Restored",
+      "reordered": "Moved"
+    }
   }
 }

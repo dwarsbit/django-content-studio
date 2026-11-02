@@ -1,3 +1,4 @@
+import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -5,6 +6,7 @@ import {
   PiBellBold,
   PiCheckBold,
   PiCheckCircleBold,
+  PiMagnifyingGlassBold,
   PiWarningBold,
   PiWarningCircleBold,
 } from "react-icons/pi";
@@ -19,6 +21,8 @@ import { useDiscover } from "@/hooks/use-discover";
 import {
   type Notification,
   type NotificationFilter,
+  type NotificationQuery,
+  queryParams,
   useArrivedSince,
   useMarkRead,
   useNotificationList,
@@ -208,21 +212,29 @@ export function NotificationRow({
 /**
  * The notifications, with the Unread and All tabs, mark all as read,
  * the "new" pill when more arrive while it is open, and its footer:
- * the popover of the main menu and the notifications page.
+ * the popover of the main menu and the notifications page. The page
+ * passes its filters, shown under the tabs, and the query they make.
  */
 export function NotificationList({
   variant,
   onNavigate,
+  query,
+  filters,
+  onClearFilters,
 }: {
   variant: "popover" | "page";
   // Called when a row or a footer link leads elsewhere.
   onNavigate?(): void;
+  query?: NotificationQuery;
+  filters?: React.ReactNode;
+  onClearFilters?(): void;
 }) {
   const { t } = useTranslation();
   const { data: discover } = useDiscover();
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const { data: status } = useNotificationStatus();
-  const list = useNotificationList(filter);
+  const list = useNotificationList(filter, query);
+  const filtered = Object.keys(queryParams(query)).length > 0;
   const { mutate: markRead, isPending: isMarking } = useMarkRead();
   // When the shown rows were loaded: newer ones wait behind the pill.
   const [loadedAt, setLoadedAt] = useState<string | null>(null);
@@ -293,6 +305,22 @@ export function NotificationList({
         <Spinner />
         <span className="sr-only">{t("notifications.loading")}</span>
       </div>
+    );
+  } else if (notifications.length === 0 && filtered) {
+    body = (
+      <EmptyState
+        icon={<PiMagnifyingGlassBold />}
+        title={t("notifications.empty_filtered_title")}
+        description={t("notifications.empty_filtered_description")}
+        action={
+          onClearFilters && (
+            <Button variant="outline" size="sm" onClick={onClearFilters}>
+              {t("notifications.clear_filters")}
+            </Button>
+          )
+        }
+        className="py-12"
+      />
     );
   } else if (notifications.length === 0) {
     body = (
@@ -384,6 +412,7 @@ export function NotificationList({
           {t("notifications.mark_all_read")}
         </Button>
       </div>
+      {filters}
       <div
         className={cn(
           "flex-1 min-h-0 overflow-y-auto scrollbar border-t",

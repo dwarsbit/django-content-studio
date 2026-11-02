@@ -656,12 +656,23 @@ def webhook_setting_errors() -> list[tuple[str, str]]:
     return errors
 
 
+def _is_absolute_url(value) -> bool:
+    from urllib.parse import urlsplit
+
+    if not isinstance(value, str):
+        return False
+
+    parts = urlsplit(value)
+    return parts.scheme in ("http", "https") and bool(parts.netloc)
+
+
 def notification_errors() -> list[tuple[str, str]]:
     """
     A malformed NOTIFICATION_RETENTION or NOTIFICATION_UNREAD_RETENTION
-    (E030), and notification events
-    registered with a malformed key or twice with different definitions
-    (E031), as (check id, message) pairs.
+    (E030), notification events registered with a malformed key or twice
+    with different definitions (E031), and a malformed
+    NOTIFICATION_EMAIL_DIGEST or ADMIN_URL (E032), as (check id, message)
+    pairs.
     """
     errors = []
 
@@ -675,6 +686,31 @@ def notification_errors() -> list[tuple[str, str]]:
                     f"{setting} must be None or a positive whole number of days.",
                 )
             )
+
+    digest = cs_settings.NOTIFICATION_EMAIL_DIGEST
+    admin_url = cs_settings.ADMIN_URL
+
+    if not isinstance(digest, bool):
+        errors.append(
+            ("content_studio.E032", "NOTIFICATION_EMAIL_DIGEST must be True or False.")
+        )
+
+    if admin_url is not None and not _is_absolute_url(admin_url):
+        errors.append(
+            (
+                "content_studio.E032",
+                "ADMIN_URL must be None or the admin's absolute URL, like "
+                '"https://example.com/admin/".',
+            )
+        )
+    elif digest is True and admin_url is None:
+        errors.append(
+            (
+                "content_studio.E032",
+                "NOTIFICATION_EMAIL_DIGEST needs ADMIN_URL, the admin's absolute "
+                "URL, for the links in the emails.",
+            )
+        )
 
     from django.apps import apps
 

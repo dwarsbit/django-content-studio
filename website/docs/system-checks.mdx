@@ -46,6 +46,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E029` | A dashboard widget's `refresh_interval` that is not a positive number of seconds or `None`. |
 | `content_studio.E030` | A [`NOTIFICATION_RETENTION`](/docs/settings#notification_retention) or [`NOTIFICATION_UNREAD_RETENTION`](/docs/settings#notification_unread_retention) that is not a positive whole number of days or `None`. |
 | `content_studio.E031` | A notification event registered with `register_event` whose key is not lowercase dotted words (like `blog.article_submitted`), starts with `content.`, has an unknown level, or is registered twice with different definitions. |
+| `content_studio.E032` | A [`NOTIFICATION_EMAIL_DIGEST`](/docs/settings#notification_email_digest) that is not `True` or `False`, an [`ADMIN_URL`](/docs/settings#admin_url) that is not an absolute `http` or `https` URL, or the digest turned on without `ADMIN_URL`. |
 
 ## Warnings
 
