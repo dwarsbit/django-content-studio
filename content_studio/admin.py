@@ -363,6 +363,10 @@ class ModelStudio(BaseStudio[T]):
     # object open (when the PRESENCE setting is on).
     presence: bool = True
 
+    # Whether changes to the model notify anyone (with the notifications
+    # app installed).
+    notifications: bool = True
+
     def get_duplicate_initial(self, request: HttpRequest, obj: T) -> dict[str, Any]:
         """
         The values a duplicate of obj starts with, as model values:

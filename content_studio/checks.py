@@ -656,6 +656,36 @@ def webhook_setting_errors() -> list[tuple[str, str]]:
     return errors
 
 
+def notification_errors() -> list[tuple[str, str]]:
+    """
+    A malformed NOTIFICATION_RETENTION or NOTIFICATION_UNREAD_RETENTION
+    (E030), and notification events
+    registered with a malformed key or twice with different definitions
+    (E031), as (check id, message) pairs.
+    """
+    errors = []
+
+    for setting in ("NOTIFICATION_RETENTION", "NOTIFICATION_UNREAD_RETENTION"):
+        retention = getattr(cs_settings, setting)
+
+        if retention is not None and not _is_positive_number(retention, integer=True):
+            errors.append(
+                (
+                    "content_studio.E030",
+                    f"{setting} must be None or a positive whole number of days.",
+                )
+            )
+
+    from django.apps import apps
+
+    if apps.is_installed("content_studio.notifications"):
+        from .notifications.events import registration_errors
+
+        errors += [("content_studio.E031", error) for error in registration_errors()]
+
+    return errors
+
+
 def media_json_attr_errors(
     setting, check_id, purpose, explicit_only=False
 ) -> list[tuple[str, str]]:
@@ -2116,6 +2146,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in webhook_setting_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in notification_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in presence_errors():
