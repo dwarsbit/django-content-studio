@@ -33,3 +33,34 @@ def render_blocks(context, blocks):
             rendered.append(block_template.render(context))
 
     return mark_safe("".join(rendered))
+
+
+@register.simple_tag
+def image_size(item, name):
+    """
+    One size (IMAGE_SIZES) of a media library image: a dict of url,
+    width, height and ready, or None for an unknown size or an item that
+    is not an image:
+
+        {% image_size page.cover "card" as card %}
+        <img src="{{ card.url }}" width="{{ card.width }}" height="{{ card.height }}">
+
+    A size that is not made yet is the image's own file.
+    """
+    from ..media_library.sizes import get_image_sizes
+
+    if not item:
+        return None
+
+    return get_image_sizes(item).get(name)
+
+
+@register.simple_tag
+def image_url(item, name):
+    """
+    The URL of one size of a media library image, or "" when there is
+    none: {% image_url page.cover "hero" %}.
+    """
+    size = image_size(item, name)
+
+    return size["url"] if size else ""

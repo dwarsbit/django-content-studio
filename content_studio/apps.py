@@ -27,10 +27,15 @@ class DjangoContentStudioConfig(AppConfig):
     def ready(self):
         from django.utils.module_loading import autodiscover_modules
 
-        from django.db.models.signals import post_delete
+        from django.db.models.signals import post_delete, post_save, pre_save
 
         from . import checks  # noqa: F401 -- registers the system checks
         from .media_library.cropping import delete_original
+        from .media_library.sizes import (
+            delete_sizes_of_deleted_item,
+            remember_stored_sizes,
+            update_sizes_of_saved_item,
+        )
         from .thumbnails import delete_thumbnails_of_deleted_item
         from .utils import log
 
@@ -55,6 +60,20 @@ class DjangoContentStudioConfig(AppConfig):
         # A cropped media item's original goes with the item.
         post_delete.connect(
             delete_original, dispatch_uid="content_studio_delete_media_original"
+        )
+
+        # Image sizes follow the item: made after a change, deleted
+        # with it.
+        pre_save.connect(
+            remember_stored_sizes, dispatch_uid="content_studio_remember_image_sizes"
+        )
+        post_save.connect(
+            update_sizes_of_saved_item,
+            dispatch_uid="content_studio_update_image_sizes",
+        )
+        post_delete.connect(
+            delete_sizes_of_deleted_item,
+            dispatch_uid="content_studio_delete_image_sizes",
         )
         self._create_crud_api()
 

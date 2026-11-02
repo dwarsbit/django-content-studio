@@ -47,6 +47,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E030` | A [`NOTIFICATION_RETENTION`](/docs/settings#notification_retention) or [`NOTIFICATION_UNREAD_RETENTION`](/docs/settings#notification_unread_retention) that is not a positive whole number of days or `None`. |
 | `content_studio.E031` | A notification event registered with `register_event` whose key is not lowercase dotted words (like `blog.article_submitted`), starts with `content.`, has an unknown level, or is registered twice with different definitions. |
 | `content_studio.E032` | A [`NOTIFICATION_EMAIL_DIGEST`](/docs/settings#notification_email_digest) that is not `True` or `False`, an [`ADMIN_URL`](/docs/settings#admin_url) that is not an absolute `http` or `https` URL, or the digest turned on without `ADMIN_URL`. |
+| `content_studio.E033` | An [`IMAGE_SIZES`](/docs/settings#image_sizes) size with an invalid name or option, such as an unknown option, no width or height, or `"cover"` without both. The size is not made. |
 
 ## Warnings
 
@@ -73,3 +74,4 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.W019` | `CoverImageWidget` on a field that is not a `MediaField` to the media library model. The widget edits one media item. |
 | `content_studio.W020` | A [Huey task dashboard](/docs/dashboard#huey) without Huey's stats app, so it cannot show runs, durations or errors. |
 | `content_studio.W021` | A [`NotificationsWidget`](/docs/notifications#a-dashboard-widget) on a site without `content_studio.notifications` in `INSTALLED_APPS`; it is not shown. |
+| `content_studio.W022` | [`IMAGE_SIZES`](/docs/settings#image_sizes) set while no sizes can be made: Pillow is not installed, `IMAGE_SIZE_FOLDER` is not set, or the media model has no metadata field. Every size is then the image's own file. |

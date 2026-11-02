@@ -186,6 +186,93 @@ Without Pillow, with `THUMBNAIL_FOLDER` set to `None`, or for a file it
 cannot read, the admin shows the image file itself. To serve thumbnails
 another way, override [`get_thumbnail`](#customize-with-site-hooks).
 
+## Image sizes
+
+Thumbnails are for the admin. For your site, apps and other consumers, name
+the sizes you need in [`IMAGE_SIZES`](/docs/settings#image_sizes), and
+Content Studio makes every image in each of them:
+
+```python
+CONTENT_STUDIO = {
+    # ...
+    "IMAGE_SIZES": {
+        "card": {"width": 600, "height": 400, "fit": "cover"},
+        "hero": {"width": 1920},
+        "share": {"width": 1200, "height": 630, "fit": "cover", "format": "jpeg"},
+    },
+}
+```
+
+Each size takes these options:
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `width`, `height` | | The box in pixels. Give one or both; a side left out is free. |
+| `fit` | `"contain"` | `"contain"` scales the image to fit inside the box. `"cover"` fills the box exactly, cut around the [focal point](#focal-points); it needs both sides. |
+| `format` | `"webp"` | `"webp"`, `"jpeg"`, `"png"`, or `"original"` to keep the uploaded format (WebP for other formats). |
+| `quality` | `82` | The quality of WebP and JPEG images, from 1 to 100. |
+| `upscale` | `False` | Whether a smaller image is enlarged to the size. Without it, a small image gives a smaller size of the same shape. |
+
+Sizes need the `images` extra and a media model with a metadata field (the
+built-in `Media` model has one). Content Studio makes them after an image is
+uploaded, replaced, cropped or reset, and makes the `"cover"` sizes again
+when its focal point moves. They are saved in the image's own storage, in
+the folder set by [`IMAGE_SIZE_FOLDER`](/docs/settings#image_size_folder)
+(`"content_studio/sizes"` by default), and recorded in the item's metadata.
+A size's file name changes whenever its image, its options or its focal
+point change, so you can cache the files for as long as you like. Sizes that
+are replaced, and the sizes of a deleted image, are removed.
+
+### Use the sizes
+
+`get_image_sizes` returns every size of an image, with its URL and the width
+and height it has:
+
+```python
+from content_studio.media_library.sizes import get_image_sizes
+
+get_image_sizes(article.cover)
+# {"card": {"url": "/media/content_studio/sizes/...-card-....webp",
+#           "width": 600, "height": 400, "ready": True},
+#  "hero": {...}, "share": {...}}
+```
+
+In templates, use the `image_url` and `image_size` tags of the
+`content_studio` library:
+
+```django
+{% load content_studio %}
+
+<img src="{% image_url article.cover "hero" %}" alt="{{ article.cover.alt_text }}">
+
+{% image_size article.cover "card" as card %}
+<img src="{{ card.url }}" width="{{ card.width }}" height="{{ card.height }}" alt="">
+```
+
+A size that is not made yet is the image's own file, with `ready` set to
+`False`: an image is never missing, only larger for a moment. An item that is
+not an image has no sizes (`{}`), and an unknown size name gives `None` in
+`image_size` and an empty string in `image_url`.
+
+### Making sizes in the background
+
+Content Studio makes the sizes in a [Django task](https://docs.djangoproject.com/en/stable/topics/tasks/).
+Without a `TASKS` setting, Django runs it right after the change is saved,
+in the same request. To keep uploads and crops fast, configure a task
+backend that runs it in a worker, such as [Huey](/docs/dashboard#huey).
+On Django 5.2, install the `django-tasks` backport to use a backend;
+without it, the sizes are made in the request.
+
+After you add or change a size, existing images are out of date: they show
+their own file until their sizes are made. Make them, and remove the sizes
+you no longer configure, with:
+
+```bash
+python manage.py content_studio_image_sizes
+```
+
+Pass `--all` to make every size again.
+
 ## Cropping and focal points
 
 A crop removes what must never be shown, such as a watermark or a bystander;

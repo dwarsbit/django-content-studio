@@ -176,6 +176,20 @@ shared cache, such as Redis, Memcached or the database cache. System check
 `content_studio.E027` reports an alias that is not in `CACHES` while
 thumbnails are on.
 
+### IMAGE_SIZES {#image_sizes}
+
+The [image sizes](/docs/media-library#image-sizes) every media library image
+is made in, for your site and other consumers: a dict of size names to
+options (`width`, `height`, `fit`, `format`, `quality` and `upscale`).
+Default: `{}`, which makes none. Names hold letters, digits, hyphens and
+underscores. System check `content_studio.E033` reports a size it cannot
+make, and `content_studio.W022` sizes that are set while none can be made.
+
+### IMAGE_SIZE_FOLDER {#image_size_folder}
+
+The folder, inside each image's own storage, that the image sizes are saved
+in. Default: `"content_studio/sizes"`.
+
 ## Multi-tenancy
 
 ### TENANT_MODEL {#tenant_model}

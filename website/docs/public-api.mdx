@@ -23,13 +23,15 @@ The public API consists of:
   `Block`, `get_context` and `get_template_name`, and the
   [values of a block field](/docs/content/block-fields#render-blocks-in-templates)
   (`blocks`, and each block's `id`, `type`, `value` and `render`);
-- the `render_blocks` tag of the `content_studio` template library;
+- the `render_blocks`, `image_size` and `image_url` tags of the
+  `content_studio` template library;
 - every [setting](/docs/settings) in `CONTENT_STUDIO`;
 - the [system check](/docs/system-checks) IDs, but not their messages;
 - `content_studio.urls` and the `content_studio.contrib.password_reset` app,
   as a whole;
-- the media library's `content_studio_media_metadata` and
-  `content_studio_thumbnails` commands, with their `--all` option;
+- the media library's `content_studio_media_metadata`,
+  `content_studio_thumbnails` and `content_studio_image_sizes` commands,
+  with their `--all` option;
 - the `content_studio.webhooks` app's `content_studio_deliver_webhooks`
   command, and the requests its webhooks send: the payload with its
   `version`, and the `X-Content-Studio-*` headers;
@@ -263,6 +265,12 @@ The media library app's concrete models.
 
 - `Folder`
 - `Media`
+
+## `content_studio.media_library.sizes`
+
+The [image sizes](/docs/media-library#image-sizes) of media library images.
+
+- `get_image_sizes`
 
 ## `content_studio.webhooks.models`
 

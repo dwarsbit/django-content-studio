@@ -2,6 +2,23 @@
 
 ## 1.6.0 (unreleased)
 
+- **Image sizes.** The new `IMAGE_SIZES` setting names the sizes every media
+  library image is also made in, for your site and other consumers: a
+  `width` and/or `height`, a `fit` of `"contain"` or `"cover"` (filled
+  around the focal point), a `format`, `quality` and `upscale`. With the
+  `images` extra installed, a Django task makes them after an image is
+  uploaded, replaced, cropped or reset, and makes the cover sizes again when
+  its focal point moves. They are saved under the new `IMAGE_SIZE_FOLDER`
+  (`"content_studio/sizes"`) and recorded in the item's metadata; replaced
+  sizes and those of deleted images are removed.
+  `content_studio.media_library.sizes.get_image_sizes` and the `image_size`
+  and `image_url` template tags return them; a size not made yet is the
+  image's own file with `ready` set to `False`.
+  `content_studio_image_sizes` makes missing and out-of-date sizes
+  (`--all` makes every size again) and removes sizes no longer configured.
+  System check `content_studio.E033` reports an invalid size and
+  `content_studio.W022` sizes set while none can be made.
+
 - **Notifications (backend).** The new optional app
   `content_studio.notifications` notifies editors about changes made in the
   admin. Without a choice of their own, editors hear about updates,

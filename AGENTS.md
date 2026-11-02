@@ -44,7 +44,7 @@ content_studio/
 ├── validators.py        # Field validators (JSONSchemaValidator, ChoiceOptionsValidator)
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E032, W001-W021)
+├── checks.py            # System checks (content_studio.E001-E033, W001-W022)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
@@ -62,6 +62,7 @@ content_studio/
 │   └── tasks.py         # Task dashboard: TaskAdapter, its widgets and the TaskDashboard page
 ├── notifications/       # Optional notifications app: models, the content_changed fan-out, register_event/notify, read filter, prune command, the admin endpoints (viewsets.py, with the page's filters and search), site defaults (defaults.py), the dashboard widget, the email digest (digest.py, templates in templates/content_studio/notifications)
 ├── media_library/       # Optional built-in media library app (models, migrations)
+│   ├── sizes.py         # Image sizes (IMAGE_SIZES): made by tasks.py, recorded in metadata["sizes"], get_image_sizes
 │   └── viewsets.py      # Media library API endpoints
 ├── login_backends/
 │   └── ...              # Authentication backends
@@ -139,6 +140,8 @@ CONTENT_STUDIO = {
     'HTML_SANITIZER': None,
     'THUMBNAIL_FOLDER': 'content_studio/thumbnails',  # in the image's storage; None: the file itself
     'THUMBNAIL_CACHE': 'default',  # remembers which thumbnails exist; must be shared across processes
+    'IMAGE_SIZES': {},  # {name: {width, height, fit, format, quality, upscale}}: sizes for consumers, made by a Django task
+    'IMAGE_SIZE_FOLDER': 'content_studio/sizes',  # in the image's storage
     'MEDIA_METADATA_ATTR': 'metadata',  # JSONField: read from the file on upload (site.get_media_metadata), read-only; off when the media model lacks it
     'MEDIA_PROPERTIES_ATTR': 'properties',  # JSONField: set by editors (focal_point), kept when the file changes; off when the media model lacks it
     'TENANT_MODEL': None,

@@ -8,6 +8,7 @@ from content_studio.thumbnails import get_thumbnail_url
 
 from .cropping import get_crop, original_file
 from .metadata import get_metadata_attr, get_properties_attr, validate_properties
+from .sizes import get_image_sizes, get_size_specs
 
 # Leading bytes that mark markup (HTML, SVG, XML): browsers may render
 # such a file as a page when it is served from the site's own domain.
@@ -96,7 +97,21 @@ def build_media_item_serializer(media_model):
             data = super().to_representation(obj)
             data["original"] = self.get_original(obj)
 
+            if get_size_specs():
+                data["sizes"] = self.get_sizes(obj)
+
             return data
+
+        def get_sizes(self, obj):
+            """The image's sizes (IMAGE_SIZES), with absolute URLs."""
+            request = self.context.get("request")
+            sizes = get_image_sizes(obj)
+
+            if request:
+                for size in sizes.values():
+                    size["url"] = request.build_absolute_uri(size["url"])
+
+            return sizes
 
         def get_original(self, obj):
             """

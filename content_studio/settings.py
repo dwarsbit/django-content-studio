@@ -87,6 +87,13 @@ DEFAULTS = {
     # several processes or servers it must be a shared cache (Redis,
     # Memcached, database).
     "THUMBNAIL_CACHE": "default",
+    # Sizes every media library image is also made in, for the site and
+    # other consumers: {name: {"width", "height", "fit", "format",
+    # "quality", "upscale"}}. Empty makes none.
+    "IMAGE_SIZES": {},
+    # Folder, inside each image's own storage, the image sizes are
+    # saved in.
+    "IMAGE_SIZE_FOLDER": "content_studio/sizes",
     "TENANT_MODEL": None,
     # Whether edit and list pages show which users have an object open;
     # a studio opts out with presence = False.
