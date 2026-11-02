@@ -9,6 +9,8 @@ __all__ = [
     "IFramePage",
     "MainMenuButton",
     "MainMenuLink",
+    "UserMenuButton",
+    "UserMenuLink",
 ]
 
 
@@ -44,6 +46,13 @@ class BaseExtension:
         """
         return ()
 
+    def is_visible(self, request) -> bool:
+        """
+        Whether the request's user sees this extension. Extensions it
+        returns False for are left out of what the frontend receives.
+        """
+        return True
+
     def serialize(self):
         return {
             "extension_type": self.extension_type,
@@ -52,6 +61,13 @@ class BaseExtension:
 
 
 class MainMenuLink(BaseExtension):
+    """
+    A link in the main menu. url is a path in the admin, such as
+    "/reports/", or an http(s) URL, which opens in a new tab.
+    Subclass it and override is_visible(request) to show the link to
+    some users only.
+    """
+
     extension_type = "MainMenuLink"
     url: str
     label: str
@@ -156,9 +172,6 @@ class MainMenuButton(BaseExtension):
     def get_id_parts(self):
         return (str(self.label),)
 
-    def is_visible(self, request) -> bool:
-        return True
-
     def handle(self, request) -> Union[None, str, ButtonResult]:
         raise NotImplementedError("A main menu button needs a handle(request) method.")
 
@@ -181,6 +194,25 @@ class MainMenuButton(BaseExtension):
                 "weight": self.weight,
             },
         }
+
+
+class UserMenuLink(MainMenuLink):
+    """
+    A link in the user menu, between the theme toggle and logging out.
+    It takes the same options as MainMenuLink.
+    """
+
+    extension_type = "UserMenuLink"
+
+
+class UserMenuButton(MainMenuButton):
+    """
+    A button in the user menu, between the theme toggle and logging
+    out. It works like MainMenuButton: subclass it and implement
+    handle(request).
+    """
+
+    extension_type = "UserMenuButton"
 
 
 # The sandbox an IFramePage's iframe gets by default. The embedded page

@@ -572,6 +572,7 @@ export interface SearchResultGroup {
 }
 
 export interface MainMenuLinkConfig {
+  // A path in the admin, or an http(s) URL that opens in a new tab.
   url: string;
   icon: string | null;
   color: TailwindColor | null;
@@ -626,15 +627,31 @@ export interface MainMenuButtonExtension {
   config: MainMenuButtonConfig;
 }
 
+export interface UserMenuLinkExtension {
+  extension_id: string;
+  extension_type: ExtensionType.UserMenuLink;
+  config: MainMenuLinkConfig;
+}
+
+export interface UserMenuButtonExtension {
+  extension_id: string;
+  extension_type: ExtensionType.UserMenuButton;
+  config: MainMenuButtonConfig;
+}
+
 export type Extension =
   | MainMenuLinkExtension
   | MainMenuButtonExtension
+  | UserMenuLinkExtension
+  | UserMenuButtonExtension
   | IFramePageExtension
   | DashboardPageExtension;
 
 export enum ExtensionType {
   MainMenuLink = "MainMenuLink",
   MainMenuButton = "MainMenuButton",
+  UserMenuLink = "UserMenuLink",
+  UserMenuButton = "UserMenuButton",
   IFramePage = "IFramePage",
   DashboardPage = "DashboardPage",
 }

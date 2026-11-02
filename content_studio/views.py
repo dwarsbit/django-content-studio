@@ -17,7 +17,7 @@ from rest_framework.viewsets import ViewSet
 from . import __version__
 from .admin import AdminSerializer, ModelStudio, ModelGroup
 from .exceptions import NotConfigured
-from .extensions import DashboardPage, MainMenuButton
+from .extensions import MainMenuButton
 from .media_library.cropping import get_crop_hook
 from .media_library.metadata import get_metadata_attr, get_properties_attr
 from .permissions import IsActiveStaff
@@ -309,13 +309,11 @@ def get_health_check_path():
 
 
 def get_extensions(request):
-    """The site's extensions, without the buttons and pages the request
-    may not see."""
+    """The site's extensions, without those the request may not see."""
     admin_site = cs_settings.ADMIN_SITE
 
     return [
         extension.serialize()
         for extension in getattr(admin_site, "extensions", None) or []
-        if not isinstance(extension, (MainMenuButton, DashboardPage))
-        or extension.is_visible(request)
+        if extension.is_visible(request)
     ]
