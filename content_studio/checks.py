@@ -1993,6 +1993,54 @@ def thumbnail_errors() -> list[tuple[str, str]]:
     return []
 
 
+def image_size_errors() -> list[tuple[str, str]]:
+    """
+    IMAGE_SIZES entries that cannot be made, as (check id, message)
+    pairs: such a size is left out.
+    """
+    from .media_library.sizes import image_sizes_errors
+
+    return [("content_studio.E033", error) for error in image_sizes_errors()]
+
+
+def image_size_warnings() -> list[tuple[str, str]]:
+    """
+    IMAGE_SIZES set while sizes cannot be made, as (check id, message)
+    pairs: every size is then the image's own file.
+    """
+    from .media_library.metadata import get_metadata_attr
+    from .media_library.sizes import get_size_specs, pillow_available
+
+    if not cs_settings.IMAGE_SIZES or not get_size_specs():
+        return []
+
+    reasons = []
+
+    if not cs_settings.IMAGE_SIZE_FOLDER:
+        reasons.append("IMAGE_SIZE_FOLDER is not set")
+
+    if not cs_settings.MEDIA_LIBRARY_MODEL:
+        reasons.append("MEDIA_LIBRARY_MODEL is not set")
+    elif not get_metadata_attr():
+        reasons.append(
+            "the media model has no JSONField named by MEDIA_METADATA_ATTR "
+            "to record them in"
+        )
+
+    if not pillow_available():
+        reasons.append("Pillow is not installed (django-content-studio[images])")
+
+    if not reasons:
+        return []
+
+    return [
+        (
+            "content_studio.W022",
+            f"IMAGE_SIZES is set but no image sizes are made: {'; '.join(reasons)}.",
+        )
+    ]
+
+
 def presence_warnings() -> list[tuple[str, str]]:
     """
     Presence stored in the dummy cache, as (check id, message) pairs:
@@ -2208,6 +2256,14 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
 
     for check_id, error in thumbnail_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in image_size_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, warning in image_size_warnings():
+        messages.append(
+            checks.Warning(warning, obj=site.__class__.__name__, id=check_id)
+        )
 
     for check_id, warning in dashboard_widget_warnings(site):
         messages.append(

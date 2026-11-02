@@ -82,23 +82,150 @@ def _cache_key(storage, name: str) -> str:
 
 def render_thumbnail(source, box: int) -> bytes:
     """A WebP of the image in source, scaled down to fit box x box."""
+    content, _, _, _ = render_image(source, width=box, height=box)
+
+    return content
+
+
+# The Pillow format and file extension of each output format.
+OUTPUT_FORMATS = {
+    "webp": ("WEBP", "webp"),
+    "jpeg": ("JPEG", "jpg"),
+    "png": ("PNG", "png"),
+}
+
+
+def output_format(image_format: str, source_format: str | None) -> tuple[str, str]:
+    """
+    The Pillow format and extension to save in: "original" keeps the
+    source's format when it is one of OUTPUT_FORMATS, and is WebP
+    otherwise.
+    """
+    if image_format == "original":
+        for pillow_format, extension in OUTPUT_FORMATS.values():
+            if pillow_format == source_format:
+                return pillow_format, extension
+
+        return OUTPUT_FORMATS["webp"]
+
+    return OUTPUT_FORMATS[image_format]
+
+
+def _cover_box(size, target, focal_point):
+    """
+    The largest box with the target's aspect ratio inside an image of the
+    given size, centred on the focal point (percentages; the centre when
+    None) as far as the image's edges allow.
+    """
+    width, height = size
+    ratio = target[0] / target[1]
+
+    if width / height > ratio:
+        box_width, box_height = height * ratio, height
+    else:
+        box_width, box_height = width, width / ratio
+
+    x, y = (focal_point or {}).get("x", 50), (focal_point or {}).get("y", 50)
+    left = min(max(width * x / 100 - box_width / 2, 0), width - box_width)
+    top = min(max(height * y / 100 - box_height / 2, 0), height - box_height)
+
+    return left, top, left + box_width, top + box_height
+
+
+def render_image(
+    source,
+    width: int | None = None,
+    height: int | None = None,
+    fit: str = "contain",
+    focal_point: dict | None = None,
+    image_format: str = "webp",
+    quality: int = WEBP_QUALITY,
+    upscale: bool = False,
+) -> tuple[bytes, int, int, str]:
+    """
+    The image in source resized, as (content, width, height, extension).
+
+    "contain" scales the image to fit inside width x height (a missing
+    side is free). "cover" fills width x height exactly, cut around the
+    focal point; without upscale, a source smaller than the box gives a
+    smaller image of the same shape. image_format is "webp", "jpeg",
+    "png" or "original". Animated images keep their first frame.
+    """
     from PIL import Image, ImageOps
 
-    with Image.open(source) as image:
-        # Lets JPEG decode at a lower resolution: much faster for photos.
-        image.draft(image.mode, (box, box))
-        # Animated images keep their first frame.
-        image = ImageOps.exif_transpose(image)
-        image.thumbnail((box, box), Image.Resampling.LANCZOS)
+    resample = Image.Resampling.LANCZOS
 
-        if image.mode not in ("RGB", "RGBA"):
-            transparent = image.mode in ("LA", "PA") or ("transparency" in image.info)
+    with Image.open(source) as image:
+        source_format = image.format
+        pillow_format, extension = output_format(image_format, source_format)
+
+        # Lets JPEG decode at a lower resolution: much faster for photos.
+        # Only for contain: the cover box is computed on the full size.
+        # Square, as the EXIF orientation may still swap the sides.
+        if fit == "contain":
+            side = max(width or 0, height or 0)
+            image.draft(image.mode, (side, side))
+
+        image = ImageOps.exif_transpose(image)
+        source_width, source_height = image.size
+
+        if fit == "cover":
+            box = _cover_box(image.size, (width, height), focal_point)
+            box_width = box[2] - box[0]
+            scale = width / box_width
+
+            if not upscale:
+                scale = min(scale, 1)
+
+            size = (
+                max(round(box_width * scale), 1),
+                max(round((box[3] - box[1]) * scale), 1),
+            )
+            image = image.resize(size, resample, box=box)
+        else:
+            scales = []
+
+            if width:
+                scales.append(width / source_width)
+
+            if height:
+                scales.append(height / source_height)
+
+            scale = min(scales)
+
+            if not upscale:
+                scale = min(scale, 1)
+
+            size = (
+                max(round(source_width * scale), 1),
+                max(round(source_height * scale), 1),
+            )
+
+            if size != image.size:
+                image = image.resize(size, resample)
+
+        transparent = image.mode in ("RGBA", "LA", "PA") or (
+            "transparency" in image.info
+        )
+
+        if pillow_format == "JPEG":
+            image = image.convert("RGB")
+        elif image.mode not in ("RGB", "RGBA"):
             image = image.convert("RGBA" if transparent else "RGB")
 
-        buffer = io.BytesIO()
-        image.save(buffer, "WEBP", quality=WEBP_QUALITY, method=4)
+        options = {}
 
-    return buffer.getvalue()
+        if pillow_format == "WEBP":
+            options = {"quality": quality, "method": 4}
+        elif pillow_format == "JPEG":
+            options = {"quality": quality, "optimize": True}
+        elif pillow_format == "PNG":
+            options = {"optimize": True}
+
+        buffer = io.BytesIO()
+        image.save(buffer, pillow_format, **options)
+
+    return buffer.getvalue(), image.width, image.height, extension
 
 
 def make_thumbnail(file, size: str, force: bool = False) -> bool:

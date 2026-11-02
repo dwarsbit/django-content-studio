@@ -6,6 +6,7 @@ height of images uploaded before metadata was stored.
 from django.core.management.base import BaseCommand, CommandError
 
 from content_studio.media_library.cropping import CROP_KEY, get_crop
+from content_studio.media_library.sizes import SIZES_KEY, get_record
 from content_studio.media_library.metadata import (
     get_metadata_attr,
     get_metadata_values,
@@ -62,6 +63,12 @@ class Command(BaseCommand):
 
             if crop and values:
                 values[attr] = {**values[attr], CROP_KEY: crop}
+
+            # So is the record of the image's sizes, made from the file.
+            sizes = get_record(item)
+
+            if sizes and values:
+                values[attr] = {**values[attr], SIZES_KEY: sizes}
 
             # An update, not a save: no audit stamps, signals or webhooks
             # for what is not an editor's change.
