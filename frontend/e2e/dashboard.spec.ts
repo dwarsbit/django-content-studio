@@ -20,7 +20,12 @@ test("the dashboard shows the configured widgets", async ({ page }) => {
   const notifications = page.locator("section", {
     has: page.getByRole("heading", { name: "Notifications" }),
   });
-  await expect(notifications.getByText("1 unread notification")).toBeVisible();
+  await expect(notifications.getByLabel("1 unread notification")).toHaveText(
+    "1",
+  );
+  await expect(
+    notifications.getByRole("button", { name: "Mark all as read" }),
+  ).toBeVisible();
   await expect(notifications.getByRole("listitem")).toHaveCount(1);
 });
 
