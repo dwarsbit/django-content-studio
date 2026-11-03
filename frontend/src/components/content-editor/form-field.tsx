@@ -3,8 +3,12 @@ import { useFormContext, useWatch } from "react-hook-form";
 
 import { ActivityLog } from "@/components/form-components/activity-log";
 import { ComponentButton } from "@/components/form-components/button";
+import { Callout } from "@/components/form-components/callout";
 import { Link } from "@/components/form-components/link";
 import { LinkButton } from "@/components/form-components/link-button";
+import { Subtitle } from "@/components/form-components/subtitle";
+import { Text } from "@/components/form-components/text";
+import { Title } from "@/components/form-components/title";
 import { FormatRenderer } from "@/components/formats/renderer";
 import {
   FormControl,
@@ -35,6 +39,10 @@ const COMPONENTS: Partial<
   LinkButton,
   Button: ComponentButton,
   ActivityLog,
+  Title,
+  Subtitle,
+  Text,
+  Callout,
 };
 
 export function FormField({
@@ -179,7 +187,8 @@ export function FormField({
 }
 
 /**
- * Renders a component (Link, LinkButton, Button, ActivityLog) of the
+ * Renders a component (Link, LinkButton, Button, ActivityLog, Title,
+ * Subtitle, Text, Callout) of the
  * edit page, in a form set or in the header.
  */
 export function ComponentRenderer({

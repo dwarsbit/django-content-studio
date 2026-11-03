@@ -250,8 +250,8 @@ The check only reports what the database would reject:
 
 ## Components
 
-Besides fields, the edit page can show components: links, buttons that run
-your code, and the object's activity log.
+Besides fields, the edit page can show components: text, links, buttons that
+run your code, and the object's activity log.
 
 ```python
 # blog/admin.py
@@ -282,9 +282,95 @@ class ArticleStudio(ModelStudio):
 - **`Button`**: a button that runs your code on the object; see below.
 - **`ActivityLog`**: the changes made to the object, newest first, under the
   title "Activity" or the `title` you pass.
+- **`Title`**, **`Subtitle`**, **`Text`** and **`Callout`**: text for the
+  editor to read, such as headings and instructions; see below.
 
 Only these components are supported; other component types are not. Links
 and buttons appear once the object is saved.
+
+### Text
+
+The text components show information on the edit page; they are not
+inputs. Place them in `edit_main`, `edit_sidebar` or the `fields` of a
+`FormSet`, between the fields they describe:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import Callout, FormSet, Subtitle, Text, Title
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_main = [
+        FormSet(
+            fields=[
+                Title("Article"),
+                Text("Write for the web: short paragraphs, **one idea** each."),
+                "title",
+                "body",
+                Subtitle("Publishing"),
+                "status",
+            ]
+        )
+    ]
+    edit_sidebar = [
+        Callout(
+            "Published articles change on the site as soon as you save.",
+            title="Heads up",
+            variant="warning",
+        ),
+        "published_at",
+        "author",
+    ]
+```
+
+- **`Title`**: a heading, in plain text.
+- **`Subtitle`**: a smaller heading, in plain text.
+- **`Text`**: a paragraph in Markdown: bold, italic, links, lists and
+  paragraphs. HTML in the text is not rendered, and links open in a new tab.
+- **`Callout`**: Markdown text in a highlighted box, with an optional
+  `title`. The `variant` sets its color and icon: `"info"` (the default),
+  `"success"`, `"warning"` or `"danger"`. Pass an `icon`, such as
+  `"ph-bold ph-lightbulb"`, to use another
+  [Phosphor icon](https://phosphoricons.com).
+
+To show text that depends on the object, subclass the component and
+override `get_text(obj, request)`. It runs when the editor opens a saved
+object, so text computed this way does not appear on the create form:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import Callout
+
+from .models import Article
+
+
+class ReadingTime(Callout):
+    title = "Reading time"
+
+    def get_text(self, obj, request):
+        minutes = max(1, len(obj.body.split()) // 200)
+        return f"About **{minutes} min** to read."
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_sidebar = [ReadingTime(), "published_at", "author"]
+```
+
+The text is computed again after the editor saves. Text components are not
+allowed in a `FieldLayout` or in `edit_header`; system check
+`content_studio.E020` reports one in the header.
+
+Two text components with the same text and type get the same ID. To show
+the same text twice, pass `component_id` with a UUID of your own to one of
+them.
 
 ### Buttons
 
@@ -377,7 +463,7 @@ An [inline studio](/docs/content/registering-models#inlines) takes
 which an editor opens one of the inline's objects. That dialog shows the
 fields and components of the inline model's own studio, when it has one, and
 its links and buttons work there too. The inline studio's permissions decide
-who may use them. `edit_header` only takes
+who may use them. `edit_header` only takes components, and no text
 components; system check `content_studio.E020` reports anything else.
 
 ### After creating an object

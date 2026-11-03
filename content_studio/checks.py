@@ -33,7 +33,7 @@ from .admin import (
 )
 from .export import is_exportable
 from .extensions import DashboardPage
-from .form import Component, Field, TableColumn
+from .form import BaseText, Component, Field, TableColumn
 from .settings import cs_settings
 from .utils import as_instance, flatten, get_tenant_field_name
 
@@ -1063,7 +1063,8 @@ def readonly_fields_errors(studio) -> list[tuple[str, str]]:
 
 def edit_header_errors(studio) -> list[tuple[str, str]]:
     """
-    edit_header entries that are not components, as (check id,
+    edit_header entries that are not components, or are text
+    components (Title, Subtitle, Text, Callout), as (check id,
     message) pairs: the header only shows components, so fields and
     other values would be silently dropped. Inlines are checked too.
     """
@@ -1091,6 +1092,15 @@ def edit_header_errors(studio) -> list[tuple[str, str]]:
                         "content_studio.E020",
                         f"{config_name(owner)}.edit_header entry {entry!r} is "
                         "not a component, such as a Button.",
+                    )
+                )
+            elif isinstance(entry, BaseText):
+                errors.append(
+                    (
+                        "content_studio.E020",
+                        f"{config_name(owner)}.edit_header entry {entry!r} is "
+                        "a text component; the header only shows links and "
+                        "buttons. Put it in edit_main or edit_sidebar.",
                     )
                 )
 
