@@ -192,7 +192,10 @@ export function CommandPalette({
               ) : (
                 <PiFileTextBold />
               )}
-              {model.verbose_name_plural}
+              {/* verbose_name_plural is lowercase in Django. */}
+              <span className="first-letter:uppercase">
+                {model.verbose_name_plural}
+              </span>
             </CommandItem>
           ))}
         </CommandGroup>

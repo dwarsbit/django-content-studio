@@ -407,7 +407,9 @@ export function BlockList({
     <div
       ref={setNodeRef}
       className={cn(
-        "rounded-lg border bg-muted p-3 space-y-3 transition-shadow",
+        // min-w-0: as a grid item the list would otherwise grow to the
+        // width of its longest truncated line (a block's summary).
+        "min-w-0 rounded-lg border bg-muted p-3 space-y-3 transition-shadow",
         tree.dropTarget === list && "ring-2 ring-ring",
       )}
       data-testid={depth ? "nested-block-list" : "block-list"}
