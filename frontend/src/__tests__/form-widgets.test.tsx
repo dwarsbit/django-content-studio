@@ -96,6 +96,17 @@ describe("character counter", () => {
     expect(screen.queryByTestId("character-count")).not.toBeInTheDocument();
   });
 
+  it("takes a number field's number value", () => {
+    render(
+      <InputWidget
+        value={42 as unknown as string}
+        onChange={vi.fn()}
+        options={{ show_count: true }}
+      />,
+    );
+    expect(screen.getByTestId("character-count")).toHaveTextContent("2");
+  });
+
   it("counts characters, not UTF-16 units", () => {
     render(
       <InputWidget

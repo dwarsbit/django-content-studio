@@ -11,11 +11,12 @@ export function CharacterCount({
   maxLength,
   options,
 }: {
-  value: string | null | undefined;
+  value: unknown;
   maxLength?: number;
   options: CharacterCountOptions;
 }) {
-  const length = countCharacters(value ?? "");
+  // Number fields use the InputWidget too: their value can be a number.
+  const length = countCharacters(value == null ? "" : String(value));
   const recommended = options.recommended_length;
 
   if (!showsCount(length, maxLength, options)) {
