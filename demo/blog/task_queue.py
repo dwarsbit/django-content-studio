@@ -23,7 +23,7 @@ class DemoTaskAdapter(TaskAdapter):
         return {
             "queued": TaskStatistic(3),
             "running": TaskStatistic(1),
-            "succeeded": TaskStatistic(128, trend=4.2),
+            "succeeded": TaskStatistic(1284, trend=4.2),
             "failed": TaskStatistic(2, trend=-50),
         }
 
@@ -53,17 +53,50 @@ class DemoTaskAdapter(TaskAdapter):
                 duration=12,
                 error_message="SMTP server refused the connection",
             ),
+            TaskRow(
+                title="Send the notification digest",
+                description="Daily at 07:00",
+                status=TaskStatus.SUCCESS,
+                last_run_at=now - timedelta(hours=2),
+                next_run_at=now + timedelta(hours=22),
+                duration=6,
+            ),
+            TaskRow(
+                title="Prune old notifications",
+                description="Sundays at 03:00",
+                status=TaskStatus.SUCCESS,
+                last_run_at=now - timedelta(days=2),
+                next_run_at=now + timedelta(days=5),
+                duration=2,
+            ),
         ]
 
     def get_recent_tasks(self, request, limit):
         now = timezone.now()
+        runs = [
+            ("Make image sizes", "Alpine dawn", TaskStatus.SUCCESS, 1, 2),
+            ("Deliver webhook", "Netlify deploy", TaskStatus.SUCCESS, 3, 0),
+            ("Purge CDN cache", "/travel/slow-train", TaskStatus.SUCCESS, 4, 1),
+            ("Send notification digest", "38 recipients", TaskStatus.SUCCESS, 9, 6),
+            ("Make image sizes", "Desert dunes", TaskStatus.SUCCESS, 14, 3),
+            ("Import reader reviews", "Feedback form", TaskStatus.FAILURE, 22, 4),
+            ("Deliver webhook", "Search index", TaskStatus.SUCCESS, 31, 0),
+            ("Rebuild the sitemap", "212 URLs", TaskStatus.SUCCESS, 58, 7),
+            ("Publish scheduled articles", "1 article", TaskStatus.SUCCESS, 63, 1),
+            ("Purge CDN cache", "/design/", TaskStatus.SUCCESS, 75, 1),
+        ]
         return [
             TaskRow(
-                title="Deliver webhook",
-                description="Netlify deploy",
-                status=TaskStatus.SUCCESS,
+                title=title,
+                description=description,
+                status=status,
                 last_run_at=now - timedelta(minutes=minutes),
-                duration=0,
+                duration=duration,
+                error_message=(
+                    "The feedback form API answered 503"
+                    if status == TaskStatus.FAILURE
+                    else None
+                ),
             )
-            for minutes in range(1, limit + 1)
+            for title, description, status, minutes, duration in runs
         ][:limit]

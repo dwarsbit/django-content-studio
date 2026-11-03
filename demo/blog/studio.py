@@ -6,13 +6,16 @@ decorator resolves the configured site), so defining both in one module
 would be circular.
 """
 
-from content_studio.admin import ContentStudioSite
+from django.contrib.auth import get_user_model
+
+from content_studio.admin import ContentStudioSite, ModelGroup
 from content_studio.dashboard import Dashboard
 from content_studio.dashboard.activity_log import ActivityLogWidget
 from content_studio.dashboard.tasks import TaskDashboard
 from content_studio.extensions import UserMenuLink
 from content_studio.notifications.dashboard import NotificationsWidget
 
+from . import models
 from .dashboard import (
     ArticleCountWidget,
     FeaturedArticlesWidget,
@@ -24,6 +27,23 @@ from .task_queue import DemoTaskAdapter
 
 
 class DemoStudioSite(ContentStudioSite):
+    model_groups = [
+        ModelGroup(
+            "magazine",
+            icon="ph-bold ph-newspaper",
+            models=[models.Article, models.Category, models.LandingPage],
+        ),
+        ModelGroup(
+            "media",
+            icon="ph-bold ph-images",
+            models=[models.MediaItem, models.MediaFolder],
+        ),
+        ModelGroup(
+            "settings",
+            icon="ph-bold ph-gear",
+            models=[models.SiteSettings, get_user_model()],
+        ),
+    ]
     dashboard = Dashboard(
         widgets=[
             ArticleCountWidget(),

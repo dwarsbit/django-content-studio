@@ -38,6 +38,10 @@
   day and marks each kind of change on the avatar, and the notifications
   widget shows the unread count with a button to mark all as read.
 
+- **Menu icons.** The icons of the main menu are hidden from screen
+  readers, so an icon font glyph no longer ends up in a menu item's name.
+  In the collapsed menu, each item is named by its label.
+
 ## 1.6.0 (2026-11-02)
 
 - **Image sizes.** The new `IMAGE_SIZES` setting names the sizes every media

@@ -13,7 +13,24 @@ DEMO_PASSWORD = "admin1234"
 class Command(BaseCommand):
     help = "Seed the demo project with staff users and sample content."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--showcase",
+            action="store_true",
+            help=(
+                "Replace the demo content with a complete, realistic magazine "
+                "with images, for screenshots and demos. The e2e suite uses "
+                "the plain seed."
+            ),
+        )
+
     def handle(self, *args, **options):
+        if options["showcase"]:
+            from demo.blog.showcase.seed import run
+
+            run(self.stdout, DEMO_PASSWORD)
+            return
+
         user_model = get_user_model()
         user, created = user_model.objects.get_or_create(
             username="admin",
