@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.7.0 (unreleased)
+## 1.7.0 (2026-11-03)
 
 - **Colors.** The new `ColorField` stores a CSS color in the notation set
   with `color_format`: `"hex"` (the default), `"rgb"` or `"hsl"`.
