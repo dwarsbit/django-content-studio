@@ -12,18 +12,22 @@ import { BadgeFormat } from "./badge-format";
 import { BlockFormat } from "./block-format";
 import { BooleanFormat } from "./boolean-format";
 import { ChoiceFormat } from "./choice-format";
+import { CodeFormat } from "./code-format";
 import { ColorFormat } from "./color-format";
 import { DateFormat } from "./date-format";
 import { DatetimeFormat } from "./datetime-format";
+import { DurationFormat } from "./duration-format";
 import { FileFormat } from "./file-format";
 import { FileSizeFormat } from "./file-size-format";
 import { ForeignKeyFormat } from "./foreign-key-format";
 import { HtmlFormat } from "./html-format";
+import { ImageFormat } from "./image-format";
 import { JSONFormat } from "./json-format";
 import { EmailFormat, LinkFormat } from "./link-format";
 import { ManyToManyFormat } from "./many-to-many-format";
 import { ManyMediaFormat, MediaFormat } from "./media-format";
 import { CurrencyFormat, NumberFormat, PercentFormat } from "./number-format";
+import { ProgressFormat } from "./progress-format";
 import { TagFormat } from "./tag-format";
 import { TextFormat } from "./text-format";
 import { TimeFormat } from "./time-format";
@@ -40,15 +44,18 @@ const FORMATS: Partial<Record<FieldFormat, FormatComponent>> = {
   [FieldFormat.BadgeFormat]: BadgeFormat,
   [FieldFormat.BlockFormat]: BlockFormat,
   [FieldFormat.BooleanFormat]: BooleanFormat,
+  [FieldFormat.CodeFormat]: CodeFormat,
   [FieldFormat.ColorFormat]: ColorFormat,
   [FieldFormat.CurrencyFormat]: CurrencyFormat,
   [FieldFormat.DateFormat]: DateFormat,
   [FieldFormat.DateTimeFormat]: DatetimeFormat,
+  [FieldFormat.DurationFormat]: DurationFormat,
   [FieldFormat.EmailFormat]: EmailFormat,
   [FieldFormat.FileFormat]: FileFormat,
   [FieldFormat.FileSizeFormat]: FileSizeFormat,
   [FieldFormat.ForeignKeyFormat]: ForeignKeyFormat,
   [FieldFormat.HtmlFormat]: HtmlFormat,
+  [FieldFormat.ImageFormat]: ImageFormat,
   [FieldFormat.JSONFormat]: JSONFormat,
   [FieldFormat.LinkFormat]: LinkFormat,
   [FieldFormat.ManyMediaFormat]: ManyMediaFormat,
@@ -56,6 +63,7 @@ const FORMATS: Partial<Record<FieldFormat, FormatComponent>> = {
   [FieldFormat.MediaFormat]: MediaFormat,
   [FieldFormat.NumberFormat]: NumberFormat,
   [FieldFormat.PercentFormat]: PercentFormat,
+  [FieldFormat.ProgressFormat]: ProgressFormat,
   [FieldFormat.TagFormat]: TagFormat,
   [FieldFormat.TextFormat]: TextFormat,
   [FieldFormat.TimeFormat]: TimeFormat,

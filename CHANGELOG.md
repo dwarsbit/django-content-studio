@@ -43,6 +43,16 @@
 - **Character counter.** Text fields with a `max_length` show a counter
   once the text nears the limit. `show_count` turns it on or off, and
   `recommended_length` sets a soft limit it warns about.
+- **Long text.** `TextField` columns show two lines on the list page, with
+  the full text on hover. `TextFormat(max_length=..., lines=...)` sets it
+  for any column.
+- **More formats.** `DurationField` values read as "1h 20m"
+  (`DurationFormat(style=...)`), `UUIDField` values show in a monospace
+  font with a copy button (`CodeFormat`), and `ImageField` values as a
+  small thumbnail (`ImageFormat`). The new `ProgressFormat(max_value=100)`
+  shows a number as a meter. `BooleanFormat(labels=..., colors=...)` shows
+  words or badges instead of a check and a dash.
+- In the API, an `ImageField`'s value now also has a `"thumbnail"`.
 - **Fixed:** text columns showed `0` and `false` as empty.
 
 ## 1.7.0 (2026-11-03)

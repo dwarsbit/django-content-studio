@@ -346,7 +346,8 @@
     }
   },
   "formats": {
-    "more": "+{{count}}"
+    "more": "+{{count}}",
+    "copy": "Kopiëren"
   },
   "dashboard": {
     "greetings": {

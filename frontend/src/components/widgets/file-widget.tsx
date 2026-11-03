@@ -133,8 +133,10 @@ export function FileWidget({
     ? preview?.token === picked.upload
       ? preview.url
       : null
-    : isImage && current && isSavedFile(current) && isSafeHref(current.url)
-      ? current.url
+    : isImage && current && isSavedFile(current)
+      ? ([current.thumbnail, current.url].find(
+          (url): url is string => typeof url === "string" && isSafeHref(url),
+        ) ?? null)
       : null;
 
   const chooseButton = (label: string) => (

@@ -299,6 +299,29 @@ export interface BadgeFormatOptions {
 
 export type DateStyle = "short" | "medium" | "long";
 
+export interface TextFormatOptions {
+  // On the list page: cut at this many characters, or clamp to this
+  // many lines, with the full text on hover.
+  max_length?: number;
+  lines?: number;
+}
+
+export type DurationStyle = "narrow" | "short" | "long";
+
+export interface DurationFormatOptions {
+  style?: DurationStyle;
+}
+
+export interface ProgressFormatOptions {
+  max_value?: number;
+}
+
+export interface BooleanFormatOptions {
+  // Words for true and false; colors shows them as badges.
+  labels?: [string, string];
+  colors?: [BadgeColor, BadgeColor];
+}
+
 export interface DateFormatOptions {
   style?: DateStyle;
 }
@@ -358,6 +381,8 @@ export interface DurationWidgetOptions {
 export interface SavedFile {
   name: string;
   url: string;
+  // An ImageField's small thumbnail; null when there is none.
+  thumbnail?: string | null;
 }
 
 export interface PickedFile {
@@ -536,21 +561,25 @@ export enum FieldFormat {
   BadgeFormat = "BadgeFormat",
   BlockFormat = "BlockFormat",
   BooleanFormat = "BooleanFormat",
+  CodeFormat = "CodeFormat",
   ColorFormat = "ColorFormat",
   CurrencyFormat = "CurrencyFormat",
   DateFormat = "DateFormat",
   DateTimeFormat = "DateTimeFormat",
+  DurationFormat = "DurationFormat",
   EmailFormat = "EmailFormat",
   FileFormat = "FileFormat",
   FileSizeFormat = "FileSizeFormat",
   ForeignKeyFormat = "ForeignKeyFormat",
   HtmlFormat = "HtmlFormat",
+  ImageFormat = "ImageFormat",
   LinkFormat = "LinkFormat",
   ManyMediaFormat = "ManyMediaFormat",
   ManyToManyFormat = "ManyToManyFormat",
   MediaFormat = "MediaFormat",
   NumberFormat = "NumberFormat",
   PercentFormat = "PercentFormat",
+  ProgressFormat = "ProgressFormat",
   TagFormat = "TagFormat",
   TextFormat = "TextFormat",
   TimeFormat = "TimeFormat",
