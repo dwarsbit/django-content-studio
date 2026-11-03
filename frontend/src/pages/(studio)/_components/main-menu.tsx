@@ -463,6 +463,8 @@ function MenuItem({
       rel={external ? "noopener noreferrer" : undefined}
       type={to ? undefined : "button"}
       title={title}
+      // The collapsed rail shows only the icon: the label names the item.
+      aria-label={collapsed ? label : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
         "relative flex items-center h-8 rounded-md text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring cursor-pointer disabled:opacity-50",
@@ -475,7 +477,10 @@ function MenuItem({
       onClick={onClick}
     >
       {icon && (
+        // Decorative: an icon font glyph would otherwise end up in the
+        // item's accessible name.
         <span
+          aria-hidden="true"
           className={cn(
             "shrink-0 flex items-center justify-center size-4 [&_svg]:size-4 text-base leading-none",
             active ? "text-foreground" : "text-muted-foreground",

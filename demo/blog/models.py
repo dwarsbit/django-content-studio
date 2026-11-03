@@ -15,12 +15,15 @@ from django.conf import settings
 from django.db import models
 
 from content_studio.blocks import Block, BlockField
-from content_studio.fields import HTMLField
+from content_studio.fields import ColorField, HTMLField
 from content_studio.media_library.fields import MediaField
 
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
+    description = models.CharField(max_length=200, blank=True)
+    # The label color on the site; the color picker widget.
+    color = ColorField(default="#6366f1")
     # The manual order; see CategoryStudio.reorder_field.
     position = models.PositiveIntegerField(default=0)
 
@@ -157,6 +160,9 @@ class Review(models.Model):
 class SiteSettings(models.Model):
     site_name = models.CharField(max_length=100, default="Demo site")
     tagline = models.CharField(max_length=200, blank=True)
+    brand_color = ColorField(default="#4f46e5")
+    accent_color = ColorField(default="#f97316")
+    contact_email = models.EmailField(blank=True)
 
     class Meta:
         verbose_name = "site settings"

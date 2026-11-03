@@ -88,4 +88,10 @@ CONTENT_STUDIO = {
     # The default per-IP rate (10/min) is fine for humans; the e2e suite
     # drives several parallel browser contexts through the same login form.
     "LOGIN_THROTTLE_RATE": "60/min",
+    # Sizes for the site, made for every media library image.
+    "IMAGE_SIZES": {
+        "card": {"width": 600, "height": 400, "fit": "cover"},
+        "hero": {"width": 1920},
+        "share": {"width": 1200, "height": 630, "fit": "cover", "format": "jpeg"},
+    },
 }

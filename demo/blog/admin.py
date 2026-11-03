@@ -4,6 +4,8 @@ Content Studio registration for the demo project — the documented pattern:
 configured in CONTENT_STUDIO (demo.blog.studio.admin_site).
 """
 
+from django.contrib.auth import get_user_model
+
 from content_studio import register, widgets
 from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
 from content_studio.form import ActivityLog, Callout, Field, FormSet, Subtitle, Text
@@ -18,10 +20,27 @@ class ReviewInline(InlineModelStudio):
     reorder_field = "position"
 
 
+@register(get_user_model())
+class UserStudio(ModelStudio):
+    icon = "ph-bold ph-users"
+    table_display = ["username", "first_name", "last_name", "email", "is_superuser"]
+    search_fields = ["username", "first_name", "last_name", "email"]
+
+    def get_relation_display(self, obj, request):
+        # Authors and actors show by name, falling back to the username.
+        return RelationDisplay(
+            title=obj.get_full_name() or obj.username,
+            description=obj.email,
+            initials=f"{obj.first_name[:1]}{obj.last_name[:1]}" or obj.username[:2],
+        )
+
+
 @register(models.Category)
 class CategoryStudio(ModelStudio):
-    table_display = ["name"]
+    icon = "ph-bold ph-tag"
+    table_display = ["name", "color", "description"]
     search_fields = ["name"]
+    edit_main = ["name", "description", "color"]
     # Categories are dragged into order; the list follows it.
     reorder_field = "position"
 
@@ -35,7 +54,8 @@ class CategoryStudio(ModelStudio):
 
 @register(models.MediaItem)
 class MediaItemStudio(ModelStudio):
-    table_display = ["name", "type"]
+    icon = "ph-bold ph-image"
+    table_display = ["name", "type", "folder"]
 
     def get_relation_display(self, obj, request):
         return RelationDisplay(
@@ -48,6 +68,7 @@ class MediaItemStudio(ModelStudio):
 
 @register(models.MediaFolder)
 class MediaFolderStudio(ModelStudio):
+    icon = "ph-bold ph-folder"
     table_display = ["name"]
 
 
@@ -61,6 +82,7 @@ class ReadingTime(Callout):
 
 @register(models.Article)
 class ArticleStudio(ModelStudio):
+    icon = "ph-bold ph-article"
     table_display = ["title", "status", "featured", "views", "author", "published_at"]
     # The list view's rows; both views are offered, with a toggle.
     list_views = ["table", "list"]
@@ -126,10 +148,21 @@ class ArticleStudio(ModelStudio):
 
 @register(models.SiteSettings)
 class SiteSettingsStudio(ModelStudio):
+    icon = "ph-bold ph-sliders-horizontal"
     is_singleton = True
-    edit_main = ["site_name", "tagline"]
+    edit_main = [
+        "site_name",
+        "tagline",
+        "contact_email",
+        Subtitle("Brand"),
+        Text("The colors the site's header, links and buttons use."),
+        "brand_color",
+        "accent_color",
+    ]
 
 
 @register(models.LandingPage)
 class LandingPageStudio(ModelStudio):
+    icon = "ph-bold ph-browser"
+    table_display = ["title"]
     edit_main = ["title", "body", "sections"]
