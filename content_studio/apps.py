@@ -136,6 +136,7 @@ class DjangoContentStudioConfig(AppConfig):
             get_is_singleton,
             get_readonly_field_names,
             get_table_display_columns,
+            get_write_only_field_names,
             is_computed_column,
         )
         from .export import fetch_related
@@ -226,8 +227,13 @@ class DjangoContentStudioConfig(AppConfig):
                     + list(get_readonly_field_names(self._admin_model, self.request))
                 )
 
+                studio_write_only_fields = frozenset(
+                    get_write_only_field_names(self._admin_model, self._model)
+                )
+
                 class Serializer(ContentSerializer):
                     named_properties = studio_named_properties
+                    write_only_fields = studio_write_only_fields
 
                     class Meta:
                         model = self._model

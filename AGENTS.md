@@ -139,6 +139,8 @@ CONTENT_STUDIO = {
     'MEDIA_LIBRARY_ALLOWED_EXTENSIONS': [...],  # images (no SVG), video, audio, documents
     'MEDIA_LIBRARY_MAX_UPLOAD_SIZE': 50 * 1024 * 1024,
     'HTML_SANITIZER': None,
+    'UPLOAD_FOLDER': 'content_studio/uploads',  # FileWidget uploads wait here (default storage) until saved; content_studio_clear_uploads removes old ones
+    'UPLOAD_MAX_SIZE': 50 * 1024 * 1024,  # FileWidget uploads
     'THUMBNAIL_FOLDER': 'content_studio/thumbnails',  # in the image's storage; None: the file itself
     'THUMBNAIL_CACHE': 'default',  # remembers which thumbnails exist; must be shared across processes
     'IMAGE_SIZES': {},  # {name: {width, height, fit, format, quality, upscale}}: sizes for consumers, made by a Django task

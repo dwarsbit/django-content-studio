@@ -105,6 +105,19 @@ built-in sanitizer, which keeps a common set of tags, attributes and link
 types and removes everything else. A `sanitizer` passed to an `HTMLField`
 takes precedence over this setting.
 
+### UPLOAD_FOLDER {#upload_folder}
+
+Where files picked in a [`FileWidget`](/docs/widgets#files) wait until the
+editor saves, in the default storage. Default:
+`"content_studio/uploads"`. `content_studio_clear_uploads` removes the
+ones that were never saved.
+
+### UPLOAD_MAX_SIZE {#upload_max_size}
+
+The maximum size of a file picked in a `FileWidget`, in bytes. Default:
+`52428800` (50 MB). `None` removes the limit; your web server's own request
+size limit still applies.
+
 ## Media library
 
 ### MEDIA_LIBRARY_MODEL, MEDIA_LIBRARY_FOLDER_MODEL {#media_models}

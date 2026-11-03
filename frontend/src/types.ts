@@ -308,7 +308,15 @@ export interface DateTimeFormatOptions {
   style?: DateStyle;
 }
 
-export interface InputWidgetOptions {
+// The character counter of a text field. Unset, it shows once the text
+// nears the field's max_length (or recommended_length).
+export interface CharacterCountOptions {
+  show_count?: boolean;
+  // A soft limit: the counter warns past it.
+  recommended_length?: number;
+}
+
+export interface InputWidgetOptions extends CharacterCountOptions {
   placeholder?: string;
   prefix?: string;
   suffix?: string;
@@ -317,9 +325,52 @@ export interface InputWidgetOptions {
   step?: number;
 }
 
-export interface TextAreaWidgetOptions {
+export interface TextAreaWidgetOptions extends CharacterCountOptions {
   rows?: number;
   placeholder?: string;
+}
+
+// EmailWidget, URLWidget and PhoneWidget.
+export interface PlaceholderWidgetOptions {
+  placeholder?: string;
+}
+
+export interface PasswordWidgetOptions extends PlaceholderWidgetOptions {
+  // The saved value stays on the server: the field's value is
+  // {is_set}, and a new value replaces it.
+  write_only?: boolean;
+}
+
+export interface SliderWidgetOptions {
+  min_value: number;
+  max_value: number;
+  step?: number;
+  suffix?: string;
+}
+
+export interface DurationWidgetOptions {
+  show_days?: boolean;
+  show_seconds?: boolean;
+}
+
+// A FileField's value: the saved file, a file picked in the editor
+// (uploaded, attached when the object is saved), or none.
+export interface SavedFile {
+  name: string;
+  url: string;
+}
+
+export interface PickedFile {
+  upload: string;
+  name: string;
+  size: number;
+}
+
+export type FileValue = SavedFile | PickedFile | null;
+
+// A write-only value as the API sends it: whether one is saved.
+export interface WriteOnlyValue {
+  is_set: boolean;
 }
 
 export type RichTextFeature =
@@ -464,10 +515,13 @@ export enum FieldType {
   DateField = "DateField",
   DateTimeField = "DateTimeField",
   DecimalField = "DecimalField",
+  DurationField = "DurationField",
   EmailField = "EmailField",
+  FileField = "FileField",
   FlexField = "FlexField",
   FloatField = "FloatField",
   HTMLField = "HTMLField",
+  ImageField = "ImageField",
   IntegerField = "IntegerField",
   ManyToManyField = "ManyToManyField",
   SlugField = "SlugField",
@@ -509,6 +563,9 @@ export enum FieldWidget {
   ColorPickerWidget = "ColorPickerWidget",
   DateTimeWidget = "DateTimeWidget",
   DateWidget = "DateWidget",
+  DurationWidget = "DurationWidget",
+  EmailWidget = "EmailWidget",
+  FileWidget = "FileWidget",
   ForeignKeyWidget = "ForeignKeyWidget",
   InputWidget = "InputWidget",
   JSONSchemaWidget = "JSONSchemaWidget",
@@ -517,15 +574,19 @@ export enum FieldWidget {
   CoverImageWidget = "CoverImageWidget",
   ManyMediaWidget = "ManyMediaWidget",
   MultiSelectWidget = "MultiSelectWidget",
+  PasswordWidget = "PasswordWidget",
+  PhoneWidget = "PhoneWidget",
   RadioButtonWidget = "RadioButtonWidget",
   RichTextWidget = "RichTextWidget",
   SelectWidget = "SelectWidget",
   SlugWidget = "SlugWidget",
+  SliderWidget = "SliderWidget",
   SwitchWidget = "SwitchWidget",
   TextAreaWidget = "TextAreaWidget",
   ToggleGroupWidget = "ToggleGroupWidget",
   TimeWidget = "TimeWidget",
   URLPathWidget = "URLPathWidget",
+  URLWidget = "URLWidget",
   TagWidget = "TagWidget",
 }
 

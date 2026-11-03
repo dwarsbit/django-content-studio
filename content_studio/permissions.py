@@ -58,6 +58,13 @@ class ModelStudioPermissions(BasePermission):
                 request
             ) or admin_model.has_add_permission(request)
 
+        if getattr(view, "action", None) == "upload":
+            # A file for a FileWidget, picked on the create or the edit
+            # page; it changes nothing until the object is saved.
+            return admin_model.has_add_permission(
+                request
+            ) or admin_model.has_change_permission(request)
+
         if getattr(view, "action", None) in ("restore", "move"):
             # Restoring a trashed object and moving one to another
             # position are changes, whatever the HTTP method.

@@ -6,6 +6,9 @@ __all__ = [
     "CoverImageWidget",
     "DateTimeWidget",
     "DateWidget",
+    "DurationWidget",
+    "EmailWidget",
+    "FileWidget",
     "ForeignKeyWidget",
     "InputWidget",
     "JSONSchemaWidget",
@@ -14,9 +17,12 @@ __all__ = [
     "ManyToManyWidget",
     "MediaWidget",
     "MultiSelectWidget",
+    "PasswordWidget",
+    "PhoneWidget",
     "RadioButtonWidget",
     "RichTextWidget",
     "SelectWidget",
+    "SliderWidget",
     "SlugWidget",
     "SwitchWidget",
     "TagWidget",
@@ -24,6 +30,7 @@ __all__ = [
     "TimeWidget",
     "ToggleGroupWidget",
     "URLPathWidget",
+    "URLWidget",
 ]
 import datetime
 from decimal import Decimal
@@ -96,6 +103,36 @@ def as_number(value):
     return float(value) if isinstance(value, Decimal) else value
 
 
+def check_number(owner: str, name: str, value):
+    if isinstance(value, bool) or not isinstance(value, (int, float, Decimal)):
+        raise TypeError(f"{owner} {name} must be a number; got {value!r}.")
+
+
+def check_bool(owner: str, name: str, value):
+    if not isinstance(value, bool):
+        raise TypeError(f"{owner} {name} must be True or False; got {value!r}.")
+
+
+def check_counter(owner: str, show_count, recommended_length):
+    """
+    The character counter's options: show_count None shows it once the
+    text nears its limit, True always, False never; recommended_length
+    is a soft limit, such as 60 for an SEO title.
+    """
+    if show_count is not None:
+        check_bool(owner, "show_count", show_count)
+
+    if recommended_length is not None and (
+        isinstance(recommended_length, bool)
+        or not isinstance(recommended_length, int)
+        or recommended_length < 1
+    ):
+        raise ValueError(
+            f"{owner} recommended_length must be a positive int; "
+            f"got {recommended_length!r}."
+        )
+
+
 def serialize_date_option(value: DateOption) -> Optional[str]:
     """
     A date option as an ISO date. Callables are evaluated on every
@@ -119,6 +156,10 @@ class InputWidget(BaseWidget):
     A single-line input. min_value, max_value and step turn it into a
     number input; prefix and suffix are shown inside the box, around
     the value (a currency or a unit).
+
+    A field with a max_length shows a character counter once the text
+    reaches 80% of it; show_count=True shows it always, False never.
+    recommended_length is a soft limit the counter warns about.
     """
 
     def __init__(
@@ -130,7 +171,11 @@ class InputWidget(BaseWidget):
         min_value: Union[int, float, Decimal] = None,
         max_value: Union[int, float, Decimal] = None,
         step: Union[int, float, Decimal] = None,
+        show_count: bool = None,
+        recommended_length: int = None,
     ):
+        check_counter("InputWidget", show_count, recommended_length)
+
         for name, value in (
             ("min_value", min_value),
             ("max_value", max_value),
@@ -156,6 +201,8 @@ class InputWidget(BaseWidget):
         self.min_value = min_value
         self.max_value = max_value
         self.step = step
+        self.show_count = show_count
+        self.recommended_length = recommended_length
 
     def get_options(self):
         return {
@@ -166,16 +213,28 @@ class InputWidget(BaseWidget):
             "min_value": as_number(self.min_value),
             "max_value": as_number(self.max_value),
             "step": as_number(self.step),
+            "show_count": self.show_count,
+            "recommended_length": self.recommended_length,
         }
 
 
 class TextAreaWidget(BaseWidget):
     """
     A multi-line input that grows with its text; rows sets the height
-    it starts at.
+    it starts at. show_count and recommended_length work as on
+    InputWidget.
     """
 
-    def __init__(self, *, rows: int = None, placeholder: str = None):
+    def __init__(
+        self,
+        *,
+        rows: int = None,
+        placeholder: str = None,
+        show_count: bool = None,
+        recommended_length: int = None,
+    ):
+        check_counter("TextAreaWidget", show_count, recommended_length)
+
         if rows is not None and (
             isinstance(rows, bool) or not isinstance(rows, int) or rows < 1
         ):
@@ -185,9 +244,135 @@ class TextAreaWidget(BaseWidget):
 
         self.rows = rows
         self.placeholder = placeholder
+        self.show_count = show_count
+        self.recommended_length = recommended_length
 
     def get_options(self):
-        return {"rows": self.rows, "placeholder": self.placeholder}
+        return {
+            "rows": self.rows,
+            "placeholder": self.placeholder,
+            "show_count": self.show_count,
+            "recommended_length": self.recommended_length,
+        }
+
+
+class PlaceholderWidget(BaseWidget):
+    """Base of the typed inputs: an optional placeholder."""
+
+    def __init__(self, *, placeholder: str = None):
+        if placeholder is not None and not isinstance(placeholder, str):
+            raise TypeError(
+                f"{self.__class__.__name__} placeholder must be a string; "
+                f"got {placeholder!r}."
+            )
+
+        self.placeholder = placeholder
+
+    def get_options(self):
+        return {"placeholder": self.placeholder}
+
+
+class EmailWidget(PlaceholderWidget):
+    """An email input with a button that writes to the address."""
+
+
+class URLWidget(PlaceholderWidget):
+    """A URL input with a button that opens the link in a new tab."""
+
+
+class PhoneWidget(PlaceholderWidget):
+    """
+    A phone number input: the phone keyboard on mobile devices. The
+    number is kept as typed.
+    """
+
+
+class PasswordWidget(PlaceholderWidget):
+    """
+    A masked input with a button to show the value, for API keys and
+    secrets. write_only=True never sends the saved value to the admin:
+    the field shows whether a value is set, and editors type a new one
+    to replace it.
+    """
+
+    def __init__(self, *, write_only: bool = False, placeholder: str = None):
+        check_bool("PasswordWidget", "write_only", write_only)
+        super().__init__(placeholder=placeholder)
+        self.write_only = write_only
+
+    def get_options(self):
+        return {**super().get_options(), "write_only": self.write_only}
+
+
+class SliderWidget(BaseWidget):
+    """
+    A slider from min_value to max_value in steps of step, with the
+    value next to it; suffix is shown after the value (a unit).
+    """
+
+    def __init__(
+        self,
+        *,
+        min_value: Union[int, float, Decimal],
+        max_value: Union[int, float, Decimal],
+        step: Union[int, float, Decimal] = 1,
+        suffix: str = None,
+    ):
+        for name, value in (
+            ("min_value", min_value),
+            ("max_value", max_value),
+            ("step", step),
+        ):
+            check_number("SliderWidget", name, value)
+
+        if step <= 0:
+            raise ValueError(f"SliderWidget step must be positive; got {step!r}.")
+
+        if min_value >= max_value:
+            raise ValueError(
+                f"SliderWidget min_value {min_value!r} must be less than "
+                f"max_value {max_value!r}."
+            )
+
+        if suffix is not None and not isinstance(suffix, str):
+            raise TypeError(f"SliderWidget suffix must be a string; got {suffix!r}.")
+
+        self.min_value = min_value
+        self.max_value = max_value
+        self.step = step
+        self.suffix = suffix
+
+    def get_options(self):
+        return {
+            "min_value": as_number(self.min_value),
+            "max_value": as_number(self.max_value),
+            "step": as_number(self.step),
+            "suffix": self.suffix,
+        }
+
+
+class DurationWidget(BaseWidget):
+    """
+    Hours, minutes and seconds boxes for a DurationField. show_days
+    adds a days box; show_seconds=False leaves out the seconds.
+    """
+
+    def __init__(self, *, show_days: bool = False, show_seconds: bool = True):
+        check_bool("DurationWidget", "show_days", show_days)
+        check_bool("DurationWidget", "show_seconds", show_seconds)
+        self.show_days = show_days
+        self.show_seconds = show_seconds
+
+    def get_options(self):
+        return {"show_days": self.show_days, "show_seconds": self.show_seconds}
+
+
+class FileWidget(BaseWidget):
+    """
+    A file picker for a FileField or ImageField, with drag and drop. A
+    picked file is uploaded right away and attached when the object is
+    saved; an ImageField shows a preview.
+    """
 
 
 class SwitchWidget(BaseWidget):

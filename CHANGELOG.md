@@ -25,6 +25,24 @@
   `relative=False` shows it instead of "3 hours ago".
 - **Radio buttons.** `RadioButtonWidget` now shows a field's choices as
   radio buttons; it used to show a read-only value.
+- **Email, URL and phone fields.** `EmailField` and `URLField` get
+  `EmailWidget` and `URLWidget`, with a button that writes to the address or
+  opens it. `PhoneWidget` shows phones the number pad.
+- **Files.** `FileField` and `ImageField` can now be edited with the new
+  `FileWidget`: a picked or dropped file is uploaded right away and attached
+  when the editor saves. Run `manage.py content_studio_clear_uploads` daily
+  to remove uploads that were never saved. New settings: `UPLOAD_FOLDER`
+  and `UPLOAD_MAX_SIZE`. In the API, a file field's value is now
+  `{"name", "url"}`.
+- **Secrets.** The new `PasswordWidget` masks a value, with a button that
+  shows it. With `write_only=True`, the value never leaves the server and
+  is left out of exports.
+- **Sliders and durations.** The new `SliderWidget(min_value, max_value)`
+  picks a number on a slider. `DurationField` gets `DurationWidget`, with
+  boxes for hours, minutes and seconds (and days with `show_days=True`).
+- **Character counter.** Text fields with a `max_length` show a counter
+  once the text nears the limit. `show_count` turns it on or off, and
+  `recommended_length` sets a soft limit it warns about.
 - **Fixed:** text columns showed `0` and `false` as empty.
 
 ## 1.7.0 (2026-11-03)

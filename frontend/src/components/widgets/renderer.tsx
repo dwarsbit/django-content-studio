@@ -14,7 +14,9 @@ import { ColorPickerWidget } from "./color-picker-widget";
 import { CoverImageWidget } from "./cover-image-widget/cover-image-widget";
 import { DateTimeWidget } from "./date-time-widget";
 import { DateWidget } from "./date-widget";
+import { DurationWidget } from "./duration-widget";
 import { FallbackWidget } from "./fallback-widget";
+import { FileWidget } from "./file-widget";
 import { ForeignKeyWidget } from "./foreign-key-widget";
 import { InputWidget } from "./input-widget";
 import { JSONSchemaWidget } from "./json-schema-widget";
@@ -22,15 +24,18 @@ import { ManyMediaWidget } from "./many-media-widget";
 import { ManyToManyWidget } from "./many-to-many-widget";
 import { MediaWidget } from "./media-widget";
 import { MultiSelectWidget } from "./multi-select-widget";
+import { PasswordWidget } from "./password-widget";
 import { RadioButtonWidget } from "./radio-button-widget";
 import { RichTextWidget } from "./rich-text-widget";
 import { SelectWidget } from "./select-widget";
+import { SliderWidget } from "./slider-widget";
 import { SlugWidget } from "./slug-widget";
 import { SwitchWidget } from "./switch-widget";
 import { TagWidget } from "./tag-widget";
 import { TextAreaWidget } from "./text-area-widget";
 import { TimeWidget } from "./time-widget";
 import { ToggleGroupWidget } from "./toggle-group-widget";
+import { EmailWidget, PhoneWidget, URLWidget } from "./typed-input-widgets";
 import { URLPathWidget } from "./url-path-widget";
 
 type WidgetComponent = ComponentType<{
@@ -60,6 +65,9 @@ const WIDGETS = {
   [FieldWidget.CoverImageWidget]: CoverImageWidget,
   [FieldWidget.DateWidget]: DateWidget,
   [FieldWidget.DateTimeWidget]: DateTimeWidget,
+  [FieldWidget.DurationWidget]: DurationWidget,
+  [FieldWidget.EmailWidget]: EmailWidget,
+  [FieldWidget.FileWidget]: FileWidget,
   [FieldWidget.ForeignKeyWidget]: ForeignKeyWidget,
   [FieldWidget.InputWidget]: InputWidget,
   [FieldWidget.JSONSchemaWidget]: JSONSchemaWidget,
@@ -67,9 +75,12 @@ const WIDGETS = {
   [FieldWidget.ManyMediaWidget]: ManyMediaWidget,
   [FieldWidget.MediaWidget]: MediaWidget,
   [FieldWidget.MultiSelectWidget]: MultiSelectWidget,
+  [FieldWidget.PasswordWidget]: PasswordWidget,
+  [FieldWidget.PhoneWidget]: PhoneWidget,
   [FieldWidget.RadioButtonWidget]: RadioButtonWidget,
   [FieldWidget.RichTextWidget]: RichTextWidget,
   [FieldWidget.SelectWidget]: SelectWidget,
+  [FieldWidget.SliderWidget]: SliderWidget,
   [FieldWidget.SlugWidget]: SlugWidget,
   [FieldWidget.SwitchWidget]: SwitchWidget,
   [FieldWidget.TagWidget]: TagWidget,
@@ -77,6 +88,7 @@ const WIDGETS = {
   [FieldWidget.TimeWidget]: TimeWidget,
   [FieldWidget.ToggleGroupWidget]: ToggleGroupWidget,
   [FieldWidget.URLPathWidget]: URLPathWidget,
+  [FieldWidget.URLWidget]: URLWidget,
 } as Partial<Record<FieldWidget, WidgetComponent>>;
 
 export function WidgetRenderer({

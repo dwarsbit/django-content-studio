@@ -8,12 +8,16 @@ the widget from the field's type, so most models need no configuration.
 | Field type | Widget |
 |-----------|--------|
 | `CharField` and number fields | `InputWidget` |
+| `EmailField` | `EmailWidget` |
+| `URLField` | `URLWidget` |
 | `SlugField` | `SlugWidget` |
 | `TextField` | `TextAreaWidget` |
 | `BooleanField` | `CheckboxWidget` |
 | `ForeignKey`, `OneToOneField` | `ForeignKeyWidget` |
 | `ManyToManyField` | `ManyToManyWidget` |
 | `DateField`, `DateTimeField`, `TimeField` | `DateWidget`, `DateTimeWidget`, `TimeWidget` |
+| `DurationField` | `DurationWidget` |
+| `FileField`, `ImageField` | `FileWidget` |
 | `JSONField` | `JSONWidget` |
 | `HTMLField` (built-in) | `RichTextWidget` |
 | `TagField` (built-in) | `TagWidget` |
@@ -27,9 +31,15 @@ the widget from the field's type, so most models need no configuration.
 
 Fields with choices get a select. Fields of other types get a plain input.
 
-Four widgets are not used by default but are there to choose:
+These widgets are not used by default but are there to choose:
 
 - **`SwitchWidget`**: a toggle switch, for a `BooleanField`.
+- **`PhoneWidget`**: a phone number, for a `CharField`. Phones show the
+  number pad.
+- **`PasswordWidget`**: a masked value with a button that shows it, for a
+  secret such as an API key in a `CharField`. See [Secrets](#secrets).
+- **`SliderWidget`**: a number picked on a slider, for a number field. It
+  needs its range: see [Widget options](#widget-options).
 - **`ToggleGroupWidget`**: a row of buttons for a field with choices, of
   which exactly one is active.
 - **`RadioButtonWidget`**: the choices of a field as radio buttons, one per
@@ -103,12 +113,25 @@ class ArticleStudio(ModelStudio):
 Options are keyword arguments. An unknown option or an invalid value raises
 an error when the studio is defined, not when an editor opens the page.
 
-- **`InputWidget(placeholder=None, prefix=None, suffix=None, min_value=None, max_value=None, step=None)`**:
+- **`InputWidget(placeholder=None, prefix=None, suffix=None, min_value=None, max_value=None, step=None, show_count=None, recommended_length=None)`**:
   `prefix` and `suffix` are shown inside the box, around the value, for a
   currency or a unit. `min_value`, `max_value` or `step` make it a number
-  input.
-- **`TextAreaWidget(rows=None, placeholder=None)`**: the textarea grows with
-  its text; `rows` sets the height it starts at.
+  input. For `show_count` and `recommended_length`, see
+  [Character counter](#character-counter).
+- **`TextAreaWidget(rows=None, placeholder=None, show_count=None, recommended_length=None)`**:
+  the textarea grows with its text; `rows` sets the height it starts at.
+- **`EmailWidget(placeholder=None)`**, **`URLWidget(placeholder=None)`** and
+  **`PhoneWidget(placeholder=None)`**: an email address gets a button that
+  writes to it, and a web address one that opens it in a new tab.
+- **`PasswordWidget(write_only=False, placeholder=None)`**: see
+  [Secrets](#secrets).
+- **`SliderWidget(min_value, max_value, step=1, suffix=None)`**: a slider
+  from `min_value` to `max_value`, with the value next to it. `suffix` is
+  shown after the value, for a unit. `min_value` and `max_value` are
+  required.
+- **`DurationWidget(show_days=False, show_seconds=True)`**: boxes for hours,
+  minutes and seconds. `show_days=True` adds a days box; without it, a day
+  counts as 24 hours. `show_seconds=False` leaves out the seconds.
 - **`RichTextWidget(features=None, heading_levels=None)`**: `features` limits
   the editor to the listed formatting. Choose from `"heading"`,
   `"blockquote"`, `"code_block"`, `"bold"`, `"italic"`, `"underline"`,
@@ -130,6 +153,63 @@ format, add [validators](https://docs.djangoproject.com/en/stable/ref/validators
 to the model field, such as `MinValueValidator`, and an `HTMLField`'s
 [sanitizer](/docs/settings#html_sanitizer) for the HTML it keeps.
 :::
+
+## Character counter
+
+A text field with a `max_length` shows a counter under its box once the
+text reaches 80% of the limit, such as "52 / 60". It turns red past the
+limit. `show_count=True` always shows the counter, and `show_count=False`
+never does.
+
+`recommended_length` is a soft limit, such as the length a search engine
+shows of a title. The counter counts against it, starts at 80% of it, and
+turns orange past it. The field still saves:
+
+```python
+# blog/admin.py
+Field("title", widget=widgets.InputWidget(recommended_length=60)),
+```
+
+## Secrets
+
+`PasswordWidget` masks its value. Editors can show it with the eye button.
+With `write_only=True`, the saved value never leaves the server: the API
+says whether a value is saved, and the box stays empty. Editors type a new
+value to replace it, and an optional field has a **Clear** button that
+removes it on save. CSV and Excel exports leave the field out.
+
+```python
+# blog/admin.py
+Field("api_key", widget=widgets.PasswordWidget(write_only=True)),
+```
+
+`write_only` applies to the field wherever the studio's form has it. The
+value is stored as you store it: to encrypt it in the database, use an
+encrypted model field.
+
+## Files
+
+`FileWidget` edits a `FileField` or an `ImageField`. Editors pick a file or
+drop it on the field; an `ImageField` only takes images and shows a preview.
+The file is uploaded right away and attached when the editor saves. Until
+then, the object keeps its saved file, so **Cancel** leaves it unchanged.
+
+Uploads go through the same checks as the media library: the field's own
+validators (an `ImageField` checks that the file is an image), a maximum
+size ([`UPLOAD_MAX_SIZE`](/docs/settings#upload_max_size)), and no markup
+such as HTML and SVG. A picked file waits in
+[`UPLOAD_FOLDER`](/docs/settings#upload_folder) in the default storage. It
+is moved into the field's `upload_to` on save.
+
+Files that were picked but never saved stay in the upload folder. Remove
+them once a day, for example with cron:
+
+```bash
+python manage.py content_studio_clear_uploads
+```
+
+It removes uploads older than a day; an editor's upload is valid for that
+long.
 
 ## Cover images
 
@@ -382,6 +462,7 @@ Content Studio picks the format from the field's type:
 | `TimeField` | `TimeFormat` | Hours and minutes |
 | `EmailField` | `EmailFormat` | A `mailto:` link |
 | `URLField` | `LinkFormat` | A link that opens in a new tab |
+| `FileField`, `ImageField` | `FileFormat` | The file's name, linked to the file |
 | `ForeignKey`, `OneToOneField` | `ForeignKeyFormat` | The related object |
 | `ManyToManyField` | `ManyToManyFormat` | The related objects as chips |
 | `JSONField`, `FlexField` (built-in) | `JSONFormat` | The JSON |

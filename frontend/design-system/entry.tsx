@@ -126,6 +126,7 @@ export {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+export { Slider } from "@/components/ui/slider";
 export { Toaster } from "@/components/ui/sonner";
 export { Spinner } from "@/components/ui/spinner";
 export { Switch } from "@/components/ui/switch";

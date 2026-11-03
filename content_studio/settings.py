@@ -94,6 +94,13 @@ DEFAULTS = {
     # Folder, inside each image's own storage, the image sizes are
     # saved in.
     "IMAGE_SIZE_FOLDER": "content_studio/sizes",
+    # Folder, in the default storage, that files picked in a FileWidget
+    # wait in until the object is saved. Unsaved uploads are removed by
+    # the content_studio_clear_uploads command.
+    "UPLOAD_FOLDER": "content_studio/uploads",
+    # Maximum size of a file picked in a FileWidget, in bytes; None for
+    # no limit.
+    "UPLOAD_MAX_SIZE": 50 * 1024 * 1024,
     "TENANT_MODEL": None,
     # Whether edit and list pages show which users have an object open;
     # a studio opts out with presence = False.

@@ -28,6 +28,10 @@ of the box, and the system checks that catch configuration mistakes.
 - **Serve uploads from a separate domain** when you can, such as a CDN or an
   object storage bucket. Even with the upload checks, a file served from your
   own domain runs with your site's privileges if a browser renders it.
+- **Clear unsaved uploads daily.** Files picked in a
+  [`FileWidget`](/docs/widgets#files) but never saved stay in the upload
+  folder until `manage.py content_studio_clear_uploads` removes them. Run it
+  once a day, for example with cron.
 - **Configure a task backend** that runs Django tasks in a worker. Password
   reset emails are then sent outside the request, so its duration does not
   reveal whether an address has an account
@@ -69,6 +73,11 @@ of the box, and the system checks that catch configuration mistakes.
 - **Checked uploads.** The media library accepts a list of file types up to
   a maximum size, and rejects markup such as HTML and SVG
   ([`MEDIA_LIBRARY_ALLOWED_EXTENSIONS`](/docs/settings#media_library_allowed_extensions)).
+  File fields reject markup too, and a file is only attached to an object
+  by the editor who uploaded it.
+- **Write-only secrets.** A field with
+  [`PasswordWidget(write_only=True)`](/docs/widgets#secrets) never sends
+  its value to the browser or to an export.
 - **Nothing public but the login pages.** Before logging in, the admin only
   receives what it needs to show the login form.
 

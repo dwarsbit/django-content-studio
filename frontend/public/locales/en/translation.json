@@ -310,6 +310,39 @@
     "color_picker": {
       "pick": "Pick a color",
       "input": "Color value"
+    },
+    "email_widget": {
+      "send": "Write an email"
+    },
+    "url_widget": {
+      "open": "Open in a new tab"
+    },
+    "password_widget": {
+      "show": "Show",
+      "hide": "Hide",
+      "saved": "A value is saved. Type a new one to replace it.",
+      "cleared": "The saved value is removed when you save.",
+      "undo": "Undo"
+    },
+    "duration_widget": {
+      "days": "days",
+      "hours": "hours",
+      "minutes": "minutes",
+      "seconds": "seconds"
+    },
+    "file_widget": {
+      "choose": "Choose file",
+      "replace": "Replace",
+      "remove": "Remove",
+      "keep_saved": "Keep saved file",
+      "undo": "Undo",
+      "empty": "Or drop a file here.",
+      "drop": "Drop to upload",
+      "uploading": "Uploading {{name}}",
+      "upload_progress": "Upload progress",
+      "attached_on_save": "Attached when you save",
+      "removed_on_save": "{{name}} is removed when you save.",
+      "not_an_image": "Only images can be added here. Choose a PNG, JPEG or WebP file."
     }
   },
   "formats": {
