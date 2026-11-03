@@ -4,6 +4,8 @@ import Layout from "@theme/Layout";
 import CodeBlock from "@theme/CodeBlock";
 import Link from "@docusaurus/Link";
 
+import Screenshot from "../components/Screenshot";
+
 import "../css/custom.css";
 
 const heroCode = `# blog/admin.py
@@ -18,6 +20,33 @@ class ArticleStudio(ModelStudio):
     table_display = ["title", "status", "published_at"]
     list_filter = ["status"]
     search_fields = ["title"]`;
+
+const tour = [
+  {
+    name: "articles",
+    title: "List page",
+    to: "/docs/list-page",
+    alt: "The list page of articles, with search, filters and a table",
+  },
+  {
+    name: "article-edit",
+    title: "Edit page",
+    to: "/docs/edit-page",
+    alt: "The edit page of an article, with a cover image and a sidebar",
+  },
+  {
+    name: "media-library",
+    title: "Media library",
+    to: "/docs/media-library",
+    alt: "The media library, with folders and a grid of images",
+  },
+  {
+    name: "palette",
+    title: "Command palette",
+    to: "/docs/command-palette",
+    alt: "The command palette open over the list page",
+  },
+];
 
 const features = [
   {
@@ -76,6 +105,23 @@ export default function Home(): React.JSX.Element {
             </div>
             <div className="hero-visual">
               <CodeBlock language="python">{heroCode}</CodeBlock>
+            </div>
+          </div>
+        </section>
+
+        <section className="showcase-dbp">
+          <div className="container">
+            <Screenshot
+              name="dashboard"
+              alt="The dashboard of a magazine site in Content Studio, with statistics, the latest articles, notifications and recent activity"
+            />
+            <div className="tour-grid">
+              {tour.map((item) => (
+                <Link className="tour-card" to={item.to} key={item.name}>
+                  <Screenshot name={item.name} alt={item.alt} />
+                  <span>{item.title}</span>
+                </Link>
+              ))}
             </div>
           </div>
         </section>
