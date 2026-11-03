@@ -1,8 +1,78 @@
----
-sidebar_position: 14
----
+# 🛡️ Deployment
 
-# 🔎 System checks
+Everyone who can log in to the admin can change your content. This page
+lists what to configure before you go live, what Content Studio protects out
+of the box, and the system checks that catch configuration mistakes.
+
+## Deployment checklist
+
+- **Serve the admin over HTTPS.** The session cookie is marked `Secure`
+  whenever `DEBUG` is off
+  ([`REFRESH_COOKIE_SECURE`](/docs/settings#refresh_cookie_secure)). Behind a
+  proxy that terminates TLS, also set Django's `SECURE_PROXY_SSL_HEADER`.
+- **Configure a shared cache**, such as Redis, Memcached or the database
+  cache. The login and password reset limits are counted in the cache; with
+  the default per-process cache, every worker counts separately.
+  Ended sessions are recorded in the cache
+  ([`TOKEN_CACHE`](/docs/settings#token_cache)); with a per-process cache,
+  a session logged out in one worker continues in another.
+  [Presence](/docs/presence) is kept in the cache too.
+- **Pass on the client's IP address.** The limits count per IP address.
+  Without further configuration, Content Studio uses the address of the
+  connection and ignores `X-Forwarded-For`, which any client can set. Behind
+  a proxy, every request then comes from the proxy's address and all
+  clients share one limit. Set `NUM_PROXIES` in the
+  [Django REST Framework settings](https://www.django-rest-framework.org/api-guide/settings/#num_proxies)
+  to the number of proxies in front of your application, and make sure
+  those proxies add the client's address to `X-Forwarded-For`.
+- **Serve uploads from a separate domain** when you can, such as a CDN or an
+  object storage bucket. Even with the upload checks, a file served from your
+  own domain runs with your site's privileges if a browser renders it.
+- **Configure a task backend** that runs Django tasks in a worker. Password
+  reset emails are then sent outside the request, so its duration does not
+  reveal whether an address has an account
+  ([password reset](/docs/authentication#password-reset)).
+- **Keep `DEBUG` off** in production, and keep Django, Content Studio and
+  your other dependencies up to date.
+- **Use Django's security middleware and settings:** `SecurityMiddleware`
+  with HSTS, `XFrameOptionsMiddleware`, and `SESSION_COOKIE_SECURE` and
+  `CSRF_COOKIE_SECURE` for the rest of your site. `manage.py check --deploy`
+  lists what is missing.
+- **Keep `SECRET_KEY` strong and secret**, or set a separate
+  [`TOKEN_SIGNING_KEY`](/docs/settings#token_signing_key): it signs the
+  sessions.
+
+## What Content Studio protects
+
+- **Staff only.** Like the classic Django admin, only active staff users can
+  log in, and every request checks this again. Deactivating a user or
+  revoking their staff status ends their access immediately. What an editor
+  may see and do is decided by the [permission hooks](/docs/permissions).
+- **Short sessions.** Sessions renew themselves while an editor works and
+  end after a week without use, and 30 days after logging in at the latest
+  ([`MAX_SESSION_LIFETIME`](/docs/settings#max_session_lifetime)). Changing
+  or resetting a password logs the user out everywhere
+  ([authentication](/docs/authentication)).
+- **Logging out ends the session on the server.** A copy of the session
+  cookie stops working at logout, and each renewal invalidates the previous
+  cookie. A cookie presented again after its renewal was copied, so
+  Content Studio ends that session.
+- **Limited login and password reset attempts**, per IP address
+  ([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate),
+  [`PASSWORD_RESET_THROTTLE_RATE`](/docs/settings#password_reset_throttle_rate)).
+  The address is the one the connection comes from; an `X-Forwarded-For`
+  header sent by the client is ignored unless you configure your proxies
+  (see the checklist below). Five wrong reset codes lock an email address
+  out, and new passwords must pass `AUTH_PASSWORD_VALIDATORS`.
+- **Sanitized rich text.** `HTMLField` cleans its value on save with an
+  allowlist sanitizer ([`HTML_SANITIZER`](/docs/settings#html_sanitizer)).
+- **Checked uploads.** The media library accepts a list of file types up to
+  a maximum size, and rejects markup such as HTML and SVG
+  ([`MEDIA_LIBRARY_ALLOWED_EXTENSIONS`](/docs/settings#media_library_allowed_extensions)).
+- **Nothing public but the login pages.** Before logging in, the admin only
+  receives what it needs to show the login form.
+
+## System checks
 
 Content Studio checks its configuration with Django's system check
 framework: on `manage.py check`, when the development server starts, on
@@ -11,7 +81,7 @@ and would fail at runtime, often silently. A warning means it works, but
 probably not as you intended. Neither stops the server from starting, but
 `manage.py check` exits with an error code.
 
-## Errors
+### Errors
 
 | ID | Reports |
 |----|---------|
@@ -49,7 +119,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E032` | A [`NOTIFICATION_EMAIL_DIGEST`](/docs/settings#notification_email_digest) that is not `True` or `False`, an [`ADMIN_URL`](/docs/settings#admin_url) that is not an absolute `http` or `https` URL, or the digest turned on without `ADMIN_URL`. |
 | `content_studio.E033` | An [`IMAGE_SIZES`](/docs/settings#image_sizes) size with an invalid name or option, such as an unknown option, no width or height, or `"cover"` without both. The size is not made. |
 
-## Warnings
+### Warnings
 
 | ID | Reports |
 |----|---------|
@@ -75,3 +145,9 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.W020` | A [Huey task dashboard](/docs/dashboard#huey) without Huey's stats app, so it cannot show runs, durations or errors. |
 | `content_studio.W021` | A [`NotificationsWidget`](/docs/notifications#a-dashboard-widget) on a site without `content_studio.notifications` in `INSTALLED_APPS`; it is not shown. |
 | `content_studio.W022` | [`IMAGE_SIZES`](/docs/settings#image_sizes) set while no sizes can be made: Pillow is not installed, `IMAGE_SIZE_FOLDER` is not set, or the media model has no metadata field. Every size is then the image's own file. |
+
+## Reporting a vulnerability
+
+Report security problems privately, through GitHub's private vulnerability
+reporting or by email; see
+[SECURITY.md](https://github.com/dwarsbit/django-content-studio/blob/main/SECURITY.md).

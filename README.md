@@ -94,17 +94,18 @@ in the documentation.
 ## Documentation
 
 - [Introduction](https://djangocontentstudio.org/docs/intro): what Content Studio is, and what it is not
-- [How it compares](https://djangocontentstudio.org/docs/comparison): Content Studio next to admin themes and content management systems
 - [Getting started](https://djangocontentstudio.org/docs/getting-started): installation and your first model
-- [Registering models](https://djangocontentstudio.org/docs/content/registering-models): studio options, singletons and inlines
-- [Access control](https://djangocontentstudio.org/docs/permissions): model and object permissions
-- [Widgets](https://djangocontentstudio.org/docs/forms/widgets) and [form sets](https://djangocontentstudio.org/docs/forms/form-sets): field editors and edit page layouts
-- [Dashboard](https://djangocontentstudio.org/docs/dashboard): composing the start page
+- [Registering models](https://djangocontentstudio.org/docs/registering-models): studio options, singletons and inlines
+- [List page](https://djangocontentstudio.org/docs/list-page): columns, bulk actions, trash, reordering and export
+- [Edit page layout](https://djangocontentstudio.org/docs/edit-page) and [widgets](https://djangocontentstudio.org/docs/widgets): edit page layouts and field editors
 - [Media library](https://djangocontentstudio.org/docs/media-library): models, uploads and cropping
+- [Dashboard](https://djangocontentstudio.org/docs/dashboard): composing the start page
+- [Access control](https://djangocontentstudio.org/docs/permissions): model and object permissions
 - [Authentication](https://djangocontentstudio.org/docs/authentication): logging in, sessions and password reset
 - [Multi-tenancy](https://djangocontentstudio.org/docs/multi-tenancy): tenants and who may work in them
-- [Security](https://djangocontentstudio.org/docs/security): what is protected, and a deployment checklist
+- [Deployment](https://djangocontentstudio.org/docs/deployment): a deployment checklist, what is protected, and system checks
 - [Settings](https://djangocontentstudio.org/docs/settings): every `CONTENT_STUDIO` setting
+- [How it compares](https://djangocontentstudio.org/docs/comparison): Content Studio next to admin themes and content management systems
 
 See also [Django Headless](https://djangoheadless.org), if you need an API
 for your own clients.

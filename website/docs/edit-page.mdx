@@ -1,4 +1,4 @@
-# 🧱 Form sets and layouts
+# 🧱 Edit page layout
 
 By default, the edit page shows the model's fields in the order they are
 declared. Set `edit_main` and `edit_sidebar` on the studio to choose the
@@ -61,7 +61,7 @@ an input.
 To edit one field with another widget, pass the widget class:
 `Field("body", widget=widgets.TextAreaWidget)`, or an instance with
 options: `Field("body", widget=widgets.TextAreaWidget(rows=12))`. See
-[Widgets](/docs/forms/widgets) for the widgets you can use and their
+[Widgets](/docs/widgets) for the widgets you can use and their
 options.
 
 ## Page width
@@ -188,7 +188,7 @@ check works with any model field and needs no configuration.
 
 The warning does not stop you from saving: Django's uniqueness validation
 still decides, and reports the error when you save. Objects in the
-[trash](/docs/content/registering-models#soft-delete-and-the-trash) count, because they still hold the value. The warning
+[trash](/docs/list-page#soft-delete-and-the-trash) count, because they still hold the value. The warning
 names the other object only if you may view it.
 
 On a model scoped to a tenant, only objects of the current tenant are
@@ -458,7 +458,7 @@ class ArticleStudio(ModelStudio):
     edit_header = [PublishButton()]
 ```
 
-An [inline studio](/docs/content/registering-models#inlines) takes
+An [inline studio](/docs/registering-models#inlines) takes
 `edit_header` too: its components appear in the header of the dialog in
 which an editor opens one of the inline's objects. That dialog shows the
 fields and components of the inline model's own studio, when it has one, and
@@ -491,7 +491,34 @@ class ArticleStudio(ModelStudio):
         )
 ```
 
-Each component gets an ID from its class and its label, so every worker of a
-deployment agrees on it. Two components of the same class with the same
-label need an explicit `component_id` (a UUID); `manage.py check` reports
+Two components of the same class with the same label need an explicit
+`component_id` (a UUID) to tell them apart; `manage.py check` reports
 duplicates.
+
+### Object history
+
+The `ActivityLog` component shows an object's history on its edit page: every
+addition, change and deletion, newest first. Add it to the sidebar or to any
+form set:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import ActivityLog, FormSet
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_sidebar = [
+        FormSet(fields=["published_at", "author"]),
+        FormSet(fields=[ActivityLog(title="History")]),
+    ]
+```
+
+The title is "Activity" unless you pass one. The history appears on the edit
+page of saved objects only, for editors who may view the object. Each
+`FormSet` in the sidebar is its own card, so the history above gets a card of
+its own.

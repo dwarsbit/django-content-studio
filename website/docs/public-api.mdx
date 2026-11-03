@@ -1,7 +1,3 @@
----
-sidebar_position: 15
----
-
 # 📜 Public API
 
 Content Studio follows [semantic versioning](https://semver.org/) for its
@@ -21,12 +17,12 @@ The public API consists of:
   `get_default_subscriptions`, `crop_image` and `reset_crop`;
 - the documented options and methods of blocks: the `Meta` options of
   `Block`, `get_context` and `get_template_name`, and the
-  [values of a block field](/docs/content/block-fields#render-blocks-in-templates)
+  [values of a block field](/docs/block-fields#render-blocks-in-templates)
   (`blocks`, and each block's `id`, `type`, `value` and `render`);
 - the `render_blocks`, `image_size` and `image_url` tags of the
   `content_studio` template library;
 - every [setting](/docs/settings) in `CONTENT_STUDIO`;
-- the [system check](/docs/system-checks) IDs, but not their messages;
+- the [system check](/docs/deployment#system-checks) IDs, but not their messages;
 - `content_studio.urls` and the `content_studio.contrib.password_reset` app,
   as a whole;
 - the media library's `content_studio_media_metadata`,
@@ -141,7 +137,7 @@ Menu links, menu buttons, embedded pages and dashboard pages.
 
 ## `content_studio.widgets`
 
-The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_mapping`, as classes or as instances with [options](/docs/forms/widgets#widget-options). `BaseWidget` is their base type; custom widgets are not supported.
+The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_mapping`, as classes or as instances with [options](/docs/widgets#widget-options). `BaseWidget` is their base type; custom widgets are not supported.
 
 - `BaseWidget`
 - `BlockWidget`

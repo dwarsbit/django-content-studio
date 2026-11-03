@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # 🎯 Introduction
 
 Django Content Studio is a modern alternative to the classic Django admin,
@@ -25,6 +21,11 @@ widgets, inlines, a dashboard and a media library.
   scheduled tasks, declared in Python.
 - **A media library** with folders, uploads and image crops, on the media
   model you choose.
+- **Collaboration**: notifications about other editors' changes, presence
+  avatars on the objects others have open, and a command palette to jump
+  anywhere.
+- **Webhooks** that rebuild a static site or notify another service after
+  editors change content.
 - **Multi-tenancy**: one hook decides which tenants an editor may work in,
   and every page is scoped to the selected tenant.
 - **Batteries included.** Optional fields such as `HTMLField`, `TagField`
@@ -50,7 +51,7 @@ everything also works with plain Django models and fields.
 ## Next steps
 
 Start with [installation](/docs/getting-started), then read about
-[registering models](/docs/content/registering-models) and
+[registering models](/docs/registering-models) and
 [access control](/docs/permissions). To see how Content Studio relates to
 admin themes and content management systems, read
 [how it compares](/docs/comparison).

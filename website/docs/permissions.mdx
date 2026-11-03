@@ -1,7 +1,3 @@
----
-sidebar_position: 4
----
-
 # 🔑 Access control
 
 Content Studio uses the permission system of the classic Django admin. Only
@@ -82,7 +78,7 @@ leave it out of the edit page with `exclude` or `edit_main`. Fields in
 as an API key out of editors' browsers; a field you only leave out of
 `edit_main` is still sent. To let some
 editors see a field without changing it, return it from the studio's
-[`get_readonly_fields`](/docs/forms/form-sets#read-only-fields) for those
+[`get_readonly_fields`](/docs/edit-page#read-only-fields) for those
 editors. To protect
 sensitive data from some editors only, keep it in a separate model with its
 own permissions.

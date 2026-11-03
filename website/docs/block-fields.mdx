@@ -66,8 +66,7 @@ two blocks, and edit its fields with the same widgets as the fields of a
 model. They reorder blocks by dragging or with the keyboard, and collapse,
 duplicate and remove them. Tables show the number of blocks.
 
-Blocks are not models. They have no table: the blocks are stored as JSON in
-the block field's column, so adding or changing a block needs no migration.
+Blocks are not models, so adding or changing a block needs no migration.
 
 ## Block options
 
@@ -99,7 +98,7 @@ These fields cannot be used in a block: `ManyToManyField` and
 `ManyMediaField`, `FileField` and `ImageField` (upload to the media library
 and use a `MediaField` instead), and auto fields. A `BlockField` can, one
 level deep: see [Blocks inside blocks](#blocks-inside-blocks). System check
-[`content_studio.E018`](/docs/system-checks) reports the fields that cannot
+[`content_studio.E018`](/docs/deployment#system-checks) reports the fields that cannot
 be used.
 
 ## Blocks inside blocks
@@ -227,8 +226,7 @@ In Python, `page.sections` is a list of the stored blocks, and
 
 ## Change blocks later
 
-Because blocks are stored as JSON, existing pages keep the shape they were
-saved with:
+Existing pages keep the blocks they were saved with:
 
 - **A new field** takes its default on existing blocks. A new required
   field without a default asks the editor for a value on the next save.
@@ -247,14 +245,14 @@ which works on PostgreSQL, MySQL and MariaDB:
 
 A block field is optional. With plain Django, a related model does the same
 job: a `Section` model with a foreign key to the page, a type field and a
-position field, edited as an [inline](/docs/content/registering-models#inlines)
+position field, edited as an [inline](/docs/registering-models#inlines)
 on the page's studio with `reorder_field = "position"`, so editors can drag
-sections into order (see [Reordering](/docs/content/registering-models#reordering)).
+sections into order (see [Reordering](/docs/list-page#reordering)).
 Each section is then a row in its own table, which you can query and protect
 with database constraints.
 
 ## Related pages
 
-- [Widgets](/docs/forms/widgets)
+- [Widgets](/docs/widgets)
 - [Media library](/docs/media-library)
-- [System checks](/docs/system-checks)
+- [System checks](/docs/deployment#system-checks)
