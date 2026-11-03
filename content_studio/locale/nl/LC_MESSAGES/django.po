@@ -207,6 +207,14 @@ msgstr ""
 msgid "Consecutive slashes are not allowed."
 msgstr "Opeenvolgende slashes zijn niet toegestaan."
 
+#: validators.py:99
+msgid "Enter a valid color."
+msgstr "Voer een geldige kleur in."
+
+#: validators.py:100
+msgid "Transparent colors are not allowed."
+msgstr "Transparante kleuren zijn niet toegestaan."
+
 #: form.py:385
 msgid "Activity"
 msgstr "Activiteit"

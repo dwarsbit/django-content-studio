@@ -2,6 +2,7 @@ __all__ = [
     "BaseWidget",
     "BlockWidget",
     "CheckboxWidget",
+    "ColorPickerWidget",
     "CoverImageWidget",
     "DateTimeWidget",
     "DateWidget",
@@ -29,6 +30,8 @@ from decimal import Decimal
 from typing import Callable, Iterable, Optional, Union
 
 from django.utils import timezone
+
+from .colors import parse_color
 
 ###
 # Widgets determine what input field is used for a certain
@@ -386,6 +389,42 @@ class CoverImageWidget(BaseWidget):
             "min_width": self.min_width,
             "min_height": self.min_height,
         }
+
+
+class ColorPickerWidget(BaseWidget):
+    """
+    A color swatch that opens a color picker. show_input adds a text
+    input to type or paste a color; swatches are colors offered below
+    the picker, such as a brand palette.
+    """
+
+    def __init__(self, *, show_input: bool = True, swatches: Iterable[str] = None):
+        if not isinstance(show_input, bool):
+            raise TypeError(
+                f"ColorPickerWidget show_input must be True or False; got {show_input!r}."
+            )
+
+        if swatches is not None:
+            if isinstance(swatches, str):
+                raise TypeError(
+                    "ColorPickerWidget swatches must be a list of colors, not a "
+                    f"string; got {swatches!r}."
+                )
+
+            swatches = list(swatches)
+            invalid = [swatch for swatch in swatches if parse_color(swatch) is None]
+
+            if invalid:
+                raise ValueError(
+                    f"ColorPickerWidget swatches {invalid!r} are not hex, rgb() "
+                    "or hsl() colors."
+                )
+
+        self.show_input = show_input
+        self.swatches = swatches
+
+    def get_options(self):
+        return {"show_input": self.show_input, "swatches": self.swatches}
 
 
 class TagWidget(BaseWidget):

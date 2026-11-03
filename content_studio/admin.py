@@ -548,6 +548,7 @@ class ContentStudioSite:
         blocks.BlockField: widgets.BlockWidget,
         fields.MultipleChoiceField: widgets.MultiSelectWidget,
         fields.URLPathField: widgets.URLPathWidget,
+        fields.ColorField: widgets.ColorPickerWidget,
         ml_fields.MediaField: widgets.MediaWidget,
         ml_fields.ManyMediaField: widgets.ManyMediaWidget,
         # Common third-party fields
@@ -581,6 +582,7 @@ class ContentStudioSite:
         blocks.BlockField: formats.BlockFormat,
         fields.MultipleChoiceField: formats.TextFormat,
         fields.URLPathField: formats.TextFormat,
+        fields.ColorField: formats.ColorFormat,
         ml_fields.MediaField: formats.MediaFormat,
         ml_fields.ManyMediaField: formats.ManyMediaFormat,
         # Common third-party fields

@@ -306,6 +306,10 @@
     "block_format": {
       "count_one": "{{count}} blok",
       "count_other": "{{count}} blokken"
+    },
+    "color_picker": {
+      "pick": "Kies een kleur",
+      "input": "Kleurwaarde"
     }
   },
   "dashboard": {
