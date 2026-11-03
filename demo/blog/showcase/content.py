@@ -340,6 +340,39 @@ ARTICLES = [
     },
 ]
 
+# Short dispatches, published more often lately: they fill the recent
+# weeks of the publishing sparkline.
+FIELD_NOTES = [
+    ("Field notes: first snow on the pass", "night-peaks", "sam", 1, 860),
+    ("Field notes: the bakery that opens at four", "ember", "maya", 3, 1120),
+    ("Field notes: a bench with the best view in town", "pale-sea", "jonas", 5, 940),
+    ("Field notes: fog on the morning train", "misty-forest", "maya", 9, 1310),
+    (
+        "Field notes: a print shop still setting type by hand",
+        "bauhaus-cool",
+        "priya",
+        13,
+        780,
+    ),
+    ("Field notes: the dunes after rain", "desert-dunes", "jonas", 19, 1450),
+    ("Field notes: skyline from the last tram", "city-dusk", "sam", 26, 1020),
+]
+
+ARTICLES += [
+    {
+        "title": title,
+        "cover": cover,
+        "categories": ["Field notes"],
+        "author": author,
+        "days": days,
+        "views": views,
+        "body": [
+            "A short dispatch from the road: one place, one moment, one photograph.",
+        ],
+    }
+    for title, cover, author, days, views in FIELD_NOTES
+]
+
 # Reader reviews on the most read articles: title -> [(text, stars)].
 REVIEWS = {
     "Five forest walks within an hour of the city": [

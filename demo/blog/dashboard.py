@@ -37,10 +37,13 @@ class PublishedArticlesWidget(StatisticWidget):
             published_at__gte=start - timedelta(days=self.days),
             published_at__lt=start,
         ).count()
-        # Publications per day over the last two weeks, oldest first.
-        days = [now - timedelta(days=13 - offset) for offset in range(14)]
+        # Publications per week over the last twelve weeks, oldest first.
         series = [
-            published.filter(published_at__date=day.date()).count() for day in days
+            published.filter(
+                published_at__gt=now - timedelta(weeks=week + 1),
+                published_at__lte=now - timedelta(weeks=week),
+            ).count()
+            for week in reversed(range(12))
         ]
         trend = round((current - previous) / previous * 100, 1) if previous else None
         return {
@@ -60,6 +63,7 @@ class TotalViewsWidget(StatisticWidget):
             "title": "Total views",
             "value": Article.objects.aggregate(total=Sum("views"))["total"] or 0,
             "icon": "ph-bold ph-eye",
+            "footnote": "across all articles",
         }
 
 
@@ -84,7 +88,7 @@ class LatestArticlesWidget(ContentListWidget):
                 "model": "demo_blog.article",
                 "id": str(article.pk),
                 "title": article.title,
-                "description": str(article.author or ""),
+                "description": author_name(article.author),
                 "status": article.get_status_display(),
                 "status_variant": (
                     "success"
@@ -103,8 +107,15 @@ class LatestArticlesWidget(ContentListWidget):
         }
 
 
+def author_name(user):
+    return (user.get_full_name() or user.get_username()) if user else ""
+
+
 def cover_url(article):
+    """The cover's small thumbnail, made by the admin site."""
+    from content_studio.settings import cs_settings
+
     cover = article.cover
     if cover and cover.type == "image" and cover.file:
-        return cover.file.url
+        return cs_settings.ADMIN_SITE.get_thumbnail(cover)
     return ""
