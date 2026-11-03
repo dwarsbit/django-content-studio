@@ -9,6 +9,7 @@ from rest_framework.relations import RelatedField
 
 from content_studio.settings import cs_settings
 from content_studio.uniqueness import get_unique_sets
+from content_studio.validators import ColorValidator
 from content_studio.utils import (
     get_tenant_field_name,
     get_tenant_scoped_queryset,
@@ -365,6 +366,15 @@ class ModelSerializer:
 
         if getattr(field, "max_length", None) is not None:
             data["max_length"] = field.max_length
+
+        # A plain field with a ColorValidator gets the color picker's
+        # notation from the validator; a ColorField sets its own below.
+        color_validator = next(
+            (v for v in field.validators if isinstance(v, ColorValidator)), None
+        )
+        if color_validator is not None:
+            data["color_format"] = color_validator.color_format or "hex"
+            data["alpha"] = color_validator.alpha
 
         if getattr(field, "cs_get_field_attributes", None):
             data.update(field.cs_get_field_attributes())

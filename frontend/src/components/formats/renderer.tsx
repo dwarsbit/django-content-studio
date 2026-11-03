@@ -6,6 +6,7 @@ import { FieldFormat, type FormatConfig, type ModelField } from "@/types";
 import { BlockFormat } from "./block-format";
 import { BooleanFormat } from "./boolean-format";
 import { ChoiceFormat } from "./choice-format";
+import { ColorFormat } from "./color-format";
 import { DateFormat } from "./date-format";
 import { DatetimeFormat } from "./datetime-format";
 import { FileFormat } from "./file-format";
@@ -26,6 +27,7 @@ type FormatComponent = ComponentType<{
 const FORMATS: Partial<Record<FieldFormat, FormatComponent>> = {
   [FieldFormat.BlockFormat]: BlockFormat,
   [FieldFormat.BooleanFormat]: BooleanFormat,
+  [FieldFormat.ColorFormat]: ColorFormat,
   [FieldFormat.DateFormat]: DateFormat,
   [FieldFormat.DateTimeFormat]: DatetimeFormat,
   [FieldFormat.FileFormat]: FileFormat,

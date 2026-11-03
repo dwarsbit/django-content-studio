@@ -36,6 +36,7 @@ const COMPONENTS = {
   Select: "select",
   MultiSelect: "multi-select",
   TagInput: "tag-input",
+  ColorPicker: "color-picker",
   Checkbox: "checkbox",
   Switch: "switch",
   InputOTP: "input-otp",

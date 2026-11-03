@@ -133,6 +133,16 @@ export interface TagInputProps extends Omit<React.InputHTMLAttributes<HTMLInputE
 }
 export declare function TagInput(props: TagInputProps): React.ReactElement;
 
+export interface ColorPickerProps {
+  /** The color; an empty string is no color. */
+  value: string | null | undefined; onChange: (value: string) => void;
+  /** The notation it writes. */
+  format?: "hex" | "rgb" | "hsl"; alpha?: boolean; showInput?: boolean;
+  swatches?: string[]; clearable?: boolean; disabled?: boolean; id?: string; placeholder?: string;
+  labels?: { picker?: string; input?: string; clear?: string }; className?: string;
+}
+export declare function ColorPicker(props: ColorPickerProps): React.ReactElement;
+
 export declare function InputOTP(props: Children & { maxLength: number; value?: string; onChange?: (value: string) => void; disabled?: boolean }): React.ReactElement;
 export declare function InputOTPGroup(props: Div): React.ReactElement;
 export declare function InputOTPSlot(props: { index: number; className?: string }): React.ReactElement;

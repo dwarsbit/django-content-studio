@@ -21,6 +21,7 @@ the widget from the field's type, so most models need no configuration.
 | `BlockField` (built-in) | `BlockWidget` |
 | `MultipleChoiceField` (built-in) | `MultiSelectWidget` |
 | `URLPathField` (built-in) | `URLPathWidget` |
+| `ColorField` (built-in) | `ColorPickerWidget` |
 | `MediaField`, `ManyMediaField` (built-in) | `MediaWidget`, `ManyMediaWidget` |
 | `AutoSlugField` (django-extensions) | `SlugWidget` |
 
@@ -118,6 +119,8 @@ an error when the studio is defined, not when an editor opens the page.
   `datetime.date.today`, for a limit that moves with time.
 - **`CoverImageWidget(aspect_ratio=None, min_width=None, min_height=None)`**:
   see [Cover images](#cover-images).
+- **`ColorPickerWidget(show_input=True, swatches=None)`**: see
+  [Colors](#colors).
 
 :::note
 Options guide editors; they do not validate. To enforce a range or a
@@ -223,6 +226,120 @@ class ArticleStudio(ModelStudio):
 System check `content_studio.W019` reports a `CoverImageWidget` on a field
 that is not a `MediaField` to the media library model.
 
+## Colors
+
+`ColorField` stores a CSS color, edited with a color picker. It is a
+`CharField` that saves the color in one notation, chosen with
+`color_format`: `"hex"` (the default), `"rgb"` or `"hsl"`. Set `alpha=True`
+to allow transparent colors.
+
+```python
+# blog/models.py
+from django.db import models
+
+from content_studio.fields import ColorField
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    color = ColorField(blank=True)
+    overlay = ColorField(color_format="rgb", alpha=True, blank=True)
+```
+
+Editors can type or paste a color in any of the three notations, such as
+`#336699`, `rgb(51 102 153)` or `hsl(210, 50%, 40%)`. Anything else is
+rejected. On save, the color is converted to the field's notation, so your
+templates always get the same form:
+
+| `color_format` | Saved | With `alpha=True` |
+|----------------|-------|-------------------|
+| `"hex"` | `#336699` | `#33669980` |
+| `"rgb"` | `rgb(51, 102, 153)` | `rgba(51, 102, 153, 0.5)` |
+| `"hsl"` | `hsl(210, 50%, 40%)` | `hsla(210, 50%, 40%, 0.5)` |
+
+With `alpha=True`, every color is saved with its alpha, also an opaque
+one. Without it, transparent colors are rejected.
+
+`ColorPickerWidget` shows a swatch that opens the picker, next to a text
+input for typing or pasting a color. Pass options to change it:
+
+- **`show_input`**: `False` leaves out the text input. Editors pick a color
+  with the picker only.
+- **`swatches`**: a list of colors offered below the picker, such as your
+  brand palette. They can be in any notation and are converted to the
+  field's.
+
+```python
+# blog/admin.py
+from content_studio import register, widgets
+from content_studio.admin import ModelStudio
+from content_studio.form import Field, FormSet
+
+from .models import Category
+
+
+@register(Category)
+class CategoryStudio(ModelStudio):
+    table_display = ["name", "color"]
+    edit_main = [
+        FormSet(
+            fields=[
+                "name",
+                Field(
+                    "color",
+                    widget=widgets.ColorPickerWidget(
+                        swatches=["#0f172a", "#2563eb", "#16a34a", "#dc2626"],
+                    ),
+                ),
+                Field(
+                    "overlay",
+                    widget=widgets.ColorPickerWidget(show_input=False),
+                ),
+            ],
+        ),
+    ]
+```
+
+On the list page, a `ColorField` shows a swatch next to its value
+(`ColorFormat`).
+
+To keep a plain `CharField`, add a `ColorValidator` and choose the
+widget. `ColorValidator(color_format=None, alpha=False)` accepts colors in
+the given notation only, or in all three with `None`. A plain field does
+not convert colors on save, so give the validator a `color_format` to
+keep them in one notation. The picker writes the validator's notation, or
+hex without one.
+
+```python
+# blog/models.py
+from django.db import models
+
+from content_studio.validators import ColorValidator
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50)
+    color = models.CharField(
+        max_length=7, blank=True, validators=[ColorValidator(color_format="hex")]
+    )
+```
+
+```python
+# blog/admin.py
+from content_studio import register, widgets
+from content_studio.admin import ModelStudio
+from content_studio.form import Field, FormSet
+
+from .models import Tag
+
+
+@register(Tag)
+class TagStudio(ModelStudio):
+    edit_main = [
+        FormSet(fields=["name", Field("color", widget=widgets.ColorPickerWidget)]),
+    ]
+```
+
 ## Change the default for a field type
 
 To change the widget for every field of a type, extend the site's
@@ -249,7 +366,8 @@ admin_site = BlogStudioSite()
 ## Formats
 
 Values on the list page and in read-only fields are shown through formats:
-dates, times, booleans, numbers, tags, rich text and media each have one.
+dates, times, booleans, numbers, tags, colors, rich text and media each
+have one.
 The site's `default_format_mapping` maps field types to formats, and you
 change it the same way as `default_widget_mapping`.
 

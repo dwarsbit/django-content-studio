@@ -4,10 +4,17 @@ from django.db import models
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
+from .colors import normalize_color
 from .sanitizers import get_default_sanitizer
-from .validators import ChoiceOptionsValidator, JSONSchemaValidator
+from .validators import (
+    ChoiceOptionsValidator,
+    ColorValidator,
+    JSONSchemaValidator,
+    check_color_options,
+)
 
 __all__ = [
+    "ColorField",
     "FlexField",
     "HTMLField",
     "HashTagField",
@@ -134,6 +141,61 @@ class URLPathField(models.CharField):
         setattr(model_instance, self.attname, value)
 
         return value
+
+
+class ColorField(models.CharField):
+    description = "A CSS color in hex, rgb() or hsl() notation."
+
+    def __init__(self, *args, color_format="hex", alpha=False, **kwargs):
+        """
+        `color_format` ("hex", "rgb" or "hsl") is the notation the color
+        is saved in; a color given in another notation is converted on
+        save. `alpha` allows translucent colors and saves every color
+        with its alpha.
+        """
+        check_color_options("ColorField", color_format, alpha)
+
+        self.color_format = color_format
+        self.alpha = alpha
+        kwargs.setdefault("max_length", 40)
+
+        # The color validator is a default: caller-supplied validators are
+        # appended to it instead of replacing it.
+        self.default_validators = [ColorValidator(alpha=alpha)]
+
+        super().__init__(*args, **kwargs)
+
+    def pre_save(self, model_instance, add):
+        """
+        Saves the color in the field's notation. A value that is not a
+        color is left as it is (the validator reports it).
+        """
+        value = super().pre_save(model_instance, add)
+        normalized = normalize_color(value, self.color_format, self.alpha)
+
+        if normalized is not None:
+            value = normalized
+            setattr(model_instance, self.attname, value)
+
+        return value
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+
+        if self.color_format != "hex":
+            kwargs["color_format"] = self.color_format
+
+        if self.alpha:
+            kwargs["alpha"] = True
+
+        if kwargs.get("max_length") == 40:
+            del kwargs["max_length"]
+
+        return name, path, args, kwargs
+
+    def cs_get_field_attributes(self):
+        # The color picker writes colors in the field's notation.
+        return {"color_format": self.color_format, "alpha": self.alpha}
 
 
 class MultipleChoiceField(models.JSONField):

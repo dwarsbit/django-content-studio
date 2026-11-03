@@ -134,6 +134,14 @@ const WIDGET_FIXTURES: Record<string, { field: ModelField; value: unknown }> = {
     },
     value: ["django", "admin"],
   },
+  "Color field (ColorPickerWidget)": {
+    field: {
+      type: FieldType.ColorField,
+      widget_class: FieldWidget.ColorPickerWidget,
+      color_format: "hex",
+    },
+    value: "#2563eb",
+  },
   "URL path field (URLPathWidget)": {
     field: {
       type: FieldType.URLPathField,
