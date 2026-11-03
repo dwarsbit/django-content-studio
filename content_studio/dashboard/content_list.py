@@ -16,6 +16,18 @@ class ContentSerializer(serializers.Serializer):
         allow_blank=True,
         required=False,
     )
+    # A short state shown as a badge, such as "Published", colored by
+    # its variant.
+    status = serializers.CharField(default="", allow_blank=True, required=False)
+    status_variant = serializers.ChoiceField(
+        default="default",
+        required=False,
+        choices=["default", "success", "warning", "info", "danger"],
+    )
+    # The URL of a small image shown before the title.
+    thumbnail = serializers.CharField(default="", allow_blank=True, required=False)
+    # Shown relative to now ("2h") at the end of the row.
+    timestamp = serializers.DateTimeField(default=None, allow_null=True, required=False)
 
 
 class ContentListWidgetSerializer(serializers.Serializer):

@@ -91,6 +91,13 @@ def test_widget_data_endpoint_returns_serializer_output():
         "title": "Articles",
         "trend": "1.5",
         "trend_sentiment": "positive",
+        "trend_label": "",
+        "number_format": "compact",
+        "currency": "",
+        "icon": "",
+        "footnote": "",
+        "series": [],
+        "max_value": None,
     }
 
 
@@ -313,3 +320,112 @@ def test_activity_log_widget_skips_other_tenants_to_fill_up():
         data = ActivityLogWidget().get_data(_tenant_request_for(admin, a))
 
     assert [entry["object_repr"] for entry in data] == ["own"]
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [(15, 15), (45.9, 45.9), ("12.50", 12.5), ("3", 3), (2.0, 2)],
+)
+def test_statistic_value_accepts_decimals(value, expected):
+    serializer = StatisticWidgetSerializer(data={"value": value})
+
+    assert serializer.is_valid(), serializer.errors
+    assert serializer.data["value"] == expected
+
+
+@pytest.mark.parametrize("value", [True, "abc", float("nan"), float("inf"), None])
+def test_statistic_value_refuses_non_numbers(value):
+    serializer = StatisticWidgetSerializer(data={"value": value})
+
+    assert not serializer.is_valid()
+    assert "value" in serializer.errors
+
+
+def test_statistic_defaults_to_compact_numbers():
+    serializer = StatisticWidgetSerializer(data={"value": 45940})
+
+    assert serializer.is_valid(), serializer.errors
+    assert serializer.data["number_format"] == "compact"
+    assert serializer.data["series"] == []
+    assert serializer.data["max_value"] is None
+
+
+def test_statistic_extras():
+    serializer = StatisticWidgetSerializer(
+        data={
+            "value": 1250.5,
+            "number_format": "currency",
+            "currency": "eur",
+            "icon": "ph-bold ph-coins",
+            "footnote": "This month",
+            "trend": 4.2,
+            "trend_label": "vs last month",
+            "series": [1, 2.5, 3],
+            "max_value": 2000,
+        }
+    )
+
+    assert serializer.is_valid(), serializer.errors
+    assert serializer.data["currency"] == "EUR"
+    assert serializer.data["series"] == [1, 2.5, 3]
+    assert serializer.data["max_value"] == 2000
+
+
+@pytest.mark.parametrize(
+    "data, field",
+    [
+        ({"number_format": "currency"}, "currency"),
+        ({"number_format": "currency", "currency": "euro"}, "currency"),
+        ({"number_format": "bytes"}, "number_format"),
+        ({"max_value": 0}, "max_value"),
+        ({"series": [1, "x"]}, "series"),
+    ],
+)
+def test_statistic_extras_are_validated(data, field):
+    serializer = StatisticWidgetSerializer(data={"value": 1, **data})
+
+    assert not serializer.is_valid()
+    assert field in serializer.errors
+
+
+def test_content_list_items_take_optional_status_thumbnail_and_time():
+    from content_studio.dashboard.content_list import ContentListWidgetSerializer
+
+    serializer = ContentListWidgetSerializer(
+        data={
+            "title": "Latest articles",
+            "content": [
+                {
+                    "model": "testapp.article",
+                    "id": "3",
+                    "title": "Article",
+                    "status": "Published",
+                    "status_variant": "success",
+                    "thumbnail": "/media/cover.jpg",
+                    "timestamp": "2026-11-03T08:00:00Z",
+                },
+                {"model": "testapp.article", "id": "4", "title": "Other"},
+            ],
+        }
+    )
+
+    assert serializer.is_valid(), serializer.errors
+    first, second = serializer.data["content"]
+    assert first["status_variant"] == "success"
+    assert first["timestamp"].startswith("2026-11-03T08:00:00")
+    assert second["status"] == ""
+    assert second["timestamp"] is None
+
+
+def test_content_list_status_variant_is_validated():
+    from content_studio.dashboard.content_list import ContentListWidgetSerializer
+
+    serializer = ContentListWidgetSerializer(
+        data={
+            "content": [
+                {"model": "a.b", "id": "1", "title": "x", "status_variant": "pink"}
+            ]
+        }
+    )
+
+    assert not serializer.is_valid()

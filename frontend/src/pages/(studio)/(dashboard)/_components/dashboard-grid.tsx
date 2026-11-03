@@ -43,7 +43,16 @@ export function DashboardGrid({ widgets }: { widgets: DashboardWidget[] }) {
         const span = Math.min(Math.max(widget.col_span, 1), 4);
 
         return Comp ? (
-          <div key={widget.widget_id} className={cn("min-w-0", COL_SPAN[span])}>
+          <div
+            key={widget.widget_id}
+            className={cn(
+              "min-w-0",
+              COL_SPAN[span],
+              // Statistics in a row share one height.
+              widget.widget_type === DashboardWidgetType.StatisticWidget &&
+                "self-stretch",
+            )}
+          >
             <Comp widget={widget} />
           </div>
         ) : null;

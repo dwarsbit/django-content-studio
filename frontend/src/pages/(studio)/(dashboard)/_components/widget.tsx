@@ -4,7 +4,6 @@ import { PiArrowRightBold } from "react-icons/pi";
 import { Link } from "react-router";
 
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 /**
@@ -67,16 +66,25 @@ export function ViewAll({ to }: { to: string }) {
   );
 }
 
-/** A widget's body while its data loads. */
-export function WidgetLoading({ className }: { className?: string }) {
+/** A widget's body while its data loads: placeholder rows. */
+export function WidgetLoading({
+  className,
+  rows = 3,
+}: {
+  className?: string;
+  rows?: number;
+}) {
   return (
-    <div
-      className={cn(
-        "py-12 flex items-center justify-center border-t",
-        className,
-      )}
-    >
-      <Spinner />
+    <div aria-busy className={cn("border-t p-1.5 space-y-1", className)}>
+      {Array.from({ length: rows }, (_, idx) => (
+        <div key={idx} className="flex items-center gap-3 px-2.5 py-2">
+          <div className="size-8 shrink-0 rounded-full bg-muted animate-pulse" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 w-3/5 rounded bg-muted animate-pulse" />
+            <div className="h-2.5 w-2/5 rounded bg-muted animate-pulse" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

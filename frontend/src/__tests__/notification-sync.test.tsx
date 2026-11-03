@@ -279,8 +279,11 @@ describe("the dashboard widget", () => {
       }),
     ).toHaveAttribute("href", "/content/blog.article/1");
     expect(
-      await screen.findByText("notifications.widget_unread:2"),
-    ).toBeInTheDocument();
+      await screen.findByLabelText("notifications.widget_unread:2"),
+    ).toHaveTextContent("2");
+    expect(
+      screen.getByRole("button", { name: "notifications.mark_all_read" }),
+    ).toBeEnabled();
     expect(
       screen.getByRole("link", { name: /dashboard\.view_all/ }),
     ).toHaveAttribute("href", "/notifications");

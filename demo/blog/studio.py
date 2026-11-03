@@ -8,11 +8,18 @@ would be circular.
 
 from content_studio.admin import ContentStudioSite
 from content_studio.dashboard import Dashboard
+from content_studio.dashboard.activity_log import ActivityLogWidget
 from content_studio.dashboard.tasks import TaskDashboard
 from content_studio.extensions import UserMenuLink
 from content_studio.notifications.dashboard import NotificationsWidget
 
-from .dashboard import ArticleCountWidget, LatestArticlesWidget
+from .dashboard import (
+    ArticleCountWidget,
+    FeaturedArticlesWidget,
+    LatestArticlesWidget,
+    PublishedArticlesWidget,
+    TotalViewsWidget,
+)
 from .task_queue import DemoTaskAdapter
 
 
@@ -20,8 +27,12 @@ class DemoStudioSite(ContentStudioSite):
     dashboard = Dashboard(
         widgets=[
             ArticleCountWidget(),
+            PublishedArticlesWidget(),
+            TotalViewsWidget(),
+            FeaturedArticlesWidget(),
             LatestArticlesWidget(),
             NotificationsWidget(),
+            ActivityLogWidget(),
         ],
     )
     extensions = [

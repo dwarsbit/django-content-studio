@@ -99,10 +99,13 @@ with a dashboard of its own.
 - **`StatisticWidget`**: one number with a title. `get_data` returns
   `value` and, optionally, `title`, `prefix`, `suffix`, a `trend` (a
   percentage) and a `trend_sentiment` (`"positive"`, `"negative"` or
-  `"default"`).
+  `"default"`). See [Statistics](#statistics) for the formats and extras.
 - **`ContentListWidget`**: a list of links to content. `get_data` returns a
   `title`, an optional `description` and `content`: items with the `model`
-  label, the object's `id`, a `title` and an optional `description`.
+  label, the object's `id`, a `title` and, optionally, a `description`, a
+  `status` shown as a badge, a `status_variant` that colors it
+  (`"default"`, `"success"`, `"warning"`, `"info"` or `"danger"`), the URL
+  of a `thumbnail` and a `timestamp`, shown relative to now.
 - **`ActivityLogWidget`**: the five latest changes made in the admin. It
   needs no configuration and only shows changes to models the editor may
   view. With [multi-tenancy](/docs/multi-tenancy), changes to a tenant's
@@ -123,6 +126,56 @@ with a dashboard of its own.
 Your own widgets subclass one of these: the admin can only show the built-in
 widget types. System check `content_studio.W012` reports a widget that does
 not.
+
+## Statistics
+
+A `StatisticWidget` shows its value compact and in the editor's language:
+1,234 shows as 1.2K and 45,940 as 45.9K, with the exact value on hover.
+Set `number_format` to show it otherwise:
+
+- `"compact"` (the default): large numbers shortened, with one decimal.
+- `"full"`: every digit, grouped (45,940).
+- `"percent"`: the value as a percentage, so 91 shows as 91%.
+- `"currency"`: an amount in `currency`, a three-letter code such as
+  `"EUR"`; compact from 1,000 on.
+
+The value may be a whole number or a decimal. A statistic also takes these
+optional fields:
+
+- `icon`: a [Phosphor](https://phosphoricons.com/) icon class, such as
+  `"ph-bold ph-eye"`, shown next to the title.
+- `trend_label`: what the `trend` compares with, such as "vs last month".
+- `footnote`: a short line under the value.
+- `series`: a list of numbers, oldest first, drawn as a sparkline.
+- `max_value`: draws a meter of the value against it, such as a goal.
+
+```python
+# blog/dashboard.py
+from datetime import timedelta
+
+from django.utils import timezone
+
+from content_studio.dashboard.statistic import StatisticWidget
+
+from .models import Article
+
+
+class RecentlyPublishedWidget(StatisticWidget):
+    def get_data(self, request):
+        today = timezone.localdate()
+        published = Article.objects.filter(status="published")
+        days = [today - timedelta(days=n) for n in range(29, -1, -1)]
+        return {
+            "title": "Published, last 30 days",
+            "value": published.filter(published_at__date__gte=days[0]).count(),
+            "icon": "ph-bold ph-check-circle",
+            "trend": 12.5,
+            "trend_sentiment": "positive",
+            "trend_label": "vs last month",
+            # Articles published per day, oldest first.
+            "series": [published.filter(published_at__date=day).count() for day in days],
+        }
+```
 
 ## Task dashboard
 

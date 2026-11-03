@@ -327,7 +327,9 @@
           "2": "bewerkte",
           "3": "verwijderde"
         },
-        "empty": "Nog geen wijzigingen"
+        "empty": "Nog geen wijzigingen",
+        "today": "Vandaag",
+        "yesterday": "Gisteren"
       },
       "scheduled_tasks": {
         "empty": "Geen geplande taken",

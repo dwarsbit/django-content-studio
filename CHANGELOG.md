@@ -25,6 +25,19 @@
   System check `content_studio.E020` reports text components in
   `edit_header`.
 
+- **Dashboard statistics.** `StatisticWidget` shows its number compact
+  and in the editor's language (45.9K, 1.2M), with the exact value on
+  hover. Set `number_format` to `"full"`, `"percent"` or `"currency"`
+  (with `currency`, such as `"EUR"`) to show it otherwise. The value may
+  now be a decimal. New optional fields: an `icon`, a `footnote`, a
+  `trend_label` such as "vs last month", a `series` drawn as a sparkline
+  and a `max_value` drawn as a meter. The trend shows as a colored pill.
+- **Dashboard lists.** Items of a `ContentListWidget` take an optional
+  `status` badge (colored by `status_variant`), a `thumbnail` and a
+  `timestamp`, shown relative to now. The activity log groups changes by
+  day and marks each kind of change on the avatar, and the notifications
+  widget shows the unread count with a button to mark all as read.
+
 ## 1.6.0 (2026-11-02)
 
 - **Image sizes.** The new `IMAGE_SIZES` setting names the sizes every media
