@@ -2,9 +2,11 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { NotificationRow } from "@/components/notifications/notification-list";
+import { Button } from "@/components/ui/button";
 import { useHttp } from "@/hooks/use-http";
 import {
   type Notification,
+  useMarkRead,
   useNotificationsEnabled,
   useNotificationStatus,
 } from "@/hooks/use-notifications";
@@ -21,8 +23,8 @@ export interface NotificationsWidgetData {
 }
 
 /**
- * The editor's latest notifications, unread ones marked, with a link
- * to all of them. It reloads when the polled status moves (a new
+ * The editor's latest notifications, unread ones marked, with the
+ * unread count, mark all as read and a link to all of them. It reloads when the polled status moves (a new
  * notification) and after marking one as read, like the list.
  */
 export function NotificationsWidget({ widget }: { widget: DashboardWidget }) {
@@ -31,6 +33,7 @@ export function NotificationsWidget({ widget }: { widget: DashboardWidget }) {
   const { tenantId } = useTenant();
   const enabled = useNotificationsEnabled();
   const { data: status } = useNotificationStatus();
+  const { mutate: markRead, isPending: isMarking } = useMarkRead();
   const { data } = useQuery({
     enabled,
     retry: false,
@@ -60,15 +63,42 @@ export function NotificationsWidget({ widget }: { widget: DashboardWidget }) {
 
   return (
     <Widget
-      title={data?.title ?? t("notifications.title")}
-      description={
-        data
-          ? unread
-            ? t("notifications.widget_unread", { count: unread })
-            : data.description
-          : undefined
+      title={
+        <span className="flex items-center gap-2">
+          <span className="truncate">
+            {data?.title ?? t("notifications.title")}
+          </span>
+          {unread ? (
+            <span
+              aria-label={t("notifications.widget_unread", { count: unread })}
+              className="rounded-full bg-primary text-primary-foreground px-1.5 text-[11px] font-semibold leading-[18px] tabular-nums"
+            >
+              {unread}
+            </span>
+          ) : null}
+        </span>
       }
-      action={<ViewAll to="/notifications" />}
+      description={data?.description || undefined}
+      action={
+        <div className="flex items-center gap-1 shrink-0">
+          {unread ? (
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-muted-foreground"
+              disabled={isMarking}
+              onClick={() =>
+                markRead({
+                  before: status?.latest ?? new Date().toISOString(),
+                })
+              }
+            >
+              {t("notifications.mark_all_read")}
+            </Button>
+          ) : null}
+          <ViewAll to="/notifications" />
+        </div>
+      }
     >
       {!data ? (
         <WidgetLoading />

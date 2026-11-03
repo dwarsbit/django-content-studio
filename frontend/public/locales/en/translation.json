@@ -327,7 +327,9 @@
           "2": "edited",
           "3": "deleted"
         },
-        "empty": "No changes yet"
+        "empty": "No changes yet",
+        "today": "Today",
+        "yesterday": "Yesterday"
       },
       "scheduled_tasks": {
         "empty": "No scheduled tasks",
