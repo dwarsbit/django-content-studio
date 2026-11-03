@@ -454,15 +454,19 @@ Content Studio picks the format from the field's type:
 
 | Field type | Format | Shows |
 |-----------|--------|-------|
-| `CharField`, `TextField`, `SlugField` | `TextFormat` | The text |
+| `CharField`, `SlugField` | `TextFormat` | The text |
+| `TextField` | `TextFormat(lines=2)` | Two lines on the list page, all of it on hover and in a read-only field |
 | Number fields | `NumberFormat` | Grouped digits in the editor's language (45,940) |
 | `BooleanField` | `BooleanFormat` | A check or a dash |
 | `DateField` | `DateFormat` | The date in the editor's language |
 | `DateTimeField` | `DateTimeFormat` | The time relative to now, exact on hover |
 | `TimeField` | `TimeFormat` | Hours and minutes |
+| `DurationField` | `DurationFormat` | The duration in words, such as 1h 20m |
+| `UUIDField` | `CodeFormat` | The value in a monospace font, with a copy button |
 | `EmailField` | `EmailFormat` | A `mailto:` link |
 | `URLField` | `LinkFormat` | A link that opens in a new tab |
-| `FileField`, `ImageField` | `FileFormat` | The file's name, linked to the file |
+| `FileField` | `FileFormat` | The file's name, linked to the file |
+| `ImageField` | `ImageFormat` | A small thumbnail, linked to the image |
 | `ForeignKey`, `OneToOneField` | `ForeignKeyFormat` | The related object |
 | `ManyToManyField` | `ManyToManyFormat` | The related objects as chips |
 | `JSONField`, `FlexField` (built-in) | `JSONFormat` | The JSON |
@@ -475,11 +479,14 @@ Content Studio picks the format from the field's type:
 Fields with choices show the choice's label. Lists of tags, related objects
 and media show the first three, then "+2" for the rest.
 
-Four formats are not used by default but are there to choose:
+These formats are not used by default but are there to choose:
 
 - **`CurrencyFormat`**: an amount in a currency, such as €1,250.00.
 - **`PercentFormat`**: a percentage, such as 91%.
 - **`BadgeFormat`**: a value as a colored badge, for a status.
+- **`ProgressFormat`**: a number as a small meter, with the number next to
+  it, for a score or a completion percentage.
+- **`CodeFormat`**: for any identifier, such as a SKU or a key.
 - **`FileSizeFormat`**: a number of bytes, such as 1.2 MB.
 
 ### Use another format for a column
@@ -520,6 +527,11 @@ class ArticleStudio(ModelStudio):
 Options are keyword arguments, checked when the format is made: an unknown
 style or color raises an error when Django starts.
 
+```python
+# blog/admin.py
+TableColumn(field="body", format=TextFormat(max_length=80)),
+```
+
 - **`NumberFormat`**: `decimals` fixes the digits after the decimal point
   (up to two are shown without it). `compact=True` shortens large numbers
   (45.9K) and shows the exact value on hover. `prefix` and `suffix` are
@@ -540,6 +552,18 @@ style or color raises an error when Django starts.
   language.
 - **`DateTimeFormat`**: `relative=False` shows the date and time instead of
   "3 hours ago"; `style` sets the date's style, as for `DateFormat`.
+- **`TextFormat`**: `max_length` cuts the text at that many characters and
+  `lines` clamps it to that many lines. The full text shows on hover. A
+  read-only field on the edit page always shows all of it.
+- **`DurationFormat`**: `style` is `"narrow"` (1h 20m, the default),
+  `"short"` (1 hr, 20 min) or `"long"` (1 hour, 20 minutes), in the
+  editor's language.
+- **`ProgressFormat`**: `max_value` is the value of a full meter (`100`).
+  Values below 0 or above it show an empty or a full meter.
+- **`BooleanFormat`**: `labels=("In stock", "Sold out")` shows the first
+  word for true and the second, muted, for false. Add
+  `colors=("green", "red")` to show them as badges, in the colors of
+  `BadgeFormat`.
 
 ### Change the default format for a field type
 

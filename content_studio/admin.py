@@ -560,12 +560,14 @@ class ContentStudioSite:
         "AutoSlugField": widgets.SlugWidget,
     }
 
-    default_format_mapping: dict[Type[models.Field], Type[formats.BaseFormat]] = {
+    default_format_mapping: dict[
+        Type[models.Field], Union[Type[formats.BaseFormat], formats.BaseFormat]
+    ] = {
         models.CharField: formats.TextFormat,
         models.EmailField: formats.EmailFormat,
         models.URLField: formats.LinkFormat,
         models.FileField: formats.FileFormat,
-        models.ImageField: formats.FileFormat,
+        models.ImageField: formats.ImageFormat,
         models.IntegerField: formats.NumberFormat,
         models.SmallIntegerField: formats.NumberFormat,
         models.BigIntegerField: formats.NumberFormat,
@@ -575,12 +577,15 @@ class ContentStudioSite:
         models.FloatField: formats.NumberFormat,
         models.DecimalField: formats.NumberFormat,
         models.SlugField: formats.TextFormat,
-        models.TextField: formats.TextFormat,
+        # Long text: two lines on the list page, the rest on hover.
+        models.TextField: formats.TextFormat(lines=2),
         models.BooleanField: formats.BooleanFormat,
         models.NullBooleanField: formats.BooleanFormat,
         models.DateField: formats.DateFormat,
         models.DateTimeField: formats.DateTimeFormat,
         models.TimeField: formats.TimeFormat,
+        models.DurationField: formats.DurationFormat,
+        models.UUIDField: formats.CodeFormat,
         models.ForeignKey: formats.ForeignKeyFormat,
         models.OneToOneField: formats.ForeignKeyFormat,
         models.ManyToManyField: formats.ManyToManyFormat,

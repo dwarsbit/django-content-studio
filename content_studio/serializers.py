@@ -158,8 +158,8 @@ class BlockSerializerField(serializers.JSONField):
 
 class ContentFileField(serializers.Field):
     """
-    A FileField or ImageField: {"name", "url"} out (None without a
-    file). In, {"upload": token} attaches a temporary upload (see
+    A FileField or ImageField: {"name", "url"} out, plus "thumbnail"
+    for an ImageField (None without a file). In, {"upload": token} attaches a temporary upload (see
     uploads.py), None clears the field, and anything else, such as the
     value as it was sent out, leaves the file unchanged: a path is never
     taken from the editor.
@@ -178,7 +178,16 @@ class ContentFileField(serializers.Field):
         except ValueError:
             url = None
 
-        return {"name": posixpath.basename(value.name), "url": url}
+        data = {"name": posixpath.basename(value.name), "url": url}
+
+        # An image also gets a small thumbnail, for tables and previews;
+        # None when thumbnails are off or the image cannot be read.
+        if isinstance(self.model_field, models.ImageField):
+            from .thumbnails import get_thumbnail_url
+
+            data["thumbnail"] = get_thumbnail_url(value, "small")
+
+        return data
 
     def to_internal_value(self, data):
         from .uploads import open_upload

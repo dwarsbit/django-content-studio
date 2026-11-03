@@ -248,9 +248,48 @@ const FORMAT_FIXTURES: Record<
     field: { type: FieldType.CharField },
     value: "Hello, studio",
   },
+  "TextFormat (TextField, 2 lines)": {
+    field: { type: FieldType.TextField },
+    format: { name: FieldFormat.TextFormat, options: { lines: 2 } },
+    value:
+      "A longer body of text that runs on for a while, so that the list page clamps it to two lines and shows the rest when you hover over it with the pointer.",
+  },
+  "TextFormat (max_length=24)": {
+    field: { type: FieldType.CharField },
+    format: { name: FieldFormat.TextFormat, options: { max_length: 24 } },
+    value: "A headline that is too long for its column",
+  },
   "NumberFormat (IntegerField)": {
     field: { type: FieldType.IntegerField },
     value: 1234,
+  },
+  "ProgressFormat (IntegerField)": {
+    field: { type: FieldType.IntegerField },
+    format: { name: FieldFormat.ProgressFormat },
+    value: 64,
+  },
+  "DurationFormat (DurationField)": {
+    field: { type: FieldType.DurationField },
+    format: { name: FieldFormat.DurationFormat },
+    value: "1 02:20:00",
+  },
+  "DurationFormat (long)": {
+    field: { type: FieldType.DurationField },
+    format: { name: FieldFormat.DurationFormat, options: { style: "long" } },
+    value: "1:20:00",
+  },
+  "CodeFormat (UUIDField)": {
+    field: { type: FieldType.UUIDField },
+    format: { name: FieldFormat.CodeFormat },
+    value: "3f2b8c1e-9d4a-4e6b-8a7f-2c5d1e0b9a64",
+  },
+  "BooleanFormat (labels, colors)": {
+    field: { type: FieldType.BooleanField },
+    format: {
+      name: FieldFormat.BooleanFormat,
+      options: { labels: ["In stock", "Sold out"], colors: ["green", "red"] },
+    },
+    value: false,
   },
   "CurrencyFormat (DecimalField)": {
     field: { type: FieldType.DecimalField },
