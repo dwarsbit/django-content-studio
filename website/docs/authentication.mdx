@@ -1,7 +1,3 @@
----
-sidebar_position: 8
----
-
 # 🔐 Authentication
 
 Editors log in to the admin with their username and password, like in the
@@ -41,23 +37,12 @@ they expire.
 
 ## Login backends
 
-The login backend decides how editors log in. The built-in
-`UsernamePasswordBackend` checks the username and password, like the classic
-Django admin. Login attempts are limited per IP address
+Editors log in with their username and password, like in the classic Django
+admin. Login attempts are limited per IP address
 ([`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate)).
 
-```python
-# mysite/settings.py
-CONTENT_STUDIO = {
-    "LOGIN_BACKENDS": [
-        "content_studio.login_backends.UsernamePasswordBackend",
-    ],
-}
-```
-
 :::note
-Only the built-in login backend and token backend
-([`TOKEN_BACKEND`](/docs/settings#token_backend)) are supported. Custom
+Username and password is the only supported way to log in. Custom login
 backends, such as single sign-on, are not supported.
 :::
 

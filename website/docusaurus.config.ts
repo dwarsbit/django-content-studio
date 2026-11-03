@@ -17,6 +17,23 @@ const config: Config = {
   },
   trailingSlash: false,
   themes: [],
+  plugins: [
+    [
+      "@docusaurus/plugin-client-redirects",
+      {
+        redirects: [
+          { from: "/docs/content/registering-models", to: "/docs/registering-models" },
+          { from: "/docs/content/block-fields", to: "/docs/block-fields" },
+          { from: "/docs/forms/widgets", to: "/docs/widgets" },
+          { from: "/docs/forms/form-sets", to: "/docs/edit-page" },
+          { from: "/docs/security", to: "/docs/deployment" },
+          { from: "/docs/system-checks", to: "/docs/deployment" },
+          { from: "/docs/category/content", to: "/docs/registering-models" },
+          { from: "/docs/category/widgets--forms", to: "/docs/widgets" },
+        ],
+      },
+    ],
+  ],
   themeConfig: {
     colorMode: {
       defaultMode: "light",
@@ -55,6 +72,9 @@ const config: Config = {
           items: [
             { label: "Introduction", to: "/docs/intro" },
             { label: "Getting started", to: "/docs/getting-started" },
+            { label: "Registering models", to: "/docs/registering-models" },
+            { label: "Media library", to: "/docs/media-library" },
+            { label: "Dashboard", to: "/docs/dashboard" },
             {
               label: "Settings reference",
               to: "/docs/settings",

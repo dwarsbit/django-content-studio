@@ -1,7 +1,3 @@
----
-sidebar_position: 10.7
----
-
 # 🔔 Notifications
 
 Notifications tell editors in the admin what other editors changed. An
@@ -198,19 +194,12 @@ user, as in the example, without queries of its own per user.
 Some rules hold whatever editors choose:
 
 - Nobody is notified about their own changes.
-- Editors are only notified about models they may view, and only see
-  notifications about models and objects they may still view: a revoked
-  permission hides old notifications, a restored one shows them again. See
-  [Access control](/docs/permissions).
-- A bulk action notifies each editor once per model and change, with a
-  summary that names the first few objects and links to the list.
-- An unread notification about one object is bumped, not repeated, when the
-  object changes again: twenty saves are one notification that counts
-  twenty changes.
-- Reordering a list only notifies the followers of the objects that moved.
+- Editors only see notifications about objects they may view (see
+  [Access control](/docs/permissions)).
+- Repeated changes do not flood the list: a bulk action is one notification,
+  and further changes to an object update its unread notification.
 - With [multi-tenancy](/docs/multi-tenancy), notifications and settings are
-  kept per tenant for tenant-scoped models, and the settings page names the
-  tenant the choices apply to.
+  kept per tenant.
 
 ## Leave a model out
 

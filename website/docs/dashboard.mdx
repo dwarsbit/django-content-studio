@@ -1,7 +1,3 @@
----
-sidebar_position: 6
----
-
 # 📊 Dashboard
 
 The dashboard is the admin's start page. You compose it in Python from
@@ -283,9 +279,7 @@ runs, and system check `content_studio.W020` warns. The stats app keeps
 48 hours and at most 2000 events by default (its `HUEY_STATS` setting);
 on a busy queue, the counts cover less than the window.
 
-## Widget identity
+## Two widgets of the same class
 
-Each widget gets an ID from its class and its `name`, so every worker of a
-deployment agrees on it. Two widgets of the same class need an explicit
-`widget_id` (a UUID) to tell them apart; `manage.py check` reports
-duplicates.
+Give each an explicit `widget_id` (a UUID) to tell them apart;
+`manage.py check` reports duplicates.

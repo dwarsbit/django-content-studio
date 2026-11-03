@@ -1,7 +1,3 @@
----
-sidebar_position: 7
----
-
 # 🖼️ Media library
 
 The media library is where editors upload and organize files: images,
@@ -108,46 +104,6 @@ up to [`MEDIA_LIBRARY_MAX_UPLOAD_SIZE`](/docs/settings#media_library_max_upload_
 SVG: served from your own domain, such a file could run scripts in your
 editors' sessions.
 
-## Customize with site hooks
-
-Five methods on the site change how the media library behaves. Add them to
-your site subclass:
-
-```python
-# mysite/studio.py
-from content_studio.admin import ContentStudioSite
-
-
-class BlogStudioSite(ContentStudioSite):
-    def get_thumbnail(self, obj, size="small"):
-        return f"https://images.example.com/{obj.file.name}?size={size}"
-
-    def get_media_serializer_fields(self, media_model):
-        return ["id", "name", "type", "tags", "file", "folder"]
-
-    def crop_image(self, obj, crop_info):
-        # Crop obj's file the way your project needs.
-        ...
-
-
-admin_site = BlogStudioSite()
-```
-
-- **`get_thumbnail(obj, size="small")`** returns the thumbnail URL of an
-  image, `"small"` or `"large"`. By default, a [thumbnail](#thumbnails) made
-  by Content Studio, or the file's own URL. Override it to serve thumbnails
-  from an image service or CDN.
-- **`get_media_serializer_fields(media_model)`** returns the fields of a
-  media item the admin works with. By default, all fields; leave out fields
-  editors should not see.
-- **`crop_image(obj, crop_info)`** crops an image. By default, the
-  [built-in crop](#cropping-and-focal-points); override it to crop another
-  way.
-- **`reset_crop(obj)`** undoes a crop. By default, it puts the original back
-  that the built-in crop kept.
-- **`get_media_metadata(file, type)`** returns the [metadata](#metadata) to
-  store for an uploaded file.
-
 ## Thumbnails
 
 The admin shows images in two sizes: small thumbnails in the media library,
@@ -159,13 +115,10 @@ both from the uploaded image:
 pip install "django-content-studio[images]"
 ```
 
-A thumbnail is a WebP image scaled down to fit 480 pixels (small) or 1600
-pixels (large), turned to the image's EXIF orientation. Animated images get
-their first frame. Thumbnails are saved in the image's own storage, in the
-folder set by [`THUMBNAIL_FOLDER`](/docs/settings#thumbnail_folder)
-(`"content_studio/thumbnails"` by default). Content Studio makes them when an
-image is uploaded, replaced or cropped, and the first time an image you
-already have is shown. It removes them with the image.
+Thumbnails are saved in the image's own storage, in the folder set by
+[`THUMBNAIL_FOLDER`](/docs/settings#thumbnail_folder). Content Studio makes
+them when an image is uploaded, replaced or cropped, and the first time an
+image you already have is shown. It removes them with the image.
 
 Making a thumbnail takes a moment, so a library of existing images is slow
 the first time the admin shows it. Make the missing thumbnails in advance:
@@ -176,10 +129,8 @@ python manage.py content_studio_thumbnails
 
 Pass `--all` to make every thumbnail again.
 
-Content Studio remembers which thumbnails exist in the cache set by
-[`THUMBNAIL_CACHE`](/docs/settings#thumbnail_cache) (`"default"` by default),
-so showing a folder does not check the storage for every image. With several
-worker processes or servers, configure a shared cache, such as Redis,
+With several worker processes or servers, configure a shared cache for
+[`THUMBNAIL_CACHE`](/docs/settings#thumbnail_cache), such as Redis,
 Memcached or the database cache.
 
 Without Pillow, with `THUMBNAIL_FOLDER` set to `None`, or for a file it
@@ -342,7 +293,7 @@ Pillow or a metadata field. Override `reset_crop(obj)` as well to offer
 ### Focal points
 
 A focal point is one of the image's [properties](#properties): editors click
-the image to set it. The [cover image widget](/docs/forms/widgets#cover-images)
+the image to set it. The [cover image widget](/docs/widgets#cover-images)
 sets the same focal point from the edit page. The focal point is relative to
 the image as it is shown, so the built-in crop and reset move it along; a
 focal point outside a new crop moves to the crop's nearest edge.
@@ -352,7 +303,7 @@ focal point outside a new crop moves to the crop's nearest edge.
 The media library can store facts about each file, read once when the file
 is uploaded or replaced: an image's width and height, or a video's duration.
 The admin shows them in the file's details, and the
-[cover image widget](/docs/forms/widgets#cover-images) uses an image's size
+[cover image widget](/docs/widgets#cover-images) uses an image's size
 to warn about images that are too small.
 
 1. Give your media item model a `JSONField` named `metadata`. The built-in
@@ -513,3 +464,42 @@ there too. Read them in templates like any dictionary:
 {% endwith %}
 ```
 
+## Customize with site hooks
+
+Five methods on the site change how the media library behaves. Add them to
+your site subclass:
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+
+
+class BlogStudioSite(ContentStudioSite):
+    def get_thumbnail(self, obj, size="small"):
+        return f"https://images.example.com/{obj.file.name}?size={size}"
+
+    def get_media_serializer_fields(self, media_model):
+        return ["id", "name", "type", "tags", "file", "folder"]
+
+    def crop_image(self, obj, crop_info):
+        # Crop obj's file the way your project needs.
+        ...
+
+
+admin_site = BlogStudioSite()
+```
+
+- **`get_thumbnail(obj, size="small")`** returns the thumbnail URL of an
+  image, `"small"` or `"large"`. By default, a [thumbnail](#thumbnails) made
+  by Content Studio, or the file's own URL. Override it to serve thumbnails
+  from an image service or CDN.
+- **`get_media_serializer_fields(media_model)`** returns the fields of a
+  media item the admin works with. By default, all fields; leave out fields
+  editors should not see.
+- **`crop_image(obj, crop_info)`** crops an image. By default, the
+  [built-in crop](#cropping-and-focal-points); override it to crop another
+  way.
+- **`reset_crop(obj)`** undoes a crop. By default, it puts the original back
+  that the built-in crop kept.
+- **`get_media_metadata(file, type)`** returns the [metadata](#metadata) to
+  store for an uploaded file.

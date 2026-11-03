@@ -1,7 +1,3 @@
----
-sidebar_position: 10
----
-
 # 🔌 Extensions
 
 Extensions add links, buttons and pages to the admin's menus: a link to an
@@ -89,7 +85,7 @@ admin_site = BlogStudioSite()
   does. Content Studio checks it again when the button runs.
 
 `handle` returns what the editor sees: a string as a notification, or a
-[`ButtonResult`](/docs/forms/form-sets#buttons) with a `message` and a
+[`ButtonResult`](/docs/edit-page#buttons) with a `message` and a
 `value` that appears once in a dialog with a copy button. The options can
 also be passed as arguments, such as `ClearCacheButton(label="Empty
 cache")`. Record the changes the button makes with `record_change`, so they
@@ -199,9 +195,7 @@ across the start page and every dashboard page; system check
 pages uses, such as `content/` or `media-library/`, is reported by system
 check `content_studio.E028`.
 
-## Identity
+## Two identical extensions
 
-Each extension gets an ID from its class and its settings, so every worker
-of a deployment agrees on it. Two extensions with the same settings need an
-explicit `extension_id` (a UUID) to tell them apart; `manage.py check`
-reports duplicates.
+Two extensions with the same settings need an explicit `extension_id` (a
+UUID) to tell them apart; `manage.py check` reports duplicates.
