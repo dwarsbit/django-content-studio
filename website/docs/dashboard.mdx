@@ -3,6 +3,8 @@
 The dashboard is the admin's start page. You compose it in Python from
 widgets: statistics, lists of content, recent activity and scheduled tasks.
 
+<Screenshot name="dashboard" alt="A dashboard with four statistics, a list of the latest articles, notifications and an activity log" />
+
 ## Compose a dashboard
 
 Most widgets get their data from a `get_data(request)` method you write.
@@ -184,6 +186,8 @@ the state of your task backend: a statistic tile per number, the periodic
 tasks with their latest run, and the latest runs. Content Studio does not
 know your backend. You connect it with an adapter: a subclass of
 `TaskAdapter` that implements the methods your backend supports.
+
+<Screenshot name="tasks" alt="The task dashboard with queued, running, succeeded and failed counts, periodic tasks and recent runs" />
 
 ```python
 # mysite/tasks_dashboard.py

@@ -257,3 +257,60 @@ html {
 .theme-doc-markdown code {
   border-radius: 4px;
 }
+
+/* Screenshots of the showcase demo. The images carry their own window
+   frame and shadow on a transparent background. */
+.screenshot {
+  margin: 1.5rem 0;
+}
+
+/* In the docs, the transparent margin around the frame hangs into the
+   gutter, so the window lines up with the text. */
+.markdown .screenshot {
+  margin: 0.5rem -4.4%;
+}
+
+.screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.showcase-dbp {
+  padding: 3rem 0 1rem;
+}
+
+.showcase-dbp .screenshot {
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.tour-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+  max-width: 1100px;
+  margin: 1.5rem auto 0;
+}
+
+.tour-card {
+  display: block;
+  color: inherit;
+  text-align: center;
+  font-weight: 500;
+}
+
+.tour-card:hover {
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+
+.tour-card .screenshot {
+  margin: 0 0 0.25rem;
+}
+
+@media (max-width: 996px) {
+  .tour-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
