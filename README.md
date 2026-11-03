@@ -2,35 +2,55 @@
   <img src="https://raw.githubusercontent.com/dwarsbit/django-content-studio/main/website/static/img/logo.svg" alt="Django Content Studio" width="96">
 </p>
 
-# Django Content Studio
+<h1 align="center">Django Content Studio</h1>
 
-[![PyPI version](https://badge.fury.io/py/django-content-studio.svg)](https://badge.fury.io/py/django-content-studio)
-[![Python versions](https://img.shields.io/pypi/pyversions/django-content-studio.svg)](https://pypi.org/project/django-content-studio/)
-[![Django versions](https://img.shields.io/pypi/frameworkversions/django/django-content-studio.svg)](https://pypi.org/project/django-content-studio/)
-[![CI](https://github.com/dwarsbit/django-content-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/dwarsbit/django-content-studio/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+<p align="center">
+  <a href="https://badge.fury.io/py/django-content-studio"><img src="https://badge.fury.io/py/django-content-studio.svg" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/django-content-studio/"><img src="https://img.shields.io/pypi/pyversions/django-content-studio.svg" alt="Python versions"></a>
+  <a href="https://pypi.org/project/django-content-studio/"><img src="https://img.shields.io/pypi/frameworkversions/django/django-content-studio.svg" alt="Django versions"></a>
+  <a href="https://github.com/dwarsbit/django-content-studio/actions/workflows/ci.yml"><img src="https://github.com/dwarsbit/django-content-studio/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"></a>
+</p>
 
-Django Content Studio is a modern alternative to the classic Django admin,
-with batteries included. Register the models you already have and manage
-them in a fast, modern admin, with optional fields and models for
-content-driven projects.
+Django Content Studio is a modern alternative to the classic Django admin.
+Register the models you already have and manage them in an admin with list
+pages, edit pages, a dashboard and a media library. Optional fields and
+models help with content-driven projects.
 
-**Documentation: [djangocontentstudio.org](https://djangocontentstudio.org/)**
+<p align="center"><strong>Documentation: <a href="https://djangocontentstudio.org/">djangocontentstudio.org</a></strong></p>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/dwarsbit/django-content-studio/main/website/static/img/screenshots/dashboard-dark.webp">
+  <img src="https://raw.githubusercontent.com/dwarsbit/django-content-studio/main/website/static/img/screenshots/dashboard-light.webp" alt="The Content Studio dashboard with statistics, content lists and recent activity">
+</picture>
 
 ## Features
 
-- **Your models, as they are.** Register a plain Django model, as in the
-  classic Django admin, and it is manageable. Nothing to migrate to.
-- **A complete admin.** List pages with search, filters and sorting, and
-  edit pages with validation, inlines and audit stamps. Access follows the
-  permission hooks of the classic Django admin, down to single objects.
-- **Dedicated widgets** for dates, rich text, tags, media and structured
-  JSON, with edit pages laid out in Python.
-- **A dashboard** with statistics, content lists and recent activity.
-- **A media library** with folders, uploads and image crops.
+- **Your models, as they are**: register a plain Django model, as in the
+  classic Django admin. There is nothing to migrate to.
+- **List pages** with search, filters, sorting, bulk actions, a trash and
+  export.
+- **Edit pages laid out in Python**, with widgets for dates, rich text,
+  tags, colors, media and structured JSON, block fields, and text
+  components.
+- **A dashboard** with statistics, content lists, recent activity and
+  background tasks.
+- **A media library** with folders, uploads, crops, focal points and image
+  sizes.
+- **Collaboration**: notifications, presence avatars and a command palette.
+- **Access control** that follows the permission hooks of the classic
+  Django admin, down to single objects.
 - **Multi-tenancy**: one method decides which tenants an editor may work in.
-- **Batteries included**: optional fields such as `HTMLField` and
-  `TagField`, and base models such as `ContentModel` and `SingletonModel`.
+- **Extensions, webhooks and built-in fields and models** such as
+  `HTMLField`, `ColorField` and `ContentModel`, all optional.
+
+Content Studio does not render your website. It manages content, the way
+the classic Django admin does.
+
+## Requirements
+
+- Python 3.12 or later
+- Django 5.2, 6.0 or 6.1
 
 ## Quick start
 
@@ -68,7 +88,8 @@ content-driven projects.
    ]
    ```
 
-4. Register a model in your app's `admin.py`:
+4. Register one of your models in your app's `admin.py`. The example uses
+   an `Article` model with a `title` and a `status` field:
 
    ```python
    # blog/admin.py
@@ -80,7 +101,7 @@ content-driven projects.
 
    @register(Article)
    class ArticleStudio(ModelStudio):
-       table_display = ["title", "status", "published_at"]
+       table_display = ["title", "status"]
        list_filter = ["status"]
        search_fields = ["title"]
    ```
@@ -93,18 +114,15 @@ in the documentation.
 
 ## Documentation
 
+The full documentation is at [djangocontentstudio.org](https://djangocontentstudio.org/).
+Good places to start:
+
 - [Introduction](https://djangocontentstudio.org/docs/intro): what Content Studio is, and what it is not
 - [Getting started](https://djangocontentstudio.org/docs/getting-started): installation and your first model
 - [Registering models](https://djangocontentstudio.org/docs/registering-models): studio options, singletons and inlines
-- [List page](https://djangocontentstudio.org/docs/list-page): columns, bulk actions, trash, reordering and export
-- [Edit page layout](https://djangocontentstudio.org/docs/edit-page) and [widgets](https://djangocontentstudio.org/docs/widgets): edit page layouts and field editors
-- [Media library](https://djangocontentstudio.org/docs/media-library): models, uploads and cropping
-- [Dashboard](https://djangocontentstudio.org/docs/dashboard): composing the start page
+- [Edit page layout](https://djangocontentstudio.org/docs/edit-page): form sets, the sidebar and components
 - [Access control](https://djangocontentstudio.org/docs/permissions): model and object permissions
-- [Authentication](https://djangocontentstudio.org/docs/authentication): logging in, sessions and password reset
-- [Multi-tenancy](https://djangocontentstudio.org/docs/multi-tenancy): tenants and who may work in them
-- [Deployment](https://djangocontentstudio.org/docs/deployment): a deployment checklist, what is protected, and system checks
-- [Settings](https://djangocontentstudio.org/docs/settings): every `CONTENT_STUDIO` setting
+- [Deployment](https://djangocontentstudio.org/docs/deployment): a deployment checklist and system checks
 - [How it compares](https://djangocontentstudio.org/docs/comparison): Content Studio next to admin themes and content management systems
 
 See also [Django Headless](https://djangoheadless.org), if you need an API
