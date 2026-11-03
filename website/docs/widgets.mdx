@@ -27,11 +27,13 @@ the widget from the field's type, so most models need no configuration.
 
 Fields with choices get a select. Fields of other types get a plain input.
 
-Three widgets are not used by default but are there to choose:
+Four widgets are not used by default but are there to choose:
 
 - **`SwitchWidget`**: a toggle switch, for a `BooleanField`.
 - **`ToggleGroupWidget`**: a row of buttons for a field with choices, of
   which exactly one is active.
+- **`RadioButtonWidget`**: the choices of a field as radio buttons, one per
+  line. An optional field can be cleared.
 - **`CoverImageWidget`**: one image shown large, for a `MediaField` that
   holds a cover or header image. See [Cover images](#cover-images).
 
@@ -367,11 +369,120 @@ admin_site = BlogStudioSite()
 
 ## Formats
 
-Values on the list page and in read-only fields are shown through formats:
-dates, times, booleans, numbers, tags, colors, rich text and media each
-have one.
+Values on the list page and in read-only fields are shown through formats.
+Content Studio picks the format from the field's type:
+
+| Field type | Format | Shows |
+|-----------|--------|-------|
+| `CharField`, `TextField`, `SlugField` | `TextFormat` | The text |
+| Number fields | `NumberFormat` | Grouped digits in the editor's language (45,940) |
+| `BooleanField` | `BooleanFormat` | A check or a dash |
+| `DateField` | `DateFormat` | The date in the editor's language |
+| `DateTimeField` | `DateTimeFormat` | The time relative to now, exact on hover |
+| `TimeField` | `TimeFormat` | Hours and minutes |
+| `EmailField` | `EmailFormat` | A `mailto:` link |
+| `URLField` | `LinkFormat` | A link that opens in a new tab |
+| `ForeignKey`, `OneToOneField` | `ForeignKeyFormat` | The related object |
+| `ManyToManyField` | `ManyToManyFormat` | The related objects as chips |
+| `JSONField`, `FlexField` (built-in) | `JSONFormat` | The JSON |
+| `HTMLField` (built-in) | `HtmlFormat` | An excerpt on the list page, the formatted text in a read-only field |
+| `TagField` (built-in) | `TagFormat` | The tags as pills |
+| `ColorField` (built-in) | `ColorFormat` | A swatch with the value |
+| `BlockField` (built-in) | `BlockFormat` | The number of blocks |
+| `MediaField`, `ManyMediaField` (built-in) | `MediaFormat`, `ManyMediaFormat` | The thumbnails |
+
+Fields with choices show the choice's label. Lists of tags, related objects
+and media show the first three, then "+2" for the rest.
+
+Four formats are not used by default but are there to choose:
+
+- **`CurrencyFormat`**: an amount in a currency, such as €1,250.00.
+- **`PercentFormat`**: a percentage, such as 91%.
+- **`BadgeFormat`**: a value as a colored badge, for a status.
+- **`FileSizeFormat`**: a number of bytes, such as 1.2 MB.
+
+### Use another format for a column
+
+Pass a format to a `TableColumn`, as a class or as an instance with
+options:
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import TableColumn
+from content_studio.formats import BadgeFormat, DateTimeFormat, NumberFormat
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    table_display = [
+        "title",
+        TableColumn(
+            field="status",
+            format=BadgeFormat(colors={"draft": "gray", "published": "green"}),
+        ),
+        TableColumn(field="published_at", format=DateTimeFormat(relative=False)),
+        TableColumn(
+            field="get_word_count", header="Words", format=NumberFormat(compact=True)
+        ),
+    ]
+
+    def get_word_count(self, obj, request):
+        return len(obj.body.split())
+```
+
+### Format options
+
+Options are keyword arguments, checked when the format is made: an unknown
+style or color raises an error when Django starts.
+
+- **`NumberFormat`**: `decimals` fixes the digits after the decimal point
+  (up to two are shown without it). `compact=True` shortens large numbers
+  (45.9K) and shows the exact value on hover. `prefix` and `suffix` are
+  shown next to the number in muted text, such as `suffix="km"`.
+- **`CurrencyFormat`**: the currency as an ISO 4217 code, such as `"EUR"` or
+  `"USD"`, and `decimals` and `compact` as for `NumberFormat`. Without
+  `decimals`, the currency's own minor units are shown (cents for euros).
+- **`PercentFormat`**: the value is the percentage, so 91 shows as 91%.
+  With `fraction=True` the value is a fraction of one, so 0.91 shows as
+  91%. `decimals` as for `NumberFormat`; one decimal is shown without it.
+- **`BadgeFormat`**: `colors` maps values to `"gray"`, `"blue"`, `"green"`,
+  `"yellow"`, `"red"` or `"purple"`; values not in it get `default_color`
+  (`"gray"`). The colors are tuned for the light and dark theme. A field
+  with choices shows the choice's label; a `MultipleChoiceField` shows a
+  badge per value.
+- **`DateFormat`**: `style` is `"short"` (10/9/26), `"medium"` (Oct 9,
+  2026, the default) or `"long"` (October 9, 2026), in the editor's
+  language.
+- **`DateTimeFormat`**: `relative=False` shows the date and time instead of
+  "3 hours ago"; `style` sets the date's style, as for `DateFormat`.
+
+### Change the default format for a field type
+
 The site's `default_format_mapping` maps field types to formats, and you
-change it the same way as `default_widget_mapping`.
+change it the same way as `default_widget_mapping`. To show every
+`DecimalField` as euros:
+
+```python
+# mysite/studio.py
+from django.db import models
+
+from content_studio import formats
+from content_studio.admin import ContentStudioSite
+
+
+class BlogStudioSite(ContentStudioSite):
+    default_format_mapping = {
+        **ContentStudioSite.default_format_mapping,
+        models.DecimalField: formats.CurrencyFormat("EUR"),
+    }
+
+
+admin_site = BlogStudioSite()
+```
 
 ## Custom widgets and formats
 

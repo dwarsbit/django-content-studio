@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.8.0 (unreleased)
+
+- **Number formats.** `NumberFormat` now groups digits in the editor's
+  language (45,940) and shows 0 instead of an empty cell. It takes
+  `decimals`, `compact=True` (45.9K, exact on hover), `prefix` and
+  `suffix`. The new `CurrencyFormat("EUR")` shows amounts and
+  `PercentFormat` percentages (`fraction=True` reads 0.91 as 91%).
+- **Badges.** The new `BadgeFormat(colors={...})` shows a value as a
+  colored badge with its choice's label, in `"gray"`, `"blue"`, `"green"`,
+  `"yellow"`, `"red"` or `"purple"`.
+- **Links.** `URLField` values show as links that open in a new tab
+  (`LinkFormat`) and `EmailField` values as `mailto:` links
+  (`EmailFormat`). A click on a link opens the link, not the row.
+- **Related objects.** `ManyToManyField` values show as chips
+  (`ManyToManyFormat`). Tags show as pills and many-media fields as a
+  stack of thumbnails; each list shows the first three, then "+N".
+- **Rich text.** `HtmlFormat` shows a plain-text excerpt on the list page
+  and the formatted text in a read-only field, keeping only the rich text
+  editor's formatting.
+- **Dates.** `DateFormat(style=...)` and `DateTimeFormat(style=...)` take
+  `"short"`, `"medium"` (the default) or `"long"`, in the editor's
+  language. `DateTimeFormat` shows the exact time on hover, and
+  `relative=False` shows it instead of "3 hours ago".
+- **Radio buttons.** `RadioButtonWidget` now shows a field's choices as
+  radio buttons; it used to show a read-only value.
+- **Fixed:** text columns showed `0` and `false` as empty.
+
 ## 1.7.0 (2026-11-03)
 
 - **Colors.** The new `ColorField` stores a CSS color in the notation set

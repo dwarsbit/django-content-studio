@@ -41,6 +41,13 @@ export interface CheckboxProps {
 }
 export declare function Checkbox(props: CheckboxProps): React.ReactElement;
 
+export interface RadioGroupProps {
+  value?: string; defaultValue?: string; onValueChange?: (value: string) => void;
+  disabled?: boolean; id?: string; children?: React.ReactNode;
+}
+export declare function RadioGroup(props: RadioGroupProps): React.ReactElement;
+export declare function RadioGroupItem(props: { value: string; id?: string; disabled?: boolean }): React.ReactElement;
+
 export declare function DragHandle(props: React.ButtonHTMLAttributes<HTMLButtonElement> & { disabled?: boolean }): React.ReactElement;
 
 export interface SwitchProps {
@@ -51,6 +58,7 @@ export declare function Switch(props: SwitchProps): React.ReactElement;
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: "default" | "secondary" | "destructive" | "outline";
+  tone?: "gray" | "blue" | "green" | "yellow" | "red" | "purple";
   asChild?: boolean;
 }
 export declare function Badge(props: BadgeProps): React.ReactElement;

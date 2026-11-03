@@ -109,7 +109,11 @@ export function FormField({
             );
             const control = isReadonly ? (
               <div className="min-h-9 flex items-center px-3 rounded-md border border-dashed bg-muted/40 text-muted-foreground cursor-default">
-                <FormatRenderer value={field.value} field={modelField} />
+                <FormatRenderer
+                  value={field.value}
+                  field={modelField}
+                  display="field"
+                />
               </div>
             ) : (
               <FormControl>

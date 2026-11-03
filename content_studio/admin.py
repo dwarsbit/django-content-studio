@@ -557,6 +557,8 @@ class ContentStudioSite:
 
     default_format_mapping: dict[Type[models.Field], Type[formats.BaseFormat]] = {
         models.CharField: formats.TextFormat,
+        models.EmailField: formats.EmailFormat,
+        models.URLField: formats.LinkFormat,
         models.IntegerField: formats.NumberFormat,
         models.SmallIntegerField: formats.NumberFormat,
         models.BigIntegerField: formats.NumberFormat,
@@ -574,6 +576,7 @@ class ContentStudioSite:
         models.TimeField: formats.TimeFormat,
         models.ForeignKey: formats.ForeignKeyFormat,
         models.OneToOneField: formats.ForeignKeyFormat,
+        models.ManyToManyField: formats.ManyToManyFormat,
         models.JSONField: formats.JSONFormat,
         # Content Studio fields
         fields.HTMLField: formats.HtmlFormat,

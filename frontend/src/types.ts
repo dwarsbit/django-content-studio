@@ -274,6 +274,40 @@ export interface FormatConfig {
   options?: Record<string, unknown>;
 }
 
+// Where a format is shown: a table cell (the list page, inlines) or a
+// read-only field on the edit page, which has room for more.
+export type FormatDisplay = "cell" | "field";
+
+export interface NumberFormatOptions {
+  decimals?: number;
+  compact?: boolean;
+  prefix?: string;
+  suffix?: string;
+  // CurrencyFormat: an ISO 4217 code.
+  currency?: string;
+  // PercentFormat: the value is a fraction of one (0.91 is 91%).
+  fraction?: boolean;
+}
+
+export type BadgeColor =
+  "gray" | "blue" | "green" | "yellow" | "red" | "purple";
+
+export interface BadgeFormatOptions {
+  colors?: Record<string, BadgeColor>;
+  default_color?: BadgeColor;
+}
+
+export type DateStyle = "short" | "medium" | "long";
+
+export interface DateFormatOptions {
+  style?: DateStyle;
+}
+
+export interface DateTimeFormatOptions {
+  relative?: boolean;
+  style?: DateStyle;
+}
+
 export interface InputWidgetOptions {
   placeholder?: string;
   prefix?: string;
@@ -435,25 +469,34 @@ export enum FieldType {
   FloatField = "FloatField",
   HTMLField = "HTMLField",
   IntegerField = "IntegerField",
+  ManyToManyField = "ManyToManyField",
   SlugField = "SlugField",
   TextField = "TextField",
   TimeField = "TimeField",
+  URLField = "URLField",
   URLPathField = "URLPathField",
   UUIDField = "UUIDField",
 }
 
 export enum FieldFormat {
+  BadgeFormat = "BadgeFormat",
   BlockFormat = "BlockFormat",
   BooleanFormat = "BooleanFormat",
   ColorFormat = "ColorFormat",
+  CurrencyFormat = "CurrencyFormat",
   DateFormat = "DateFormat",
   DateTimeFormat = "DateTimeFormat",
+  EmailFormat = "EmailFormat",
   FileFormat = "FileFormat",
   FileSizeFormat = "FileSizeFormat",
   ForeignKeyFormat = "ForeignKeyFormat",
   HtmlFormat = "HtmlFormat",
+  LinkFormat = "LinkFormat",
+  ManyMediaFormat = "ManyMediaFormat",
+  ManyToManyFormat = "ManyToManyFormat",
   MediaFormat = "MediaFormat",
   NumberFormat = "NumberFormat",
+  PercentFormat = "PercentFormat",
   TagFormat = "TagFormat",
   TextFormat = "TextFormat",
   TimeFormat = "TimeFormat",

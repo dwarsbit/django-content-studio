@@ -77,3 +77,69 @@ export function formatExactNumber(
   }
   return formatter(locale, { maximumFractionDigits: 20 }).format(value);
 }
+
+export interface FieldNumberOptions {
+  // Digits after the decimal point; up to 2 when left out.
+  decimals?: number;
+  compact?: boolean;
+  style?: "decimal" | "currency" | "percent";
+  // ISO 4217 code, for the "currency" style.
+  currency?: string;
+  // "percent" style: the value is a fraction of one (0.91 is 91%)
+  // rather than the percentage (91 is 91%).
+  fraction?: boolean;
+  // BCP 47 tag; the browser's language when left out.
+  locale?: string;
+}
+
+/**
+ * A field's number as shown on the list page and in read-only fields
+ * (NumberFormat, CurrencyFormat, PercentFormat): grouped digits in the
+ * editor's language, compact only when asked.
+ */
+export function formatFieldNumber(
+  value: number,
+  {
+    decimals,
+    compact = false,
+    style = "decimal",
+    currency,
+    fraction = false,
+    locale,
+  }: FieldNumberOptions = {},
+): string {
+  const options: Intl.NumberFormatOptions =
+    decimals === undefined
+      ? // A currency keeps its own minor units (cents) when left out.
+        style === "currency"
+        ? {}
+        : { maximumFractionDigits: compact || style === "percent" ? 1 : 2 }
+      : { minimumFractionDigits: decimals, maximumFractionDigits: decimals };
+
+  if (style === "currency" && currency) {
+    Object.assign(options, { style: "currency", currency });
+  }
+  if (compact) {
+    options.notation = "compact";
+  }
+  if (style === "percent") {
+    options.style = "percent";
+    return formatter(locale, options).format(fraction ? value : value / 100);
+  }
+  return formatter(locale, options).format(value);
+}
+
+/**
+ * The number a field's value holds: numbers as they are, decimals
+ * (sent as strings, such as "12.50") parsed; null for anything else.
+ */
+export function toNumber(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+  return null;
+}

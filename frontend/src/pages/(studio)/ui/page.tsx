@@ -50,6 +50,7 @@ import {
   FieldFormat,
   FieldType,
   FieldWidget,
+  type FormatConfig,
   type Model,
   type ModelField,
   type PaginatedResponse,
@@ -85,6 +86,18 @@ const WIDGET_FIXTURES: Record<string, { field: ModelField; value: unknown }> = {
       widget_class: FieldWidget.SelectWidget,
     },
     value: "draft",
+  },
+  "Choice field (RadioButtonWidget)": {
+    field: {
+      type: FieldType.CharField,
+      choices: [
+        ["low", "Low"],
+        ["normal", "Normal"],
+        ["high", "High"],
+      ],
+      widget_class: FieldWidget.RadioButtonWidget,
+    },
+    value: "normal",
   },
   "Multiple choice field (MultiSelectWidget)": {
     field: {
@@ -166,51 +179,105 @@ const WIDGET_FIXTURES: Record<string, { field: ModelField; value: unknown }> = {
   },
 };
 
-const FORMAT_FIXTURES: Record<string, { field?: ModelField; value: unknown }> =
-  {
-    "TextFormat (CharField)": {
-      field: { type: FieldType.CharField },
-      value: "Hello, studio",
+const FORMAT_FIXTURES: Record<
+  string,
+  { field?: ModelField; format?: FormatConfig; value: unknown }
+> = {
+  "TextFormat (CharField)": {
+    field: { type: FieldType.CharField },
+    value: "Hello, studio",
+  },
+  "NumberFormat (IntegerField)": {
+    field: { type: FieldType.IntegerField },
+    value: 1234,
+  },
+  "CurrencyFormat (DecimalField)": {
+    field: { type: FieldType.DecimalField },
+    format: { name: FieldFormat.CurrencyFormat, options: { currency: "EUR" } },
+    value: "1250.00",
+  },
+  "PercentFormat (IntegerField)": {
+    field: { type: FieldType.IntegerField },
+    format: { name: FieldFormat.PercentFormat },
+    value: 91,
+  },
+  "BadgeFormat (CharField with choices)": {
+    field: {
+      type: FieldType.CharField,
+      choices: [
+        ["draft", "Draft"],
+        ["published", "Published"],
+      ],
     },
-    "NumberFormat (IntegerField)": {
-      field: { type: FieldType.IntegerField },
-      value: 1234,
+    format: {
+      name: FieldFormat.BadgeFormat,
+      options: { colors: { published: "green" } },
     },
-    "BooleanFormat (BooleanField)": {
-      field: { type: FieldType.BooleanField },
-      value: true,
+    value: "published",
+  },
+  "LinkFormat (URLField)": {
+    field: { type: FieldType.URLField },
+    format: { name: FieldFormat.LinkFormat },
+    value: "https://example.com/about/",
+  },
+  "EmailFormat (EmailField)": {
+    field: { type: FieldType.EmailField },
+    format: { name: FieldFormat.EmailFormat },
+    value: "ada@example.com",
+  },
+  "TagFormat (TagField)": {
+    field: { type: FieldType.CharField },
+    format: { name: FieldFormat.TagFormat },
+    value: ["django", "admin", "python", "react", "design"],
+  },
+  "ManyToManyFormat (ManyToManyField)": {
+    field: { type: FieldType.ManyToManyField },
+    format: { name: FieldFormat.ManyToManyFormat },
+    value: [
+      { id: 1, __str__: "News" },
+      { id: 2, __str__: "Sports" },
+    ],
+  },
+  "HtmlFormat (HTMLField)": {
+    field: { type: FieldType.HTMLField },
+    format: { name: FieldFormat.HtmlFormat },
+    value: "<p>Rich <strong>text</strong> as a plain excerpt.</p>",
+  },
+  "BooleanFormat (BooleanField)": {
+    field: { type: FieldType.BooleanField },
+    value: true,
+  },
+  "DateFormat (DateField)": {
+    field: { type: FieldType.DateField },
+    value: "2026-10-09",
+  },
+  "DateTimeFormat (DateTimeField)": {
+    field: { type: FieldType.DateTimeField },
+    value: "2026-10-09T12:30:00",
+  },
+  "TimeFormat (TimeField)": {
+    field: { type: FieldType.TimeField },
+    value: "12:30:00",
+  },
+  "FileSizeFormat (IntegerField)": {
+    field: {
+      type: FieldType.IntegerField,
+      format_class: FieldFormat.FileSizeFormat,
     },
-    "DateFormat (DateField)": {
-      field: { type: FieldType.DateField },
-      value: "2026-10-09",
+    value: 91341,
+  },
+  "FileFormat (CharField)": {
+    field: {
+      type: FieldType.CharField,
+      format_class: FieldFormat.FileFormat,
     },
-    "DateTimeFormat (DateTimeField)": {
-      field: { type: FieldType.DateTimeField },
-      value: "2026-10-09T12:30:00",
-    },
-    "TimeFormat (TimeField)": {
-      field: { type: FieldType.TimeField },
-      value: "12:30:00",
-    },
-    "FileSizeFormat (IntegerField)": {
-      field: {
-        type: FieldType.IntegerField,
-        format_class: FieldFormat.FileSizeFormat,
-      },
-      value: 91341,
-    },
-    "FileFormat (CharField)": {
-      field: {
-        type: FieldType.CharField,
-        format_class: FieldFormat.FileFormat,
-      },
-      value: "media/report.pdf",
-    },
-    "JSONFormat (CharField)": {
-      field: { type: FieldType.CharField },
-      value: { level: 1, tags: ["a", "b"] },
-    },
-  };
+    value: "media/report.pdf",
+  },
+  "JSONFormat (CharField)": {
+    field: { type: FieldType.CharField },
+    value: { level: 1, tags: ["a", "b"] },
+  },
+};
 
 // Drives the related field column in the table example: the same
 // format renderer list views use, with a customized relation display.
@@ -620,6 +687,7 @@ export function UIPage() {
                     <FormatRenderer
                       value={fixture.value}
                       field={fixture.field}
+                      format={fixture.format}
                     />
                   </span>
                 </div>

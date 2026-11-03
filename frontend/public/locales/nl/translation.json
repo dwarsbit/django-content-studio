@@ -312,6 +312,9 @@
       "input": "Kleurwaarde"
     }
   },
+  "formats": {
+    "more": "+{{count}}"
+  },
   "dashboard": {
     "greetings": {
       "morning": "Goedemorgen",

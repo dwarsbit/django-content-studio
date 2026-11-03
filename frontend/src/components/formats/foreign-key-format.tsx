@@ -6,13 +6,7 @@ import { useDiscover } from "@/hooks/use-discover";
 import { cn } from "@/lib/utils";
 import type { ModelField } from "@/types";
 
-function relatedLabel(value: object): string {
-  if (!("__str__" in value)) {
-    return String(value);
-  }
-  const str = value.__str__;
-  return str === null || str === undefined ? String(value) : String(str);
-}
+import { relatedLabel } from "./related-label";
 
 export function ForeignKeyFormat({
   value,

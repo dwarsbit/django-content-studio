@@ -418,6 +418,10 @@ Widgets and formats are given as a class or an instance; `utils.as_instance`
 turns either into an instance, and `serialize()` sends
 `{"name": ..., "options": {...}}` (unset options left out) to the admin,
 where `WidgetRenderer` / `FormatRenderer` pass the options to the component.
+`FormatRenderer` also passes `display`: `"cell"` (tables, the default) or
+`"field"` (a read-only field on the edit page, which `HtmlFormat` renders
+as formatted text). Format options are validated in `__init__`, like
+widget options.
 
 Only the built-in widgets and formats are supported in v1: the compiled
 frontend has no renderer for custom `BaseWidget` / `BaseFormat` subclasses.

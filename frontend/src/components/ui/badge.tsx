@@ -18,6 +18,19 @@ const badgeVariants = cva(
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
       },
+      // A status color, for values such as "Published" or "Archived";
+      // overrides the variant's colors.
+      tone: {
+        gray: "border-transparent bg-zinc-100 text-zinc-700 dark:bg-zinc-500/20 dark:text-zinc-300",
+        blue: "border-transparent bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",
+        green:
+          "border-transparent bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300",
+        yellow:
+          "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
+        red: "border-transparent bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
+        purple:
+          "border-transparent bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-300",
+      },
     },
     defaultVariants: {
       variant: "default",
@@ -28,6 +41,7 @@ const badgeVariants = cva(
 function Badge({
   className,
   variant,
+  tone,
   asChild = false,
   ...props
 }: React.ComponentProps<"span"> &
@@ -37,7 +51,7 @@ function Badge({
   return (
     <Comp
       data-slot="badge"
-      className={cn(badgeVariants({ variant }), className)}
+      className={cn(badgeVariants({ variant, tone }), className)}
       {...props}
     />
   );

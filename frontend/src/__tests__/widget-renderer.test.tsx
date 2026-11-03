@@ -160,7 +160,7 @@ describe("WidgetRenderer", () => {
           flavor: {
             type: FieldType.CharField,
             // Not implemented in the frontend registry.
-            widget_class: FieldWidget.RadioButtonWidget,
+            widget_class: "UnknownWidget" as FieldWidget,
           },
         })}
         name="flavor"
