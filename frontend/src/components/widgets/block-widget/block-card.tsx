@@ -323,12 +323,19 @@ function BlockFieldInput({
               <div className="flex items-center gap-2">
                 {control}
                 <FormLabel className="cursor-pointer">
-                  {modelField.verbose_name}
+                  <span className="first-letter:uppercase">
+                    {modelField.verbose_name}
+                  </span>
                 </FormLabel>
               </div>
             ) : (
               <>
-                <FormLabel>{modelField.verbose_name}</FormLabel>
+                {/* verbose_name is lowercase in Django. */}
+                <FormLabel>
+                  <span className="first-letter:uppercase">
+                    {modelField.verbose_name}
+                  </span>
+                </FormLabel>
                 {control}
               </>
             )}

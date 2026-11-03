@@ -42,6 +42,16 @@
   readers, so an icon font glyph no longer ends up in a menu item's name.
   In the collapsed menu, each item is named by its label.
 
+### Fixes
+
+- In dark mode, the backdrop behind dialogs and the command palette
+  lightened the page instead of dimming it. It now dims in both themes.
+- The command palette and the fields of a block start model names and
+  field labels with a capital letter, like the rest of the admin
+  ("Media items", not "media items").
+- A `BlockField` no longer grows past its card when a collapsed block's
+  summary is long.
+
 ## 1.6.0 (2026-11-02)
 
 - **Image sizes.** The new `IMAGE_SIZES` setting names the sizes every media
