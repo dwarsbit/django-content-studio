@@ -2,6 +2,7 @@ __all__ = [
     "BaseWidget",
     "BlockWidget",
     "CheckboxWidget",
+    "CodeWidget",
     "ColorPickerWidget",
     "CoverImageWidget",
     "DateTimeWidget",
@@ -10,16 +11,21 @@ __all__ = [
     "EmailWidget",
     "FileWidget",
     "ForeignKeyWidget",
+    "IconPickerWidget",
     "InputWidget",
     "JSONSchemaWidget",
     "JSONWidget",
+    "KeyValueWidget",
+    "ListWidget",
     "ManyMediaWidget",
     "ManyToManyWidget",
+    "MarkdownWidget",
     "MediaWidget",
     "MultiSelectWidget",
     "PasswordWidget",
     "PhoneWidget",
     "RadioButtonWidget",
+    "RatingWidget",
     "RichTextWidget",
     "SelectWidget",
     "SliderWidget",
@@ -65,6 +71,10 @@ RICH_TEXT_FEATURES = (
     "bullet_list",
     "link",
 )
+
+
+# The languages CodeWidget highlights.
+CODE_LANGUAGES = ("css", "html", "javascript", "json")
 
 
 class BaseWidget:
@@ -233,14 +243,13 @@ class TextAreaWidget(BaseWidget):
         show_count: bool = None,
         recommended_length: int = None,
     ):
-        check_counter("TextAreaWidget", show_count, recommended_length)
+        owner = type(self).__name__
+        check_counter(owner, show_count, recommended_length)
 
         if rows is not None and (
             isinstance(rows, bool) or not isinstance(rows, int) or rows < 1
         ):
-            raise ValueError(
-                f"TextAreaWidget rows must be a positive int; got {rows!r}."
-            )
+            raise ValueError(f"{owner} rows must be a positive int; got {rows!r}.")
 
         self.rows = rows
         self.placeholder = placeholder
@@ -254,6 +263,81 @@ class TextAreaWidget(BaseWidget):
             "show_count": self.show_count,
             "recommended_length": self.recommended_length,
         }
+
+
+class MarkdownWidget(TextAreaWidget):
+    """
+    Markdown typed as text, for a TextField that stores Markdown: a
+    toolbar for headings, bold, italic, links and lists, and a Preview
+    tab that shows it rendered (raw HTML is not). Takes the options of
+    TextAreaWidget. Not used by default.
+    """
+
+
+class CodeWidget(BaseWidget):
+    """
+    A code editor with line numbers, for embed codes and snippets.
+    language ("css", "html", "javascript" or "json") turns on syntax
+    highlighting; without it the code is plain text. Not used by
+    default.
+    """
+
+    def __init__(self, *, language: str = None):
+        if language is not None and language not in CODE_LANGUAGES:
+            raise ValueError(
+                f"CodeWidget language must be one of {', '.join(CODE_LANGUAGES)}; "
+                f"got {language!r}."
+            )
+
+        self.language = language
+
+    def get_options(self):
+        return {"language": self.language}
+
+
+class IconPickerWidget(BaseWidget):
+    """
+    A Phosphor icon picked from a searchable grid, for a CharField. The
+    value is the icon's class, such as "ph-bold ph-star", as Callout's
+    icon option and block icons take it. Not used by default.
+    """
+
+
+class KeyValueWidget(BaseWidget):
+    """
+    A JSONField dict of strings, edited as rows of a key and a value.
+    A key that is empty or used twice keeps the form from saving. Not
+    used by default.
+    """
+
+
+class ListWidget(BaseWidget):
+    """
+    A JSONField list of strings, edited as rows that can be added,
+    removed and dragged into order. Not used by default.
+    """
+
+
+class RatingWidget(BaseWidget):
+    """
+    Stars for a small integer, from 1 to max_value. Clicking the
+    current star again clears an optional field. Not used by default.
+    """
+
+    def __init__(self, *, max_value: int = 5):
+        if (
+            isinstance(max_value, bool)
+            or not isinstance(max_value, int)
+            or not 1 < max_value <= 10
+        ):
+            raise ValueError(
+                f"RatingWidget max_value must be an int from 2 to 10; got {max_value!r}."
+            )
+
+        self.max_value = max_value
+
+    def get_options(self):
+        return {"max_value": self.max_value}
 
 
 class PlaceholderWidget(BaseWidget):
@@ -520,7 +604,11 @@ class JSONSchemaWidget(BaseWidget):
 
 
 class JSONWidget(BaseWidget):
-    pass
+    """
+    A JSONField's value in a JSON editor. JSON that does not parse is
+    underlined and keeps the form from saving. The default for
+    JSONField.
+    """
 
 
 class MediaWidget(BaseWidget):

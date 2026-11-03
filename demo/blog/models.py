@@ -163,6 +163,10 @@ class SiteSettings(models.Model):
     brand_color = ColorField(default="#4f46e5")
     accent_color = ColorField(default="#f97316")
     contact_email = models.EmailField(blank=True)
+    # Edited with a KeyValueWidget: {"Mastodon": "https://..."}.
+    social_links = models.JSONField(default=dict, blank=True)
+    # Edited with a CodeWidget: an analytics or verification snippet.
+    head_code = models.TextField(blank=True)
 
     class Meta:
         verbose_name = "site settings"

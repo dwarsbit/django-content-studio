@@ -26,6 +26,7 @@ export {
 } from "@/components/ui/button-group";
 export { Calendar } from "@/components/ui/calendar";
 export { Checkbox } from "@/components/ui/checkbox";
+export { CodeEditor } from "@/components/ui/code-editor";
 export { ColorPicker } from "@/components/ui/color-picker";
 export {
   Command,

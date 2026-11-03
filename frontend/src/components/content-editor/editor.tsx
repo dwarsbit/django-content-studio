@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { type Blocker, useBlocker } from "react-router";
 import { toast } from "sonner";
-import { z } from "zod";
+import type { z } from "zod";
 
 import { TenantInfo } from "@/components/tenant-info";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -17,6 +17,7 @@ import { useDiscover } from "@/hooks/use-discover";
 import { useHttp } from "@/hooks/use-http";
 import { usePresence } from "@/hooks/use-presence";
 import { useShowResult } from "@/hooks/use-show-result";
+import { contentFormSchema } from "@/lib/invalid-input";
 import { applyFieldErrors } from "@/lib/server-errors";
 import { cn, getErrorMessage } from "@/lib/utils";
 import type {
@@ -155,10 +156,7 @@ function EditorForm({
     } as Record<string, unknown>,
   );
 
-  const formSchema = z.looseObject({
-    id: z.string().readonly().optional(),
-    __str__: z.string().readonly().optional(),
-  });
+  const formSchema = contentFormSchema;
   const form = useForm<Partial<Resource>>({
     resolver: zodResolver(formSchema),
     mode: "onChange",

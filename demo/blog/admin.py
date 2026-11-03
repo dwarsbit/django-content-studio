@@ -158,6 +158,9 @@ class SiteSettingsStudio(ModelStudio):
         Text("The colors the site's header, links and buttons use."),
         "brand_color",
         "accent_color",
+        Subtitle("Integrations"),
+        Field("social_links", widget=widgets.KeyValueWidget),
+        Field("head_code", widget=widgets.CodeWidget(language="html")),
     ]
 
 

@@ -238,6 +238,46 @@ const WIDGET_FIXTURES: Record<
       url: "https://example.com/price-list.pdf",
     },
   },
+  "Text field (MarkdownWidget)": {
+    field: { type: FieldType.TextField },
+    widget: { name: FieldWidget.MarkdownWidget, options: { rows: 4 } },
+    value:
+      "## Release notes\n\nThe **Markdown** widget has a [preview](https://example.com).\n\n- One\n- Two",
+  },
+  "Text field (CodeWidget, html)": {
+    field: { type: FieldType.TextField },
+    widget: { name: FieldWidget.CodeWidget, options: { language: "html" } },
+    value:
+      '<iframe src="https://example.com/embed" width="560" height="315"></iframe>',
+  },
+  "JSON field (JSONWidget)": {
+    field: { type: FieldType.JSONField, widget_class: FieldWidget.JSONWidget },
+    value: { theme: "dark", columns: 3, sticky: true },
+  },
+  "Char field (IconPickerWidget)": {
+    field: { type: FieldType.CharField },
+    widget: { name: FieldWidget.IconPickerWidget },
+    value: "ph-bold ph-lightbulb",
+  },
+  "JSON field (KeyValueWidget)": {
+    field: { type: FieldType.JSONField },
+    widget: { name: FieldWidget.KeyValueWidget },
+    value: { color: "Blue", size: "Large" },
+  },
+  "JSON field (ListWidget)": {
+    field: { type: FieldType.JSONField },
+    widget: { name: FieldWidget.ListWidget },
+    value: [
+      "Preheat the oven",
+      "Mix the flour and sugar",
+      "Bake for 20 minutes",
+    ],
+  },
+  "Integer field (RatingWidget)": {
+    field: { type: FieldType.IntegerField },
+    widget: { name: FieldWidget.RatingWidget, options: { max_value: 5 } },
+    value: 4,
+  },
 };
 
 const FORMAT_FIXTURES: Record<

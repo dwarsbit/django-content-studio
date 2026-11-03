@@ -343,6 +343,48 @@
       "attached_on_save": "Attached when you save",
       "removed_on_save": "{{name}} is removed when you save.",
       "not_an_image": "Only images can be added here. Choose a PNG, JPEG or WebP file."
+    },
+    "markdown_widget": {
+      "write": "Write",
+      "preview": "Preview",
+      "formatting": "Formatting",
+      "heading": "Heading",
+      "bold": "Bold",
+      "italic": "Italic",
+      "link": "Link",
+      "bullet_list": "Bulleted list",
+      "ordered_list": "Numbered list",
+      "nothing_to_preview": "Nothing to preview."
+    },
+    "json_widget": {
+      "invalid": "This is not valid JSON. Fix the underlined part to save."
+    },
+    "icon_picker_widget": {
+      "choose": "Choose an icon",
+      "search": "Search icons",
+      "icons": "Icons",
+      "no_results": "No icons found",
+      "load_error": "The icons could not be loaded.",
+      "more_one": "{{count}} more icon. Search to narrow it down.",
+      "more_other": "{{count}} more icons. Search to narrow them down."
+    },
+    "key_value_widget": {
+      "key": "Key",
+      "value": "Value",
+      "add": "Add row",
+      "remove": "Remove {{key}}",
+      "empty_key": "Every row with a value needs a key.",
+      "duplicate_key": "The key “{{key}}” is used more than once."
+    },
+    "list_widget": {
+      "item": "Item {{n}}",
+      "add": "Add item",
+      "remove": "Remove item {{n}}",
+      "move": "Move item {{n}}"
+    },
+    "rating_widget": {
+      "star_one": "{{count}} star of {{max}}",
+      "star_other": "{{count}} stars of {{max}}"
     }
   },
   "formats": {

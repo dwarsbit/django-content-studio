@@ -343,6 +343,48 @@
       "attached_on_save": "Wordt toegevoegd als je opslaat",
       "removed_on_save": "{{name}} wordt verwijderd als je opslaat.",
       "not_an_image": "Hier kunnen alleen afbeeldingen worden toegevoegd. Kies een PNG-, JPEG- of WebP-bestand."
+    },
+    "markdown_widget": {
+      "write": "Schrijven",
+      "preview": "Voorbeeld",
+      "formatting": "Opmaak",
+      "heading": "Kop",
+      "bold": "Vet",
+      "italic": "Cursief",
+      "link": "Link",
+      "bullet_list": "Opsomming",
+      "ordered_list": "Genummerde lijst",
+      "nothing_to_preview": "Niets om te tonen."
+    },
+    "json_widget": {
+      "invalid": "Dit is geen geldige JSON. Verbeter het onderstreepte deel om op te slaan."
+    },
+    "icon_picker_widget": {
+      "choose": "Kies een icoon",
+      "search": "Iconen zoeken",
+      "icons": "Iconen",
+      "no_results": "Geen iconen gevonden",
+      "load_error": "De iconen konden niet worden geladen.",
+      "more_one": "Nog {{count}} icoon. Zoek om het te vinden.",
+      "more_other": "Nog {{count}} iconen. Zoek om ze te beperken."
+    },
+    "key_value_widget": {
+      "key": "Sleutel",
+      "value": "Waarde",
+      "add": "Rij toevoegen",
+      "remove": "{{key}} verwijderen",
+      "empty_key": "Elke rij met een waarde heeft een sleutel nodig.",
+      "duplicate_key": "De sleutel “{{key}}” wordt meer dan eens gebruikt."
+    },
+    "list_widget": {
+      "item": "Item {{n}}",
+      "add": "Item toevoegen",
+      "remove": "Item {{n}} verwijderen",
+      "move": "Item {{n}} verplaatsen"
+    },
+    "rating_widget": {
+      "star_one": "{{count}} ster van {{max}}",
+      "star_other": "{{count}} sterren van {{max}}"
     }
   },
   "formats": {

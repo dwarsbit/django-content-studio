@@ -1,0 +1,20 @@
+<!-- @dsCard group="Forms" height=260 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>CodeEditor preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.col{display:flex;flex-direction:column;gap:16px;max-width:480px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+function Editor(props) {
+  var state = React.useState(props.initial);
+  return h(C.CodeEditor, { language: props.language, value: state[0], onChange: state[1], "aria-label": props.label });
+}
+ReactDOM.createRoot(document.getElementById("root")).render(h("div", { className: "col" },
+  h(Editor, { language: "json", label: "Settings", initial: '{\n  "theme": "dark",\n  "columns": 3,\n  "sticky": true\n}' }),
+  h(Editor, { language: "html", label: "Embed code", initial: '<iframe src="https://example.com/embed" width="560"></iframe>' })));
+</script>
+</body>
+</html>
