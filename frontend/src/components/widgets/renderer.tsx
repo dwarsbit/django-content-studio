@@ -22,6 +22,7 @@ import { ManyMediaWidget } from "./many-media-widget";
 import { ManyToManyWidget } from "./many-to-many-widget";
 import { MediaWidget } from "./media-widget";
 import { MultiSelectWidget } from "./multi-select-widget";
+import { RadioButtonWidget } from "./radio-button-widget";
 import { RichTextWidget } from "./rich-text-widget";
 import { SelectWidget } from "./select-widget";
 import { SlugWidget } from "./slug-widget";
@@ -66,6 +67,7 @@ const WIDGETS = {
   [FieldWidget.ManyMediaWidget]: ManyMediaWidget,
   [FieldWidget.MediaWidget]: MediaWidget,
   [FieldWidget.MultiSelectWidget]: MultiSelectWidget,
+  [FieldWidget.RadioButtonWidget]: RadioButtonWidget,
   [FieldWidget.RichTextWidget]: RichTextWidget,
   [FieldWidget.SelectWidget]: SelectWidget,
   [FieldWidget.SlugWidget]: SlugWidget,

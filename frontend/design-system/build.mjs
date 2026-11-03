@@ -38,6 +38,7 @@ const COMPONENTS = {
   TagInput: "tag-input",
   ColorPicker: "color-picker",
   Checkbox: "checkbox",
+  RadioGroup: "radio-group",
   Switch: "switch",
   InputOTP: "input-otp",
   Calendar: "calendar",

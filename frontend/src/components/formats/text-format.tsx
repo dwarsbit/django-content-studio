@@ -5,5 +5,8 @@ export function TextFormat({
   value: unknown;
   emptyValue?: string | null;
 }) {
-  return <span>{String(value || emptyValue || "")}</span>;
+  // 0 and false are values; only a missing or blank value is empty.
+  const empty = value === null || value === undefined || value === "";
+
+  return <span>{empty ? (emptyValue ?? "") : String(value)}</span>;
 }

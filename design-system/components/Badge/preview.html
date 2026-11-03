@@ -1,4 +1,4 @@
-<!-- @dsCard group="Display" height=56 -->
+<!-- @dsCard group="Display" height=96 -->
 <!doctype html>
 <html>
 <head><meta charset="utf-8"><title>Badge preview</title>
@@ -9,11 +9,19 @@ label{display:flex;align-items:center;gap:8px}</style></head>
 <div id="root"></div>
 <script>
 var C = window.ContentStudio, h = React.createElement;
-ReactDOM.createRoot(document.getElementById("root")).render(h("div", { className: "row" },
-  h(C.Badge, null, "Published"),
-  h(C.Badge, { variant: "secondary" }, "Draft"),
-  h(C.Badge, { variant: "outline" }, "3 tags"),
-  h(C.Badge, { variant: "destructive" }, "In trash")));
+ReactDOM.createRoot(document.getElementById("root")).render(h("div", { className: "col" },
+  h("div", { className: "row" },
+    h(C.Badge, null, "Published"),
+    h(C.Badge, { variant: "secondary" }, "Draft"),
+    h(C.Badge, { variant: "outline" }, "3 tags"),
+    h(C.Badge, { variant: "destructive" }, "In trash")),
+  h("div", { className: "row" },
+    h(C.Badge, { tone: "gray" }, "Archived"),
+    h(C.Badge, { tone: "blue" }, "Scheduled"),
+    h(C.Badge, { tone: "green" }, "Published"),
+    h(C.Badge, { tone: "yellow" }, "In review"),
+    h(C.Badge, { tone: "red" }, "Rejected"),
+    h(C.Badge, { tone: "purple" }, "Featured"))));
 </script>
 </body>
 </html>

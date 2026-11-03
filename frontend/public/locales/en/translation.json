@@ -312,6 +312,9 @@
       "input": "Color value"
     }
   },
+  "formats": {
+    "more": "+{{count}}"
+  },
   "dashboard": {
     "greetings": {
       "morning": "Good morning",
