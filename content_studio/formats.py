@@ -8,6 +8,7 @@ __all__ = [
     "DateFormat",
     "DateTimeFormat",
     "EmailFormat",
+    "FileFormat",
     "FileSizeFormat",
     "ForeignKeyFormat",
     "HtmlFormat",
@@ -288,6 +289,10 @@ class PercentFormat(NumberFormat):
 
     def get_options(self):
         return {**super().get_options(), "fraction": self.fraction or None}
+
+
+class FileFormat(BaseFormat):
+    """A FileField or ImageField: the file's name, linked to the file."""
 
 
 class FileSizeFormat(BaseFormat):

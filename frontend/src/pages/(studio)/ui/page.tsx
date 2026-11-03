@@ -55,9 +55,13 @@ import {
   type ModelField,
   type PaginatedResponse,
   type Resource,
+  type WidgetConfig,
 } from "@/types";
 
-const WIDGET_FIXTURES: Record<string, { field: ModelField; value: unknown }> = {
+const WIDGET_FIXTURES: Record<
+  string,
+  { field: ModelField; value: unknown; widget?: WidgetConfig }
+> = {
   "Char field (InputWidget)": {
     field: { type: FieldType.CharField, widget_class: FieldWidget.InputWidget },
     value: "Hello, studio",
@@ -177,6 +181,63 @@ const WIDGET_FIXTURES: Record<string, { field: ModelField; value: unknown }> = {
     },
     value: "<p>Edit me with the rich text toolbar.</p>",
   },
+  "Char field near its limit (character counter)": {
+    field: { type: FieldType.CharField, max_length: 60 },
+    widget: {
+      name: FieldWidget.InputWidget,
+      options: { recommended_length: 50 },
+    },
+    value: "A headline that is getting close to its recommended length",
+  },
+  "Email field (EmailWidget)": {
+    field: {
+      type: FieldType.EmailField,
+      widget_class: FieldWidget.EmailWidget,
+    },
+    value: "editor@example.com",
+  },
+  "URL field (URLWidget)": {
+    field: { type: FieldType.URLField, widget_class: FieldWidget.URLWidget },
+    value: "https://example.com/docs",
+  },
+  "Char field (PhoneWidget)": {
+    field: { type: FieldType.CharField, widget_class: FieldWidget.PhoneWidget },
+    value: "+31 20 123 4567",
+  },
+  "Char field (PasswordWidget)": {
+    field: {
+      type: FieldType.CharField,
+      widget_class: FieldWidget.PasswordWidget,
+    },
+    value: "s3cr3t-api-key",
+  },
+  "Char field (PasswordWidget, write_only)": {
+    field: { type: FieldType.CharField },
+    widget: { name: FieldWidget.PasswordWidget, options: { write_only: true } },
+    value: { is_set: true },
+  },
+  "Integer field (SliderWidget)": {
+    field: { type: FieldType.IntegerField },
+    widget: {
+      name: FieldWidget.SliderWidget,
+      options: { min_value: 0, max_value: 100, step: 5, suffix: "%" },
+    },
+    value: 40,
+  },
+  "Duration field (DurationWidget)": {
+    field: {
+      type: FieldType.DurationField,
+      widget_class: FieldWidget.DurationWidget,
+    },
+    value: "1:30:00",
+  },
+  "File field (FileWidget)": {
+    field: { type: FieldType.FileField, widget_class: FieldWidget.FileWidget },
+    value: {
+      name: "price-list.pdf",
+      url: "https://example.com/price-list.pdf",
+    },
+  },
 };
 
 const FORMAT_FIXTURES: Record<
@@ -266,12 +327,12 @@ const FORMAT_FIXTURES: Record<
     },
     value: 91341,
   },
-  "FileFormat (CharField)": {
+  "FileFormat (FileField)": {
     field: {
-      type: FieldType.CharField,
+      type: FieldType.FileField,
       format_class: FieldFormat.FileFormat,
     },
-    value: "media/report.pdf",
+    value: { name: "report.pdf", url: "https://example.com/report.pdf" },
   },
   "JSONFormat (CharField)": {
     field: { type: FieldType.CharField },
@@ -397,6 +458,7 @@ function ShowcaseWidget({
   title,
   name = "showcase",
   field,
+  widget,
   initialValue,
 }: {
   title: string;
@@ -404,6 +466,7 @@ function ShowcaseWidget({
    * real demo field so their options resolve. */
   name?: string;
   field: ModelField;
+  widget?: WidgetConfig;
   initialValue: unknown;
 }) {
   const [value, setValue] = useState<unknown>(initialValue);
@@ -446,6 +509,7 @@ function ShowcaseWidget({
         name={name}
         value={value}
         onChange={setValue}
+        widget={widget}
       />
     </div>
   );
@@ -636,6 +700,7 @@ export function UIPage() {
                   key={title}
                   title={title}
                   field={fixture.field}
+                  widget={fixture.widget}
                   initialValue={fixture.value}
                 />
               ))}

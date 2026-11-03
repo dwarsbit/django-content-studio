@@ -1,0 +1,16 @@
+<!-- @dsCard group="Forms" height=110 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Slider preview</title>
+<style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--foreground);background:var(--background)}
+.col{display:flex;flex-direction:column;gap:20px;max-width:360px}</style></head>
+<body>
+<div id="root"></div>
+<script>
+var C = window.ContentStudio, h = React.createElement;
+ReactDOM.createRoot(document.getElementById("root")).render(h("div", { className: "col" },
+  h(C.Slider, { defaultValue: [40], min: 0, max: 100, step: 5, "aria-label": "Discount" }),
+  h(C.Slider, { defaultValue: [70], min: 0, max: 100, disabled: true, "aria-label": "Opacity" })));
+</script>
+</body>
+</html>

@@ -310,6 +310,39 @@
     "color_picker": {
       "pick": "Kies een kleur",
       "input": "Kleurwaarde"
+    },
+    "email_widget": {
+      "send": "E-mail schrijven"
+    },
+    "url_widget": {
+      "open": "Openen in een nieuw tabblad"
+    },
+    "password_widget": {
+      "show": "Tonen",
+      "hide": "Verbergen",
+      "saved": "Er is een waarde opgeslagen. Typ een nieuwe om die te vervangen.",
+      "cleared": "De opgeslagen waarde wordt verwijderd als je opslaat.",
+      "undo": "Ongedaan maken"
+    },
+    "duration_widget": {
+      "days": "dagen",
+      "hours": "uur",
+      "minutes": "minuten",
+      "seconds": "seconden"
+    },
+    "file_widget": {
+      "choose": "Bestand kiezen",
+      "replace": "Vervangen",
+      "remove": "Verwijderen",
+      "keep_saved": "Opgeslagen bestand houden",
+      "undo": "Ongedaan maken",
+      "empty": "Of sleep een bestand hierheen.",
+      "drop": "Loslaten om te uploaden",
+      "uploading": "{{name}} uploaden",
+      "upload_progress": "Uploadvoortgang",
+      "attached_on_save": "Wordt toegevoegd als je opslaat",
+      "removed_on_save": "{{name}} wordt verwijderd als je opslaat.",
+      "not_an_image": "Hier kunnen alleen afbeeldingen worden toegevoegd. Kies een PNG-, JPEG- of WebP-bestand."
     }
   },
   "formats": {

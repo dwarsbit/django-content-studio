@@ -48,6 +48,13 @@ export interface RadioGroupProps {
 export declare function RadioGroup(props: RadioGroupProps): React.ReactElement;
 export declare function RadioGroupItem(props: { value: string; id?: string; disabled?: boolean }): React.ReactElement;
 
+export interface SliderProps {
+  value?: number[]; defaultValue?: number[]; onValueChange?: (value: number[]) => void;
+  min?: number; max?: number; step?: number; disabled?: boolean; id?: string; name?: string;
+  "aria-label"?: string;
+}
+export declare function Slider(props: SliderProps): React.ReactElement;
+
 export declare function DragHandle(props: React.ButtonHTMLAttributes<HTMLButtonElement> & { disabled?: boolean }): React.ReactElement;
 
 export interface SwitchProps {

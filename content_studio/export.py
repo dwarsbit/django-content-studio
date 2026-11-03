@@ -90,9 +90,14 @@ def get_export_entries(studio) -> list:
 def get_export_columns(studio) -> list[TableColumn]:
     """
     The columns an export writes, as TableColumn objects. Fields in the
-    studio's exclude are left out: they never leave the server.
+    studio's exclude, and fields with a write-only PasswordWidget, are
+    left out: they never leave the server.
     """
-    excluded = set(studio.exclude or [])
+    from .admin import get_write_only_field_names
+
+    excluded = set(studio.exclude or []) | get_write_only_field_names(
+        studio, studio.model
+    )
     columns = [
         entry if isinstance(entry, TableColumn) else TableColumn(field=entry)
         for entry in get_export_entries(studio)

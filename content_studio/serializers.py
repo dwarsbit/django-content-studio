@@ -1,10 +1,12 @@
 import copy
 import inspect
+import posixpath
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from rest_framework import serializers
+from rest_framework.fields import SkipField
 from rest_framework.relations import RelatedField
 
 from content_studio.settings import cs_settings
@@ -154,6 +156,61 @@ class BlockSerializerField(serializers.JSONField):
         return value
 
 
+class ContentFileField(serializers.Field):
+    """
+    A FileField or ImageField: {"name", "url"} out (None without a
+    file). In, {"upload": token} attaches a temporary upload (see
+    uploads.py), None clears the field, and anything else, such as the
+    value as it was sent out, leaves the file unchanged: a path is never
+    taken from the editor.
+    """
+
+    def __init__(self, *, model_field, **kwargs):
+        self.model_field = model_field
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        if not value:
+            return None
+
+        try:
+            url = value.url
+        except ValueError:
+            url = None
+
+        return {"name": posixpath.basename(value.name), "url": url}
+
+    def to_internal_value(self, data):
+        from .uploads import open_upload
+
+        if isinstance(data, dict) and isinstance(data.get("upload"), str):
+            return open_upload(
+                self.context.get("request"),
+                self.parent.Meta.model,
+                self.model_field.name,
+                data["upload"],
+            )
+
+        raise SkipField()
+
+
+class WriteOnlyCharField(serializers.CharField):
+    """
+    A field with a write-only PasswordWidget: its value never leaves the
+    server. Out, only whether it is set; in, a new value replaces it, an
+    empty one clears it and the value as it was sent out keeps it.
+    """
+
+    def to_representation(self, value):
+        return {"is_set": bool(value)}
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            raise SkipField()
+
+        return super().to_internal_value(data)
+
+
 class ContentSerializer(serializers.ModelSerializer):
     __str__ = serializers.CharField(read_only=True)
     serializer_related_field = ContentRelatedField
@@ -163,6 +220,33 @@ class ContentSerializer(serializers.ModelSerializer):
     # exclude field list: properties are never serialized implicitly, so a
     # computed value stays out of the admin unless a studio asks for it.
     named_properties: frozenset[str] = frozenset()
+
+    # The fields edited with a write-only PasswordWidget: their values
+    # are never serialized, in any view.
+    write_only_fields: frozenset[str] = frozenset()
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        for name in self.write_only_fields:
+            field = fields.get(name)
+
+            if isinstance(field, serializers.CharField):
+                fields[name] = WriteOnlyCharField(*field._args, **field._kwargs)
+
+        return fields
+
+    def save(self, **kwargs):
+        from .uploads import TemporaryUpload, discard_upload
+
+        instance = super().save(**kwargs)
+
+        # Attached uploads were copied to the field's own storage.
+        for value in (self.validated_data or {}).values():
+            if isinstance(value, TemporaryUpload):
+                discard_upload(value)
+
+        return instance
 
     def get_field_names(self, declared_fields, info):
         fields = list(super().get_field_names(declared_fields, info))
@@ -202,6 +286,17 @@ class ContentSerializer(serializers.ModelSerializer):
         if isinstance(model_field, BlockField):
             field_class = BlockSerializerField
             field_kwargs["block_field"] = model_field
+
+        if isinstance(model_field, models.FileField):
+            field_class = ContentFileField
+            field_kwargs = {
+                key: value
+                for key, value in field_kwargs.items()
+                if key in ("required", "read_only", "label", "help_text")
+            }
+            field_kwargs["model_field"] = model_field
+            # A blank file field can be cleared.
+            field_kwargs["allow_null"] = model_field.blank
 
         return field_class, field_kwargs
 

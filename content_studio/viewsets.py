@@ -15,7 +15,7 @@ from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -798,6 +798,48 @@ class BaseModelViewSet(ModelViewSet):
             data["trashed"] = True
 
         return Response(data)
+
+    @action(
+        methods=["post"],
+        detail=False,
+        url_path="uploads/(?P<field_name>[^/]+)",
+        parser_classes=[MultiPartParser],
+    )
+    def upload(self, request, field_name):
+        """
+        A file picked in a FileWidget, kept until the object is saved:
+        the token the editor sends as the field's value to attach it
+        (see uploads.py). Only for file fields the edit page writes.
+        """
+        from .admin import get_form_field_names, get_readonly_field_names
+        from .uploads import save_upload
+
+        model = self.queryset.model
+
+        try:
+            model_field = model._meta.get_field(field_name)
+        except FieldDoesNotExist:
+            raise ValidationError("File field not found.")
+
+        if (
+            not isinstance(model_field, models.FileField)
+            or field_name not in get_form_field_names(self._admin_model, request)
+            or field_name in get_readonly_field_names(self._admin_model, request)
+        ):
+            raise ValidationError("File field not found.")
+
+        file = request.FILES.get("file")
+
+        if file is None:
+            raise ValidationError({"file": "No file was submitted."})
+
+        try:
+            upload = save_upload(request, model, model_field, file)
+        except ValidationError as error:
+            # Keyed by the file, like the media library's upload errors.
+            raise ValidationError({"file": error.detail})
+
+        return Response(upload, status=201)
 
     @action(methods=["post"], detail=False, url_path="relations/(?P<field_name>[^/]+)")
     def get_related_objects(self, request, field_name):

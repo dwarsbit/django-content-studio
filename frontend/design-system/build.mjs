@@ -39,6 +39,7 @@ const COMPONENTS = {
   ColorPicker: "color-picker",
   Checkbox: "checkbox",
   RadioGroup: "radio-group",
+  Slider: "slider",
   Switch: "switch",
   InputOTP: "input-otp",
   Calendar: "calendar",

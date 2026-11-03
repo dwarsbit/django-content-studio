@@ -1,11 +1,14 @@
 import { Input } from "@/components/ui/input";
-import type { InputWidgetOptions, WidgetProps } from "@/types";
+import type { InputWidgetOptions, ModelField, WidgetProps } from "@/types";
+
+import { CharacterCount } from "./character-count";
 
 export function InputWidget({
+  field,
   value,
   onChange,
   options = {},
-}: WidgetProps<string, InputWidgetOptions>) {
+}: { field?: ModelField } & WidgetProps<string, InputWidgetOptions>) {
   const { placeholder, prefix, suffix, min_value, max_value, step } = options;
   // Number limits make it a number input, with the limits on its stepper.
   const isNumber =
@@ -29,20 +32,36 @@ export function InputWidget({
     />
   );
 
+  const counter = isNumber ? null : (
+    <CharacterCount
+      value={value}
+      maxLength={field?.max_length}
+      options={options}
+    />
+  );
+
   if (!isAdorned) {
-    return <div>{input}</div>;
+    return (
+      <div>
+        {input}
+        {counter}
+      </div>
+    );
   }
 
   // The prefix and suffix sit inside the box, around the value.
   return (
-    <div className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm focus-within:border-ring">
-      {prefix && (
-        <span className="text-muted-foreground select-none">{prefix}</span>
-      )}
-      {input}
-      {suffix && (
-        <span className="text-muted-foreground select-none">{suffix}</span>
-      )}
+    <div>
+      <div className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm focus-within:border-ring">
+        {prefix && (
+          <span className="text-muted-foreground select-none">{prefix}</span>
+        )}
+        {input}
+        {suffix && (
+          <span className="text-muted-foreground select-none">{suffix}</span>
+        )}
+      </div>
+      {counter}
     </div>
   );
 }

@@ -522,6 +522,8 @@ class ContentStudioSite:
     ] = {
         # Django fields
         models.CharField: widgets.InputWidget,
+        models.EmailField: widgets.EmailWidget,
+        models.URLField: widgets.URLWidget,
         models.IntegerField: widgets.InputWidget,
         models.SmallIntegerField: widgets.InputWidget,
         models.BigIntegerField: widgets.InputWidget,
@@ -540,6 +542,9 @@ class ContentStudioSite:
         models.DateField: widgets.DateWidget,
         models.DateTimeField: widgets.DateTimeWidget,
         models.TimeField: widgets.TimeWidget,
+        models.DurationField: widgets.DurationWidget,
+        models.FileField: widgets.FileWidget,
+        models.ImageField: widgets.FileWidget,
         models.JSONField: widgets.JSONWidget,
         # Content Studio fields
         fields.HTMLField: widgets.RichTextWidget,
@@ -559,6 +564,8 @@ class ContentStudioSite:
         models.CharField: formats.TextFormat,
         models.EmailField: formats.EmailFormat,
         models.URLField: formats.LinkFormat,
+        models.FileField: formats.FileFormat,
+        models.ImageField: formats.FileFormat,
         models.IntegerField: formats.NumberFormat,
         models.SmallIntegerField: formats.NumberFormat,
         models.BigIntegerField: formats.NumberFormat,
@@ -995,6 +1002,50 @@ def get_form_field_names(
             names.add(field)
         elif isinstance(field, Field):
             names.add(field.name)
+
+    return names
+
+
+def get_write_only_field_names(studio, model) -> set[str]:
+    """
+    The fields edited with a write-only PasswordWidget, whose values are
+    never sent to the admin: by the widget a Field gives them on the edit
+    page, or else by the field's default widget.
+    """
+    from .utils import as_instance
+
+    site = cs_settings.ADMIN_SITE
+    mapping = getattr(site, "default_widget_mapping", None) or {}
+
+    def is_write_only(widget) -> bool:
+        widget = as_instance(widget) if widget is not None else None
+        return isinstance(widget, widgets.PasswordWidget) and widget.write_only
+
+    form_widgets = {}
+    entries = list(getattr(studio, "edit_main", None) or []) + list(
+        getattr(studio, "edit_sidebar", None) or []
+    )
+
+    for field in flatten(
+        [f.get_fields() if hasattr(f, "get_fields") else [f] for f in entries]
+    ):
+        if isinstance(field, Field) and field.widget is not None:
+            form_widgets[field.name] = field.widget
+
+    names = set()
+
+    for model_field in model._meta.concrete_fields:
+        if model_field.name in form_widgets:
+            widget = form_widgets[model_field.name]
+        elif hasattr(model_field, "widget_class"):
+            widget = model_field.widget_class
+        else:
+            widget = mapping.get(model_field.__class__) or mapping.get(
+                model_field.__class__.__name__
+            )
+
+        if is_write_only(widget):
+            names.add(model_field.name)
 
     return names
 
