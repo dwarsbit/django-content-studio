@@ -132,6 +132,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E036` | An [`SEOPreview`](/docs/edit-page#seo-preview) whose `title_field`, `description_field` or `path_field` is not a model field. |
 | `content_studio.E037` | [Analytics](/docs/analytics) set up wrong: an `AnalyticsPage`, link, `Analytics` component or analytics widget without an `AnalyticsExtension`, more than one extension or page, a provider that reports metrics or breakdowns Content Studio does not know, or an analytics page path that another page uses. |
 | `content_studio.E038` | The same model inlined twice on one studio. An inline is served at one endpoint per parent and model, so the second inline is not served. |
+| `content_studio.E039` | With [`TENANT_MODEL`](/docs/settings#tenant_model) set, a registered or inlined model with more than one foreign key to the tenant model. Tenant scoping needs exactly one. |
 
 ### Warnings
 

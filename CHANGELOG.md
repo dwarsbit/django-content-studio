@@ -70,6 +70,9 @@
   component) class used on two studios, although components are looked
   up per studio. IDs now only need to be unique within a studio, or within
   an inline together with the inlined model's own studio.
+- Fixed: a model with two foreign keys to the tenant model made
+  `/api/discover` and every request on the model answer 500; the new
+  system check `E039` reports it at startup.
 
 ## 1.8.0 (2026-11-04)
 

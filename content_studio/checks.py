@@ -1040,6 +1040,42 @@ def duplicate_inline_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def tenant_field_errors(studio) -> list[tuple[str, str]]:
+    """
+    A model with more than one foreign key to the tenant model, as
+    (check id, message) pairs. Tenant scoping needs one field to scope
+    on; with several, every request on the model fails.
+    """
+    from .utils import get_tenant_field_name
+
+    errors = []
+    model = getattr(studio, "model", None)
+
+    if model is None or not cs_settings.TENANT_MODEL:
+        return errors
+
+    inline_models = [
+        inline.model
+        for inline in getattr(studio, "inlines", None) or []
+        if getattr(inline, "model", None) is not None
+    ]
+
+    for checked in [model, *inline_models]:
+        try:
+            get_tenant_field_name(checked)
+        except ValueError:
+            errors.append(
+                (
+                    "content_studio.E039",
+                    f"{checked._meta.label_lower} has more than one foreign "
+                    "key to the tenant model; tenant scoping needs exactly "
+                    "one.",
+                )
+            )
+
+    return errors
+
+
 def inline_fk_errors(studio) -> list[tuple[str, str]]:
     """
     A misconfigured inline fk_name, as (check id, message) pairs. The
@@ -2617,6 +2653,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in duplicate_inline_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in tenant_field_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in readonly_fields_errors(studio):

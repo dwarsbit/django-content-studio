@@ -874,3 +874,50 @@ def test_unknown_name_is_still_rejected_everywhere():
         "content_studio.E015",
         "content_studio.E022",
     }
+
+
+# --- E039: more than one foreign key to the tenant model ---------------------
+
+
+def test_two_foreign_keys_to_the_tenant_model_surface_as_system_error():
+    from django.test.utils import isolate_apps
+
+    from content_studio.checks import tenant_field_errors
+    from tests.testapp.models import Category
+
+    with isolate_apps("tests.testapp"):
+
+        class Shared(models.Model):
+            owner = models.ForeignKey(Category, on_delete=models.CASCADE)
+            partner = models.ForeignKey(
+                Category, on_delete=models.CASCADE, related_name="+"
+            )
+
+            class Meta:
+                app_label = "testapp"
+
+        class SharedInline(InlineModelStudio):
+            model = Shared
+            fk_name = "owner"
+
+        class SharedStudio(ModelStudio):
+            pass
+
+        class CategoryStudio(ModelStudio):
+            inlines = [SharedInline]
+
+        settings = {
+            "ADMIN_SITE": "content_studio.admin.admin_site",
+            "TENANT_MODEL": "tests.testapp.models.Category",
+        }
+
+        with override_settings(CONTENT_STUDIO=settings):
+            errors = tenant_field_errors(SharedStudio(Shared, admin_site))
+            inline_errors = tenant_field_errors(CategoryStudio(Category, admin_site))
+
+        # Without a tenant model there is nothing to scope on.
+        assert tenant_field_errors(SharedStudio(Shared, admin_site)) == []
+
+    assert [check_id for check_id, _ in errors] == ["content_studio.E039"]
+    assert "testapp.shared" in errors[0][1]
+    assert [check_id for check_id, _ in inline_errors] == ["content_studio.E039"]
