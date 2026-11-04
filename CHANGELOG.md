@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+- **Analytics.** Show your website's visitor statistics in the admin, from
+  an analytics tool through a provider. `UmamiProvider` reads Umami Cloud
+  or your own Umami server with an API key; subclass `AnalyticsProvider`
+  for another tool. Add an `AnalyticsExtension` with the provider, and:
+  - `AnalyticsPage`, with `AnalyticsLink` in the main menu or
+    `AnalyticsUserMenuLink` in the user menu: visitors, pageviews, visits,
+    bounce rate and visit duration against the period before, a chart, and
+    the top pages, sources, locations and devices. The period is a preset
+    (today, 7, 30 or 90 days, 12 months) or a range of dates, and top pages
+    link to their objects.
+  - The `Analytics` component for `edit_sidebar` (compact) or `edit_main`
+    (the full report): the statistics of the edited object's page, found
+    with `path_field`, `path_prefix` and `path_suffix` or
+    `get_absolute_url()`.
+  - `AnalyticsStatisticWidget` and `AnalyticsTopPagesWidget` for the
+    dashboard.
+
+  Reports are cached (`cache_timeout`), and every active staff user sees
+  them unless you override `is_visible`. New checks: `E037` and `W023`.
+- `ContentListWidget` rows can be plain rows without a model and ID and
+  show a `value`, and the widget takes a `view_all` link.
+
 ## 1.8.0 (2026-11-04)
 
 - **Number formats.** `NumberFormat` now groups digits in the editor's
