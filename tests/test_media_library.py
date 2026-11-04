@@ -765,6 +765,25 @@ def log_entries():
 
 
 @pytest.mark.django_db
+def test_tags_must_be_a_list_of_strings(media_root):
+    user = make_superuser()
+    pk = upload(user, "photo.png", PNG_BYTES).json()["id"]
+
+    with override_settings(CONTENT_STUDIO=MEDIA_SETTINGS):
+        client = media_client(user)
+        url = f"/api/media-library/items/{pk}"
+
+        for bad in ("nope", {"a": 1}, [1, 2], [["x"]]):
+            response = client.patch(url, {"tags": bad}, format="json")
+            assert response.status_code == 400, bad
+            assert "list of strings" in str(response.json())
+
+        response = client.patch(url, {"tags": ["hero", "summer"]}, format="json")
+        assert response.status_code == 200
+        assert response.json()["tags"] == ["hero", "summer"]
+
+
+@pytest.mark.django_db
 def test_uploading_editing_and_deleting_an_item_are_logged(media_root):
     from django.contrib.admin.models import ADDITION, CHANGE, DELETION
 

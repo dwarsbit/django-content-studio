@@ -57,6 +57,8 @@
 - Fixed: saving an object that violates a unique constraint the form
   cannot check, such as a conditional constraint or `unique_together` with
   the tenant field, answered 500; it is now a 400 that names the conflict.
+- Fixed: the media library accepted any JSON value as an item's `tags`
+  (a string, an object); it now requires a list of strings.
 
 ## 1.8.0 (2026-11-04)
 

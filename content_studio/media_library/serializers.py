@@ -82,6 +82,16 @@ def build_media_item_serializer(media_model):
         def validate_file(self, file):
             return validate_media_upload(file)
 
+        def validate_tags(self, tags):
+            """Tags are a list of strings; the field is a JSONField, so
+            the serializer would otherwise accept any JSON value."""
+            if not isinstance(tags, list) or not all(
+                isinstance(tag, str) for tag in tags
+            ):
+                raise serializers.ValidationError("Tags must be a list of strings.")
+
+            return tags
+
         def validate(self, attrs):
             attr = get_properties_attr()
 
