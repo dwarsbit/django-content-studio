@@ -996,14 +996,47 @@ def list_query_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def duplicate_inline_errors(studio) -> list[tuple[str, str]]:
+    """
+    The same model inlined twice on one studio, as (check id, message)
+    pairs. An inline is served at one endpoint per parent and model, so
+    a second inline of the model has no endpoint of its own.
+    """
+    errors = []
+    seen = {}
+
+    for inline in getattr(studio, "inlines", None) or []:
+        inline_model = getattr(inline, "model", None)
+
+        if inline_model is None:
+            continue
+
+        if inline_model in seen:
+            errors.append(
+                (
+                    "content_studio.E038",
+                    f"{inline_model._meta.label_lower} is inlined twice on "
+                    f"{studio.__class__.__name__}: {seen[inline_model]} and "
+                    f"{inline.__name__}. A model can be inlined once per "
+                    "studio; the second inline is not served.",
+                )
+            )
+        else:
+            seen[inline_model] = inline.__name__
+
+    return errors
+
+
 def inline_fk_errors(studio) -> list[tuple[str, str]]:
     """
     A misconfigured inline fk_name, as (check id, message) pairs. The
     name must exist on the inline's model and be a foreign key to the
     parent; anything else fails every inline list with a database
-    FieldError. An unset fk_name is auto-detected and already fails
-    loudly at startup.
+    FieldError. An unset fk_name is auto-detected: that needs exactly
+    one foreign key to the parent on the inline's model.
     """
+    from .utils import get_related_field_name
+
     errors = []
     model = getattr(studio, "model", None)
 
@@ -1014,6 +1047,16 @@ def inline_fk_errors(studio) -> list[tuple[str, str]]:
         fk_name = getattr(inline, "fk_name", None)
 
         if not fk_name:
+            try:
+                get_related_field_name(inline, model)
+            except ValueError as error:
+                errors.append(
+                    (
+                        "content_studio.E012",
+                        f"{inline.__name__}: {error} The inline is not served.",
+                    )
+                )
+
             continue
 
         try:
@@ -2558,6 +2601,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in inline_fk_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in duplicate_inline_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in readonly_fields_errors(studio):

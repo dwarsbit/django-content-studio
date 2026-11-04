@@ -105,7 +105,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E009` | A `FOCAL_POINT_ATTR` setting, which is removed: the focal point is one of a media item's [properties](/docs/media-library#properties). |
 | `content_studio.E010` | Edit page fields that are not model fields or properties, which would show as empty read-only boxes, and `Field(widget=...)` values that are not `content_studio.widgets` classes or instances. |
 | `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that are not a field, and `list_item_display` values that are not a field or a model method. Inlines are checked too. |
-| `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key (or one-to-one field) to the parent model. |
+| `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key (or one-to-one field) to the parent model; or no `fk_name` on an inline whose model has no, or more than one, foreign key to the parent. The inline is not served. |
 | `content_studio.E013` | Values in the site's `default_widget_mapping` or `default_format_mapping` that are not widget or format classes or instances. |
 | `content_studio.E014` | A `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` that is not a list of extensions without the dot, or a `MEDIA_LIBRARY_MAX_UPLOAD_SIZE` that is not a positive number of bytes. |
 | `content_studio.E015` | `readonly_fields` entries that are not model fields or properties. Inlines are checked too. |
@@ -131,6 +131,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E035` | A [`MapWidget`](/docs/widgets#maps) on a field that is not a `JSONField`, or a `FloatField` or `DecimalField` with an `lng_field` naming another number field; or `lng_field` on a `JSONField`. |
 | `content_studio.E036` | An [`SEOPreview`](/docs/edit-page#seo-preview) whose `title_field`, `description_field` or `path_field` is not a model field. |
 | `content_studio.E037` | [Analytics](/docs/analytics) set up wrong: an `AnalyticsPage`, link, `Analytics` component or analytics widget without an `AnalyticsExtension`, more than one extension or page, a provider that reports metrics or breakdowns Content Studio does not know, or an analytics page path that another page uses. |
+| `content_studio.E038` | The same model inlined twice on one studio. An inline is served at one endpoint per parent and model, so the second inline is not served. |
 
 ### Warnings
 

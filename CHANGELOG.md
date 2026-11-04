@@ -62,6 +62,10 @@
 - Fixed: an inline whose model points at its parent with a
   `OneToOneField` failed at startup (or, with `fk_name`, the `E012` check
   refused it); one-to-one fields are now accepted like foreign keys.
+- Fixed: inlining the same model twice on one studio, or an inline whose
+  model has no (or more than one) foreign key to the parent and no
+  `fk_name`, crashed at startup before the system checks could run. The
+  inline is now skipped and reported by the checks (`E038`, `E012`).
 
 ## 1.8.0 (2026-11-04)
 

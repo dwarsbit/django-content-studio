@@ -423,6 +423,64 @@ def test_inline_on_a_one_to_one_field_is_accepted():
         assert inline_fk_errors(Parent(Article, admin_site)) == []
 
 
+def test_inline_without_a_detectable_parent_link_surfaces_as_system_error():
+    """Without fk_name the link is auto-detected; a model with no (or
+    more than one) foreign key to the parent needs fk_name."""
+    from django.test.utils import isolate_apps
+
+    from content_studio.checks import inline_fk_errors
+
+    with isolate_apps("tests.testapp"):
+
+        class Unrelated(models.Model):
+            class Meta:
+                app_label = "testapp"
+
+        class Twice(models.Model):
+            first = models.ForeignKey(Article, on_delete=models.CASCADE)
+            second = models.ForeignKey(
+                Article, on_delete=models.CASCADE, related_name="+"
+            )
+
+            class Meta:
+                app_label = "testapp"
+
+        class UnrelatedInline(InlineModelStudio):
+            model = Unrelated
+
+        class TwiceInline(InlineModelStudio):
+            model = Twice
+
+        class Parent(ModelStudio):
+            inlines = [UnrelatedInline, TwiceInline]
+
+        errors = inline_fk_errors(Parent(Article, admin_site))
+
+    assert [check_id for check_id, _ in errors] == ["content_studio.E012"] * 2
+    assert "No foreign key" in errors[0][1]
+    assert "Specify fk_name" in errors[1][1]
+
+
+def test_model_inlined_twice_surfaces_as_system_error():
+    class First(InlineModelStudio):
+        model = Review
+
+    class Second(InlineModelStudio):
+        model = Review
+        table_display = ["stars"]
+
+    class Parent(ModelStudio):
+        inlines = [First, Second]
+
+    with swapped_article_studio(Parent):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E038")
+
+    assert "inlined twice" in str(error)
+    assert "First and Second" in str(error)
+
+
 def test_inline_fk_name_to_parent_fk_produces_no_error():
     class Inline(InlineModelStudio):
         model = Review

@@ -120,10 +120,24 @@ class DjangoContentStudioConfig(AppConfig):
         for model, admin_model in cs_settings.ADMIN_SITE._registry.items():
             self._create_view_set(model, admin_model)
 
+            inlined = set()
+
             for inline in admin_model.inlines:
-                self._create_view_set(
-                    parent=model, model=inline.model, admin_model=inline
-                )
+                # A model inlined twice on the same studio, or an inline
+                # whose link to the parent cannot be found, is reported
+                # by the system checks (E012, E038); registering it
+                # would crash before the checks can run.
+                if inline.model in inlined:
+                    continue
+
+                inlined.add(inline.model)
+
+                try:
+                    self._create_view_set(
+                        parent=model, model=inline.model, admin_model=inline
+                    )
+                except ValueError:
+                    continue
 
         log(
             ":white_check_mark:",
