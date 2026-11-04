@@ -84,6 +84,9 @@
 - Fixed: moving an object whose `reorder_field` is unique (alone or with
   other fields, such as `unique_together` with the parent) answered 500
   with an integrity error; the keys are now rewritten in two passes.
+- Fixed: the command palette offered "go to", "create" and "trash" entries
+  for models that are only inlined, which led to a list page that does not
+  exist; `/api/discover` now marks such models as `inline_only`.
 
 ## 1.8.0 (2026-11-04)
 

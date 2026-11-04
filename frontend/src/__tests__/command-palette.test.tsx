@@ -91,6 +91,13 @@ const category = makeModel("testapp.category", {
   },
 });
 
+const review: Model = {
+  ...makeModel("testapp.review", {
+    list: { ...makeModel("x").admin.list, trash: true },
+  }),
+  inline_only: true,
+};
+
 function makeDiscover(models: Model[]) {
   return {
     dashboard: { widgets: [] },
@@ -123,7 +130,7 @@ describe("CommandPalette", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useDiscoverMock.mockReturnValue({
-      data: makeDiscover([article, category]),
+      data: makeDiscover([article, category, review]),
     });
     httpMock.get.mockReset();
     httpMock.get.mockResolvedValue({ data: [] });
@@ -153,6 +160,15 @@ describe("CommandPalette", () => {
     // Theme and logout are offered too.
     expect(screen.getByText("palette.theme_light")).toBeInTheDocument();
     expect(screen.getByText("palette.logout")).toBeInTheDocument();
+
+    // An inline-only model has no list page: no entries at all.
+    expect(screen.queryByText("review")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("palette.create_item:review"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("palette.trash_item:review"),
+    ).not.toBeInTheDocument();
   });
 
   it("navigates on select and closes", async () => {

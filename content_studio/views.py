@@ -284,6 +284,7 @@ def get_models(request):
             {
                 **ModelSerializer(model).serialize(),
                 "admin": AdminSerializer(admin_class).serialize(request),
+                "inline_only": False,
             }
         )
         for inline in admin_class.inlines:
@@ -291,6 +292,9 @@ def get_models(request):
                 models.append(
                     {
                         **ModelSerializer(inline.model).serialize(),
+                        # Only reachable through its parent: it has no
+                        # list page of its own.
+                        "inline_only": True,
                         # The inline model has no studio of its own; serialize a
                         # default one so the frontend's editor can render the
                         # inline's create and edit forms (they read the admin
