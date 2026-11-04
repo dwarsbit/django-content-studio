@@ -2,6 +2,7 @@ import * as R from "ramda";
 
 import type { Model } from "@/types";
 
+import { EditPlacementContext } from "./edit-placement";
 import { FormSet } from "./form-set";
 
 export function Aside({
@@ -20,20 +21,22 @@ export function Aside({
 
   return (
     hasSidebar && (
-      <aside className="space-y-4">
-        {sidebar.map((formSet, idx) => (
-          <section
-            key={idx}
-            className="rounded-lg border bg-card shadow-xs w-full"
-          >
-            <FormSet
-              model={model}
-              formSet={formSet}
-              hiddenFields={hiddenFields}
-            />
-          </section>
-        ))}
-      </aside>
+      <EditPlacementContext.Provider value="sidebar">
+        <aside className="space-y-4">
+          {sidebar.map((formSet, idx) => (
+            <section
+              key={idx}
+              className="rounded-lg border bg-card shadow-xs w-full"
+            >
+              <FormSet
+                model={model}
+                formSet={formSet}
+                hiddenFields={hiddenFields}
+              />
+            </section>
+          ))}
+        </aside>
+      </EditPlacementContext.Provider>
     )
   );
 }

@@ -1835,6 +1835,113 @@ def task_adapter_warnings(site) -> list[tuple[str, str]]:
     return warnings
 
 
+def analytics_errors(site) -> list[tuple[str, str]]:
+    """
+    Analytics the admin cannot show, as (check id, message) pairs: an
+    analytics page, link, component or widget without an
+    AnalyticsExtension, more than one AnalyticsExtension, a provider
+    reporting metrics or breakdowns Content Studio does not know, and an
+    analytics page path taken by another page.
+    """
+    from .analytics import (
+        Analytics,
+        AnalyticsExtension,
+        AnalyticsLink,
+        AnalyticsPage,
+        AnalyticsStatisticWidget,
+        AnalyticsTopPagesWidget,
+    )
+    from .analytics.providers import BREAKDOWNS, METRICS
+
+    errors = []
+    extensions = list(getattr(site, "extensions", None) or [])
+    analytics = [e for e in extensions if isinstance(e, AnalyticsExtension)]
+    pages = [e for e in extensions if isinstance(e, AnalyticsPage)]
+
+    if len(analytics) > 1:
+        errors.append(
+            (
+                "content_studio.E037",
+                "The site has more than one AnalyticsExtension; keep one.",
+            )
+        )
+
+    if len(pages) > 1:
+        errors.append(
+            (
+                "content_studio.E037",
+                "The site has more than one AnalyticsPage; keep one.",
+            )
+        )
+
+    if not analytics:
+        users = [
+            e.__class__.__name__
+            for e in extensions
+            if isinstance(e, (AnalyticsPage, AnalyticsLink))
+        ]
+        users += [
+            w.__class__.__name__
+            for w in iter_dashboard_widgets(site)
+            if isinstance(w, (AnalyticsStatisticWidget, AnalyticsTopPagesWidget))
+        ]
+        users += [
+            f"{studio.__class__.__name__}'s {c.__class__.__name__}"
+            for studio in site._registry.values()
+            for c in iter_components(studio)
+            if isinstance(c, Analytics)
+        ]
+
+        for name in dict.fromkeys(users):
+            errors.append(
+                (
+                    "content_studio.E037",
+                    f"{name} shows analytics, but the site has no "
+                    "AnalyticsExtension; add one to its extensions.",
+                )
+            )
+    else:
+        provider = analytics[0].provider
+        unknown = [m for m in provider.metrics if m not in METRICS] + [
+            b for b in provider.breakdowns if b not in BREAKDOWNS
+        ]
+
+        if unknown:
+            errors.append(
+                (
+                    "content_studio.E037",
+                    f"The analytics provider {provider.__class__.__name__} reports "
+                    f"{', '.join(map(repr, unknown))}, which Content Studio does "
+                    "not know.",
+                )
+            )
+
+    taken = {str(e.path).strip("/") for e in extensions if isinstance(e, DashboardPage)}
+
+    for page in pages:
+        path = str(page.path).strip("/")
+
+        if path.split("/")[0] in RESERVED_PAGE_PATHS or path in taken:
+            errors.append(
+                (
+                    "content_studio.E037",
+                    f"The analytics page path {page.path!r} is taken by another "
+                    "page; choose another path.",
+                )
+            )
+
+    return errors
+
+
+def analytics_warnings(site) -> list[tuple[str, str]]:
+    """The analytics provider's own warnings, as (check id, message) pairs."""
+    from .analytics import get_analytics
+
+    analytics = get_analytics(site)
+
+    return list(analytics.provider.check()) if analytics else []
+
+
 def model_group_warnings(site) -> list[tuple[str, str]]:
     """
     Model groups listing unregistered models, as (check id, message)
@@ -2514,6 +2621,14 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         )
 
     for check_id, warning in task_adapter_warnings(site):
+        messages.append(
+            checks.Warning(warning, obj=site.__class__.__name__, id=check_id)
+        )
+
+    for check_id, error in analytics_errors(site):
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, warning in analytics_warnings(site):
         messages.append(
             checks.Warning(warning, obj=site.__class__.__name__, id=check_id)
         )

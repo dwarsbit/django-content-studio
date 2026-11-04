@@ -130,6 +130,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E034` | A [`MAP_TILE_URL`](/docs/settings#map_tiles) without `{z}`, `{x}` and `{y}`, a `MAP_TILE_ATTRIBUTION` that is not a string, a [`MAP_GEOCODER_URL`](/docs/settings#map_geocoder_url) that is not `None` or an `http(s)` URL, or an [`OEMBED_PROVIDERS`](/docs/settings#oembed_providers) that is not `None` or a list of providers with a name, an `http(s)` endpoint and valid URL patterns. |
 | `content_studio.E035` | A [`MapWidget`](/docs/widgets#maps) on a field that is not a `JSONField`, or a `FloatField` or `DecimalField` with an `lng_field` naming another number field; or `lng_field` on a `JSONField`. |
 | `content_studio.E036` | An [`SEOPreview`](/docs/edit-page#seo-preview) whose `title_field`, `description_field` or `path_field` is not a model field. |
+| `content_studio.E037` | [Analytics](/docs/analytics) set up wrong: an `AnalyticsPage`, link, `Analytics` component or analytics widget without an `AnalyticsExtension`, more than one extension or page, a provider that reports metrics or breakdowns Content Studio does not know, or an analytics page path that another page uses. |
 
 ### Warnings
 
@@ -157,6 +158,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.W020` | A [Huey task dashboard](/docs/dashboard#huey) without Huey's stats app, so it cannot show runs, durations or errors. |
 | `content_studio.W021` | A [`NotificationsWidget`](/docs/notifications#a-dashboard-widget) on a site without `content_studio.notifications` in `INSTALLED_APPS`; it is not shown. |
 | `content_studio.W022` | [`IMAGE_SIZES`](/docs/settings#image_sizes) set while no sizes can be made: Pillow is not installed, `IMAGE_SIZE_FOLDER` is not set, or the media model has no metadata field. Every size is then the image's own file. |
+| `content_studio.W023` | An analytics provider missing a setting it needs, such as an [`UmamiProvider`](/docs/analytics#umami) without an `api_key` or `website_id`. Its reports show the statistics as unavailable. |
 
 ## Reporting a vulnerability
 

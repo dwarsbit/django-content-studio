@@ -559,6 +559,7 @@ export interface FormField {
     | "Subtitle"
     | "Text"
     | "Callout"
+    | "Analytics"
     | "SEOPreview";
   copy: boolean;
   icon: string;
@@ -572,6 +573,9 @@ export interface FormField {
   per_object?: boolean;
   // Callout: its variant (the color and default icon).
   variant?: CalloutVariant;
+  // Analytics: compact, full, or auto (compact in the sidebar).
+  layout?: "auto" | "compact" | "full";
+  default_range?: string;
   // SEOPreview: the form fields it reads, and the page's URL (base_url
   // joined with the path field's value) and site name.
   title_field?: string | null;
@@ -873,13 +877,44 @@ export interface UserMenuButtonExtension {
   config: MainMenuButtonConfig;
 }
 
+export interface AnalyticsMetric {
+  key: string;
+  label: string;
+  kind: "number" | "percent" | "duration";
+  // Whether a rise is good (1) or bad (-1).
+  sign: 1 | -1;
+}
+
+export interface AnalyticsExtensionConfig {
+  provider: string;
+  metrics: AnalyticsMetric[];
+  timeseries_metrics: string[];
+  breakdowns: string[];
+  realtime: boolean;
+  page_path: string | null;
+}
+
+export interface AnalyticsExtension {
+  extension_id: string;
+  extension_type: ExtensionType.AnalyticsExtension;
+  config: AnalyticsExtensionConfig;
+}
+
+export interface AnalyticsPageExtension {
+  extension_id: string;
+  extension_type: ExtensionType.AnalyticsPage;
+  config: { path: string; title: string; description: string | null };
+}
+
 export type Extension =
   | MainMenuLinkExtension
   | MainMenuButtonExtension
   | UserMenuLinkExtension
   | UserMenuButtonExtension
   | IFramePageExtension
-  | DashboardPageExtension;
+  | DashboardPageExtension
+  | AnalyticsExtension
+  | AnalyticsPageExtension;
 
 export enum ExtensionType {
   MainMenuLink = "MainMenuLink",
@@ -888,4 +923,6 @@ export enum ExtensionType {
   UserMenuButton = "UserMenuButton",
   IFramePage = "IFramePage",
   DashboardPage = "DashboardPage",
+  AnalyticsExtension = "AnalyticsExtension",
+  AnalyticsPage = "AnalyticsPage",
 }

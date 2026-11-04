@@ -701,6 +701,14 @@ class ContentStudioSite:
 
             set_up_router()
 
+        # The analytics reports, with an AnalyticsExtension.
+        from .analytics.extensions import get_analytics
+
+        if get_analytics(self):
+            from .analytics.views import set_up_router as set_up_analytics_router
+
+            set_up_analytics_router()
+
         # Global search for the command palette.
         from .router import content_studio_router
         from .search import SearchViewSet

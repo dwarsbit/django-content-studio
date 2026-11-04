@@ -762,3 +762,107 @@ msgstr "Antwoordstatus"
 #: webhooks/models.py:145
 msgid "Response"
 msgstr "Antwoord"
+
+#: analytics/providers.py
+msgid "Visitors"
+msgstr "Bezoekers"
+
+#: analytics/providers.py
+msgid "Pageviews"
+msgstr "Paginaweergaven"
+
+#: analytics/providers.py
+msgid "Visits"
+msgstr "Bezoeken"
+
+#: analytics/providers.py
+msgid "Bounce rate"
+msgstr "Bouncepercentage"
+
+#: analytics/providers.py
+msgid "Visit duration"
+msgstr "Bezoekduur"
+
+#: analytics/providers.py
+msgid "Pages"
+msgstr "Pagina's"
+
+#: analytics/providers.py
+msgid "Entry pages"
+msgstr "Instappagina's"
+
+#: analytics/providers.py
+msgid "Exit pages"
+msgstr "Uitstappagina's"
+
+#: analytics/providers.py
+msgid "Referrers"
+msgstr "Verwijzers"
+
+#: analytics/providers.py
+msgid "Channels"
+msgstr "Kanalen"
+
+#: analytics/providers.py
+msgid "Campaigns"
+msgstr "Campagnes"
+
+#: analytics/providers.py
+msgid "Countries"
+msgstr "Landen"
+
+#: analytics/providers.py
+msgid "Regions"
+msgstr "Regio's"
+
+#: analytics/providers.py
+msgid "Cities"
+msgstr "Steden"
+
+#: analytics/providers.py
+msgid "Devices"
+msgstr "Apparaten"
+
+#: analytics/providers.py
+msgid "Browsers"
+msgstr "Browsers"
+
+#: analytics/providers.py
+msgid "Operating systems"
+msgstr "Besturingssystemen"
+
+#: analytics/extensions.py
+msgid "Analytics"
+msgstr "Statistieken"
+
+#: analytics/widgets.py
+msgid "today"
+msgstr "vandaag"
+
+#: analytics/widgets.py
+msgid "last 7 days"
+msgstr "afgelopen 7 dagen"
+
+#: analytics/widgets.py
+msgid "last 30 days"
+msgstr "afgelopen 30 dagen"
+
+#: analytics/widgets.py
+msgid "last 90 days"
+msgstr "afgelopen 90 dagen"
+
+#: analytics/widgets.py
+msgid "last 12 months"
+msgstr "afgelopen 12 maanden"
+
+#: analytics/widgets.py
+msgid "Analytics are unavailable"
+msgstr "Statistieken zijn niet beschikbaar"
+
+#: analytics/widgets.py
+msgid "vs. the period before"
+msgstr "t.o.v. de vorige periode"
+
+#: analytics/widgets.py
+msgid "Top pages"
+msgstr "Toppagina's"

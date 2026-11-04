@@ -622,5 +622,83 @@
       "restored": "Restored",
       "reordered": "Moved"
     }
+  },
+  "analytics": {
+    "range": "Period",
+    "ranges": {
+      "today": "Today",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "90d": "Last 90 days",
+      "12mo": "Last 12 months",
+      "7d_short": "7 days",
+      "30d_short": "30 days",
+      "90d_short": "90 days",
+      "12mo_short": "12 months",
+      "custom": "Custom range…"
+    },
+    "pick_dates": "Pick the first and last day",
+    "apply": "Apply",
+    "previous_period": "Previous period",
+    "previous_value": "Previous period: {{value}}",
+    "online_now": "online now",
+    "open_in": "Open in {{provider}}",
+    "page_is": "Page is",
+    "remove_filter": "Remove the page filter",
+    "visitors": "Visitors",
+    "top_sources": "Top sources",
+    "full_report": "Full report",
+    "visits_to": "Visits to",
+    "loading": "Loading",
+    "no_data": "Nothing recorded in this period.",
+    "empty": "No visits in this period.",
+    "no_path": "This has no page on the site yet. Analytics show once it has one.",
+    "error": "Couldn't load analytics from {{provider}}.",
+    "provider": "the analytics tool",
+    "retry": "Try again",
+    "direct": "Direct",
+    "unknown": "Unknown",
+    "none": "(none)",
+    "cards": {
+      "pages": "Top pages",
+      "sources": "Sources",
+      "locations": "Locations",
+      "devices": "Devices"
+    },
+    "breakdowns": {
+      "pages": "Pages",
+      "entry_pages": "Entry",
+      "exit_pages": "Exit",
+      "referrers": "Referrers",
+      "channels": "Channels",
+      "campaigns": "Campaigns",
+      "countries": "Countries",
+      "regions": "Regions",
+      "cities": "Cities",
+      "devices": "Devices",
+      "browsers": "Browsers",
+      "os": "OS"
+    },
+    "devices": {
+      "desktop": "Desktop",
+      "laptop": "Laptop",
+      "mobile": "Mobile",
+      "tablet": "Tablet"
+    },
+    "channels": {
+      "direct": "Direct",
+      "referral": "Referral",
+      "email": "Email",
+      "sms": "SMS",
+      "organicSearch": "Organic search",
+      "paidSearch": "Paid search",
+      "organicSocial": "Organic social",
+      "paidSocial": "Paid social",
+      "organicVideo": "Organic video",
+      "paidVideo": "Paid video",
+      "organicShopping": "Organic shopping",
+      "paidShopping": "Paid shopping",
+      "paidAds": "Paid ads"
+    }
   }
 }

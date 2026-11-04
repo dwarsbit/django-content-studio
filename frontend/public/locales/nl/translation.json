@@ -622,5 +622,83 @@
       "restored": "Hersteld",
       "reordered": "Verplaatst"
     }
+  },
+  "analytics": {
+    "range": "Periode",
+    "ranges": {
+      "today": "Vandaag",
+      "7d": "Afgelopen 7 dagen",
+      "30d": "Afgelopen 30 dagen",
+      "90d": "Afgelopen 90 dagen",
+      "12mo": "Afgelopen 12 maanden",
+      "7d_short": "7 dagen",
+      "30d_short": "30 dagen",
+      "90d_short": "90 dagen",
+      "12mo_short": "12 maanden",
+      "custom": "Aangepaste periode…"
+    },
+    "pick_dates": "Kies de eerste en laatste dag",
+    "apply": "Toepassen",
+    "previous_period": "Vorige periode",
+    "previous_value": "Vorige periode: {{value}}",
+    "online_now": "nu online",
+    "open_in": "Openen in {{provider}}",
+    "page_is": "Pagina is",
+    "remove_filter": "Paginafilter verwijderen",
+    "visitors": "Bezoekers",
+    "top_sources": "Belangrijkste bronnen",
+    "full_report": "Volledig rapport",
+    "visits_to": "Bezoeken aan",
+    "loading": "Laden",
+    "no_data": "Niets vastgelegd in deze periode.",
+    "empty": "Geen bezoeken in deze periode.",
+    "no_path": "Dit heeft nog geen pagina op de site. Statistieken verschijnen zodra die er is.",
+    "error": "Kon de statistieken van {{provider}} niet laden.",
+    "provider": "de analysetool",
+    "retry": "Opnieuw proberen",
+    "direct": "Direct",
+    "unknown": "Onbekend",
+    "none": "(geen)",
+    "cards": {
+      "pages": "Toppagina's",
+      "sources": "Bronnen",
+      "locations": "Locaties",
+      "devices": "Apparaten"
+    },
+    "breakdowns": {
+      "pages": "Pagina's",
+      "entry_pages": "Instap",
+      "exit_pages": "Uitstap",
+      "referrers": "Verwijzers",
+      "channels": "Kanalen",
+      "campaigns": "Campagnes",
+      "countries": "Landen",
+      "regions": "Regio's",
+      "cities": "Steden",
+      "devices": "Apparaten",
+      "browsers": "Browsers",
+      "os": "Besturingssysteem"
+    },
+    "devices": {
+      "desktop": "Desktop",
+      "laptop": "Laptop",
+      "mobile": "Mobiel",
+      "tablet": "Tablet"
+    },
+    "channels": {
+      "direct": "Direct",
+      "referral": "Verwijzing",
+      "email": "E-mail",
+      "sms": "Sms",
+      "organicSearch": "Organisch zoeken",
+      "paidSearch": "Betaald zoeken",
+      "organicSocial": "Organisch sociaal",
+      "paidSocial": "Betaald sociaal",
+      "organicVideo": "Organische video",
+      "paidVideo": "Betaalde video",
+      "organicShopping": "Organisch winkelen",
+      "paidShopping": "Betaald winkelen",
+      "paidAds": "Betaalde advertenties"
+    }
   }
 }

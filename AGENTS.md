@@ -45,7 +45,7 @@ content_studio/
 ├── colors.py            # Color parsing and conversion (hex/rgb/hsl) for ColorField; mirrored by frontend/src/lib/colors.ts
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E033, W001-W022)
+├── checks.py            # System checks (content_studio.E001-E037, W001-W023)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)
@@ -61,6 +61,7 @@ content_studio/
 │   ├── activity_log.py  # Activity logging for dashboard
 │   ├── scheduled_tasks.py
 │   └── tasks.py         # Task dashboard: TaskAdapter, its widgets and the TaskDashboard page
+├── analytics/           # Analytics: AnalyticsProvider interface (providers.py), UmamiProvider, AnalyticsExtension/AnalyticsPage/links, the Analytics component, dashboard widgets, report building and the api/analytics endpoint
 ├── notifications/       # Optional notifications app: models, the content_changed fan-out, register_event/notify, read filter, prune command, the admin endpoints (viewsets.py, with the page's filters and search), site defaults (defaults.py), the dashboard widget, the email digest (digest.py, templates in templates/content_studio/notifications)
 ├── media_library/       # Optional built-in media library app (models, migrations)
 │   ├── sizes.py         # Image sizes (IMAGE_SIZES): made by tasks.py, recorded in metadata["sizes"], get_image_sizes

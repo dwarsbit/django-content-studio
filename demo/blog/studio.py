@@ -9,6 +9,13 @@ would be circular.
 from django.contrib.auth import get_user_model
 
 from content_studio.admin import ContentStudioSite, ModelGroup
+from content_studio.analytics import (
+    AnalyticsExtension,
+    AnalyticsLink,
+    AnalyticsPage,
+    AnalyticsStatisticWidget,
+    AnalyticsTopPagesWidget,
+)
 from content_studio.dashboard import Dashboard
 from content_studio.dashboard.activity_log import ActivityLogWidget
 from content_studio.dashboard.tasks import TaskDashboard
@@ -16,6 +23,7 @@ from content_studio.extensions import UserMenuLink
 from content_studio.notifications.dashboard import NotificationsWidget
 
 from . import models
+from .analytics import DemoAnalyticsProvider
 from .dashboard import (
     ArticleCountWidget,
     FeaturedArticlesWidget,
@@ -49,13 +57,20 @@ class DemoStudioSite(ContentStudioSite):
             ArticleCountWidget(),
             PublishedArticlesWidget(),
             TotalViewsWidget(),
+            AnalyticsStatisticWidget(metric="visitors"),
             FeaturedArticlesWidget(),
+            AnalyticsTopPagesWidget(),
             LatestArticlesWidget(),
             NotificationsWidget(),
             ActivityLogWidget(),
         ],
     )
     extensions = [
+        # Made-up numbers, so the demo needs no analytics account; a real
+        # site passes UmamiProvider(website_id=..., api_key=...).
+        AnalyticsExtension(provider=DemoAnalyticsProvider()),
+        AnalyticsPage(),
+        AnalyticsLink(),
         TaskDashboard(adapter=DemoTaskAdapter()),
         UserMenuLink(url="/tasks/", label="Tasks", icon="ph-bold ph-queue"),
     ]
