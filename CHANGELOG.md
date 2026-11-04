@@ -1,5 +1,44 @@
 # Changelog
 
+## Unreleased
+
+- **Analytics.** Show your website's visitor statistics in the admin, from
+  an analytics tool through a provider. `UmamiProvider` reads Umami Cloud
+  or your own Umami server with an API key; subclass `AnalyticsProvider`
+  for another tool. Add an `AnalyticsExtension` with the provider, and:
+  - `AnalyticsPage`, with `AnalyticsLink` in the main menu or
+    `AnalyticsUserMenuLink` in the user menu: visitors, pageviews, visits,
+    bounce rate and visit duration against the period before, a chart, and
+    the top pages, sources, locations and devices. The period is a preset
+    (today, 7, 30 or 90 days, 12 months) or a range of dates, and top pages
+    link to their objects.
+  - The `Analytics` component for `edit_sidebar` (compact) or `edit_main`
+    (the full report): the statistics of the edited object's page, found
+    with `path_field`, `path_prefix` and `path_suffix` or
+    `get_absolute_url()`.
+  - `AnalyticsStatisticWidget` and `AnalyticsTopPagesWidget` for the
+    dashboard.
+
+  Reports are cached (`cache_timeout`), and every active staff user sees
+  them unless you override `is_visible`. New checks: `E037` and `W023`.
+- **Maps.** The new `MapWidget` picks a location on a map: click or drag
+  the pin, search for an address, or type the coordinates. It stores
+  `{"lat", "lng"}` in a `JSONField`, or the latitude and longitude in two
+  number fields (`lng_field`). The map (Leaflet) is loaded only on pages
+  that have a map field. New settings: `MAP_TILE_URL`,
+  `MAP_TILE_ATTRIBUTION` and `MAP_GEOCODER_URL`; by default the map uses
+  OpenStreetMap's tiles and Nominatim.
+- **Embeds.** The new `EmbedWidget` takes the URL of a video, song or post
+  on YouTube, Vimeo, Spotify, SoundCloud and other oEmbed sites and shows
+  its title and thumbnail, fetched by the server from the site. New
+  setting: `OEMBED_PROVIDERS`.
+- **SEO preview.** The new `SEOPreview` component shows how the object
+  would look in a search result, from the title, description and slug
+  fields as the editor types, and notes a title or description that search
+  engines would cut off.
+- `ContentListWidget` rows can be plain rows without a model and ID and
+  show a `value`, and the widget takes a `view_all` link.
+
 ## 1.8.0 (2026-11-04)
 
 - **Number formats.** `NumberFormat` now groups digits in the editor's
@@ -66,21 +105,6 @@
   dragged into order. `KeyValueWidget` edits a dict of strings as rows;
   those rows have no order, since PostgreSQL sorts a JSON object's keys.
   `RatingWidget(max_value=5)` shows a small integer as stars.
-- **Maps.** The new `MapWidget` picks a location on a map: click or drag
-  the pin, search for an address, or type the coordinates. It stores
-  `{"lat", "lng"}` in a `JSONField`, or the latitude and longitude in two
-  number fields (`lng_field`). The map (Leaflet) is loaded only on pages
-  that have a map field. New settings: `MAP_TILE_URL`,
-  `MAP_TILE_ATTRIBUTION` and `MAP_GEOCODER_URL`; by default the map uses
-  OpenStreetMap's tiles and Nominatim.
-- **Embeds.** The new `EmbedWidget` takes the URL of a video, song or post
-  on YouTube, Vimeo, Spotify, SoundCloud and other oEmbed sites and shows
-  its title and thumbnail, fetched by the server from the site. New
-  setting: `OEMBED_PROVIDERS`.
-- **SEO preview.** The new `SEOPreview` component shows how the object
-  would look in a search result, from the title, description and slug
-  fields as the editor types, and notes a title or description that search
-  engines would cut off.
 - In the API, an `ImageField`'s value now also has a `"thumbnail"`.
 - **Fixed:** text columns showed `0` and `false` as empty.
 
