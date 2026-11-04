@@ -472,9 +472,19 @@ class DjangoContentStudioConfig(AppConfig):
                 return row_columns
 
             def get_parent_filter_keys(self):
-                """The parent keys the viewset filters on itself (lists)."""
+                """
+                The parent keys the viewset filters on itself (lists):
+                the foreign key's name and its attname. A foreign key
+                named like a reserved query parameter (page, limit,
+                search, ...) is only reachable by its attname, since
+                the plain name is read as that parameter.
+                """
                 if self.parent_fk and self.action == "list":
-                    return [self.parent_fk, f"{self.parent_fk}_id"]
+                    return [
+                        key
+                        for key in (self.parent_fk, f"{self.parent_fk}_id")
+                        if key not in LookupFilter.NON_FILTER_FIELDS
+                    ]
                 return []
 
             def _get_parent_id(self):

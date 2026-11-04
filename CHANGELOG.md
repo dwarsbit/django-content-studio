@@ -87,6 +87,9 @@
 - Fixed: the command palette offered "go to", "create" and "trash" entries
   for models that are only inlined, which led to a list page that does not
   exist; `/api/discover` now marks such models as `inline_only`.
+- Fixed: an inline whose foreign key to the parent is named `page` (or
+  another reserved query parameter) could not list its rows: the
+  pagination parameter was read as a second parent.
 
 ## 1.8.0 (2026-11-04)
 

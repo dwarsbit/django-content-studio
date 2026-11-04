@@ -96,6 +96,17 @@ class Page(models.Model):
         return self.title
 
 
+class Attachment(models.Model):
+    """An inline row whose foreign key is named like the page query
+    parameter; see test_inline_parent_scope."""
+
+    page = models.ForeignKey(Page, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+
 class Label(models.Model):
     # A primary key that is not called "id".
     code = models.CharField(max_length=20, primary_key=True)
