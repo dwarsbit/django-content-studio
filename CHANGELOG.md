@@ -54,6 +54,9 @@
   is not one.
 - Fixed: asking the widget data endpoint for a `SpacingWidget` answered
   500; it is now 404 like an unknown widget.
+- Fixed: saving an object that violates a unique constraint the form
+  cannot check, such as a conditional constraint or `unique_together` with
+  the tenant field, answered 500; it is now a 400 that names the conflict.
 
 ## 1.8.0 (2026-11-04)
 

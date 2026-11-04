@@ -112,7 +112,7 @@ class BaseModelViewSet(ModelViewSet):
         if hasattr(model, cs_settings.CREATED_BY_ATTR):
             attrs[cs_settings.CREATED_BY_ATTR] = self.request.user
 
-        instance = serializer.save(**attrs)
+        instance = self._save(serializer, **attrs)
         source = getattr(self, "_duplicate_source", None)
 
         if source is None:
@@ -223,8 +223,24 @@ class BaseModelViewSet(ModelViewSet):
             }
         )
 
+    def _save(self, serializer, **attrs):
+        """
+        Save the serializer; a database integrity error (a unique
+        constraint the serializer could not check, such as a
+        conditional one or one that includes the tenant field) is a
+        validation error, not a crash.
+        """
+        try:
+            with transaction.atomic(using=router.db_for_write(self.get_queryset().model)):
+                return serializer.save(**attrs)
+        except IntegrityError as error:
+            raise ValidationError(
+                "The object could not be saved: it conflicts with an existing "
+                f"object ({error})."
+            )
+
     def perform_update(self, serializer):
-        instance = serializer.save()
+        instance = self._save(serializer)
 
         # Stamp the editor with a targeted update: a full instance save
         # would race with concurrent edits (lost updates).

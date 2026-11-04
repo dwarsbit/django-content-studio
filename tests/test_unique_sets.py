@@ -210,6 +210,37 @@ class UniqueSetCheckTenantTests(TestCase):
             HTTP_X_DCS_TENANT=str(tenant.pk),
         )
 
+    def test_a_conflict_the_serializer_cannot_check_is_a_validation_error(self):
+        """The title-per-category constraint includes the tenant field,
+        which is read-only, so the serializer has no validator for it:
+        the database refuses the row, and that is a 400, not a 500."""
+        data = {"title": "Spring", "slug": "spring-2", "language": "en"}
+
+        response = self.client.post(
+            "/api/content/testapp.edition",
+            data,
+            format="json",
+            HTTP_X_DCS_TENANT=str(self.b.pk),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("conflicts with an existing object", str(response.json()))
+        self.assertFalse(Edition.objects.filter(slug="spring-2").exists())
+
+        other = Edition.objects.create(
+            title="Other", slug="other", language="en", category=self.b
+        )
+        response = self.client.patch(
+            f"/api/content/testapp.edition/{other.pk}",
+            {"title": "Spring"},
+            format="json",
+            HTTP_X_DCS_TENANT=str(self.b.pk),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        other.refresh_from_db()
+        self.assertEqual(other.title, "Other")
+
     def test_scoped_to_the_tenant(self):
         values = {"slug": "spring", "language": "en"}
 
