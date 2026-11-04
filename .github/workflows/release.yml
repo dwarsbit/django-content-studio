@@ -136,7 +136,8 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
 
   github-release:
-    needs: pypi
+    # needs.build is only readable by a job that lists build itself.
+    needs: [build, pypi]
     runs-on: ubuntu-latest
     permissions:
       contents: write
