@@ -57,8 +57,6 @@
 - Fixed: the live duplicate check on the create form answered 403 for an
   editor with add permission but no view permission.
 
-### Fixes
-
 ## 1.9.0 (2026-11-04)
 
 - **Analytics.** Show your website's visitor statistics in the admin, from
