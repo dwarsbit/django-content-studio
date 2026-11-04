@@ -7,6 +7,7 @@ list_filter, mirroring the Django admin.
 
 import pytest
 from django.contrib.auth import models as auth_models
+from django.db import models
 from django.http import QueryDict
 from rest_framework.exceptions import ParseError
 from rest_framework.test import APIRequestFactory
@@ -344,3 +345,19 @@ def test_regex_lookup_still_works():
     result = filter_via_action(auth_models.User, "username__regex=^al")
 
     assert list(result.values_list("username", flat=True)) == ["alpha"]
+
+
+def test_duration_values_are_cast_to_timedelta():
+    import datetime
+
+    lf = LookupFilter()
+    field = models.DurationField()
+
+    assert lf.cast_field_value("02:30:00", field) == datetime.timedelta(
+        hours=2, minutes=30
+    )
+    assert lf.cast_field_value("90", field) == datetime.timedelta(seconds=90)
+    assert lf.cast_field_value("PT2H", field) == datetime.timedelta(hours=2)
+
+    with pytest.raises(ValueError):
+        lf.cast_field_value("soon", field)

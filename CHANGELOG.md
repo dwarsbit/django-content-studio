@@ -49,6 +49,9 @@
   `MultipleChoiceField`, although the field's options are its choices.
 - Fixed: `DELETE .../<id>/destroy` deleted an object permanently even when
   it was not in the trash; it now answers 400 for a live object.
+- Fixed: a list filter on a `DurationField` answered 500; the value is now
+  parsed as a duration (`02:30:00`, seconds or ISO 8601), and 400 when it
+  is not one.
 
 ## 1.8.0 (2026-11-04)
 

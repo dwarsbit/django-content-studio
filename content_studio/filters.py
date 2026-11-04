@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
+from django.utils.dateparse import parse_duration
 from rest_framework.exceptions import ParseError
 from rest_framework.filters import BaseFilterBackend
 
@@ -242,5 +243,15 @@ class LookupFilter(BaseFilterBackend):
 
         if isinstance(field, models.FloatField):
             return float(value)
+
+        if isinstance(field, models.DurationField):
+            # Django's lookups expect a timedelta: "1 day, 2:00:00",
+            # "02:30:00", a number of seconds, or ISO 8601 ("PT2H").
+            duration = parse_duration(value)
+
+            if duration is None:
+                raise ValueError(f"{value!r} is not a duration.")
+
+            return duration
 
         return value
