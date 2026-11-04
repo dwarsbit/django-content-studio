@@ -62,9 +62,10 @@
   formatting toolbar and a Preview tab.
 - **More widgets.** `IconPickerWidget` picks a Phosphor icon from a
   searchable grid and saves its class (`"ph-bold ph-star"`).
-  `KeyValueWidget` and `ListWidget` edit a `JSONField` dict or list of
-  strings as rows. `RatingWidget(max_value=5)` shows a small integer as
-  stars.
+  `ListWidget` edits a `JSONField` list of strings as rows that can be
+  dragged into order. `KeyValueWidget` edits a dict of strings as rows;
+  those rows have no order, since PostgreSQL sorts a JSON object's keys.
+  `RatingWidget(max_value=5)` shows a small integer as stars.
 - In the API, an `ImageField`'s value now also has a `"thumbnail"`.
 - **Fixed:** text columns showed `0` and `false` as empty.
 
