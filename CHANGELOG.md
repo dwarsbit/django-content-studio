@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.10.0 (unreleased)
+## 1.10.0 (2026-11-04)
 
 - **`ModelStudio.get_queryset(request)`.** Override it to narrow the objects
   an editor sees: the list, the trash, exports, bulk actions, the site

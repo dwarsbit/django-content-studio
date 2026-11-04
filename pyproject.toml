@@ -1,6 +1,6 @@
 [project]
 name = "django-content-studio"
-version = "1.9.0"
+version = "1.10.0"
 description = "A modern Django admin alternative, batteries included"
 authors = [
     {name = "Leon van der Grient", email = "leon@dwarsbit.nl"}
