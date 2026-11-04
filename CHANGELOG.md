@@ -39,6 +39,14 @@
 - `ContentListWidget` rows can be plain rows without a model and ID and
   show a `value`, and the widget takes a `view_all` link.
 
+### Fixes
+
+- With a manifest static files storage, such as Django's
+  `ManifestStaticFilesStorage` or WhiteNoise's
+  `CompressedManifestStaticFilesStorage`, and `DEBUG = False`, every
+  admin page returned a server error ("Missing staticfiles manifest entry
+  for ''"). The admin now finds its static files from `STATIC_URL`.
+
 ## 1.8.0 (2026-11-04)
 
 - **Number formats.** `NumberFormat` now groups digits in the editor's

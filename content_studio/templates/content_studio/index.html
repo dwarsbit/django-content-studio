@@ -7,7 +7,7 @@
     <link rel="icon" href={% static 'content_studio/img/favicon.png' %}>
     <title>Django Content Studio</title>
     <script>
-        window.DCS_STATIC_PREFIX = "{% static '' %}content_studio/";
+        window.DCS_STATIC_PREFIX = "{% get_static_prefix %}content_studio/";
         window.DCS_BASENAME = "{% url 'content_studio_web' %}";
         {% if debug %}window.DCS_DEBUG = true;{% endif %}
     </script>
