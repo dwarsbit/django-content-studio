@@ -77,11 +77,42 @@ def _rewrite(rows, order, field, keys):
 
     if changed:
         model = type(changed[0])
-        model._base_manager.db_manager(changed[0]._state.db).bulk_update(
-            changed, [field]
-        )
+        manager = model._base_manager.db_manager(changed[0]._state.db)
+
+        if is_unique_key(model, field):
+            # A unique constraint on the key is checked row by row, so
+            # the changed rows first take keys above every key in use,
+            # and their final keys in a second pass.
+            offset = max(key for key in keys if key is not None) + 1
+            finals = [getattr(row, field) for row in changed]
+
+            for row, key in zip(changed, finals):
+                setattr(row, field, key + offset)
+
+            manager.bulk_update(changed, [field])
+
+            for row, key in zip(changed, finals):
+                setattr(row, field, key)
+
+        manager.bulk_update(changed, [field])
 
     return bool(changed)
+
+
+def is_unique_key(model, field: str) -> bool:
+    """Whether the key field is unique, alone or with other fields."""
+    opts = model._meta
+
+    if opts.get_field(field).unique:
+        return True
+
+    if any(field in fields for fields in opts.unique_together):
+        return True
+
+    return any(
+        isinstance(constraint, models.UniqueConstraint) and field in constraint.fields
+        for constraint in opts.constraints
+    )
 
 
 def move(queryset, obj, field: str, *, after=None, before=None) -> bool:

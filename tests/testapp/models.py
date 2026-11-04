@@ -128,6 +128,21 @@ class Step(ManualOrderModel):
         return self.text
 
 
+class Chapter(models.Model):
+    """A reorderable row whose key is unique per article; see
+    test_reordering."""
+
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    number = models.PositiveIntegerField()
+    title = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = [("article", "number")]
+
+    def __str__(self):
+        return self.title
+
+
 class TextBlock(Block):
     heading = models.CharField(max_length=50, blank=True)
     body = HTMLField()

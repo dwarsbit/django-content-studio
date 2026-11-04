@@ -81,6 +81,9 @@
   endpoints all start from it. The [access control](/docs/permissions)
   docs said per-object `has_view_permission` hid objects from lists, which
   it never did; it guards single objects, and the docs now say so.
+- Fixed: moving an object whose `reorder_field` is unique (alone or with
+  other fields, such as `unique_together` with the parent) answered 500
+  with an integrity error; the keys are now rewritten in two passes.
 
 ## 1.8.0 (2026-11-04)
 

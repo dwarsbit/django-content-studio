@@ -20,7 +20,7 @@ from content_studio.checks import reorder_errors, reorder_ordering_warnings
 from content_studio.reordering import get_reorder_scope, move, renumber
 from tests.test_soft_delete import AuthenticatedTestCase
 from tests.testapp.admin import StepInline, TrackAdmin
-from tests.testapp.models import Article, Category, Page, Step, Track
+from tests.testapp.models import Article, Category, Chapter, Page, Step, Track
 
 TRACKS = "/api/content/testapp.track"
 STEPS = "/api/inlines/testapp.article/testapp.step"
@@ -77,6 +77,24 @@ class MoveTests(TestCase):
         self.assertEqual(
             list(Track.objects.order_by("position").values_list("position", flat=True)),
             [1, 2, 3, 4, 5],
+        )
+
+    def test_a_unique_key_is_rewritten_without_a_conflict(self):
+        """Chapter numbers are unique per article: moving a chapter
+        gives other chapters its number along the way, which the
+        database checks row by row."""
+        article = Article.objects.create(title="book")
+        chapters = [
+            Chapter.objects.create(article=article, number=number, title=title)
+            for number, title in enumerate("abc", start=1)
+        ]
+        queryset = Chapter.objects.filter(article=article)
+
+        self.assertTrue(move(queryset, chapters[2], "number", before=chapters[0]))
+
+        self.assertEqual(
+            [(c.title, c.number) for c in queryset.order_by("number")],
+            [("c", 1), ("a", 2), ("b", 3)],
         )
 
     def test_target_outside_the_queryset_is_refused(self):
