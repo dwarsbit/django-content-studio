@@ -8,7 +8,15 @@ from django.contrib.auth import get_user_model
 
 from content_studio import register, widgets
 from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
-from content_studio.form import ActivityLog, Callout, Field, FormSet, Subtitle, Text
+from content_studio.form import (
+    ActivityLog,
+    Callout,
+    Field,
+    FormSet,
+    SEOPreview,
+    Subtitle,
+    Text,
+)
 from content_studio.actions import bulk_action
 
 from . import models
@@ -110,6 +118,8 @@ class ArticleStudio(ModelStudio):
     soft_delete = "removed_at"
     search_fields = ["title"]
     inlines = [ReviewInline]
+    # The slug follows the title while an article is created.
+    prepopulated_fields = {"slug": ["title"]}
     edit_main = [
         FormSet(
             title="Content",
@@ -119,9 +129,28 @@ class ArticleStudio(ModelStudio):
                 "title",
                 Text("Write for the web: short paragraphs, **one idea** each."),
                 "body",
+                Field("video_url", widget=widgets.EmbedWidget),
                 Subtitle("Publishing"),
                 "status",
                 "categories",
+            ],
+        ),
+        FormSet(
+            title="Search",
+            description="How the article shows up in search results",
+            fields=[
+                "slug",
+                Field(
+                    "meta_description",
+                    widget=widgets.InputWidget(recommended_length=160),
+                ),
+                SEOPreview(
+                    title_field="title",
+                    description_field="meta_description",
+                    base_url="https://example.com/blog/",
+                    path_field="slug",
+                    site_name="Demo site",
+                ),
             ],
         ),
     ]
@@ -161,6 +190,11 @@ class SiteSettingsStudio(ModelStudio):
         Subtitle("Integrations"),
         Field("social_links", widget=widgets.KeyValueWidget),
         Field("head_code", widget=widgets.CodeWidget(language="html")),
+        Subtitle("Office"),
+        Field(
+            "office_location",
+            widget=widgets.MapWidget(center=(52.37, 4.9), zoom=11),
+        ),
     ]
 
 

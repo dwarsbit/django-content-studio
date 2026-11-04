@@ -286,6 +286,8 @@ class ArticleStudio(ModelStudio):
   title "Activity" or the `title` you pass.
 - **`Title`**, **`Subtitle`**, **`Text`** and **`Callout`**: text for the
   editor to read, such as headings and instructions; see below.
+- **`SEOPreview`**: how the object would show in a search result, as the
+  editor types; see [SEO preview](#seo-preview).
 
 Only these components are supported; other component types are not. Links
 and buttons appear once the object is saved.
@@ -373,6 +375,58 @@ allowed in a `FieldLayout` or in `edit_header`; system check
 Two text components with the same text and type get the same ID. To show
 the same text twice, pass `component_id` with a UUID of your own to one of
 them.
+
+### SEO preview
+
+`SEOPreview` shows a search-result snippet of the object being edited: the
+value of `title_field` as the heading, the value of `description_field`
+under it, and the page's URL above them. It follows the form as the editor
+types, also on the create form. A title over about 60 characters and a
+description over about 160 are cut off the way search engines cut them,
+with a note under the snippet.
+
+```python
+# blog/admin.py
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import FormSet, SEOPreview
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    prepopulated_fields = {"slug": ["title"]}
+    edit_main = [
+        FormSet(
+            title="Search",
+            fields=[
+                "slug",
+                "meta_description",
+                SEOPreview(
+                    title_field="title",
+                    description_field="meta_description",
+                    base_url="https://example.com/blog/",
+                    path_field="slug",
+                    site_name="Example",
+                ),
+            ],
+        ),
+    ]
+```
+
+- **`title_field`**: the field with the page's title. Required.
+- **`description_field`**: the field with the description; HTML in it
+  shows as text. Without it, the snippet has no description.
+- **`base_url`** and **`path_field`**: the page's URL is `base_url` joined
+  with the value of `path_field`, a slug or a path. Without them, the
+  snippet has no URL.
+- **`site_name`**: the site's name, shown above the URL.
+
+Like the text components, it goes in `edit_main`, `edit_sidebar` or a
+`FormSet`, not in `edit_header`. The fields can also be set as class
+attributes of a subclass. System check `content_studio.E036` reports a
+field the model does not have.
 
 ### Buttons
 

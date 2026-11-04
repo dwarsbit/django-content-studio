@@ -23,6 +23,7 @@ __all__ = [
     "FormSet",
     "FormSetGroup",
     "Link",
+    "SEOPreview",
     "Subtitle",
     "TableColumn",
     "Text",
@@ -523,4 +524,84 @@ class Callout(BaseText):
             "title": None if self.title is None else str(self.title),
             "variant": self.variant,
             "icon": self.icon,
+        }
+
+
+class SEOPreview(Component):
+    """
+    A search-result snippet of the object being edited, as the editor
+    types: the value of title_field, the value of description_field
+    under it, and the page's URL, base_url joined with the value of
+    path_field (a slug or a URL path). site_name shows above the URL.
+    Titles over 60 characters and descriptions over 160 are cut off the
+    way search engines cut them, with a note.
+    """
+
+    component_type = "SEOPreview"
+    title_field: Optional[str] = None
+    description_field: Optional[str] = None
+    base_url: Optional[str] = None
+    path_field: Optional[str] = None
+    site_name: Optional[str] = None
+
+    def __init__(
+        self,
+        *,
+        title_field=None,
+        description_field=None,
+        base_url=None,
+        path_field=None,
+        site_name=None,
+        component_id=None,
+    ):
+        # Set before super().__init__(): get_id_parts() reads them.
+        if title_field is not None:
+            self.title_field = title_field
+
+        if description_field is not None:
+            self.description_field = description_field
+
+        if base_url is not None:
+            self.base_url = base_url
+
+        if path_field is not None:
+            self.path_field = path_field
+
+        if site_name is not None:
+            self.site_name = site_name
+
+        for name in ("title_field", "description_field", "path_field"):
+            value = getattr(self, name)
+
+            if value is not None and (not isinstance(value, str) or not value):
+                raise TypeError(
+                    f"SEOPreview {name} must be a field name; got {value!r}."
+                )
+
+        if self.title_field is None:
+            raise ValueError("SEOPreview needs a title_field.")
+
+        if self.base_url is not None and not isinstance(self.base_url, str):
+            raise TypeError(
+                f"SEOPreview base_url must be a string; got {self.base_url!r}."
+            )
+
+        super().__init__(component_id)
+
+    def get_id_parts(self):
+        return (
+            self.title_field,
+            self.description_field or "",
+            self.base_url or "",
+            self.path_field or "",
+        )
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "title_field": self.title_field,
+            "description_field": self.description_field,
+            "base_url": self.base_url,
+            "path_field": self.path_field,
+            "site_name": None if self.site_name is None else str(self.site_name),
         }

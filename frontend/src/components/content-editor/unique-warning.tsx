@@ -10,6 +10,7 @@ import { type Control, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { PiWarningBold } from "react-icons/pi";
 
+import { useDebounced } from "@/hooks/use-debounced";
 import { useHttp } from "@/hooks/use-http";
 import type { Model, UniqueSet } from "@/types";
 
@@ -51,7 +52,7 @@ export function UniqueWarning({ model, name }: { model: Model; name: string }) {
     useContext(ResourcePathContext) ?? `/content/${model.label}`;
   const value = checkValue(useWatch({ name }));
   const id = useWatch({ name: "id" }) as string | undefined;
-  const debounced = useDebounced(value);
+  const debounced = useDebounced(value, UNIQUE_CHECK_DEBOUNCE_MS);
 
   const { data } = useQuery({
     enabled: debounced !== "",
@@ -73,21 +74,6 @@ export function UniqueWarning({ model, name }: { model: Model; name: string }) {
   }
 
   return <Warning model={model} name={name} data={data} />;
-}
-
-function useDebounced<T>(value: T): T {
-  const [debounced, setDebounced] = useState(value);
-
-  useEffect(() => {
-    const timeout = setTimeout(
-      () => setDebounced(value),
-      UNIQUE_CHECK_DEBOUNCE_MS,
-    );
-
-    return () => clearTimeout(timeout);
-  }, [value]);
-
-  return debounced;
 }
 
 // The fields of each set that render a warning, per form: a set's warning
@@ -174,7 +160,7 @@ export function UniqueSetWarning({
     }
   });
   const serialized = JSON.stringify(values);
-  const debounced = useDebounced(serialized);
+  const debounced = useDebounced(serialized, UNIQUE_CHECK_DEBOUNCE_MS);
 
   // The field of the set edited last.
   const [lastEdited, setLastEdited] = useState<string | null>(null);

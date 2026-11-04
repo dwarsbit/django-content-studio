@@ -67,6 +67,10 @@ These widgets are not used by default but are there to choose:
   `TagWidget`, the order is kept and the same value can appear twice.
 - **`RatingWidget`**: stars for a small integer, such as a review score.
   Clicking the current star again clears an optional field.
+- **`MapWidget`**: a location picked on a map, for a `JSONField` or a pair
+  of number fields. See [Maps](#maps).
+- **`EmbedWidget`**: the URL of a video, song or post on YouTube, Vimeo,
+  Spotify and other sites, with a preview. See [Embeds](#embeds).
 
 The `JSONWidget`, the default for a `JSONField`, is a JSON editor. JSON
 that does not parse is underlined and keeps the form from saving.
@@ -180,6 +184,9 @@ an error when the studio is defined, not when an editor opens the page.
   `"html"`, `"javascript"` or `"json"`. Without it, the code is plain
   text.
 - **`RatingWidget(max_value=5)`**: the number of stars, from 2 to 10.
+- **`MapWidget(lng_field=None, center=None, zoom=None)`**: see
+  [Maps](#maps).
+- **`EmbedWidget(placeholder=None)`**: see [Embeds](#embeds).
 
 :::note
 Options guide editors; they do not validate. To enforce a range or a
@@ -244,6 +251,71 @@ python manage.py content_studio_clear_uploads
 
 It removes uploads older than a day; an editor's upload is valid for that
 long.
+
+## Maps
+
+`MapWidget` picks a location on a map. Editors click the map to place the
+pin, drag it, search for an address, or type the latitude and longitude in
+the boxes under the map. The map is loaded only on pages that have a map
+field.
+
+The location is stored in one of two ways:
+
+- In a `JSONField`, as `{"lat": 52.37, "lng": 4.89}`. Give the field
+  `null=True` so an optional location can be cleared.
+- In two number fields (`FloatField` or `DecimalField`): put the widget on
+  the latitude field and name the longitude field with `lng_field`. The
+  widget fills both. Leave the longitude field out of the form, or it shows
+  as a plain number box too.
+
+```python
+# blog/models.py
+class Venue(models.Model):
+    location = models.JSONField(null=True, blank=True)
+
+
+class Shop(models.Model):
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
+
+# blog/admin.py
+Field("location", widget=widgets.MapWidget(center=(52.37, 4.89), zoom=10)),
+Field("latitude", widget=widgets.MapWidget(lng_field="longitude")),
+```
+
+- **`lng_field`**: the number field holding the longitude, when the widget
+  is on a latitude field.
+- **`center`** and **`zoom`**: where the map starts while the field is
+  empty, as a `(latitude, longitude)` pair and a zoom from 0 (the world) to
+  19 (a street). By default, the map shows the world.
+
+The map shows [OpenStreetMap](https://www.openstreetmap.org) tiles and
+searches addresses with its Nominatim service, both from the editor's
+browser; their usage policies allow this for an admin's occasional use.
+To use your own tile server or geocoder, or to leave the search out, set
+[`MAP_TILE_URL`, `MAP_TILE_ATTRIBUTION`](/docs/settings#map_tiles) and
+[`MAP_GEOCODER_URL`](/docs/settings#map_geocoder_url). System check
+`content_studio.E035` reports a `MapWidget` on a field it cannot edit.
+
+## Embeds
+
+`EmbedWidget` takes the URL of a video, song or post on a site that offers
+[oEmbed](https://oembed.com), such as YouTube, Vimeo, Spotify, SoundCloud,
+TikTok, Flickr, Bluesky and X. The admin shows a preview with the title and
+thumbnail, which the server fetches from the site; the value stays the URL
+as typed, for your templates to embed. A URL on another site is saved too,
+without a preview.
+
+```python
+# blog/admin.py
+Field("video_url", widget=widgets.EmbedWidget),
+```
+
+The sites are listed in
+[`OEMBED_PROVIDERS`](/docs/settings#oembed_providers), which you can
+replace with your own, such as a self-hosted PeerTube. Previews are cached
+for a day.
 
 ## Cover images
 

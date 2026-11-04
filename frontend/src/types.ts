@@ -383,6 +383,44 @@ export interface RatingWidgetOptions {
   max_value?: number;
 }
 
+export interface MapWidgetOptions {
+  // On a latitude number field: the number field holding the
+  // longitude, which the widget fills in too. Unset on a JSONField,
+  // which holds {lat, lng}.
+  lng_field?: string | null;
+  // Where the map starts while the field is empty: [lat, lng] and the
+  // zoom (0 the world, 19 a street).
+  center?: [number, number] | null;
+  zoom?: number | null;
+}
+
+// The map tiles and the address search of MapWidget.
+export interface MapSettings {
+  tile_url: string;
+  tile_attribution: string;
+  // A Nominatim search URL; null leaves the search box out.
+  geocoder_url: string | null;
+}
+
+// A location, as MapWidget stores it in a JSONField.
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+// The preview of an embedded URL, from /oembed.
+export interface EmbedPreview {
+  provider: string;
+  type: string | null;
+  title: string | null;
+  author: string | null;
+  author_url: string | null;
+  thumbnail: string | null;
+  thumbnail_width: number | null;
+  thumbnail_height: number | null;
+  url: string;
+}
+
 export interface DurationWidgetOptions {
   show_days?: boolean;
   show_seconds?: boolean;
@@ -520,7 +558,8 @@ export interface FormField {
     | "Title"
     | "Subtitle"
     | "Text"
-    | "Callout";
+    | "Callout"
+    | "SEOPreview";
   copy: boolean;
   icon: string;
   title?: string | null;
@@ -533,6 +572,13 @@ export interface FormField {
   per_object?: boolean;
   // Callout: its variant (the color and default icon).
   variant?: CalloutVariant;
+  // SEOPreview: the form fields it reads, and the page's URL (base_url
+  // joined with the path field's value) and site name.
+  title_field?: string | null;
+  description_field?: string | null;
+  base_url?: string | null;
+  path_field?: string | null;
+  site_name?: string | null;
 }
 
 export type CalloutVariant = "info" | "success" | "warning" | "danger";
@@ -608,6 +654,7 @@ export enum FieldWidget {
   DateWidget = "DateWidget",
   DurationWidget = "DurationWidget",
   EmailWidget = "EmailWidget",
+  EmbedWidget = "EmbedWidget",
   FileWidget = "FileWidget",
   ForeignKeyWidget = "ForeignKeyWidget",
   IconPickerWidget = "IconPickerWidget",
@@ -618,6 +665,7 @@ export enum FieldWidget {
   ListWidget = "ListWidget",
   MarkdownWidget = "MarkdownWidget",
   ManyToManyWidget = "ManyToManyWidget",
+  MapWidget = "MapWidget",
   MediaWidget = "MediaWidget",
   CoverImageWidget = "CoverImageWidget",
   ManyMediaWidget = "ManyMediaWidget",

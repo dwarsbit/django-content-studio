@@ -9,6 +9,7 @@ __all__ = [
     "DateWidget",
     "DurationWidget",
     "EmailWidget",
+    "EmbedWidget",
     "FileWidget",
     "ForeignKeyWidget",
     "IconPickerWidget",
@@ -19,6 +20,7 @@ __all__ = [
     "ListWidget",
     "ManyMediaWidget",
     "ManyToManyWidget",
+    "MapWidget",
     "MarkdownWidget",
     "MediaWidget",
     "MultiSelectWidget",
@@ -369,6 +371,89 @@ class PhoneWidget(PlaceholderWidget):
     A phone number input: the phone keyboard on mobile devices. The
     number is kept as typed.
     """
+
+
+class EmbedWidget(PlaceholderWidget):
+    """
+    A URL input for a video, song or post on an oEmbed provider, such
+    as YouTube, Vimeo, Spotify or SoundCloud. The admin shows a preview
+    (the title and thumbnail) that the server fetches from the
+    provider; the value stays the URL as typed. The providers are set
+    with the OEMBED_PROVIDERS setting.
+    """
+
+
+# The zoom levels of a web map: 0 shows the world, 19 a street.
+MAP_MAX_ZOOM = 19
+
+
+def check_coordinates(owner: str, name: str, value):
+    """A (latitude, longitude) pair, as a list or tuple of two numbers."""
+    if (
+        isinstance(value, (str, bytes))
+        or not isinstance(value, (list, tuple))
+        or len(value) != 2
+    ):
+        raise ValueError(
+            f"{owner} {name} must be a (latitude, longitude) pair; got {value!r}."
+        )
+
+    lat, lng = value
+    check_number(owner, name, lat)
+    check_number(owner, name, lng)
+
+    if not -90 <= lat <= 90 or not -180 <= lng <= 180:
+        raise ValueError(
+            f"{owner} {name} must be a latitude from -90 to 90 and a "
+            f"longitude from -180 to 180; got {value!r}."
+        )
+
+
+class MapWidget(BaseWidget):
+    """
+    A location picked on a map: click or drag the pin, search for an
+    address, or type the latitude and longitude. On a JSONField the
+    value is {"lat": 52.37, "lng": 4.89}. On a number field holding the
+    latitude, lng_field names the number field holding the longitude,
+    which the widget fills in too.
+
+    center and zoom are where the map starts while the field is empty:
+    the world by default, or your country or city.
+    """
+
+    def __init__(self, *, lng_field: str = None, center=None, zoom: int = None):
+        if lng_field is not None and (not isinstance(lng_field, str) or not lng_field):
+            raise TypeError(
+                f"MapWidget lng_field must be a field name; got {lng_field!r}."
+            )
+
+        if center is not None:
+            check_coordinates("MapWidget", "center", center)
+
+        if zoom is not None and (
+            isinstance(zoom, bool)
+            or not isinstance(zoom, int)
+            or not 0 <= zoom <= MAP_MAX_ZOOM
+        ):
+            raise ValueError(
+                f"MapWidget zoom must be an int from 0 to {MAP_MAX_ZOOM}; "
+                f"got {zoom!r}."
+            )
+
+        self.lng_field = lng_field
+        self.center = center
+        self.zoom = zoom
+
+    def get_options(self):
+        return {
+            "lng_field": self.lng_field,
+            "center": (
+                None
+                if self.center is None
+                else [as_number(self.center[0]), as_number(self.center[1])]
+            ),
+            "zoom": self.zoom,
+        }
 
 
 class PasswordWidget(PlaceholderWidget):
