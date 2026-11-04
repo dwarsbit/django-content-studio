@@ -52,6 +52,8 @@
 - Fixed: a list filter on a `DurationField` answered 500; the value is now
   parsed as a duration (`02:30:00`, seconds or ISO 8601), and 400 when it
   is not one.
+- Fixed: asking the widget data endpoint for a `SpacingWidget` answered
+  500; it is now 404 like an unknown widget.
 
 ## 1.8.0 (2026-11-04)
 

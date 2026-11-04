@@ -110,6 +110,17 @@ def test_widget_data_endpoint_rejects_unknown_widgets():
         viewset.get(request, widget_id="00000000-0000-0000-0000-000000000000")
 
 
+def test_widget_data_endpoint_rejects_widgets_without_data():
+    """A SpacingWidget is layout only; asking for its data is 404, not 500."""
+    spacing = SpacingWidget()
+    viewset = DashboardViewSet()
+    viewset.dashboard = Dashboard(widgets=[spacing])
+    request = Request(APIRequestFactory().get("/"), parsers=[JSONParser()])
+
+    with pytest.raises(NotFound):
+        viewset.get(request, widget_id=str(spacing.widget_id))
+
+
 def _log(user, model, repr_):
     return LogEntry.objects.create(
         user=user,
