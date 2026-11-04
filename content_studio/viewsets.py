@@ -338,10 +338,17 @@ class BaseModelViewSet(ModelViewSet):
         Delete a soft-deleted object permanently, bypassing the trash.
         Gated by delete permission on the object.
         """
-        if not self._admin_model.soft_delete:
+        soft_delete_field = self._admin_model.soft_delete
+
+        if not soft_delete_field:
             raise NotFound("This model has no trash.")
 
         instance = self.get_object()
+
+        if getattr(instance, soft_delete_field) is None:
+            # Only the trash skips it: a live object goes through the
+            # regular delete, which moves it to the trash first.
+            raise ValidationError("The object is not in the trash.")
 
         self._delete(instance)
 

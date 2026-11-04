@@ -47,6 +47,8 @@
   exports now write a property's value too.
 - Fixed: the system check `W003` warned about a `MultiSelectWidget` on a
   `MultipleChoiceField`, although the field's options are its choices.
+- Fixed: `DELETE .../<id>/destroy` deleted an object permanently even when
+  it was not in the trash; it now answers 400 for a live object.
 
 ## 1.8.0 (2026-11-04)
 

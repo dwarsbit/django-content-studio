@@ -120,6 +120,15 @@ class SoftDeleteTests(AuthenticatedTestCase):
         response = self.client.get("/api/content/testapp.note/trash")
         self.assertEqual(response.json()["pagination"]["count"], 0)
 
+    def test_destroy_refuses_an_object_that_is_not_in_the_trash(self):
+        note = Note.objects.create(title="one")
+
+        response = self.client.delete(f"/api/content/testapp.note/{note.pk}/destroy")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("not in the trash", str(response.json()))
+        self.assertTrue(Note.objects.filter(pk=note.pk).exists())
+
     def test_trash_actions_require_permissions(self):
         note = Note.objects.create(title="one")
         self.client.delete(f"/api/content/testapp.note/{note.pk}")
@@ -142,7 +151,8 @@ class SoftDeleteTests(AuthenticatedTestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        # Permanent deletion needs delete permission.
+        # Permanent deletion needs delete permission (and a trashed object).
+        self.client.delete(f"/api/content/testapp.note/{note.pk}")
         response = self.client_for(editor).delete(
             f"/api/content/testapp.note/{note.pk}/destroy"
         )
