@@ -8,6 +8,9 @@
   endpoints all start from it. The [access control](/docs/permissions)
   docs said per-object `has_view_permission` hid objects from lists, which
   it never did; it guards single objects, and the docs now say so.
+
+### Fixes
+
 - Fixed: a list filter with one value for a `range` lookup or an invalid
   regular expression answered 500; it is now a 400 like any other invalid
   filter value.
@@ -95,6 +98,9 @@
   engines would cut off.
 - `ContentListWidget` rows can be plain rows without a model and ID and
   show a `value`, and the widget takes a `view_all` link.
+
+### Fixes
+
 - With a manifest static files storage, such as Django's
   `ManifestStaticFilesStorage` or WhiteNoise's
   `CompressedManifestStaticFilesStorage`, and `DEBUG = False`, every
