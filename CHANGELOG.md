@@ -41,6 +41,10 @@
 - Fixed: a list filter with one value for a `range` lookup or an invalid
   regular expression answered 500; it is now a 400 like any other invalid
   filter value.
+- Fixed: the system checks `E006`, `E010`, `E015` and `E022` rejected a
+  model `@property` named in `table_display`, `edit_main`, `edit_sidebar`,
+  `readonly_fields` or `export_fields`, although the admin shows it there;
+  exports now write a property's value too.
 
 ## 1.8.0 (2026-11-04)
 

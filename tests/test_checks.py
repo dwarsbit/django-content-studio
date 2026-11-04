@@ -725,3 +725,46 @@ def test_malformed_upload_settings_surface_as_system_error(overrides):
     assert [m.id for m in messages if m.id == "content_studio.E014"] == [
         "content_studio.E014"
     ]
+
+
+# --- model properties are accepted where the studio names them ---------------
+
+
+def test_model_property_is_accepted_as_column_edit_field_readonly_and_export():
+    class WithProperty(ModelStudio):
+        table_display = ["title", "word_count"]
+        export_fields = ["title", "word_count"]
+        edit_main = ["title", "word_count"]
+        readonly_fields = ["word_count"]
+
+    with swapped_article_studio(WithProperty):
+        messages = check_content_studio()
+
+    ids = {m.id for m in messages}
+
+    assert not ids & {
+        "content_studio.E006",
+        "content_studio.E010",
+        "content_studio.E015",
+        "content_studio.E022",
+    }
+
+
+def test_unknown_name_is_still_rejected_everywhere():
+    class Typo(ModelStudio):
+        table_display = ["title", "wordcount"]
+        export_fields = ["title", "wordcount"]
+        edit_main = [FormSet(fields=["title", "wordcount"])]
+        readonly_fields = ["wordcount"]
+
+    with swapped_article_studio(Typo):
+        messages = check_content_studio()
+
+    ids = {m.id for m in messages}
+
+    assert ids >= {
+        "content_studio.E006",
+        "content_studio.E010",
+        "content_studio.E015",
+        "content_studio.E022",
+    }

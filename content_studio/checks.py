@@ -90,7 +90,9 @@ def table_column_errors(studio) -> list[tuple[str, str]]:
         if model is None:
             return
 
-        model_field_names = {field.name for field in model._meta.get_fields()}
+        model_field_names = {
+            field.name for field in model._meta.get_fields()
+        } | model_property_names(model)
         seen = set()
 
         for entry in resolve_table_display(owner):
@@ -132,7 +134,7 @@ def table_column_errors(studio) -> list[tuple[str, str]]:
                         "content_studio.E006",
                         f"{config_name(owner)}.table_display column "
                         f"{column.field!r} does not resolve to a model field, "
-                        "__str__ or a method on the studio.",
+                        "a model property, __str__ or a method on the studio.",
                     )
                 )
 
@@ -830,6 +832,19 @@ def model_field_names(model) -> set[str]:
     }
 
 
+def model_property_names(model) -> set[str]:
+    """
+    The names of the model's properties: the admin shows a property
+    where the studio names it, as a table column, an edit page field,
+    a read-only field or an export column.
+    """
+    return {
+        name
+        for name in dir(model)
+        if not name.startswith("_") and isinstance(getattr(model, name, None), property)
+    }
+
+
 def iter_edit_fields(studio):
     """
     Yield the Field objects declared in a model studio's edit_main and
@@ -879,7 +894,7 @@ def edit_form_config_errors(studio) -> list[tuple[str, str]]:
         return []
 
     errors = []
-    field_names = model_field_names(model)
+    field_names = model_field_names(model) | model_property_names(model)
 
     for field in iter_edit_fields(studio):
         if field.name not in field_names:
@@ -1040,7 +1055,7 @@ def readonly_fields_errors(studio) -> list[tuple[str, str]]:
         if model is None:
             return
 
-        field_names = model_field_names(model)
+        field_names = model_field_names(model) | model_property_names(model)
 
         for name in getattr(owner, "readonly_fields", None) or []:
             if not isinstance(name, str) or name not in field_names:
@@ -1048,7 +1063,7 @@ def readonly_fields_errors(studio) -> list[tuple[str, str]]:
                     (
                         "content_studio.E015",
                         f"{config_name(owner)}.readonly_fields entry "
-                        f"{name!r} is not a field of "
+                        f"{name!r} is not a field or property of "
                         f"{model._meta.label_lower}.",
                     )
                 )
@@ -1248,7 +1263,11 @@ def export_errors(studio) -> list[tuple[str, str]]:
             )
         seen.add(column.field)
 
-        if column.field == "__str__" or is_computed_column(studio, column):
+        if (
+            column.field == "__str__"
+            or is_computed_column(studio, column)
+            or column.field in model_property_names(model)
+        ):
             continue
 
         try:
@@ -1261,8 +1280,8 @@ def export_errors(studio) -> list[tuple[str, str]]:
                 (
                     "content_studio.E022",
                     f"{name}.export_fields entry {column.field!r} does not "
-                    "resolve to a model field, __str__ or a method on the "
-                    "studio.",
+                    "resolve to a model field, a model property, __str__ or "
+                    "a method on the studio.",
                 )
             )
 

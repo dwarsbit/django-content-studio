@@ -178,7 +178,13 @@ def get_value(studio, column: TableColumn, obj, request):
     if field is not None:
         return get_field_value(obj, field)
 
-    return getattr(studio, column.field)(obj, request)
+    method = getattr(studio, column.field, None)
+
+    if callable(method):
+        return method(obj, request)
+
+    # A model property named as a column.
+    return getattr(obj, column.field)
 
 
 def to_cell(value, native: bool = False):
