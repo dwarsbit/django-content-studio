@@ -98,7 +98,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E002` | `list_views` with an unknown view name. |
 | `content_studio.E003` | Two extensions with the same ID. Pass an `extension_id` to tell them apart. |
 | `content_studio.E004` | Two dashboard widgets with the same ID, on the start page and the [dashboard pages](/docs/extensions#dashboardpage) together. Pass a `widget_id` to tell them apart. |
-| `content_studio.E005` | Two components with the same ID. Pass a `component_id` to tell them apart. |
+| `content_studio.E005` | Two components with the same ID on one studio, or on an inline and the inlined model's own studio. Pass a `component_id` to tell them apart; the same component class may serve several studios. |
 | `content_studio.E006` | `table_display` entries that are not field names or `TableColumn` objects, duplicate columns, columns that are not a model field, a model property, `__str__` or a studio method, and formats that are not `content_studio.formats` classes or instances. Inlines are checked too. |
 | `content_studio.E007` | Bulk actions: an `actions` list with unknown or duplicate names, a `@bulk_action` that replaces the built-in delete or export, `"export"` in `actions` without export, or an unknown permission. |
 | `content_studio.E008` | `soft_delete` naming an unknown field, or a field that is not a nullable date or date and time. |

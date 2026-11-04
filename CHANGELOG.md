@@ -66,6 +66,10 @@
   model has no (or more than one) foreign key to the parent and no
   `fk_name`, crashed at startup before the system checks could run. The
   inline is now skipped and reported by the checks (`E038`, `E012`).
+- Fixed: the system check `E005` rejected one `Button` (or other
+  component) class used on two studios, although components are looked
+  up per studio. IDs now only need to be unique within a studio, or within
+  an inline together with the inlined model's own studio.
 
 ## 1.8.0 (2026-11-04)
 

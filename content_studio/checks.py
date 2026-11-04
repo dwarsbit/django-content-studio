@@ -441,25 +441,38 @@ def duplicate_id_errors(site) -> list[tuple[str, str]]:
             )
         seen[key] = widget.__class__.__name__
 
-    seen = {}
+    # Components are looked up per studio: a model studio serves its
+    # own, an inline serves its own and falls back on the studio of the
+    # inlined model. IDs must be unique within each of those scopes;
+    # the same component class may serve several studios.
     for model, studio in site._registry.items():
-        components = list(iter_components(studio))
-        for inline in studio.inlines:
-            components.extend(iter_components(inline))
+        scopes = [(studio.__class__.__name__, list(iter_components(studio)))]
 
-        for component in components:
-            key = str(component.component_id)
-            if key in seen:
-                errors.append(
-                    (
-                        "content_studio.E005",
-                        f"Duplicate component ID {key}: "
-                        f"{seen[key]} and {component.__class__.__name__} "
-                        f"in {studio.__class__.__name__}. "
-                        "Pass component_id to disambiguate.",
+        for inline in studio.inlines:
+            components = list(iter_components(inline))
+            inline_model_studio = site._registry.get(getattr(inline, "model", None))
+
+            if inline_model_studio is not None:
+                components.extend(iter_components(inline_model_studio))
+
+            scopes.append((inline.__name__, components))
+
+        for scope, components in scopes:
+            seen = {}
+
+            for component in components:
+                key = str(component.component_id)
+                if key in seen:
+                    errors.append(
+                        (
+                            "content_studio.E005",
+                            f"Duplicate component ID {key}: "
+                            f"{seen[key]} and {component.__class__.__name__} "
+                            f"in {scope}. "
+                            "Pass component_id to disambiguate.",
+                        )
                     )
-                )
-            seen[key] = component.__class__.__name__
+                seen[key] = component.__class__.__name__
 
     return errors
 

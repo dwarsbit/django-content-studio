@@ -4,6 +4,8 @@ and inlines), the inline permissions in the admin payload, and
 get_created_result (shown once after creating an object).
 """
 
+import uuid
+
 import pytest
 from django.contrib.auth.models import Permission, User
 from rest_framework.test import APIClient, APIRequestFactory
@@ -164,13 +166,46 @@ def test_header_entries_must_be_components(monkeypatch):
     assert len(checked(monkeypatch, ReviewInline, ["text"])) == 1
 
 
+def e005():
+    return [m for m in check_content_studio() if m.id == "content_studio.E005"]
+
+
 def test_duplicate_ids_in_inline_headers_are_reported(monkeypatch):
+    monkeypatch.setattr(ReviewInline, "edit_header", [ArchiveButton(), ArchiveButton()])
+
+    (error,) = e005()
+
+    assert "ReviewInline" in str(error)
+
+
+def test_the_same_component_may_serve_a_studio_and_its_inline(monkeypatch):
+    """Components are looked up per studio, so one button class can
+    be on the article's header and on the review inline's."""
     monkeypatch.setattr(ArticleAdmin, "edit_header", [ArchiveButton()])
     monkeypatch.setattr(ReviewInline, "edit_header", [ArchiveButton()])
 
-    assert [m.id for m in check_content_studio() if m.id == "content_studio.E005"] == [
-        "content_studio.E005"
-    ]
+    assert e005() == []
+
+
+def test_an_inline_and_the_inlined_models_studio_share_a_scope(monkeypatch):
+    """An inline falls back on the inlined model's own studio for its
+    components, so their IDs must differ."""
+
+    class ReviewAdmin(ModelStudio):
+        edit_header = [ArchiveButton()]
+
+    monkeypatch.setattr(ReviewInline, "edit_header", [ArchiveButton()])
+    monkeypatch.setitem(admin_site._registry, Review, ReviewAdmin(Review, admin_site))
+
+    (error,) = e005()
+
+    assert "ReviewInline" in str(error)
+
+    monkeypatch.setattr(
+        ReviewInline, "edit_header", [ArchiveButton(component_id=uuid.uuid4())]
+    )
+
+    assert e005() == []
 
 
 def test_inline_studios_find_their_header_components(headers):
