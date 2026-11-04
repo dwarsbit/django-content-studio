@@ -20,7 +20,11 @@
     "download": "Downloaden",
     "done": "Klaar",
     "copied_to_clipboard": "Gekopieerd naar het klembord!",
-    "close": "Sluiten"
+    "close": "Sluiten",
+    "previous_month": "Vorige maand",
+    "next_month": "Volgende maand",
+    "previous_year": "Vorig jaar",
+    "next_year": "Volgend jaar"
   },
   "app": {
     "copied_to_clipboard": "Gekopieerd naar klembord",

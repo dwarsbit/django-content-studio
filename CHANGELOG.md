@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.11.0 (unreleased)
+
+- **Year stepper in the date pickers.** The calendar of the date, date and
+  time, and date range pickers has buttons to go a year back or forward
+  next to the month buttons, so a date a few years away is a couple of
+  clicks instead of dozens.
+
 ## 1.10.0 (2026-11-04)
 
 - **`ModelStudio.get_queryset(request)`.** Override it to narrow the objects
