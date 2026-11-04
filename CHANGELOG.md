@@ -38,6 +38,9 @@
   engines would cut off.
 - `ContentListWidget` rows can be plain rows without a model and ID and
   show a `value`, and the widget takes a `view_all` link.
+- Fixed: a list filter with one value for a `range` lookup or an invalid
+  regular expression answered 500; it is now a 400 like any other invalid
+  filter value.
 
 ## 1.8.0 (2026-11-04)
 
