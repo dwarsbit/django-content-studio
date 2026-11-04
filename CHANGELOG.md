@@ -1,5 +1,64 @@
 # Changelog
 
+## 1.10.0 (unreleased)
+
+- **`ModelStudio.get_queryset(request)`.** Override it to narrow the objects
+  an editor sees: the list, the trash, exports, bulk actions, the site
+  search, relation pickers, saves of relations and the single-object
+  endpoints all start from it. The [access control](/docs/permissions)
+  docs said per-object `has_view_permission` hid objects from lists, which
+  it never did; it guards single objects, and the docs now say so.
+- Fixed: a list filter with one value for a `range` lookup or an invalid
+  regular expression answered 500; it is now a 400 like any other invalid
+  filter value.
+- Fixed: the system checks `E006`, `E010`, `E015` and `E022` rejected a
+  model `@property` named in `table_display`, `edit_main`, `edit_sidebar`,
+  `readonly_fields` or `export_fields`, although the admin shows it there;
+  exports now write a property's value too.
+- Fixed: the system check `W003` warned about a `MultiSelectWidget` on a
+  `MultipleChoiceField`, although the field's options are its choices.
+- Fixed: `DELETE .../<id>/destroy` deleted an object permanently even when
+  it was not in the trash; it now answers 400 for a live object.
+- Fixed: a list filter on a `DurationField` answered 500; the value is now
+  parsed as a duration (`02:30:00`, seconds or ISO 8601), and 400 when it
+  is not one.
+- Fixed: asking the widget data endpoint for a `SpacingWidget` answered
+  500; it is now 404 like an unknown widget.
+- Fixed: saving an object that violates a unique constraint the form
+  cannot check, such as a conditional constraint or `unique_together` with
+  the tenant field, answered 500; it is now a 400 that names the conflict.
+- Fixed: the media library accepted any JSON value as an item's `tags`
+  (a string, an object); it now requires a list of strings.
+- Fixed: an inline whose model points at its parent with a
+  `OneToOneField` failed at startup (or, with `fk_name`, the `E012` check
+  refused it); one-to-one fields are now accepted like foreign keys.
+- Fixed: inlining the same model twice on one studio, or an inline whose
+  model has no (or more than one) foreign key to the parent and no
+  `fk_name`, crashed at startup before the system checks could run. The
+  inline is now skipped and reported by the checks (`E038`, `E012`).
+- Fixed: the system check `E005` rejected one `Button` (or other
+  component) class used on two studios, although components are looked
+  up per studio. IDs now only need to be unique within a studio, or within
+  an inline together with the inlined model's own studio.
+- Fixed: a model with two foreign keys to the tenant model made
+  `/api/discover` and every request on the model answer 500; the new
+  system check `E039` reports it at startup.
+- Fixed: the demo's example `get_thumbnail` hook lacked the `size`
+  argument the site passes, so copying it raised a `TypeError`.
+- Fixed: moving an object whose `reorder_field` is unique (alone or with
+  other fields, such as `unique_together` with the parent) answered 500
+  with an integrity error; the keys are now rewritten in two passes.
+- Fixed: the command palette offered "go to", "create" and "trash" entries
+  for models that are only inlined, which led to a list page that does not
+  exist; `/api/discover` now marks such models as `inline_only`.
+- Fixed: an inline whose foreign key to the parent is named `page` (or
+  another reserved query parameter) could not list its rows: the
+  pagination parameter was read as a second parent.
+- Fixed: the live duplicate check on the create form answered 403 for an
+  editor with add permission but no view permission.
+
+### Fixes
+
 ## 1.9.0 (2026-11-04)
 
 - **Analytics.** Show your website's visitor statistics in the admin, from
@@ -38,63 +97,6 @@
   engines would cut off.
 - `ContentListWidget` rows can be plain rows without a model and ID and
   show a `value`, and the widget takes a `view_all` link.
-- Fixed: a list filter with one value for a `range` lookup or an invalid
-  regular expression answered 500; it is now a 400 like any other invalid
-  filter value.
-- Fixed: the system checks `E006`, `E010`, `E015` and `E022` rejected a
-  model `@property` named in `table_display`, `edit_main`, `edit_sidebar`,
-  `readonly_fields` or `export_fields`, although the admin shows it there;
-  exports now write a property's value too.
-- Fixed: the system check `W003` warned about a `MultiSelectWidget` on a
-  `MultipleChoiceField`, although the field's options are its choices.
-- Fixed: `DELETE .../<id>/destroy` deleted an object permanently even when
-  it was not in the trash; it now answers 400 for a live object.
-- Fixed: a list filter on a `DurationField` answered 500; the value is now
-  parsed as a duration (`02:30:00`, seconds or ISO 8601), and 400 when it
-  is not one.
-- Fixed: asking the widget data endpoint for a `SpacingWidget` answered
-  500; it is now 404 like an unknown widget.
-- Fixed: saving an object that violates a unique constraint the form
-  cannot check, such as a conditional constraint or `unique_together` with
-  the tenant field, answered 500; it is now a 400 that names the conflict.
-- Fixed: the media library accepted any JSON value as an item's `tags`
-  (a string, an object); it now requires a list of strings.
-- Fixed: an inline whose model points at its parent with a
-  `OneToOneField` failed at startup (or, with `fk_name`, the `E012` check
-  refused it); one-to-one fields are now accepted like foreign keys.
-- Fixed: inlining the same model twice on one studio, or an inline whose
-  model has no (or more than one) foreign key to the parent and no
-  `fk_name`, crashed at startup before the system checks could run. The
-  inline is now skipped and reported by the checks (`E038`, `E012`).
-- Fixed: the system check `E005` rejected one `Button` (or other
-  component) class used on two studios, although components are looked
-  up per studio. IDs now only need to be unique within a studio, or within
-  an inline together with the inlined model's own studio.
-- Fixed: a model with two foreign keys to the tenant model made
-  `/api/discover` and every request on the model answer 500; the new
-  system check `E039` reports it at startup.
-- Fixed: the demo's example `get_thumbnail` hook lacked the `size`
-  argument the site passes, so copying it raised a `TypeError`.
-- **`ModelStudio.get_queryset(request)`.** Override it to narrow the objects
-  an editor sees: the list, the trash, exports, bulk actions, the site
-  search, relation pickers, saves of relations and the single-object
-  endpoints all start from it. The [access control](/docs/permissions)
-  docs said per-object `has_view_permission` hid objects from lists, which
-  it never did; it guards single objects, and the docs now say so.
-- Fixed: moving an object whose `reorder_field` is unique (alone or with
-  other fields, such as `unique_together` with the parent) answered 500
-  with an integrity error; the keys are now rewritten in two passes.
-- Fixed: the command palette offered "go to", "create" and "trash" entries
-  for models that are only inlined, which led to a list page that does not
-  exist; `/api/discover` now marks such models as `inline_only`.
-- Fixed: an inline whose foreign key to the parent is named `page` (or
-  another reserved query parameter) could not list its rows: the
-  pagination parameter was read as a second parent.
-- Fixed: the live duplicate check on the create form answered 403 for an
-  editor with add permission but no view permission.
-
-### Fixes
-
 - With a manifest static files storage, such as Django's
   `ManifestStaticFilesStorage` or WhiteNoise's
   `CompressedManifestStaticFilesStorage`, and `DEBUG = False`, every
