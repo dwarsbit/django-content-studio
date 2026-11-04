@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.9.0 (unreleased)
+## 1.9.0 (2026-11-04)
 
 - **Analytics.** Show your website's visitor statistics in the admin, from
   an analytics tool through a provider. `UmamiProvider` reads Umami Cloud
