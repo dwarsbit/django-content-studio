@@ -73,6 +73,8 @@
 - Fixed: a model with two foreign keys to the tenant model made
   `/api/discover` and every request on the model answer 500; the new
   system check `E039` reports it at startup.
+- Fixed: the demo's example `get_thumbnail` hook lacked the `size`
+  argument the site passes, so copying it raised a `TypeError`.
 
 ## 1.8.0 (2026-11-04)
 
