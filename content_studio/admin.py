@@ -249,6 +249,16 @@ class BaseStudio(Generic[T]):
             before=before,
         )
 
+    def get_queryset(self, request: HttpRequest):
+        """
+        The objects the admin works with for this request: the list,
+        the trash, exports, bulk actions, the site search, relation
+        pickers and single-object endpoints all start from it. Override
+        it to narrow the objects an editor sees, such as to their own.
+        Tenant scoping and the trash filter are applied on top.
+        """
+        return self.model._default_manager.all()
+
     def _has_model_perm(self, request: HttpRequest, action: str) -> bool:
         opts = self.model._meta
         return request.user.has_perm(f"{opts.app_label}.{action}_{opts.model_name}")

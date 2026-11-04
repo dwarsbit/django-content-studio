@@ -48,6 +48,22 @@ def represent_related(value, request):
     return data
 
 
+def studio_queryset(request, model, queryset):
+    """
+    The queryset of model's registered studio for the request, or
+    queryset when the model is not registered: related objects can only
+    be picked from what the editor may see.
+    """
+    studio = cs_settings.ADMIN_SITE._registry.get(model)
+
+    if studio is None:
+        return queryset
+
+    # Narrow the field's own queryset (limit_choices_to) to the
+    # studio's: both apply.
+    return queryset.filter(pk__in=studio.get_queryset(request).values("pk"))
+
+
 class ContentRelatedField(RelatedField):
 
     def to_representation(self, value):
@@ -64,7 +80,9 @@ class ContentRelatedField(RelatedField):
         if request is None or queryset is None:
             return queryset
 
-        return get_tenant_scoped_queryset(request, queryset.model, queryset)
+        return get_tenant_scoped_queryset(
+            request, queryset.model, studio_queryset(request, queryset.model, queryset)
+        )
 
     def to_internal_value(self, data):
         from django.core.exceptions import ObjectDoesNotExist
@@ -77,7 +95,62 @@ class ContentRelatedField(RelatedField):
                 "A related item must be given as {'id': ...}."
             )
         except ObjectDoesNotExist:
+            current = self._current_value(data["id"])
+
+            if current is not None:
+                return current
+
             raise serializers.ValidationError("Unknown related item.")
+
+    def _current_value(self, pk):
+        """
+        The edited object's current related object with the given pk,
+        if any: a relation the editor could not pick (outside the
+        studio's queryset) is kept when the form sends it unchanged.
+        Tenant scoping is not relaxed: the object is matched among the
+        request's tenant.
+        """
+        # A many-to-many field wraps this field: its source names the
+        # relation and its parent is the serializer.
+        field = self
+        source = None
+
+        while field is not None and not isinstance(field, serializers.Serializer):
+            if not source and field.source and field.source != "*":
+                source = field.source
+            field = field.parent
+
+        serializer = field
+        instance = getattr(serializer, "instance", None)
+
+        if instance is None or not source or isinstance(instance, list):
+            return None
+
+        try:
+            current = getattr(instance, source)
+        except Exception:
+            return None
+
+        if isinstance(current, models.Manager):
+            current = current.all()
+        elif current is None:
+            return None
+        else:
+            current = [current]
+
+        queryset = super().get_queryset()
+        request = self.context.get("request")
+
+        if request is not None and queryset is not None:
+            queryset = get_tenant_scoped_queryset(request, queryset.model, queryset)
+
+        for obj in current:
+            if str(obj.pk) == str(pk):
+                if queryset is None or queryset.filter(pk=obj.pk).exists():
+                    return obj
+                return None
+
+        return None
 
 
 class BlockSerializerField(serializers.JSONField):

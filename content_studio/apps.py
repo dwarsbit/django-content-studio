@@ -389,7 +389,11 @@ class DjangoContentStudioConfig(AppConfig):
                 return Serializer
 
             def get_queryset(self):
-                qs = get_tenant_scoped_queryset(self.request, self._model)
+                qs = get_tenant_scoped_queryset(
+                    self.request,
+                    self._model,
+                    self._admin_model.get_queryset(self.request),
+                )
 
                 # Inline lists only exist in the context of a parent:
                 # the parent filter is required and the referenced
@@ -509,7 +513,15 @@ class DjangoContentStudioConfig(AppConfig):
                 # The parent is looked up like the parent studio's own
                 # detail endpoint: within the tenant and, with soft delete,
                 # outside the trash.
-                parents = get_tenant_scoped_queryset(self.request, self.parent_model)
+                parents = get_tenant_scoped_queryset(
+                    self.request,
+                    self.parent_model,
+                    (
+                        parent_admin.get_queryset(self.request)
+                        if parent_admin is not None
+                        else None
+                    ),
+                )
                 soft_delete_field = getattr(parent_admin, "soft_delete", "")
                 if soft_delete_field:
                     parents = parents.filter(**{f"{soft_delete_field}__isnull": True})

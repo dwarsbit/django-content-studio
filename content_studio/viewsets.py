@@ -231,7 +231,9 @@ class BaseModelViewSet(ModelViewSet):
         validation error, not a crash.
         """
         try:
-            with transaction.atomic(using=router.db_for_write(self.get_queryset().model)):
+            with transaction.atomic(
+                using=router.db_for_write(self.get_queryset().model)
+            ):
                 return serializer.save(**attrs)
         except IntegrityError as error:
             raise ValidationError(
@@ -901,7 +903,7 @@ class BaseModelViewSet(ModelViewSet):
             )
 
         else:
-            qs = self._get_related_search_queryset(related_model, search)
+            qs = self._get_related_search_queryset(related_model, search, request)
 
         # Related objects of tenant-scoped models come from the request's
         # tenant only, like any list.
@@ -949,7 +951,7 @@ class BaseModelViewSet(ModelViewSet):
         ):
             raise PermissionDenied("View permission required.")
 
-    def _get_related_search_queryset(self, related_model, search):
+    def _get_related_search_queryset(self, related_model, search, request):
         """
         Search the related model by the related model studio's
         search_fields. Without search_fields nothing is searchable, so a
@@ -958,7 +960,11 @@ class BaseModelViewSet(ModelViewSet):
         offered when the related model studio configures soft_delete.
         """
         related_admin = cs_settings.ADMIN_SITE._registry.get(related_model)
-        qs = related_model.objects.all()
+        qs = (
+            related_admin.get_queryset(request)
+            if related_admin is not None
+            else related_model._default_manager.all()
+        )
 
         soft_delete_field = related_admin.soft_delete if related_admin else None
         if soft_delete_field:

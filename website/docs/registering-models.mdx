@@ -48,6 +48,9 @@ own studio for it to change how it looks.
 When `ordering` is not set, objects are sorted by primary key, so pages stay
 stable.
 
+To narrow the objects an editor sees at all, override
+`get_queryset(request)` (see [Access control](/docs/permissions#narrowing-the-objects-an-editor-sees)).
+
 Icons come from the bold weight of [Phosphor](https://phosphoricons.com):
 write `ph-bold ph-` followed by the icon's name. The same goes for every
 `icon` option in Content Studio.

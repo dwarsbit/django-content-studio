@@ -75,6 +75,12 @@
   system check `E039` reports it at startup.
 - Fixed: the demo's example `get_thumbnail` hook lacked the `size`
   argument the site passes, so copying it raised a `TypeError`.
+- **`ModelStudio.get_queryset(request)`.** Override it to narrow the objects
+  an editor sees: the list, the trash, exports, bulk actions, the site
+  search, relation pickers, saves of relations and the single-object
+  endpoints all start from it. The [access control](/docs/permissions)
+  docs said per-object `has_view_permission` hid objects from lists, which
+  it never did; it guards single objects, and the docs now say so.
 
 ## 1.8.0 (2026-11-04)
 
