@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.8.0 (unreleased)
+## 1.8.0 (2026-11-04)
 
 - **Number formats.** `NumberFormat` now groups digits in the editor's
   language (45,940) and shows 0 instead of an empty cell. It takes

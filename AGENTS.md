@@ -8,7 +8,7 @@
 - **Package**: https://pypi.org/project/django-content-studio/
 - **License**: MIT
 - **Author**: Leon van der Grient (leon@dwarsbit.nl)
-- **Version**: 1.7.0
+- **Version**: 1.8.0
 
 ### Design Principles
 
