@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.9.0 (2026-11-04)
 
 - **Analytics.** Show your website's visitor statistics in the admin, from
   an analytics tool through a provider. `UmamiProvider` reads Umami Cloud
@@ -92,6 +92,14 @@
   pagination parameter was read as a second parent.
 - Fixed: the live duplicate check on the create form answered 403 for an
   editor with add permission but no view permission.
+
+### Fixes
+
+- With a manifest static files storage, such as Django's
+  `ManifestStaticFilesStorage` or WhiteNoise's
+  `CompressedManifestStaticFilesStorage`, and `DEBUG = False`, every
+  admin page returned a server error ("Missing staticfiles manifest entry
+  for ''"). The admin now finds its static files from `STATIC_URL`.
 
 ## 1.8.0 (2026-11-04)
 
