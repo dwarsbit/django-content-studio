@@ -37,6 +37,7 @@ const COMPONENTS = {
   MultiSelect: "multi-select",
   TagInput: "tag-input",
   ColorPicker: "color-picker",
+  CodeEditor: "code-editor",
   Checkbox: "checkbox",
   RadioGroup: "radio-group",
   Slider: "slider",
@@ -244,7 +245,15 @@ fs.writeFileSync(
     bundleCss,
 );
 
-const bundleJs = fs.readFileSync(path.join(outDir, "bundle.js"), "utf8");
+// The bundle is inlined in HTML, where these would end or comment out the
+// script. They only occur in string literals (the code editor's HTML
+// mode), where "<\/" and "<\!" read the same; compiling the result
+// checks that no other place was hit.
+const bundleJs = fs
+  .readFileSync(path.join(outDir, "bundle.js"), "utf8")
+  .replaceAll("</script", "<\\/script")
+  .replaceAll("<!--", "<\\!--");
+new Function(bundleJs);
 if (bundleJs.includes("</script") || bundleJs.includes("<!--")) {
   throw new Error("bundle.js contains </script or <!--");
 }

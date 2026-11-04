@@ -5,29 +5,29 @@ the widget from the field's type, so most models need no configuration.
 
 ## Default widgets
 
-| Field type | Widget |
-|-----------|--------|
-| `CharField` and number fields | `InputWidget` |
-| `EmailField` | `EmailWidget` |
-| `URLField` | `URLWidget` |
-| `SlugField` | `SlugWidget` |
-| `TextField` | `TextAreaWidget` |
-| `BooleanField` | `CheckboxWidget` |
-| `ForeignKey`, `OneToOneField` | `ForeignKeyWidget` |
-| `ManyToManyField` | `ManyToManyWidget` |
+| Field type                                | Widget                                       |
+| ----------------------------------------- | -------------------------------------------- |
+| `CharField` and number fields             | `InputWidget`                                |
+| `EmailField`                              | `EmailWidget`                                |
+| `URLField`                                | `URLWidget`                                  |
+| `SlugField`                               | `SlugWidget`                                 |
+| `TextField`                               | `TextAreaWidget`                             |
+| `BooleanField`                            | `CheckboxWidget`                             |
+| `ForeignKey`, `OneToOneField`             | `ForeignKeyWidget`                           |
+| `ManyToManyField`                         | `ManyToManyWidget`                           |
 | `DateField`, `DateTimeField`, `TimeField` | `DateWidget`, `DateTimeWidget`, `TimeWidget` |
-| `DurationField` | `DurationWidget` |
-| `FileField`, `ImageField` | `FileWidget` |
-| `JSONField` | `JSONWidget` |
-| `HTMLField` (built-in) | `RichTextWidget` |
-| `TagField` (built-in) | `TagWidget` |
-| `FlexField` (built-in) | `JSONSchemaWidget` |
-| `BlockField` (built-in) | `BlockWidget` |
-| `MultipleChoiceField` (built-in) | `MultiSelectWidget` |
-| `URLPathField` (built-in) | `URLPathWidget` |
-| `ColorField` (built-in) | `ColorPickerWidget` |
-| `MediaField`, `ManyMediaField` (built-in) | `MediaWidget`, `ManyMediaWidget` |
-| `AutoSlugField` (django-extensions) | `SlugWidget` |
+| `DurationField`                           | `DurationWidget`                             |
+| `FileField`, `ImageField`                 | `FileWidget`                                 |
+| `JSONField`                               | `JSONWidget`                                 |
+| `HTMLField` (built-in)                    | `RichTextWidget`                             |
+| `TagField` (built-in)                     | `TagWidget`                                  |
+| `FlexField` (built-in)                    | `JSONSchemaWidget`                           |
+| `BlockField` (built-in)                   | `BlockWidget`                                |
+| `MultipleChoiceField` (built-in)          | `MultiSelectWidget`                          |
+| `URLPathField` (built-in)                 | `URLPathWidget`                              |
+| `ColorField` (built-in)                   | `ColorPickerWidget`                          |
+| `MediaField`, `ManyMediaField` (built-in) | `MediaWidget`, `ManyMediaWidget`             |
+| `AutoSlugField` (django-extensions)       | `SlugWidget`                                 |
 
 Fields with choices get a select. Fields of other types get a plain input.
 
@@ -46,6 +46,33 @@ These widgets are not used by default but are there to choose:
   line. An optional field can be cleared.
 - **`CoverImageWidget`**: one image shown large, for a `MediaField` that
   holds a cover or header image. See [Cover images](#cover-images).
+- **`MarkdownWidget`**: Markdown typed as text, for a `TextField` that
+  stores Markdown. A toolbar adds headings, bold, italic, links and lists
+  (also with Ctrl or ⌘ + B, I and K), and the Preview tab shows the text
+  rendered. Raw HTML is not rendered.
+- **`CodeWidget`**: a code editor with line numbers, for embed codes and
+  snippets in a `TextField`. Pass a `language` for syntax highlighting.
+  Tab indents; press Escape, then Tab, to leave the editor.
+- **`IconPickerWidget`**: a [Phosphor](https://phosphoricons.com) icon
+  picked from a searchable grid, for a `CharField`. It saves the icon's
+  class, such as `"ph-bold ph-star"`, which you use as
+  `<i class="ph-bold ph-star"></i>` on your site with the Phosphor Bold
+  font.
+- **`KeyValueWidget`**: a `JSONField` dict of strings, edited as rows of
+  a key and a value. A key that is empty or used twice keeps the form from
+  saving. JSON objects have no order (PostgreSQL sorts their keys), so the
+  rows cannot be reordered.
+- **`ListWidget`**: a `JSONField` list of strings, edited as rows that can
+  be added, removed and dragged into order. Enter adds a row. Unlike
+  `TagWidget`, the order is kept and the same value can appear twice.
+- **`RatingWidget`**: stars for a small integer, such as a review score.
+  Clicking the current star again clears an optional field.
+
+The `JSONWidget`, the default for a `JSONField`, is a JSON editor. JSON
+that does not parse is underlined and keeps the form from saving.
+
+The code editor of `CodeWidget` and `JSONWidget` is loaded only on pages
+that have one of them.
 
 ## Use another widget for one field
 
@@ -146,6 +173,13 @@ an error when the studio is defined, not when an editor opens the page.
   see [Cover images](#cover-images).
 - **`ColorPickerWidget(show_input=True, swatches=None)`**: see
   [Colors](#colors).
+- **`MarkdownWidget(rows=None, placeholder=None, show_count=None, recommended_length=None)`**:
+  the options of `TextAreaWidget`. `rows` sets the height (8 lines by
+  default).
+- **`CodeWidget(language=None)`**: the language to highlight: `"css"`,
+  `"html"`, `"javascript"` or `"json"`. Without it, the code is plain
+  text.
+- **`RatingWidget(max_value=5)`**: the number of stars, from 2 to 10.
 
 :::note
 Options guide editors; they do not validate. To enforce a range or a
@@ -315,7 +349,10 @@ that is not a `MediaField` to the media library model.
 `color_format`: `"hex"` (the default), `"rgb"` or `"hsl"`. Set `alpha=True`
 to allow transparent colors.
 
-<Screenshot name="color-picker" alt="A color field with its color picker open" />
+<Screenshot
+  name="color-picker"
+  alt="A color field with its color picker open"
+/>
 
 ```python
 # blog/models.py
@@ -335,11 +372,11 @@ Editors can type or paste a color in any of the three notations, such as
 rejected. On save, the color is converted to the field's notation, so your
 templates always get the same form:
 
-| `color_format` | Saved | With `alpha=True` |
-|----------------|-------|-------------------|
-| `"hex"` | `#336699` | `#33669980` |
-| `"rgb"` | `rgb(51, 102, 153)` | `rgba(51, 102, 153, 0.5)` |
-| `"hsl"` | `hsl(210, 50%, 40%)` | `hsla(210, 50%, 40%, 0.5)` |
+| `color_format` | Saved                | With `alpha=True`          |
+| -------------- | -------------------- | -------------------------- |
+| `"hex"`        | `#336699`            | `#33669980`                |
+| `"rgb"`        | `rgb(51, 102, 153)`  | `rgba(51, 102, 153, 0.5)`  |
+| `"hsl"`        | `hsl(210, 50%, 40%)` | `hsla(210, 50%, 40%, 0.5)` |
 
 With `alpha=True`, every color is saved with its alpha, also an opaque
 one. Without it, transparent colors are rejected.
@@ -452,29 +489,29 @@ admin_site = BlogStudioSite()
 Values on the list page and in read-only fields are shown through formats.
 Content Studio picks the format from the field's type:
 
-| Field type | Format | Shows |
-|-----------|--------|-------|
-| `CharField`, `SlugField` | `TextFormat` | The text |
-| `TextField` | `TextFormat(lines=2)` | Two lines on the list page, all of it on hover and in a read-only field |
-| Number fields | `NumberFormat` | Grouped digits in the editor's language (45,940) |
-| `BooleanField` | `BooleanFormat` | A check or a dash |
-| `DateField` | `DateFormat` | The date in the editor's language |
-| `DateTimeField` | `DateTimeFormat` | The time relative to now, exact on hover |
-| `TimeField` | `TimeFormat` | Hours and minutes |
-| `DurationField` | `DurationFormat` | The duration in words, such as 1h 20m |
-| `UUIDField` | `CodeFormat` | The value in a monospace font, with a copy button |
-| `EmailField` | `EmailFormat` | A `mailto:` link |
-| `URLField` | `LinkFormat` | A link that opens in a new tab |
-| `FileField` | `FileFormat` | The file's name, linked to the file |
-| `ImageField` | `ImageFormat` | A small thumbnail, linked to the image |
-| `ForeignKey`, `OneToOneField` | `ForeignKeyFormat` | The related object |
-| `ManyToManyField` | `ManyToManyFormat` | The related objects as chips |
-| `JSONField`, `FlexField` (built-in) | `JSONFormat` | The JSON |
-| `HTMLField` (built-in) | `HtmlFormat` | An excerpt on the list page, the formatted text in a read-only field |
-| `TagField` (built-in) | `TagFormat` | The tags as pills |
-| `ColorField` (built-in) | `ColorFormat` | A swatch with the value |
-| `BlockField` (built-in) | `BlockFormat` | The number of blocks |
-| `MediaField`, `ManyMediaField` (built-in) | `MediaFormat`, `ManyMediaFormat` | The thumbnails |
+| Field type                                | Format                           | Shows                                                                   |
+| ----------------------------------------- | -------------------------------- | ----------------------------------------------------------------------- |
+| `CharField`, `SlugField`                  | `TextFormat`                     | The text                                                                |
+| `TextField`                               | `TextFormat(lines=2)`            | Two lines on the list page, all of it on hover and in a read-only field |
+| Number fields                             | `NumberFormat`                   | Grouped digits in the editor's language (45,940)                        |
+| `BooleanField`                            | `BooleanFormat`                  | A check or a dash                                                       |
+| `DateField`                               | `DateFormat`                     | The date in the editor's language                                       |
+| `DateTimeField`                           | `DateTimeFormat`                 | The time relative to now, exact on hover                                |
+| `TimeField`                               | `TimeFormat`                     | Hours and minutes                                                       |
+| `DurationField`                           | `DurationFormat`                 | The duration in words, such as 1h 20m                                   |
+| `UUIDField`                               | `CodeFormat`                     | The value in a monospace font, with a copy button                       |
+| `EmailField`                              | `EmailFormat`                    | A `mailto:` link                                                        |
+| `URLField`                                | `LinkFormat`                     | A link that opens in a new tab                                          |
+| `FileField`                               | `FileFormat`                     | The file's name, linked to the file                                     |
+| `ImageField`                              | `ImageFormat`                    | A small thumbnail, linked to the image                                  |
+| `ForeignKey`, `OneToOneField`             | `ForeignKeyFormat`               | The related object                                                      |
+| `ManyToManyField`                         | `ManyToManyFormat`               | The related objects as chips                                            |
+| `JSONField`, `FlexField` (built-in)       | `JSONFormat`                     | The JSON                                                                |
+| `HTMLField` (built-in)                    | `HtmlFormat`                     | An excerpt on the list page, the formatted text in a read-only field    |
+| `TagField` (built-in)                     | `TagFormat`                      | The tags as pills                                                       |
+| `ColorField` (built-in)                   | `ColorFormat`                    | A swatch with the value                                                 |
+| `BlockField` (built-in)                   | `BlockFormat`                    | The number of blocks                                                    |
+| `MediaField`, `ManyMediaField` (built-in) | `MediaFormat`, `ManyMediaFormat` | The thumbnails                                                          |
 
 Fields with choices show the choice's label. Lists of tags, related objects
 and media show the first three, then "+2" for the rest.

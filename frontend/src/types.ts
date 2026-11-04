@@ -371,6 +371,18 @@ export interface SliderWidgetOptions {
   suffix?: string;
 }
 
+export type CodeLanguage = "css" | "html" | "javascript" | "json";
+
+export interface CodeWidgetOptions {
+  // The language highlighted; plain text when unset.
+  language?: CodeLanguage | null;
+}
+
+export interface RatingWidgetOptions {
+  // The number of stars.
+  max_value?: number;
+}
+
 export interface DurationWidgetOptions {
   show_days?: boolean;
   show_seconds?: boolean;
@@ -548,6 +560,7 @@ export enum FieldType {
   HTMLField = "HTMLField",
   ImageField = "ImageField",
   IntegerField = "IntegerField",
+  JSONField = "JSONField",
   ManyToManyField = "ManyToManyField",
   SlugField = "SlugField",
   TextField = "TextField",
@@ -589,6 +602,7 @@ export enum FieldFormat {
 export enum FieldWidget {
   BlockWidget = "BlockWidget",
   CheckboxWidget = "CheckboxWidget",
+  CodeWidget = "CodeWidget",
   ColorPickerWidget = "ColorPickerWidget",
   DateTimeWidget = "DateTimeWidget",
   DateWidget = "DateWidget",
@@ -596,8 +610,13 @@ export enum FieldWidget {
   EmailWidget = "EmailWidget",
   FileWidget = "FileWidget",
   ForeignKeyWidget = "ForeignKeyWidget",
+  IconPickerWidget = "IconPickerWidget",
   InputWidget = "InputWidget",
   JSONSchemaWidget = "JSONSchemaWidget",
+  JSONWidget = "JSONWidget",
+  KeyValueWidget = "KeyValueWidget",
+  ListWidget = "ListWidget",
+  MarkdownWidget = "MarkdownWidget",
   ManyToManyWidget = "ManyToManyWidget",
   MediaWidget = "MediaWidget",
   CoverImageWidget = "CoverImageWidget",
@@ -606,6 +625,7 @@ export enum FieldWidget {
   PasswordWidget = "PasswordWidget",
   PhoneWidget = "PhoneWidget",
   RadioButtonWidget = "RadioButtonWidget",
+  RatingWidget = "RatingWidget",
   RichTextWidget = "RichTextWidget",
   SelectWidget = "SelectWidget",
   SlugWidget = "SlugWidget",

@@ -52,6 +52,20 @@
   small thumbnail (`ImageFormat`). The new `ProgressFormat(max_value=100)`
   shows a number as a meter. `BooleanFormat(labels=..., colors=...)` shows
   words or badges instead of a check and a dash.
+- **JSON fields.** `JSONField`s can now be edited: `JSONWidget` is a JSON
+  editor with syntax highlighting. JSON that does not parse is underlined
+  and keeps the form from saving. They used to show `[object Object]`.
+- **Code.** The new `CodeWidget(language=...)` is a code editor with line
+  numbers, highlighting CSS, HTML, JavaScript or JSON. The editor is
+  loaded only on pages that have a code or JSON field.
+- **Markdown.** The new `MarkdownWidget` edits Markdown as text, with a
+  formatting toolbar and a Preview tab.
+- **More widgets.** `IconPickerWidget` picks a Phosphor icon from a
+  searchable grid and saves its class (`"ph-bold ph-star"`).
+  `ListWidget` edits a `JSONField` list of strings as rows that can be
+  dragged into order. `KeyValueWidget` edits a dict of strings as rows;
+  those rows have no order, since PostgreSQL sorts a JSON object's keys.
+  `RatingWidget(max_value=5)` shows a small integer as stars.
 - In the API, an `ImageField`'s value now also has a `"thumbnail"`.
 - **Fixed:** text columns showed `0` and `false` as empty.
 

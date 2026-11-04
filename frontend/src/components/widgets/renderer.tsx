@@ -10,6 +10,7 @@ import {
 
 import { BlockWidget } from "./block-widget/block-widget";
 import { CheckboxWidget } from "./checkbox-widget";
+import { CodeWidget, JSONWidget } from "./code-widget";
 import { ColorPickerWidget } from "./color-picker-widget";
 import { CoverImageWidget } from "./cover-image-widget/cover-image-widget";
 import { DateTimeWidget } from "./date-time-widget";
@@ -18,14 +19,19 @@ import { DurationWidget } from "./duration-widget";
 import { FallbackWidget } from "./fallback-widget";
 import { FileWidget } from "./file-widget";
 import { ForeignKeyWidget } from "./foreign-key-widget";
+import { IconPickerWidget } from "./icon-picker-widget";
 import { InputWidget } from "./input-widget";
 import { JSONSchemaWidget } from "./json-schema-widget";
+import { KeyValueWidget } from "./key-value-widget";
+import { ListWidget } from "./list-widget";
 import { ManyMediaWidget } from "./many-media-widget";
 import { ManyToManyWidget } from "./many-to-many-widget";
+import { MarkdownWidget } from "./markdown-widget";
 import { MediaWidget } from "./media-widget";
 import { MultiSelectWidget } from "./multi-select-widget";
 import { PasswordWidget } from "./password-widget";
 import { RadioButtonWidget } from "./radio-button-widget";
+import { RatingWidget } from "./rating-widget";
 import { RichTextWidget } from "./rich-text-widget";
 import { SelectWidget } from "./select-widget";
 import { SliderWidget } from "./slider-widget";
@@ -61,6 +67,7 @@ type WidgetComponent = ComponentType<{
 const WIDGETS = {
   [FieldWidget.BlockWidget]: BlockWidget,
   [FieldWidget.CheckboxWidget]: CheckboxWidget,
+  [FieldWidget.CodeWidget]: CodeWidget,
   [FieldWidget.ColorPickerWidget]: ColorPickerWidget,
   [FieldWidget.CoverImageWidget]: CoverImageWidget,
   [FieldWidget.DateWidget]: DateWidget,
@@ -69,8 +76,13 @@ const WIDGETS = {
   [FieldWidget.EmailWidget]: EmailWidget,
   [FieldWidget.FileWidget]: FileWidget,
   [FieldWidget.ForeignKeyWidget]: ForeignKeyWidget,
+  [FieldWidget.IconPickerWidget]: IconPickerWidget,
   [FieldWidget.InputWidget]: InputWidget,
   [FieldWidget.JSONSchemaWidget]: JSONSchemaWidget,
+  [FieldWidget.JSONWidget]: JSONWidget,
+  [FieldWidget.KeyValueWidget]: KeyValueWidget,
+  [FieldWidget.ListWidget]: ListWidget,
+  [FieldWidget.MarkdownWidget]: MarkdownWidget,
   [FieldWidget.ManyToManyWidget]: ManyToManyWidget,
   [FieldWidget.ManyMediaWidget]: ManyMediaWidget,
   [FieldWidget.MediaWidget]: MediaWidget,
@@ -78,6 +90,7 @@ const WIDGETS = {
   [FieldWidget.PasswordWidget]: PasswordWidget,
   [FieldWidget.PhoneWidget]: PhoneWidget,
   [FieldWidget.RadioButtonWidget]: RadioButtonWidget,
+  [FieldWidget.RatingWidget]: RatingWidget,
   [FieldWidget.RichTextWidget]: RichTextWidget,
   [FieldWidget.SelectWidget]: SelectWidget,
   [FieldWidget.SliderWidget]: SliderWidget,
