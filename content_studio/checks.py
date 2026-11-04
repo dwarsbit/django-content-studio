@@ -1510,6 +1510,26 @@ def readonly_required_warnings(studio) -> list[tuple[str, str]]:
     return warnings
 
 
+def field_has_choices(model_field) -> bool:
+    """
+    Whether a model field gives the admin choices to render: Django's
+    choices, or the choices a Content Studio field (such as
+    MultipleChoiceField with its options) sends in its field attributes.
+    """
+    if getattr(model_field, "choices", None):
+        return True
+
+    get_attributes = getattr(model_field, "cs_get_field_attributes", None)
+
+    if not callable(get_attributes):
+        return False
+
+    try:
+        return bool(get_attributes().get("choices"))
+    except Exception:
+        return False
+
+
 def choice_widget_warnings(studio) -> list[tuple[str, str]]:
     """
     Choice-driven widgets on fields without choices, as (check id,
@@ -1536,7 +1556,7 @@ def choice_widget_warnings(studio) -> list[tuple[str, str]]:
         # The widget override, or a widget_class set on the model field.
         widget = field.widget or getattr(model_field, "widget_class", None)
 
-        if is_choice_widget(widget) and not getattr(model_field, "choices", None):
+        if is_choice_widget(widget) and not field_has_choices(model_field):
             warnings.append(
                 (
                     "content_studio.W003",

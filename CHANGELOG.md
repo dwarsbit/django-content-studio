@@ -45,6 +45,8 @@
   model `@property` named in `table_display`, `edit_main`, `edit_sidebar`,
   `readonly_fields` or `export_fields`, although the admin shows it there;
   exports now write a property's value too.
+- Fixed: the system check `W003` warned about a `MultiSelectWidget` on a
+  `MultipleChoiceField`, although the field's options are its choices.
 
 ## 1.8.0 (2026-11-04)
 

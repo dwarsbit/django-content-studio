@@ -517,6 +517,24 @@ def test_choice_widget_instance_without_choices_surfaces_as_warning():
     assert "SelectWidget" in str(warning)
 
 
+def test_multi_select_widget_on_multiple_choice_field_produces_no_warning():
+    """MultipleChoiceField exposes its options as choices through its
+    field attributes, not through Django's choices."""
+    from content_studio.checks import choice_widget_warnings
+    from content_studio.fields import MultipleChoiceField
+
+    class Tagged(models.Model):
+        tags = MultipleChoiceField(options=[("a", "A"), ("b", "B")])
+
+        class Meta:
+            app_label = "testapp"
+
+    class Studio(ModelStudio):
+        edit_main = [Field("tags", widget=widgets.MultiSelectWidget)]
+
+    assert choice_widget_warnings(Studio(Tagged, admin_site)) == []
+
+
 # --- W019: CoverImageWidget on a field that is not a media relation ----------
 
 
