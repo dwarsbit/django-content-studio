@@ -90,6 +90,8 @@
 - Fixed: an inline whose foreign key to the parent is named `page` (or
   another reserved query parameter) could not list its rows: the
   pagination parameter was read as a second parent.
+- Fixed: the live duplicate check on the create form answered 403 for an
+  editor with add permission but no view permission.
 
 ## 1.8.0 (2026-11-04)
 

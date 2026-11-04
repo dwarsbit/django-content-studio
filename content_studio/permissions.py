@@ -30,6 +30,13 @@ class ModelStudioPermissions(BasePermission):
         if admin_model is None:
             return False
 
+        if getattr(view, "action", None) == "unique_check":
+            # The live duplicate check serves the create form too: an
+            # editor who may only add still needs it.
+            return admin_model.has_view_permission(
+                request
+            ) or admin_model.has_add_permission(request)
+
         if request.method in SAFE_METHODS:
             return admin_model.has_view_permission(request)
 

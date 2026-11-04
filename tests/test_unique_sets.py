@@ -178,13 +178,29 @@ class UniqueSetCheckTests(TestCase):
         response = self.client.get(URL, {"set": TOGETHER, "values": "{"})
         self.assertEqual(response.status_code, 400)
 
-    def test_requires_view_or_change_permission(self):
+    def test_requires_view_change_or_add_permission(self):
         user = auth_models.User.objects.create_user(
             username="staff", password="x", is_staff=True
         )
         response = client_for(user).get(URL, {"set": TOGETHER, "values": "{}"})
 
         self.assertEqual(response.status_code, 403)
+
+        # An editor who may only add uses the check on the create form.
+        user.user_permissions.add(
+            auth_models.Permission.objects.get(codename="add_edition")
+        )
+        user = auth_models.User.objects.get(pk=user.pk)
+        response = client_for(user).get(
+            URL,
+            {
+                "set": TOGETHER,
+                "values": json.dumps({"slug": "spring", "language": "en"}),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["exists"])
 
 
 @override_settings(

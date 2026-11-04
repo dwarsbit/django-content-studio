@@ -113,12 +113,9 @@ class UniqueCheckTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    def test_requires_view_or_change_permission(self):
+    def test_requires_view_change_or_add_permission(self):
         no_perms = self.client_for(self.create_user())
         self.assertEqual(self.check(no_perms, value="x").status_code, 403)
-
-        add_only = self.client_for(self.create_user("add_page", username="adder"))
-        self.assertEqual(self.check(add_only, value="x").status_code, 403)
 
         for codename in ("view_page", "change_page"):
             client = self.client_for(self.create_user(codename, username=codename))
@@ -126,6 +123,14 @@ class UniqueCheckTests(TestCase):
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()["__str__"], "Hello World")
+
+        # The create form uses the check too: add permission is enough,
+        # but without view permission only the conflict is reported.
+        add_only = self.client_for(self.create_user("add_page", username="adder"))
+        response = self.check(add_only, value="hello-world")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"exists": True})
 
     def test_hides_objects_the_user_may_not_view(self):
         studio = admin_site._registry[Page]
