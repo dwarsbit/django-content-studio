@@ -7,6 +7,7 @@ import { ComponentButton } from "@/components/form-components/button";
 import { Callout } from "@/components/form-components/callout";
 import { Link } from "@/components/form-components/link";
 import { LinkButton } from "@/components/form-components/link-button";
+import { SEOPreview } from "@/components/form-components/seo-preview";
 import { Subtitle } from "@/components/form-components/subtitle";
 import { Text } from "@/components/form-components/text";
 import { Title } from "@/components/form-components/title";
@@ -45,6 +46,7 @@ const COMPONENTS: Partial<
   Subtitle,
   Text,
   Callout,
+  SEOPreview,
 };
 
 export function FormField({
@@ -194,8 +196,8 @@ export function FormField({
 
 /**
  * Renders a component (Link, LinkButton, Button, ActivityLog, Title,
- * Subtitle, Text, Callout) of the
- * edit page, in a form set or in the header.
+ * Subtitle, Text, Callout, SEOPreview) of the edit page, in a form set
+ * or in the header.
  */
 export function ComponentRenderer({
   formField,

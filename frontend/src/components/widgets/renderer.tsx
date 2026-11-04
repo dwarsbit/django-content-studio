@@ -16,6 +16,7 @@ import { CoverImageWidget } from "./cover-image-widget/cover-image-widget";
 import { DateTimeWidget } from "./date-time-widget";
 import { DateWidget } from "./date-widget";
 import { DurationWidget } from "./duration-widget";
+import { EmbedWidget } from "./embed-widget";
 import { FallbackWidget } from "./fallback-widget";
 import { FileWidget } from "./file-widget";
 import { ForeignKeyWidget } from "./foreign-key-widget";
@@ -26,6 +27,7 @@ import { KeyValueWidget } from "./key-value-widget";
 import { ListWidget } from "./list-widget";
 import { ManyMediaWidget } from "./many-media-widget";
 import { ManyToManyWidget } from "./many-to-many-widget";
+import { MapWidget } from "./map-widget";
 import { MarkdownWidget } from "./markdown-widget";
 import { MediaWidget } from "./media-widget";
 import { MultiSelectWidget } from "./multi-select-widget";
@@ -74,6 +76,7 @@ const WIDGETS = {
   [FieldWidget.DateTimeWidget]: DateTimeWidget,
   [FieldWidget.DurationWidget]: DurationWidget,
   [FieldWidget.EmailWidget]: EmailWidget,
+  [FieldWidget.EmbedWidget]: EmbedWidget,
   [FieldWidget.FileWidget]: FileWidget,
   [FieldWidget.ForeignKeyWidget]: ForeignKeyWidget,
   [FieldWidget.IconPickerWidget]: IconPickerWidget,
@@ -84,6 +87,7 @@ const WIDGETS = {
   [FieldWidget.ListWidget]: ListWidget,
   [FieldWidget.MarkdownWidget]: MarkdownWidget,
   [FieldWidget.ManyToManyWidget]: ManyToManyWidget,
+  [FieldWidget.MapWidget]: MapWidget,
   [FieldWidget.ManyMediaWidget]: ManyMediaWidget,
   [FieldWidget.MediaWidget]: MediaWidget,
   [FieldWidget.MultiSelectWidget]: MultiSelectWidget,

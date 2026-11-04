@@ -21,6 +21,7 @@ from .exceptions import NotConfigured
 from .extensions import MainMenuButton
 from .media_library.cropping import get_crop_hook
 from .media_library.metadata import get_metadata_attr, get_properties_attr
+from .oembed import OEmbedError, fetch as fetch_oembed
 from .permissions import IsActiveStaff
 from .serializers import ModelSerializer, get_session_user_serializer
 from .settings import cs_settings
@@ -206,6 +207,13 @@ class AdminApiViewSet(ViewSet):
             ),
         }
 
+        # What MapWidget's map shows and searches with.
+        data["map"] = {
+            "tile_url": cs_settings.MAP_TILE_URL,
+            "tile_attribution": cs_settings.MAP_TILE_ATTRIBUTION,
+            "geocoder_url": cs_settings.MAP_GEOCODER_URL,
+        }
+
         multitenancy = cs_settings.TENANT_MODEL is not None
 
         data["multitenancy"] = {
@@ -216,6 +224,25 @@ class AdminApiViewSet(ViewSet):
         }
 
         return Response(data=data)
+
+    @action(methods=["get"], detail=False, url_path="oembed")
+    def oembed(self, request):
+        """
+        The preview EmbedWidget shows of a URL (its title and thumbnail),
+        fetched from the URL's oEmbed provider. 404 when no provider
+        embeds the URL, 502 when the provider fails.
+        """
+        url = request.query_params.get("url", "").strip()
+
+        if not url:
+            return Response(
+                {"detail": _("Pass the address to preview as url.")}, status=400
+            )
+
+        try:
+            return Response(fetch_oembed(url))
+        except OEmbedError as exc:
+            return Response({"detail": str(exc)}, status=exc.status)
 
     @action(methods=["get"], detail=False, url_path="me")
     def me(self, request):

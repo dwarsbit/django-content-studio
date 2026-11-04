@@ -278,6 +278,19 @@ const WIDGET_FIXTURES: Record<
     widget: { name: FieldWidget.RatingWidget, options: { max_value: 5 } },
     value: 4,
   },
+  "JSON field (MapWidget)": {
+    field: { type: FieldType.JSONField, verbose_name: "location" },
+    widget: {
+      name: FieldWidget.MapWidget,
+      options: { center: [52.37, 4.9], zoom: 11 },
+    },
+    value: { lat: 52.3731, lng: 4.8922 },
+  },
+  "URL field (EmbedWidget)": {
+    field: { type: FieldType.URLField },
+    widget: { name: FieldWidget.EmbedWidget },
+    value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  },
 };
 
 const FORMAT_FIXTURES: Record<

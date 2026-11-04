@@ -45,7 +45,7 @@ content_studio/
 ├── colors.py            # Color parsing and conversion (hex/rgb/hsl) for ColorField; mirrored by frontend/src/lib/colors.ts
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E033, E037, W001-W023)
+├── checks.py            # System checks (content_studio.E001-E037, W001-W023)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)

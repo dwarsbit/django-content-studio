@@ -101,6 +101,20 @@ DEFAULTS = {
     # Maximum size of a file picked in a FileWidget, in bytes; None for
     # no limit.
     "UPLOAD_MAX_SIZE": 50 * 1024 * 1024,
+    # The map tiles MapWidget shows: a tile URL template with {z}, {x}
+    # and {y}, and the attribution shown on the map (HTML).
+    "MAP_TILE_URL": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "MAP_TILE_ATTRIBUTION": (
+        '&copy; <a href="https://www.openstreetmap.org/copyright">'
+        "OpenStreetMap</a> contributors"
+    ),
+    # The address search of MapWidget: a Nominatim search URL, called
+    # from the editor's browser; None leaves the search box out.
+    "MAP_GEOCODER_URL": "https://nominatim.openstreetmap.org/search",
+    # The oEmbed providers EmbedWidget previews: None uses the built-in
+    # list (content_studio.oembed.PROVIDERS); a list of {"name",
+    # "endpoint", "patterns"} dicts replaces it.
+    "OEMBED_PROVIDERS": None,
     "TENANT_MODEL": None,
     # Whether edit and list pages show which users have an object open;
     # a studio opts out with presence = False.

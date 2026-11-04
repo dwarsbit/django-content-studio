@@ -385,6 +385,21 @@
     "rating_widget": {
       "star_one": "{{count}} star of {{max}}",
       "star_other": "{{count}} stars of {{max}}"
+    },
+    "map_widget": {
+      "map": "Map",
+      "search": "Search for an address",
+      "search_placeholder": "Search for an address and press Enter",
+      "no_results": "Nothing found for “{{query}}”.",
+      "search_error": "The address search did not answer.",
+      "load_error": "The map could not be loaded. Type the coordinates instead.",
+      "latitude": "Latitude",
+      "longitude": "Longitude"
+    },
+    "embed_widget": {
+      "loading": "Loading the preview…",
+      "no_preview": "No preview for this address. It is saved as typed.",
+      "load_error": "The preview could not be loaded."
     }
   },
   "formats": {
@@ -451,6 +466,12 @@
   "form_components": {
     "activity": {
       "empty": "No activity recorded yet"
+    },
+    "seo_preview": {
+      "no_title": "Page title",
+      "no_description": "A description of the page shows here.",
+      "title_over": "The title is {{count}} characters; search engines show about {{limit}}.",
+      "description_over": "The description is {{count}} characters; search engines show about {{limit}}."
     }
   },
   "palette": {

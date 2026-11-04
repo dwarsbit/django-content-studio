@@ -118,6 +118,49 @@ The maximum size of a file picked in a `FileWidget`, in bytes. Default:
 `52428800` (50 MB). `None` removes the limit; your web server's own request
 size limit still applies.
 
+### MAP_TILE_URL, MAP_TILE_ATTRIBUTION {#map_tiles}
+
+The tiles a [`MapWidget`](/docs/widgets#maps) shows: a tile URL template
+with `{z}`, `{x}` and `{y}`, and the attribution shown on the map (HTML).
+Default: OpenStreetMap's tiles,
+`"https://tile.openstreetmap.org/{z}/{x}/{y}.png"`, with its attribution.
+Editors' browsers request the tiles, so a tile server with a key, such as
+MapTiler, exposes that key to them.
+
+### MAP_GEOCODER_URL {#map_geocoder_url}
+
+The address search of a `MapWidget`: a
+[Nominatim](https://nominatim.org) search URL, which editors' browsers
+call when they press Enter in the search box. Default:
+`"https://nominatim.openstreetmap.org/search"`. `None` leaves the search
+box out.
+
+### OEMBED_PROVIDERS {#oembed_providers}
+
+The sites an [`EmbedWidget`](/docs/widgets#embeds) previews. Default:
+`None`, the built-in list (`content_studio.oembed.PROVIDERS`): YouTube,
+Vimeo, Spotify, SoundCloud, Dailymotion, TikTok, Flickr, Bluesky, X,
+Mixcloud, CodePen and Giphy. A list replaces it; each entry names the site,
+its oEmbed endpoint and the URL patterns it embeds, as regular expressions
+matched against the start of the URL:
+
+```python
+from content_studio.oembed import PROVIDERS
+
+CONTENT_STUDIO = {
+    "OEMBED_PROVIDERS": [
+        *PROVIDERS,
+        {
+            "name": "PeerTube",
+            "endpoint": "https://tube.example.com/services/oembed",
+            "patterns": [r"https://tube\.example\.com/w/"],
+        },
+    ],
+}
+```
+
+The server asks these endpoints, and nothing else, for a preview.
+
 ## Media library
 
 ### MEDIA_LIBRARY_MODEL, MEDIA_LIBRARY_FOLDER_MODEL {#media_models}

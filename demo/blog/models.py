@@ -95,7 +95,14 @@ class Article(models.Model):
         PUBLISHED = "published", "Published"
 
     title = models.CharField(max_length=200)
+    # Filled from the title while an article is created; the SEO
+    # preview shows the page's URL with it.
+    slug = models.SlugField(max_length=200, blank=True)
     body = models.TextField(blank=True)
+    # The search-result description, shown in the SEO preview.
+    meta_description = models.CharField(max_length=200, blank=True)
+    # A video on YouTube or Vimeo, edited with an EmbedWidget.
+    video_url = models.URLField(blank=True)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.DRAFT
     )
@@ -167,6 +174,8 @@ class SiteSettings(models.Model):
     social_links = models.JSONField(default=dict, blank=True)
     # Edited with a CodeWidget: an analytics or verification snippet.
     head_code = models.TextField(blank=True)
+    # Edited with a MapWidget: {"lat": 52.37, "lng": 4.89}.
+    office_location = models.JSONField(null=True, blank=True)
 
     class Meta:
         verbose_name = "site settings"
