@@ -1,8 +1,17 @@
+import { addYears } from "date-fns";
 import { enUS, nl } from "date-fns/locale";
 import * as React from "react";
-import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
+import {
+  DayButton,
+  DayPicker,
+  getDefaultClassNames,
+  type NavProps,
+  useDayPicker,
+} from "react-day-picker";
 import { useTranslation } from "react-i18next";
 import {
+  PiCaretDoubleLeftBold,
+  PiCaretDoubleRightBold,
   PiCaretDownBold,
   PiCaretLeftBold,
   PiCaretRightBold,
@@ -64,7 +73,7 @@ function Calendar({
           defaultClassNames.button_next,
         ),
         month_caption: cn(
-          "flex items-center justify-center h-(--cell-size) w-full px-(--cell-size)",
+          "flex items-center justify-center h-(--cell-size) w-full px-[calc(var(--cell-size)*2)]",
           defaultClassNames.month_caption,
         ),
         dropdowns: cn(
@@ -161,6 +170,7 @@ function Calendar({
             <PiCaretDownBold className={cn("size-4", className)} {...props} />
           );
         },
+        Nav: CalendarNav,
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {
           return (
@@ -175,6 +185,82 @@ function Calendar({
       }}
       {...props}
     />
+  );
+}
+
+/**
+ * The month steppers with a year stepper on either side: « ‹ month › ».
+ * A year step stops at the first or last month the calendar can show.
+ */
+function CalendarNav({
+  onPreviousClick,
+  onNextClick,
+  previousMonth,
+  nextMonth,
+  ...props
+}: NavProps) {
+  const { t } = useTranslation();
+  const { months, goToMonth, classNames } = useDayPicker();
+  const month = months[0]?.date;
+
+  const button = (
+    label: string,
+    enabled: boolean,
+    onClick: React.MouseEventHandler<HTMLButtonElement> | undefined,
+    className: string,
+    icon: React.ReactNode,
+  ) => (
+    <button
+      type="button"
+      className={className}
+      tabIndex={enabled ? undefined : -1}
+      aria-disabled={enabled ? undefined : true}
+      aria-label={label}
+      onClick={(e) => enabled && onClick?.(e)}
+    >
+      {icon}
+    </button>
+  );
+
+  return (
+    <nav {...props}>
+      <div className="flex items-center">
+        {button(
+          t("common.previous_year"),
+          !!previousMonth,
+          () => month && goToMonth(addYears(month, -1)),
+          classNames.button_previous,
+          <PiCaretDoubleLeftBold
+            className={cn("size-4", classNames.chevron)}
+          />,
+        )}
+        {button(
+          t("common.previous_month"),
+          !!previousMonth,
+          onPreviousClick,
+          classNames.button_previous,
+          <PiCaretLeftBold className={cn("size-4", classNames.chevron)} />,
+        )}
+      </div>
+      <div className="flex items-center">
+        {button(
+          t("common.next_month"),
+          !!nextMonth,
+          onNextClick,
+          classNames.button_next,
+          <PiCaretRightBold className={cn("size-4", classNames.chevron)} />,
+        )}
+        {button(
+          t("common.next_year"),
+          !!nextMonth,
+          () => month && goToMonth(addYears(month, 1)),
+          classNames.button_next,
+          <PiCaretDoubleRightBold
+            className={cn("size-4", classNames.chevron)}
+          />,
+        )}
+      </div>
+    </nav>
   );
 }
 

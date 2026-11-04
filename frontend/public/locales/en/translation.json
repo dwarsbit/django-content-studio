@@ -20,7 +20,11 @@
     "download": "Download",
     "done": "Done",
     "copied_to_clipboard": "Copied to clipboard!",
-    "close": "Close"
+    "close": "Close",
+    "previous_month": "Previous month",
+    "next_month": "Next month",
+    "previous_year": "Previous year",
+    "next_year": "Next year"
   },
   "app": {
     "copied_to_clipboard": "Copied to clipboard!",
