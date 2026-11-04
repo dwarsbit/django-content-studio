@@ -33,7 +33,7 @@ from .admin import (
 )
 from .export import is_exportable
 from .extensions import DashboardPage
-from .form import BaseText, Component, Field, TableColumn
+from .form import BaseText, Component, Field, SEOPreview, TableColumn
 from .settings import cs_settings
 from .utils import as_instance, flatten, get_tenant_field_name
 
@@ -1094,13 +1094,16 @@ def edit_header_errors(studio) -> list[tuple[str, str]]:
                         "not a component, such as a Button.",
                     )
                 )
-            elif isinstance(entry, BaseText):
+            elif isinstance(entry, (BaseText, SEOPreview)):
+                kind = (
+                    "a text component" if isinstance(entry, BaseText) else "a preview"
+                )
                 errors.append(
                     (
                         "content_studio.E020",
                         f"{config_name(owner)}.edit_header entry {entry!r} is "
-                        "a text component; the header only shows links and "
-                        "buttons. Put it in edit_main or edit_sidebar.",
+                        f"{kind}; the header only shows links and buttons. "
+                        "Put it in edit_main or edit_sidebar.",
                     )
                 )
 
@@ -2153,6 +2156,227 @@ def check_password_reset_deployment(
     return []
 
 
+def map_setting_errors() -> list[tuple[str, str]]:
+    """
+    Malformed map and embed settings, as (check id, message) pairs: the
+    tile URL must be a template with {z}, {x} and {y}, the attribution
+    a string, the geocoder None or an http(s) URL, and the oEmbed
+    providers None or a list of provider dicts.
+    """
+    errors = []
+    tile_url = cs_settings.MAP_TILE_URL
+
+    if not isinstance(tile_url, str) or not all(
+        part in tile_url for part in ("{z}", "{x}", "{y}")
+    ):
+        errors.append(
+            (
+                "content_studio.E034",
+                "MAP_TILE_URL must be a tile URL template with {z}, {x} and "
+                "{y}, like 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'.",
+            )
+        )
+
+    if not isinstance(cs_settings.MAP_TILE_ATTRIBUTION, str):
+        errors.append(
+            (
+                "content_studio.E034",
+                "MAP_TILE_ATTRIBUTION must be a string, like '&copy; "
+                "OpenStreetMap contributors'.",
+            )
+        )
+
+    geocoder = cs_settings.MAP_GEOCODER_URL
+
+    if geocoder is not None and not _is_absolute_url(geocoder):
+        errors.append(
+            (
+                "content_studio.E034",
+                "MAP_GEOCODER_URL must be None or an http(s) URL, like "
+                "'https://nominatim.openstreetmap.org/search'.",
+            )
+        )
+
+    providers = cs_settings.OEMBED_PROVIDERS
+
+    if providers is not None:
+        if isinstance(providers, (str, dict)) or not isinstance(
+            providers, (list, tuple)
+        ):
+            errors.append(
+                (
+                    "content_studio.E034",
+                    "OEMBED_PROVIDERS must be None or a list of providers, "
+                    "each {'name': ..., 'endpoint': ..., 'patterns': [...]}.",
+                )
+            )
+        else:
+            for provider in providers:
+                error = _oembed_provider_error(provider)
+
+                if error:
+                    errors.append(("content_studio.E034", error))
+
+    return errors
+
+
+def _oembed_provider_error(provider):
+    import re
+
+    if not isinstance(provider, dict):
+        return f"OEMBED_PROVIDERS entry {provider!r} is not a dict."
+
+    name = provider.get("name")
+
+    if not isinstance(name, str) or not name:
+        return f"OEMBED_PROVIDERS entry {provider!r} needs a name."
+
+    if not _is_absolute_url(provider.get("endpoint")):
+        return f"OEMBED_PROVIDERS provider {name!r} needs an http(s) endpoint."
+
+    patterns = provider.get("patterns")
+
+    if (
+        isinstance(patterns, str)
+        or not isinstance(patterns, (list, tuple))
+        or not patterns
+    ):
+        return (
+            f"OEMBED_PROVIDERS provider {name!r} needs a list of URL "
+            "patterns (regular expressions)."
+        )
+
+    for pattern in patterns:
+        try:
+            re.compile(pattern)
+        except (re.error, TypeError):
+            return (
+                f"OEMBED_PROVIDERS provider {name!r} has an invalid pattern "
+                f"{pattern!r}; patterns are regular expressions."
+            )
+
+    return None
+
+
+NUMBER_FIELDS = (models.FloatField, models.DecimalField)
+
+
+def map_widget_errors(studio) -> list[tuple[str, str]]:
+    """
+    MapWidget on a field it cannot edit, as (check id, message) pairs.
+    The widget stores {"lat", "lng"} in a JSONField, or the latitude in
+    a FloatField or DecimalField and the longitude in the number field
+    lng_field names.
+    """
+    model = getattr(studio, "model", None)
+
+    if model is None:
+        return []
+
+    fields = {field.name: field for field in model._meta.get_fields()}
+    errors = []
+
+    def error(message):
+        errors.append(
+            (
+                "content_studio.E035",
+                f"{studio.__class__.__name__}: {message}",
+            )
+        )
+
+    for field in iter_edit_fields(studio):
+        model_field = fields.get(field.name)
+        widget = field.widget or getattr(model_field, "widget_class", None)
+
+        if model_field is None or not is_kind(widget, widgets.MapWidget):
+            continue
+
+        lng_field = getattr(as_instance(widget), "lng_field", None)
+
+        if isinstance(model_field, models.JSONField):
+            if lng_field is not None:
+                error(
+                    f"MapWidget on {field.name!r} stores the location in the "
+                    "JSONField; lng_field is for a latitude number field."
+                )
+        elif isinstance(model_field, NUMBER_FIELDS):
+            lng_model_field = fields.get(lng_field) if lng_field else None
+
+            if lng_field is None:
+                error(
+                    f"MapWidget on the number field {field.name!r} needs "
+                    "lng_field, the field holding the longitude."
+                )
+            elif lng_field == field.name or not isinstance(
+                lng_model_field, NUMBER_FIELDS
+            ):
+                error(
+                    f"MapWidget on {field.name!r} has lng_field {lng_field!r}, "
+                    f"which is not a FloatField or DecimalField on "
+                    f"{model._meta.label_lower}."
+                )
+        else:
+            error(
+                f"MapWidget on {field.name!r} edits a JSONField, or a "
+                "FloatField or DecimalField with lng_field; the field on "
+                f"{model._meta.label_lower} is neither."
+            )
+
+    return errors
+
+
+def iter_edit_components(studio):
+    """
+    Yield the Component objects declared in a model studio's edit_main
+    and edit_sidebar, across form sets and groups.
+    """
+    all_fields = list(getattr(studio, "edit_main", None) or []) + list(
+        getattr(studio, "edit_sidebar", None) or []
+    )
+
+    for entry in flatten(
+        [
+            entry.get_fields() if hasattr(entry, "get_fields") else [entry]
+            for entry in all_fields
+        ]
+    ):
+        if isinstance(entry, Component):
+            yield entry
+
+
+def seo_preview_errors(studio) -> list[tuple[str, str]]:
+    """
+    SEOPreview components naming fields the model does not have, as
+    (check id, message) pairs: the preview reads the title, description
+    and path from the form's values, so an unknown name stays empty.
+    """
+    model = getattr(studio, "model", None)
+
+    if model is None:
+        return []
+
+    errors = []
+    field_names = model_field_names(model)
+
+    for component in iter_edit_components(studio):
+        if not isinstance(component, SEOPreview):
+            continue
+
+        for option in ("title_field", "description_field", "path_field"):
+            name = getattr(component, option)
+
+            if name is not None and name not in field_names:
+                errors.append(
+                    (
+                        "content_studio.E036",
+                        f"{studio.__class__.__name__}: SEOPreview {option} "
+                        f"{name!r} does not exist on {model._meta.label_lower}.",
+                    )
+                )
+
+    return errors
+
+
 @checks.register()
 def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage]:
     site = cs_settings.ADMIN_SITE
@@ -2196,6 +2420,12 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in edit_width_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in map_widget_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in seo_preview_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in duplication_errors(studio):
@@ -2253,6 +2483,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in media_upload_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in map_setting_errors():
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in webhook_setting_errors():

@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useHttp } from "@/hooks/use-http";
-import type { Dashboard, Extension, Model, ModelGroup } from "@/types";
+import type {
+  Dashboard,
+  Extension,
+  MapSettings,
+  Model,
+  ModelGroup,
+} from "@/types";
 
 export function useDiscover() {
   const http = useHttp();
@@ -31,6 +37,9 @@ export function useDiscover() {
           enabled: boolean;
           tenant_model: string | null;
         };
+        // What MapWidget's map shows and searches with; absent from
+        // older servers.
+        map?: MapSettings;
         media_library: {
           enabled: boolean;
           folders: boolean;

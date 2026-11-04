@@ -140,7 +140,10 @@ class Command(BaseCommand):
             # list and stays in the dashboard's latest-5 widget.
             article = Article.objects.create(
                 title="Hello, Content Studio",
+                slug="hello-content-studio",
                 body="This article was created by the demo seed command.",
+                meta_description="A first look at editing content in Content Studio.",
+                video_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 status=Article.Status.PUBLISHED,
                 author=user,
                 created_by=user,

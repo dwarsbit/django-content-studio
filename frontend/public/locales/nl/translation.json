@@ -385,6 +385,21 @@
     "rating_widget": {
       "star_one": "{{count}} ster van {{max}}",
       "star_other": "{{count}} sterren van {{max}}"
+    },
+    "map_widget": {
+      "map": "Kaart",
+      "search": "Zoek een adres",
+      "search_placeholder": "Zoek een adres en druk op Enter",
+      "no_results": "Niets gevonden voor “{{query}}”.",
+      "search_error": "Het zoeken naar adressen gaf geen antwoord.",
+      "load_error": "De kaart kon niet worden geladen. Typ de coördinaten.",
+      "latitude": "Breedtegraad",
+      "longitude": "Lengtegraad"
+    },
+    "embed_widget": {
+      "loading": "Voorbeeld laden…",
+      "no_preview": "Geen voorbeeld voor dit adres. Het wordt opgeslagen zoals getypt.",
+      "load_error": "Het voorbeeld kon niet worden geladen."
     }
   },
   "formats": {
@@ -451,6 +466,12 @@
   "form_components": {
     "activity": {
       "empty": "Nog geen activiteit vastgelegd"
+    },
+    "seo_preview": {
+      "no_title": "Paginatitel",
+      "no_description": "Hier komt een beschrijving van de pagina.",
+      "title_over": "De titel is {{count}} tekens; zoekmachines tonen er ongeveer {{limit}}.",
+      "description_over": "De beschrijving is {{count}} tekens; zoekmachines tonen er ongeveer {{limit}}."
     }
   },
   "palette": {

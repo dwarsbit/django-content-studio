@@ -64,7 +64,7 @@ Studios, the site and their configuration objects. `admin_site` is the default s
 
 ## `content_studio.form`
 
-Edit page layouts, components and table columns. `Component` is the base type of the built-in components; custom component types are not supported, but `Link`, `ButtonLink`, `Button` and the text components (`Title`, `Subtitle`, `Text`, `Callout`) are meant to be subclassed.
+Edit page layouts, components and table columns. `Component` is the base type of the built-in components; custom component types are not supported, but `Link`, `ButtonLink`, `Button`, the text components (`Title`, `Subtitle`, `Text`, `Callout`) and `SEOPreview` are meant to be subclassed.
 
 - `ActivityLog`
 - `Button`
@@ -77,6 +77,7 @@ Edit page layouts, components and table columns. `Component` is the base type of
 - `FormSet`
 - `FormSetGroup`
 - `Link`
+- `SEOPreview`
 - `Subtitle`
 - `TableColumn`
 - `Text`
@@ -149,6 +150,7 @@ The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_
 - `DateWidget`
 - `DurationWidget`
 - `EmailWidget`
+- `EmbedWidget`
 - `FileWidget`
 - `ForeignKeyWidget`
 - `IconPickerWidget`
@@ -159,6 +161,7 @@ The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_
 - `ListWidget`
 - `ManyMediaWidget`
 - `ManyToManyWidget`
+- `MapWidget`
 - `MarkdownWidget`
 - `MediaWidget`
 - `MultiSelectWidget`

@@ -211,3 +211,51 @@
     }
   }
 }
+
+/* MapWidget: Leaflet's own stylesheet is added by its chunk; these
+   fit the map into the theme. They are not layered, as Leaflet's rules
+   are not either. */
+.dcs-map .leaflet-container {
+  font: inherit;
+  background: var(--muted);
+}
+.dcs-map .leaflet-bar {
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.dcs-map .leaflet-bar a {
+  background: var(--background);
+  color: var(--foreground);
+  border-bottom-color: var(--border);
+}
+.dcs-map .leaflet-bar a:hover,
+.dcs-map .leaflet-bar a:focus {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.dcs-map .leaflet-bar a.leaflet-disabled {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+.dcs-map .leaflet-control-attribution {
+  background: color-mix(in oklab, var(--background) 80%, transparent);
+  color: var(--muted-foreground);
+  font-size: 0.65rem;
+}
+.dcs-map .leaflet-control-attribution a {
+  color: var(--foreground);
+}
+.dcs-map .dcs-map-pin {
+  color: var(--primary);
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35));
+}
+.dcs-map .leaflet-marker-draggable .dcs-map-pin,
+.dcs-map .leaflet-marker-icon.dcs-map-pin {
+  cursor: grab;
+}
+/* The tiles are drawn for light pages: inverted and turned back
+   around the hue wheel, they keep their colors on a dark one. */
+.dark .dcs-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9)
+    saturate(0.7);
+}
