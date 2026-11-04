@@ -235,7 +235,8 @@
       "upload_label": "Upload media",
       "replace": "Vervangen",
       "remove": "Verwijderen",
-      "empty": "Nog geen bestand gekozen."
+      "empty": "Nog geen bestand gekozen.",
+      "show_details": "Details van {{name}} bekijken"
     },
     "cover_image_widget": {
       "empty_title": "Coverafbeelding toevoegen",

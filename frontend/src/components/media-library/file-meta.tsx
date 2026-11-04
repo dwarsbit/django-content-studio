@@ -20,6 +20,24 @@ export function extensionOf(item: MediaItem): string {
   return match ? match[1].toUpperCase() : "";
 }
 
+/**
+ * The name of a media item: its own name, or the file name from its URL
+ * when it has none.
+ */
+export function mediaName(item: Pick<MediaItem, "name" | "file">): string {
+  if (item.name) {
+    return item.name;
+  }
+
+  const path = (item.file ?? "").split(/[?#]/)[0];
+
+  try {
+    return decodeURIComponent(path.split("/").pop() ?? "");
+  } catch {
+    return path.split("/").pop() ?? "";
+  }
+}
+
 /** The file's size (stored in bytes), formatted; empty when unknown. */
 export function sizeOf(item: Pick<MediaItem, "size">): string {
   return !R.isNil(item.size) && item.size > 0 ? (bytes(item.size) ?? "") : "";

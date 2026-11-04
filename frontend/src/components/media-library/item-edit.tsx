@@ -75,15 +75,22 @@ export function ItemEdit({
   itemId,
   open,
   onClose,
+  onDeleted,
 }: {
   itemId: string;
   open: boolean;
   onClose: VoidFunction;
+  // Called after the item was deleted, before the sheet closes.
+  onDeleted?(item: MediaItem): void;
 }) {
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <SheetContent className="w-[400px] sm:max-w-[400px] gap-0 p-0">
-        <ItemEditContent itemId={itemId} onClose={onClose} />
+        <ItemEditContent
+          itemId={itemId}
+          onClose={onClose}
+          onDeleted={onDeleted}
+        />
       </SheetContent>
     </Sheet>
   );
@@ -92,15 +99,17 @@ export function ItemEdit({
 function ItemEditContent({
   itemId,
   onClose,
+  onDeleted,
 }: {
   itemId: string;
   onClose: VoidFunction;
+  onDeleted?(item: MediaItem): void;
 }) {
   const { t } = useTranslation();
   const { data } = useRetrieveMedia(itemId);
 
   return data ? (
-    <EditForm data={data} onClose={onClose} />
+    <EditForm data={data} onClose={onClose} onDeleted={onDeleted} />
   ) : (
     <>
       <SheetHeader className="sr-only">
@@ -140,9 +149,11 @@ function sameCrop(a: CropValue | undefined, b: CropValue | undefined) {
 function EditForm({
   data,
   onClose,
+  onDeleted,
 }: {
   data: MediaItem;
   onClose: VoidFunction;
+  onDeleted?(item: MediaItem): void;
 }) {
   const { t } = useTranslation();
   const { data: discover } = useDiscover();
@@ -420,6 +431,7 @@ function EditForm({
           className="mr-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
           onClick={async () => {
             if (await remove(data)) {
+              onDeleted?.(data);
               onClose();
             }
           }}

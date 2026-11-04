@@ -463,3 +463,16 @@ def test_command_needs_pillow(monkeypatch):
 
     with pytest.raises(CommandError, match="Pillow"):
         run_command()
+
+
+@pytest.mark.django_db
+def test_a_related_media_item_carries_its_name_and_size():
+    from content_studio.serializers import represent_related
+
+    item = make_item(b"%PDF-1.4", name="annual-report.pdf", type="file")
+
+    data = represent_related(item, None)
+
+    assert data["name"] == "annual-report"
+    assert data["size"] == item.size
+    assert data["type"] == "file"
