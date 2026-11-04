@@ -13,6 +13,7 @@ const sidebars: SidebarsConfig = {
     "media-library",
     "dashboard",
     "extensions",
+    "analytics",
     "permissions",
     "authentication",
     "multi-tenancy",

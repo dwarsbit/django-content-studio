@@ -520,7 +520,8 @@ export interface FormField {
     | "Title"
     | "Subtitle"
     | "Text"
-    | "Callout";
+    | "Callout"
+    | "Analytics";
   copy: boolean;
   icon: string;
   title?: string | null;
@@ -533,6 +534,9 @@ export interface FormField {
   per_object?: boolean;
   // Callout: its variant (the color and default icon).
   variant?: CalloutVariant;
+  // Analytics: compact, full, or auto (compact in the sidebar).
+  layout?: "auto" | "compact" | "full";
+  default_range?: string;
 }
 
 export type CalloutVariant = "info" | "success" | "warning" | "danger";
@@ -825,13 +829,44 @@ export interface UserMenuButtonExtension {
   config: MainMenuButtonConfig;
 }
 
+export interface AnalyticsMetric {
+  key: string;
+  label: string;
+  kind: "number" | "percent" | "duration";
+  // Whether a rise is good (1) or bad (-1).
+  sign: 1 | -1;
+}
+
+export interface AnalyticsExtensionConfig {
+  provider: string;
+  metrics: AnalyticsMetric[];
+  timeseries_metrics: string[];
+  breakdowns: string[];
+  realtime: boolean;
+  page_path: string | null;
+}
+
+export interface AnalyticsExtension {
+  extension_id: string;
+  extension_type: ExtensionType.AnalyticsExtension;
+  config: AnalyticsExtensionConfig;
+}
+
+export interface AnalyticsPageExtension {
+  extension_id: string;
+  extension_type: ExtensionType.AnalyticsPage;
+  config: { path: string; title: string; description: string | null };
+}
+
 export type Extension =
   | MainMenuLinkExtension
   | MainMenuButtonExtension
   | UserMenuLinkExtension
   | UserMenuButtonExtension
   | IFramePageExtension
-  | DashboardPageExtension;
+  | DashboardPageExtension
+  | AnalyticsExtension
+  | AnalyticsPageExtension;
 
 export enum ExtensionType {
   MainMenuLink = "MainMenuLink",
@@ -840,4 +875,6 @@ export enum ExtensionType {
   UserMenuButton = "UserMenuButton",
   IFramePage = "IFramePage",
   DashboardPage = "DashboardPage",
+  AnalyticsExtension = "AnalyticsExtension",
+  AnalyticsPage = "AnalyticsPage",
 }

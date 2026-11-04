@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 import { useHttp } from "@/hooks/use-http";
+import { formatExactNumber, formatNumber } from "@/lib/format-number";
 import { cn } from "@/lib/utils";
 import { type DashboardWidget } from "@/types";
 
@@ -18,10 +19,12 @@ dayjs.extend(localizedFormat);
 
 /**
  * A list of links to content. When every item belongs to one model,
- * the header offers "View all" to that model's list.
+ * the header offers "View all" to that model's list (or to the widget's
+ * own view_all). Items without a model and ID are rows, not links; an
+ * item's value shows at the end of its row.
  */
 export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const http = useHttp();
   const { data } = useQuery({
     retry: false,
@@ -33,6 +36,7 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
       const { data } = await http.get<{
         title: string;
         description: string;
+        view_all?: string;
         content: {
           id: string;
           model: string;
@@ -42,6 +46,7 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
           status_variant?: StatusVariant;
           thumbnail?: string;
           timestamp?: string | null;
+          value?: number | null;
         }[];
       }>(`/dashboard/widgets/${widget.widget_id}`);
 
@@ -50,13 +55,14 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
   });
 
   const models = R.uniq((data?.content ?? []).map((item) => item.model));
-  const model = models.length === 1 ? models[0] : null;
+  const model = models.length === 1 && models[0] ? models[0] : null;
+  const viewAll = data?.view_all || (model ? `/content/${model}` : null);
 
   return (
     <Widget
       title={data?.title ?? widget.name}
       description={data?.description}
-      action={model && <ViewAll to={`/content/${model}`} />}
+      action={viewAll && <ViewAll to={viewAll} />}
     >
       {!data ? (
         <WidgetLoading />
@@ -66,12 +72,9 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
         </WidgetEmpty>
       ) : (
         <ul className="border-t p-1.5">
-          {data.content.map((item) => (
-            <li key={`${item.model}-${item.id}`}>
-              <Link
-                to={`/content/${item.model}/${item.id}`}
-                className="flex items-center gap-3 rounded-md px-2.5 py-2 hover:bg-accent outline-none focus-visible:ring-3 focus-visible:ring-ring"
-              >
+          {data.content.map((item, index) => {
+            const row = (
+              <>
                 {item.thumbnail ? (
                   <img
                     src={item.thumbnail}
@@ -102,9 +105,36 @@ export function ContentListWidget({ widget }: { widget: DashboardWidget }) {
                     {dayjs(item.timestamp).fromNow()}
                   </time>
                 ) : null}
-              </Link>
-            </li>
-          ))}
+                {item.value != null ? (
+                  <span
+                    className="text-sm font-medium tabular-nums shrink-0"
+                    title={formatExactNumber(item.value, {
+                      locale: i18n?.language,
+                    })}
+                  >
+                    {formatNumber(item.value, { locale: i18n?.language })}
+                  </span>
+                ) : null}
+              </>
+            );
+
+            return (
+              <li key={`${item.model}-${item.id}-${index}`}>
+                {item.model && item.id ? (
+                  <Link
+                    to={`/content/${item.model}/${item.id}`}
+                    className="flex items-center gap-3 rounded-md px-2.5 py-2 hover:bg-accent outline-none focus-visible:ring-3 focus-visible:ring-ring"
+                  >
+                    {row}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 rounded-md px-2.5 py-2">
+                    {row}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </Widget>

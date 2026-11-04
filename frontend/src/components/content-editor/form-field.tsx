@@ -2,6 +2,7 @@ import React, { useContext } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 import { ActivityLog } from "@/components/form-components/activity-log";
+import { Analytics } from "@/components/form-components/analytics";
 import { ComponentButton } from "@/components/form-components/button";
 import { Callout } from "@/components/form-components/callout";
 import { Link } from "@/components/form-components/link";
@@ -39,6 +40,7 @@ const COMPONENTS: Partial<
   LinkButton,
   Button: ComponentButton,
   ActivityLog,
+  Analytics,
   Title,
   Subtitle,
   Text,

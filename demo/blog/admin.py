@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 
 from content_studio import register, widgets
 from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
+from content_studio.analytics import Analytics
 from content_studio.form import ActivityLog, Callout, Field, FormSet, Subtitle, Text
 from content_studio.actions import bulk_action
 
@@ -131,6 +132,8 @@ class ArticleStudio(ModelStudio):
         "author",
         "featured",
         "views",
+        # The demo site serves articles at /articles/<id>/.
+        Analytics(path_field="pk", path_prefix="/articles/", path_suffix="/"),
         ActivityLog(),
     ]
 

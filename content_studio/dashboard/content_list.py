@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from ..dashboard import DashboardWidget
+from .statistic import NumberField
 
 __all__ = [
     "ContentListWidget",
@@ -8,8 +9,9 @@ __all__ = [
 
 
 class ContentSerializer(serializers.Serializer):
-    model = serializers.CharField(allow_blank=False, required=True)
-    id = serializers.CharField(allow_blank=False, required=True)
+    # The object the row links to; a row without one is not a link.
+    model = serializers.CharField(default="", allow_blank=True, required=False)
+    id = serializers.CharField(default="", allow_blank=True, required=False)
     title = serializers.CharField(allow_blank=False, required=True)
     description = serializers.CharField(
         default="",
@@ -28,6 +30,8 @@ class ContentSerializer(serializers.Serializer):
     thumbnail = serializers.CharField(default="", allow_blank=True, required=False)
     # Shown relative to now ("2h") at the end of the row.
     timestamp = serializers.DateTimeField(default=None, allow_null=True, required=False)
+    # A number shown at the end of the row, such as its visitors.
+    value = NumberField(default=None, allow_null=True, required=False)
 
 
 class ContentListWidgetSerializer(serializers.Serializer):
@@ -38,6 +42,9 @@ class ContentListWidgetSerializer(serializers.Serializer):
         required=False,
     )
     content = serializers.ListField(child=ContentSerializer())
+    # A path in the admin for the header's "View all"; by default the
+    # list of the model all rows belong to.
+    view_all = serializers.CharField(default="", allow_blank=True, required=False)
 
 
 class ContentListWidget(DashboardWidget):

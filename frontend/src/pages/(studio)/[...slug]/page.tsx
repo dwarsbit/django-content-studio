@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 
+import { AnalyticsPageView } from "@/components/analytics/analytics-page";
 import { PageBody } from "@/components/ui/page-header";
 import { useDiscover } from "@/hooks/use-discover";
 import {
+  type AnalyticsPageExtension,
   type DashboardPageExtension,
   ExtensionType,
   type IFramePageExtension,
@@ -32,6 +34,16 @@ export function CatchAllPage() {
       extension.extension_type === ExtensionType.DashboardPage &&
       trimSlashes(extension.config.path) === trimSlashes(path ?? ""),
   );
+
+  const analyticsPage = discover?.extensions.find(
+    (extension): extension is AnalyticsPageExtension =>
+      extension.extension_type === ExtensionType.AnalyticsPage &&
+      trimSlashes(extension.config.path) === trimSlashes(path ?? ""),
+  );
+
+  if (analyticsPage) {
+    return <AnalyticsPageView page={analyticsPage} />;
+  }
 
   if (dashboardPage) {
     return (

@@ -2,7 +2,8 @@
 
 Extensions add links, buttons and pages to the admin's menus: a link to an
 external tool, a button that runs your code, another web application shown
-inside the admin, or a page with a dashboard of its own.
+inside the admin, or a page with a dashboard of its own. For your website's
+visitor statistics, see [Analytics](/docs/analytics).
 
 ```python
 # mysite/studio.py
@@ -13,9 +14,9 @@ from content_studio.extensions import IFramePage, MainMenuLink
 class BlogStudioSite(ContentStudioSite):
     extensions = [
         MainMenuLink(
-            url="https://plausible.io/example.com",
-            label="Analytics",
-            icon="ph-bold ph-chart-line",
+            url="https://status.example.com",
+            label="Status",
+            icon="ph-bold ph-heartbeat",
         ),
         IFramePage(
             path="reports/",
@@ -40,7 +41,7 @@ To show a link to some users only, subclass it and override
 `is_visible(request)`:
 
 ```python
-class AnalyticsLink(MainMenuLink):
+class ReportsLink(MainMenuLink):
     def is_visible(self, request):
         return request.user.is_superuser
 ```
