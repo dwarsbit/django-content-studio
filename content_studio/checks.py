@@ -1029,7 +1029,11 @@ def inline_fk_errors(studio) -> list[tuple[str, str]]:
             )
             continue
 
-        if not field.many_to_one or field.remote_field.model is not model:
+        if (
+            not (field.many_to_one or field.one_to_one)
+            or not field.concrete
+            or field.remote_field.model is not model
+        ):
             errors.append(
                 (
                     "content_studio.E012",

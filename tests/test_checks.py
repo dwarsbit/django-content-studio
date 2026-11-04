@@ -393,6 +393,36 @@ def test_inline_fk_name_to_wrong_target_surfaces_as_system_error():
     assert "foreign key" in str(error)
 
 
+def test_inline_on_a_one_to_one_field_is_accepted():
+    """A OneToOneField is a foreign key too: it is detected without
+    fk_name and accepted with it."""
+    from django.test.utils import isolate_apps
+
+    from content_studio.checks import inline_fk_errors
+    from content_studio.utils import get_related_field_name
+
+    with isolate_apps("tests.testapp"):
+
+        class Stats(models.Model):
+            article = models.OneToOneField(Article, on_delete=models.CASCADE)
+
+            class Meta:
+                app_label = "testapp"
+
+        class Inline(InlineModelStudio):
+            model = Stats
+
+        class Named(Inline):
+            fk_name = "article"
+
+        class Parent(ModelStudio):
+            inlines = [Named]
+
+        assert get_related_field_name(Inline, Article) == "article"
+        assert get_related_field_name(Named, Article) == "article"
+        assert inline_fk_errors(Parent(Article, admin_site)) == []
+
+
 def test_inline_fk_name_to_parent_fk_produces_no_error():
     class Inline(InlineModelStudio):
         model = Review

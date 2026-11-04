@@ -105,7 +105,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E009` | A `FOCAL_POINT_ATTR` setting, which is removed: the focal point is one of a media item's [properties](/docs/media-library#properties). |
 | `content_studio.E010` | Edit page fields that are not model fields or properties, which would show as empty read-only boxes, and `Field(widget=...)` values that are not `content_studio.widgets` classes or instances. |
 | `content_studio.E011` | `search_fields`, `ordering` and `list_filter` entries that are not a field, and `list_item_display` values that are not a field or a model method. Inlines are checked too. |
-| `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key to the parent model. |
+| `content_studio.E012` | An inline's `fk_name` that is not a field, or not a foreign key (or one-to-one field) to the parent model. |
 | `content_studio.E013` | Values in the site's `default_widget_mapping` or `default_format_mapping` that are not widget or format classes or instances. |
 | `content_studio.E014` | A `MEDIA_LIBRARY_ALLOWED_EXTENSIONS` that is not a list of extensions without the dot, or a `MEDIA_LIBRARY_MAX_UPLOAD_SIZE` that is not a positive number of bytes. |
 | `content_studio.E015` | `readonly_fields` entries that are not model fields or properties. Inlines are checked too. |

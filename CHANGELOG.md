@@ -59,6 +59,9 @@
   the tenant field, answered 500; it is now a 400 that names the conflict.
 - Fixed: the media library accepted any JSON value as an item's `tags`
   (a string, an object); it now requires a list of strings.
+- Fixed: an inline whose model points at its parent with a
+  `OneToOneField` failed at startup (or, with `fk_name`, the `E012` check
+  refused it); one-to-one fields are now accepted like foreign keys.
 
 ## 1.8.0 (2026-11-04)
 
