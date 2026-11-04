@@ -112,7 +112,7 @@ class BaseModelViewSet(ModelViewSet):
         if hasattr(model, cs_settings.CREATED_BY_ATTR):
             attrs[cs_settings.CREATED_BY_ATTR] = self.request.user
 
-        instance = serializer.save(**attrs)
+        instance = self._save(serializer, **attrs)
         source = getattr(self, "_duplicate_source", None)
 
         if source is None:
@@ -223,8 +223,26 @@ class BaseModelViewSet(ModelViewSet):
             }
         )
 
+    def _save(self, serializer, **attrs):
+        """
+        Save the serializer; a database integrity error (a unique
+        constraint the serializer could not check, such as a
+        conditional one or one that includes the tenant field) is a
+        validation error, not a crash.
+        """
+        try:
+            with transaction.atomic(
+                using=router.db_for_write(self.get_queryset().model)
+            ):
+                return serializer.save(**attrs)
+        except IntegrityError as error:
+            raise ValidationError(
+                "The object could not be saved: it conflicts with an existing "
+                f"object ({error})."
+            )
+
     def perform_update(self, serializer):
-        instance = serializer.save()
+        instance = self._save(serializer)
 
         # Stamp the editor with a targeted update: a full instance save
         # would race with concurrent edits (lost updates).
@@ -338,10 +356,17 @@ class BaseModelViewSet(ModelViewSet):
         Delete a soft-deleted object permanently, bypassing the trash.
         Gated by delete permission on the object.
         """
-        if not self._admin_model.soft_delete:
+        soft_delete_field = self._admin_model.soft_delete
+
+        if not soft_delete_field:
             raise NotFound("This model has no trash.")
 
         instance = self.get_object()
+
+        if getattr(instance, soft_delete_field) is None:
+            # Only the trash skips it: a live object goes through the
+            # regular delete, which moves it to the trash first.
+            raise ValidationError("The object is not in the trash.")
 
         self._delete(instance)
 
@@ -878,7 +903,7 @@ class BaseModelViewSet(ModelViewSet):
             )
 
         else:
-            qs = self._get_related_search_queryset(related_model, search)
+            qs = self._get_related_search_queryset(related_model, search, request)
 
         # Related objects of tenant-scoped models come from the request's
         # tenant only, like any list.
@@ -926,7 +951,7 @@ class BaseModelViewSet(ModelViewSet):
         ):
             raise PermissionDenied("View permission required.")
 
-    def _get_related_search_queryset(self, related_model, search):
+    def _get_related_search_queryset(self, related_model, search, request):
         """
         Search the related model by the related model studio's
         search_fields. Without search_fields nothing is searchable, so a
@@ -935,7 +960,11 @@ class BaseModelViewSet(ModelViewSet):
         offered when the related model studio configures soft_delete.
         """
         related_admin = cs_settings.ADMIN_SITE._registry.get(related_model)
-        qs = related_model.objects.all()
+        qs = (
+            related_admin.get_queryset(request)
+            if related_admin is not None
+            else related_model._default_manager.all()
+        )
 
         soft_delete_field = related_admin.soft_delete if related_admin else None
         if soft_delete_field:

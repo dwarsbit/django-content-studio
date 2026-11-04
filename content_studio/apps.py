@@ -120,10 +120,24 @@ class DjangoContentStudioConfig(AppConfig):
         for model, admin_model in cs_settings.ADMIN_SITE._registry.items():
             self._create_view_set(model, admin_model)
 
+            inlined = set()
+
             for inline in admin_model.inlines:
-                self._create_view_set(
-                    parent=model, model=inline.model, admin_model=inline
-                )
+                # A model inlined twice on the same studio, or an inline
+                # whose link to the parent cannot be found, is reported
+                # by the system checks (E012, E038); registering it
+                # would crash before the checks can run.
+                if inline.model in inlined:
+                    continue
+
+                inlined.add(inline.model)
+
+                try:
+                    self._create_view_set(
+                        parent=model, model=inline.model, admin_model=inline
+                    )
+                except ValueError:
+                    continue
 
         log(
             ":white_check_mark:",
@@ -375,7 +389,11 @@ class DjangoContentStudioConfig(AppConfig):
                 return Serializer
 
             def get_queryset(self):
-                qs = get_tenant_scoped_queryset(self.request, self._model)
+                qs = get_tenant_scoped_queryset(
+                    self.request,
+                    self._model,
+                    self._admin_model.get_queryset(self.request),
+                )
 
                 # Inline lists only exist in the context of a parent:
                 # the parent filter is required and the referenced
@@ -454,9 +472,19 @@ class DjangoContentStudioConfig(AppConfig):
                 return row_columns
 
             def get_parent_filter_keys(self):
-                """The parent keys the viewset filters on itself (lists)."""
+                """
+                The parent keys the viewset filters on itself (lists):
+                the foreign key's name and its attname. A foreign key
+                named like a reserved query parameter (page, limit,
+                search, ...) is only reachable by its attname, since
+                the plain name is read as that parameter.
+                """
                 if self.parent_fk and self.action == "list":
-                    return [self.parent_fk, f"{self.parent_fk}_id"]
+                    return [
+                        key
+                        for key in (self.parent_fk, f"{self.parent_fk}_id")
+                        if key not in LookupFilter.NON_FILTER_FIELDS
+                    ]
                 return []
 
             def _get_parent_id(self):
@@ -495,7 +523,15 @@ class DjangoContentStudioConfig(AppConfig):
                 # The parent is looked up like the parent studio's own
                 # detail endpoint: within the tenant and, with soft delete,
                 # outside the trash.
-                parents = get_tenant_scoped_queryset(self.request, self.parent_model)
+                parents = get_tenant_scoped_queryset(
+                    self.request,
+                    self.parent_model,
+                    (
+                        parent_admin.get_queryset(self.request)
+                        if parent_admin is not None
+                        else None
+                    ),
+                )
                 soft_delete_field = getattr(parent_admin, "soft_delete", "")
                 if soft_delete_field:
                     parents = parents.filter(**{f"{soft_delete_field}__isnull": True})

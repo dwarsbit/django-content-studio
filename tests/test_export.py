@@ -519,3 +519,17 @@ class ExportCheckTests(TestCase):
     def test_export_action_with_export_passes(self):
         with mock.patch.object(studio(), "actions", ["export"]):
             self.assertEqual(self.messages("content_studio.E007"), [])
+
+
+@pytest.mark.django_db
+def test_export_value_of_a_model_property():
+    """A model property named as an export column is read from the
+    object, like a table column."""
+    article = Article.objects.create(title="Words", body="one two three")
+    request = APIRequestFactory().get("/")
+
+    value = export.get_value(
+        studio(Article), TableColumn(field="word_count"), article, request
+    )
+
+    assert value == 3

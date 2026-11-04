@@ -4,6 +4,7 @@ from content_studio.admin import InlineModelStudio, ModelStudio
 from content_studio.form import FormSet, TableColumn
 
 from .models import (
+    Attachment,
     Article,
     Category,
     Edition,
@@ -93,11 +94,17 @@ class NoteAdmin(ModelStudio):
     soft_delete = "removed_at"
 
 
+class AttachmentInline(InlineModelStudio):
+    model = Attachment
+    table_display = ["name"]
+
+
 @register(Page)
 class PageAdmin(ModelStudio):
     table_display = ["id", "title"]
     prepopulated_fields = {"slug": ["title"]}
     soft_delete = "removed_at"
+    inlines = [AttachmentInline]
 
 
 @register(Label)

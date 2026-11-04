@@ -178,13 +178,29 @@ class UniqueSetCheckTests(TestCase):
         response = self.client.get(URL, {"set": TOGETHER, "values": "{"})
         self.assertEqual(response.status_code, 400)
 
-    def test_requires_view_or_change_permission(self):
+    def test_requires_view_change_or_add_permission(self):
         user = auth_models.User.objects.create_user(
             username="staff", password="x", is_staff=True
         )
         response = client_for(user).get(URL, {"set": TOGETHER, "values": "{}"})
 
         self.assertEqual(response.status_code, 403)
+
+        # An editor who may only add uses the check on the create form.
+        user.user_permissions.add(
+            auth_models.Permission.objects.get(codename="add_edition")
+        )
+        user = auth_models.User.objects.get(pk=user.pk)
+        response = client_for(user).get(
+            URL,
+            {
+                "set": TOGETHER,
+                "values": json.dumps({"slug": "spring", "language": "en"}),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["exists"])
 
 
 @override_settings(
@@ -209,6 +225,37 @@ class UniqueSetCheckTenantTests(TestCase):
             {"set": set_id, "values": json.dumps(values)},
             HTTP_X_DCS_TENANT=str(tenant.pk),
         )
+
+    def test_a_conflict_the_serializer_cannot_check_is_a_validation_error(self):
+        """The title-per-category constraint includes the tenant field,
+        which is read-only, so the serializer has no validator for it:
+        the database refuses the row, and that is a 400, not a 500."""
+        data = {"title": "Spring", "slug": "spring-2", "language": "en"}
+
+        response = self.client.post(
+            "/api/content/testapp.edition",
+            data,
+            format="json",
+            HTTP_X_DCS_TENANT=str(self.b.pk),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("conflicts with an existing object", str(response.json()))
+        self.assertFalse(Edition.objects.filter(slug="spring-2").exists())
+
+        other = Edition.objects.create(
+            title="Other", slug="other", language="en", category=self.b
+        )
+        response = self.client.patch(
+            f"/api/content/testapp.edition/{other.pk}",
+            {"title": "Spring"},
+            format="json",
+            HTTP_X_DCS_TENANT=str(self.b.pk),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        other.refresh_from_db()
+        self.assertEqual(other.title, "Other")
 
     def test_scoped_to_the_tenant(self):
         values = {"slug": "spring", "language": "en"}

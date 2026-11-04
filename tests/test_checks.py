@@ -393,6 +393,94 @@ def test_inline_fk_name_to_wrong_target_surfaces_as_system_error():
     assert "foreign key" in str(error)
 
 
+def test_inline_on_a_one_to_one_field_is_accepted():
+    """A OneToOneField is a foreign key too: it is detected without
+    fk_name and accepted with it."""
+    from django.test.utils import isolate_apps
+
+    from content_studio.checks import inline_fk_errors
+    from content_studio.utils import get_related_field_name
+
+    with isolate_apps("tests.testapp"):
+
+        class Stats(models.Model):
+            article = models.OneToOneField(Article, on_delete=models.CASCADE)
+
+            class Meta:
+                app_label = "testapp"
+
+        class Inline(InlineModelStudio):
+            model = Stats
+
+        class Named(Inline):
+            fk_name = "article"
+
+        class Parent(ModelStudio):
+            inlines = [Named]
+
+        assert get_related_field_name(Inline, Article) == "article"
+        assert get_related_field_name(Named, Article) == "article"
+        assert inline_fk_errors(Parent(Article, admin_site)) == []
+
+
+def test_inline_without_a_detectable_parent_link_surfaces_as_system_error():
+    """Without fk_name the link is auto-detected; a model with no (or
+    more than one) foreign key to the parent needs fk_name."""
+    from django.test.utils import isolate_apps
+
+    from content_studio.checks import inline_fk_errors
+
+    with isolate_apps("tests.testapp"):
+
+        class Unrelated(models.Model):
+            class Meta:
+                app_label = "testapp"
+
+        class Twice(models.Model):
+            first = models.ForeignKey(Article, on_delete=models.CASCADE)
+            second = models.ForeignKey(
+                Article, on_delete=models.CASCADE, related_name="+"
+            )
+
+            class Meta:
+                app_label = "testapp"
+
+        class UnrelatedInline(InlineModelStudio):
+            model = Unrelated
+
+        class TwiceInline(InlineModelStudio):
+            model = Twice
+
+        class Parent(ModelStudio):
+            inlines = [UnrelatedInline, TwiceInline]
+
+        errors = inline_fk_errors(Parent(Article, admin_site))
+
+    assert [check_id for check_id, _ in errors] == ["content_studio.E012"] * 2
+    assert "No foreign key" in errors[0][1]
+    assert "Specify fk_name" in errors[1][1]
+
+
+def test_model_inlined_twice_surfaces_as_system_error():
+    class First(InlineModelStudio):
+        model = Review
+
+    class Second(InlineModelStudio):
+        model = Review
+        table_display = ["stars"]
+
+    class Parent(ModelStudio):
+        inlines = [First, Second]
+
+    with swapped_article_studio(Parent):
+        messages = check_content_studio()
+
+    error = next(m for m in messages if m.id == "content_studio.E038")
+
+    assert "inlined twice" in str(error)
+    assert "First and Second" in str(error)
+
+
 def test_inline_fk_name_to_parent_fk_produces_no_error():
     class Inline(InlineModelStudio):
         model = Review
@@ -515,6 +603,24 @@ def test_choice_widget_instance_without_choices_surfaces_as_warning():
     warning = next(m for m in messages if m.id == "content_studio.W003")
 
     assert "SelectWidget" in str(warning)
+
+
+def test_multi_select_widget_on_multiple_choice_field_produces_no_warning():
+    """MultipleChoiceField exposes its options as choices through its
+    field attributes, not through Django's choices."""
+    from content_studio.checks import choice_widget_warnings
+    from content_studio.fields import MultipleChoiceField
+
+    class Tagged(models.Model):
+        tags = MultipleChoiceField(options=[("a", "A"), ("b", "B")])
+
+        class Meta:
+            app_label = "testapp"
+
+    class Studio(ModelStudio):
+        edit_main = [Field("tags", widget=widgets.MultiSelectWidget)]
+
+    assert choice_widget_warnings(Studio(Tagged, admin_site)) == []
 
 
 # --- W019: CoverImageWidget on a field that is not a media relation ----------
@@ -725,3 +831,93 @@ def test_malformed_upload_settings_surface_as_system_error(overrides):
     assert [m.id for m in messages if m.id == "content_studio.E014"] == [
         "content_studio.E014"
     ]
+
+
+# --- model properties are accepted where the studio names them ---------------
+
+
+def test_model_property_is_accepted_as_column_edit_field_readonly_and_export():
+    class WithProperty(ModelStudio):
+        table_display = ["title", "word_count"]
+        export_fields = ["title", "word_count"]
+        edit_main = ["title", "word_count"]
+        readonly_fields = ["word_count"]
+
+    with swapped_article_studio(WithProperty):
+        messages = check_content_studio()
+
+    ids = {m.id for m in messages}
+
+    assert not ids & {
+        "content_studio.E006",
+        "content_studio.E010",
+        "content_studio.E015",
+        "content_studio.E022",
+    }
+
+
+def test_unknown_name_is_still_rejected_everywhere():
+    class Typo(ModelStudio):
+        table_display = ["title", "wordcount"]
+        export_fields = ["title", "wordcount"]
+        edit_main = [FormSet(fields=["title", "wordcount"])]
+        readonly_fields = ["wordcount"]
+
+    with swapped_article_studio(Typo):
+        messages = check_content_studio()
+
+    ids = {m.id for m in messages}
+
+    assert ids >= {
+        "content_studio.E006",
+        "content_studio.E010",
+        "content_studio.E015",
+        "content_studio.E022",
+    }
+
+
+# --- E039: more than one foreign key to the tenant model ---------------------
+
+
+def test_two_foreign_keys_to_the_tenant_model_surface_as_system_error():
+    from django.test.utils import isolate_apps
+
+    from content_studio.checks import tenant_field_errors
+    from tests.testapp.models import Category
+
+    with isolate_apps("tests.testapp"):
+
+        class Shared(models.Model):
+            owner = models.ForeignKey(Category, on_delete=models.CASCADE)
+            partner = models.ForeignKey(
+                Category, on_delete=models.CASCADE, related_name="+"
+            )
+
+            class Meta:
+                app_label = "testapp"
+
+        class SharedInline(InlineModelStudio):
+            model = Shared
+            fk_name = "owner"
+
+        class SharedStudio(ModelStudio):
+            pass
+
+        class CategoryStudio(ModelStudio):
+            inlines = [SharedInline]
+
+        settings = {
+            "ADMIN_SITE": "content_studio.admin.admin_site",
+            "TENANT_MODEL": "tests.testapp.models.Category",
+        }
+
+        with override_settings(CONTENT_STUDIO=settings):
+            errors = tenant_field_errors(SharedStudio(Shared, admin_site))
+            inline_errors = tenant_field_errors(CategoryStudio(Category, admin_site))
+
+        # Without a tenant model there is nothing to scope on.
+        assert tenant_field_errors(SharedStudio(Shared, admin_site)) == []
+
+    assert [check_id for check_id, _ in errors] == ["content_studio.E039"]
+    assert "testapp.shared" in errors[0][1]
+    assert [check_id for check_id, _ in inline_errors] == ["content_studio.E039"]

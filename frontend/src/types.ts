@@ -99,6 +99,8 @@ export interface Model {
   verbose_name: string;
   verbose_name_plural: string;
   tenant_field: string | null;
+  // Only reachable through its parent's inline: no list page of its own.
+  inline_only?: boolean;
   // Combinations of fields that must be unique: the editor warns about
   // duplicates.
   unique_sets?: UniqueSet[];

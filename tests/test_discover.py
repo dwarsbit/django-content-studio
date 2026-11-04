@@ -138,3 +138,14 @@ class DiscoverEndpointTests(TestCase):
         self.assertIn("auth.user", models)
         self.assertIn("testapp.article", models)
         self.assertNotIn("auth.group", models)
+
+    def test_discover_marks_inline_only_models(self):
+        """A model that is only inlined has no list page: the frontend
+        must not offer to navigate to it."""
+        response = self.client.get("/api/discover")
+
+        inline_only = {
+            model["label"]: model["inline_only"] for model in response.json()["models"]
+        }
+        self.assertEqual(inline_only["testapp.article"], False)
+        self.assertEqual(inline_only["testapp.review"], True)

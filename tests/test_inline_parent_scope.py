@@ -104,3 +104,24 @@ def test_inline_list_with_a_malformed_parent_id_is_a_client_error(value):
     response = editor_client().get(PARTS, {"product": value})
 
     assert response.status_code == 400, response.content
+
+
+@pytest.mark.django_db
+def test_inline_parent_named_like_the_page_parameter():
+    """Attachment.page is the parent: the frontend sends page_id for the
+    parent and page for the pagination, which must not be read as a
+    second parent."""
+    from tests.testapp.models import Attachment, Page
+
+    user = User.objects.create_superuser(username="admin", password="x")
+    page = Page.objects.create(title="one", slug="one")
+    Attachment.objects.create(page=page, name="a.pdf")
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {create_access_token(user)}")
+
+    response = client.get(
+        "/api/inlines/testapp.page/testapp.attachment", {"page_id": page.pk, "page": 1}
+    )
+
+    assert response.status_code == 200, response.json()
+    assert [row["name"] for row in response.json()["results"]] == ["a.pdf"]

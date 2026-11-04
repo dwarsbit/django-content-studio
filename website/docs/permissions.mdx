@@ -24,8 +24,8 @@ user permissions.
 ## Object-level permissions
 
 The methods also receive the object, so a studio can decide per object. The
-admin respects the answer everywhere: an editor only sees and edits the
-objects you allow.
+answer guards every endpoint that works on one object: opening, saving,
+deleting, restoring and moving it, and running its buttons.
 
 ```python
 # blog/admin.py
@@ -49,6 +49,34 @@ check, as in the classic Django admin. The same methods also guard what
 surrounds an object: a related model's options only appear when the editor
 may view that model, and inline objects can only be added to parents the
 editor can see.
+
+## Narrowing the objects an editor sees
+
+Lists are not filtered object by object. To hide objects from an editor
+altogether, override `get_queryset(request)`: the list, the trash, exports,
+bulk actions, the site search, relation pickers, saves of relations and the
+single-object endpoints all start from it, so an object outside the
+queryset is not listed and not found. Tenant scoping and the trash filter
+are applied on top of it.
+
+```python
+@register(Article)
+class ArticleStudio(ModelStudio):
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset
+        # Editors only see their own articles.
+        return queryset.filter(author=request.user)
+```
+
+An object that already refers to a hidden object stays editable: a relation
+the form sends back unchanged is kept, only a new choice must come from the
+related studio's queryset. Relations inside blocks are validated within the
+tenant only.
+
+Pair it with `has_view_permission(request, obj)` when an editor may see an
+object but not open it.
 
 ## Login throttling
 

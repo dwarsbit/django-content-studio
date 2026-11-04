@@ -99,11 +99,14 @@ def get_related_field_name(inline, parent_model):
 
     opts = inline.model._meta
 
-    # Find all foreign keys pointing to parent model
+    # Find all foreign keys (including one-to-one fields) pointing to
+    # the parent model.
     fks = [
         f
         for f in opts.get_fields()
-        if f.many_to_one and f.remote_field.model == parent_model
+        if (f.many_to_one or f.one_to_one)
+        and f.concrete
+        and f.remote_field.model == parent_model
     ]
 
     if len(fks) == 1:

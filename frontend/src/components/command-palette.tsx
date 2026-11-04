@@ -100,7 +100,8 @@ export function CommandPalette({
     R.isEmpty(needle) ||
     keywords.some((keyword) => keyword.toLowerCase().includes(needle));
 
-  const models = discover?.models ?? [];
+  // Inline-only models have no list page of their own.
+  const models = (discover?.models ?? []).filter((model) => !model.inline_only);
   const navigableModels = models.filter((model) =>
     matches(model.verbose_name_plural, model.label),
   );

@@ -90,7 +90,9 @@ def table_column_errors(studio) -> list[tuple[str, str]]:
         if model is None:
             return
 
-        model_field_names = {field.name for field in model._meta.get_fields()}
+        model_field_names = {
+            field.name for field in model._meta.get_fields()
+        } | model_property_names(model)
         seen = set()
 
         for entry in resolve_table_display(owner):
@@ -132,7 +134,7 @@ def table_column_errors(studio) -> list[tuple[str, str]]:
                         "content_studio.E006",
                         f"{config_name(owner)}.table_display column "
                         f"{column.field!r} does not resolve to a model field, "
-                        "__str__ or a method on the studio.",
+                        "a model property, __str__ or a method on the studio.",
                     )
                 )
 
@@ -439,25 +441,38 @@ def duplicate_id_errors(site) -> list[tuple[str, str]]:
             )
         seen[key] = widget.__class__.__name__
 
-    seen = {}
+    # Components are looked up per studio: a model studio serves its
+    # own, an inline serves its own and falls back on the studio of the
+    # inlined model. IDs must be unique within each of those scopes;
+    # the same component class may serve several studios.
     for model, studio in site._registry.items():
-        components = list(iter_components(studio))
-        for inline in studio.inlines:
-            components.extend(iter_components(inline))
+        scopes = [(studio.__class__.__name__, list(iter_components(studio)))]
 
-        for component in components:
-            key = str(component.component_id)
-            if key in seen:
-                errors.append(
-                    (
-                        "content_studio.E005",
-                        f"Duplicate component ID {key}: "
-                        f"{seen[key]} and {component.__class__.__name__} "
-                        f"in {studio.__class__.__name__}. "
-                        "Pass component_id to disambiguate.",
+        for inline in studio.inlines:
+            components = list(iter_components(inline))
+            inline_model_studio = site._registry.get(getattr(inline, "model", None))
+
+            if inline_model_studio is not None:
+                components.extend(iter_components(inline_model_studio))
+
+            scopes.append((inline.__name__, components))
+
+        for scope, components in scopes:
+            seen = {}
+
+            for component in components:
+                key = str(component.component_id)
+                if key in seen:
+                    errors.append(
+                        (
+                            "content_studio.E005",
+                            f"Duplicate component ID {key}: "
+                            f"{seen[key]} and {component.__class__.__name__} "
+                            f"in {scope}. "
+                            "Pass component_id to disambiguate.",
+                        )
                     )
-                )
-            seen[key] = component.__class__.__name__
+                seen[key] = component.__class__.__name__
 
     return errors
 
@@ -830,6 +845,19 @@ def model_field_names(model) -> set[str]:
     }
 
 
+def model_property_names(model) -> set[str]:
+    """
+    The names of the model's properties: the admin shows a property
+    where the studio names it, as a table column, an edit page field,
+    a read-only field or an export column.
+    """
+    return {
+        name
+        for name in dir(model)
+        if not name.startswith("_") and isinstance(getattr(model, name, None), property)
+    }
+
+
 def iter_edit_fields(studio):
     """
     Yield the Field objects declared in a model studio's edit_main and
@@ -879,7 +907,7 @@ def edit_form_config_errors(studio) -> list[tuple[str, str]]:
         return []
 
     errors = []
-    field_names = model_field_names(model)
+    field_names = model_field_names(model) | model_property_names(model)
 
     for field in iter_edit_fields(studio):
         if field.name not in field_names:
@@ -981,14 +1009,83 @@ def list_query_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def duplicate_inline_errors(studio) -> list[tuple[str, str]]:
+    """
+    The same model inlined twice on one studio, as (check id, message)
+    pairs. An inline is served at one endpoint per parent and model, so
+    a second inline of the model has no endpoint of its own.
+    """
+    errors = []
+    seen = {}
+
+    for inline in getattr(studio, "inlines", None) or []:
+        inline_model = getattr(inline, "model", None)
+
+        if inline_model is None:
+            continue
+
+        if inline_model in seen:
+            errors.append(
+                (
+                    "content_studio.E038",
+                    f"{inline_model._meta.label_lower} is inlined twice on "
+                    f"{studio.__class__.__name__}: {seen[inline_model]} and "
+                    f"{inline.__name__}. A model can be inlined once per "
+                    "studio; the second inline is not served.",
+                )
+            )
+        else:
+            seen[inline_model] = inline.__name__
+
+    return errors
+
+
+def tenant_field_errors(studio) -> list[tuple[str, str]]:
+    """
+    A model with more than one foreign key to the tenant model, as
+    (check id, message) pairs. Tenant scoping needs one field to scope
+    on; with several, every request on the model fails.
+    """
+    from .utils import get_tenant_field_name
+
+    errors = []
+    model = getattr(studio, "model", None)
+
+    if model is None or not cs_settings.TENANT_MODEL:
+        return errors
+
+    inline_models = [
+        inline.model
+        for inline in getattr(studio, "inlines", None) or []
+        if getattr(inline, "model", None) is not None
+    ]
+
+    for checked in [model, *inline_models]:
+        try:
+            get_tenant_field_name(checked)
+        except ValueError:
+            errors.append(
+                (
+                    "content_studio.E039",
+                    f"{checked._meta.label_lower} has more than one foreign "
+                    "key to the tenant model; tenant scoping needs exactly "
+                    "one.",
+                )
+            )
+
+    return errors
+
+
 def inline_fk_errors(studio) -> list[tuple[str, str]]:
     """
     A misconfigured inline fk_name, as (check id, message) pairs. The
     name must exist on the inline's model and be a foreign key to the
     parent; anything else fails every inline list with a database
-    FieldError. An unset fk_name is auto-detected and already fails
-    loudly at startup.
+    FieldError. An unset fk_name is auto-detected: that needs exactly
+    one foreign key to the parent on the inline's model.
     """
+    from .utils import get_related_field_name
+
     errors = []
     model = getattr(studio, "model", None)
 
@@ -999,6 +1096,16 @@ def inline_fk_errors(studio) -> list[tuple[str, str]]:
         fk_name = getattr(inline, "fk_name", None)
 
         if not fk_name:
+            try:
+                get_related_field_name(inline, model)
+            except ValueError as error:
+                errors.append(
+                    (
+                        "content_studio.E012",
+                        f"{inline.__name__}: {error} The inline is not served.",
+                    )
+                )
+
             continue
 
         try:
@@ -1014,7 +1121,11 @@ def inline_fk_errors(studio) -> list[tuple[str, str]]:
             )
             continue
 
-        if not field.many_to_one or field.remote_field.model is not model:
+        if (
+            not (field.many_to_one or field.one_to_one)
+            or not field.concrete
+            or field.remote_field.model is not model
+        ):
             errors.append(
                 (
                     "content_studio.E012",
@@ -1040,7 +1151,7 @@ def readonly_fields_errors(studio) -> list[tuple[str, str]]:
         if model is None:
             return
 
-        field_names = model_field_names(model)
+        field_names = model_field_names(model) | model_property_names(model)
 
         for name in getattr(owner, "readonly_fields", None) or []:
             if not isinstance(name, str) or name not in field_names:
@@ -1048,7 +1159,7 @@ def readonly_fields_errors(studio) -> list[tuple[str, str]]:
                     (
                         "content_studio.E015",
                         f"{config_name(owner)}.readonly_fields entry "
-                        f"{name!r} is not a field of "
+                        f"{name!r} is not a field or property of "
                         f"{model._meta.label_lower}.",
                     )
                 )
@@ -1248,7 +1359,11 @@ def export_errors(studio) -> list[tuple[str, str]]:
             )
         seen.add(column.field)
 
-        if column.field == "__str__" or is_computed_column(studio, column):
+        if (
+            column.field == "__str__"
+            or is_computed_column(studio, column)
+            or column.field in model_property_names(model)
+        ):
             continue
 
         try:
@@ -1261,8 +1376,8 @@ def export_errors(studio) -> list[tuple[str, str]]:
                 (
                     "content_studio.E022",
                     f"{name}.export_fields entry {column.field!r} does not "
-                    "resolve to a model field, __str__ or a method on the "
-                    "studio.",
+                    "resolve to a model field, a model property, __str__ or "
+                    "a method on the studio.",
                 )
             )
 
@@ -1491,6 +1606,26 @@ def readonly_required_warnings(studio) -> list[tuple[str, str]]:
     return warnings
 
 
+def field_has_choices(model_field) -> bool:
+    """
+    Whether a model field gives the admin choices to render: Django's
+    choices, or the choices a Content Studio field (such as
+    MultipleChoiceField with its options) sends in its field attributes.
+    """
+    if getattr(model_field, "choices", None):
+        return True
+
+    get_attributes = getattr(model_field, "cs_get_field_attributes", None)
+
+    if not callable(get_attributes):
+        return False
+
+    try:
+        return bool(get_attributes().get("choices"))
+    except Exception:
+        return False
+
+
 def choice_widget_warnings(studio) -> list[tuple[str, str]]:
     """
     Choice-driven widgets on fields without choices, as (check id,
@@ -1517,7 +1652,7 @@ def choice_widget_warnings(studio) -> list[tuple[str, str]]:
         # The widget override, or a widget_class set on the model field.
         widget = field.widget or getattr(model_field, "widget_class", None)
 
-        if is_choice_widget(widget) and not getattr(model_field, "choices", None):
+        if is_choice_widget(widget) and not field_has_choices(model_field):
             warnings.append(
                 (
                     "content_studio.W003",
@@ -2515,6 +2650,12 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in inline_fk_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in duplicate_inline_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
+        for check_id, error in tenant_field_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
         for check_id, error in readonly_fields_errors(studio):

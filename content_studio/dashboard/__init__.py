@@ -90,6 +90,10 @@ class DashboardViewSet(ViewSet):
         if not widget:
             raise NotFound()
 
+        if not callable(getattr(widget, "get_data", None)):
+            # A layout-only widget (SpacingWidget) has no data to serve.
+            raise NotFound()
+
         data = widget.get_data(request)
 
         if isinstance(data, serializers.Serializer):

@@ -7,6 +7,7 @@ list_filter, mirroring the Django admin.
 
 import pytest
 from django.contrib.auth import models as auth_models
+from django.db import models
 from django.http import QueryDict
 from rest_framework.exceptions import ParseError
 from rest_framework.test import APIRequestFactory
@@ -314,3 +315,49 @@ def test_many_to_many_filter_matches_any():
         list_filter=("categories",),
     )
     assert set(result.values_list("title", flat=True)) == {"In news", "In both"}
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "id__range=1",
+        "id__range=1,2,3",
+        "username__range=a",
+        "username__regex=(",
+        "username__iregex=[",
+    ],
+)
+def test_malformed_lookup_values_return_parse_error(query):
+    """A range without both bounds or an invalid regular expression is
+    a 400 while the filter is built, not a database error while the
+    query runs."""
+    with pytest.raises(ParseError) as exc_info:
+        filter_via_action(auth_models.User, query)
+
+    assert "Invalid filter parameters" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_regex_lookup_still_works():
+    auth_models.User.objects.create_user(username="alpha", password="x")
+    auth_models.User.objects.create_user(username="beta", password="x")
+
+    result = filter_via_action(auth_models.User, "username__regex=^al")
+
+    assert list(result.values_list("username", flat=True)) == ["alpha"]
+
+
+def test_duration_values_are_cast_to_timedelta():
+    import datetime
+
+    lf = LookupFilter()
+    field = models.DurationField()
+
+    assert lf.cast_field_value("02:30:00", field) == datetime.timedelta(
+        hours=2, minutes=30
+    )
+    assert lf.cast_field_value("90", field) == datetime.timedelta(seconds=90)
+    assert lf.cast_field_value("PT2H", field) == datetime.timedelta(hours=2)
+
+    with pytest.raises(ValueError):
+        lf.cast_field_value("soon", field)

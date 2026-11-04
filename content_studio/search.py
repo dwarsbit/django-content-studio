@@ -69,7 +69,9 @@ class SearchViewSet(ViewSet):
                 (Q(**{f"{field}__icontains": term}) for field in studio.search_fields),
             )
             ordering = studio.ordering or ["pk"]
-            queryset = get_tenant_scoped_queryset(request, model).filter(query)
+            queryset = get_tenant_scoped_queryset(
+                request, model, studio.get_queryset(request)
+            ).filter(query)
 
             if getattr(studio, "soft_delete", ""):
                 queryset = queryset.filter(**{f"{studio.soft_delete}__isnull": True})

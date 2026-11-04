@@ -1,7 +1,9 @@
+import re
 from decimal import Decimal
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
+from django.utils.dateparse import parse_duration
 from rest_framework.exceptions import ParseError
 from rest_framework.filters import BaseFilterBackend
 
@@ -159,6 +161,25 @@ class LookupFilter(BaseFilterBackend):
             # Some lookups allow multiple values, otherwise
             # the first value is used.
             is_multi = lookup in self.MULTI_VALUE_LOOKUPS
+
+            # A value the lookup cannot take fails here, as a 400, not
+            # while the query runs: a range needs its two bounds, and a
+            # regular expression must compile (the database would
+            # otherwise raise, after the filter was built).
+            if lookup == "range" and len(value) != 2:
+                raise ValueError(
+                    f"The range lookup on '{field_name}' needs two values, "
+                    "a lower and an upper bound."
+                )
+
+            if lookup in ("regex", "iregex"):
+                try:
+                    re.compile(value[0])
+                except re.error as error:
+                    raise ValueError(
+                        f"The regular expression for '{field_name}' is "
+                        f"invalid: {error}."
+                    )
             # Depending on the field type we cast the value to
             # its correct type (i.e. number, boolean, etc.).
             if is_multi:
@@ -222,5 +243,15 @@ class LookupFilter(BaseFilterBackend):
 
         if isinstance(field, models.FloatField):
             return float(value)
+
+        if isinstance(field, models.DurationField):
+            # Django's lookups expect a timedelta: "1 day, 2:00:00",
+            # "02:30:00", a number of seconds, or ISO 8601 ("PT2H").
+            duration = parse_duration(value)
+
+            if duration is None:
+                raise ValueError(f"{value!r} is not a duration.")
+
+            return duration
 
         return value
