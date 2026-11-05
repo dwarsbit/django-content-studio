@@ -59,20 +59,23 @@ function discover(confirm: string | null = null) {
   };
 }
 
-function renderMenu() {
+function renderMenu(path = "/") {
   const queryClient = new QueryClient();
-  const router = createMemoryRouter([
-    {
-      path: "/",
-      element: (
-        <ConfirmDialogProvider>
-          <ValueDialogProvider>
-            <MainMenu onOpenPalette={vi.fn()} />
-          </ValueDialogProvider>
-        </ConfirmDialogProvider>
-      ),
-    },
-  ]);
+  const router = createMemoryRouter(
+    [
+      {
+        path: "*",
+        element: (
+          <ConfirmDialogProvider>
+            <ValueDialogProvider>
+              <MainMenu onOpenPalette={vi.fn()} />
+            </ValueDialogProvider>
+          </ConfirmDialogProvider>
+        ),
+      },
+    ],
+    { initialEntries: [path] },
+  );
 
   return render(
     <QueryClientProvider client={queryClient}>
@@ -161,5 +164,46 @@ describe("Main menu buttons", () => {
           Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
     }
+  });
+});
+
+describe("Main menu active item", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    useDiscoverMock.mockReturnValue({
+      data: {
+        ...discover().data,
+        extensions: [],
+        model_groups: [
+          { name: "Blog", models: ["blog.post", "blog.postcategory"] },
+        ],
+        models: [
+          { label: "blog.post", verbose_name_plural: "posts", admin: {} },
+          {
+            label: "blog.postcategory",
+            verbose_name_plural: "categories",
+            admin: {},
+          },
+        ],
+      },
+    });
+  });
+
+  const current = () =>
+    screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page")
+      .map((link) => link.textContent);
+
+  it.each([
+    ["/content/blog.post", ["posts"]],
+    ["/content/blog.post/12", ["posts"]],
+    ["/content/blog.post/trash", ["posts"]],
+    ["/content/blog.postcategory/3", ["categories"]],
+    ["/", ["main_menu.dashboard"]],
+  ])("on %s marks %j", (path, expected) => {
+    renderMenu(path);
+    expect(current()).toEqual(expected);
   });
 });
