@@ -6,6 +6,12 @@
   time, and date range pickers has buttons to go a year back or forward
   next to the month buttons, so a date a few years away is a couple of
   clicks instead of dozens.
+- **File names in the media inputs.** A media field shows the chosen
+  item's name, type and size again after the page is loaded, not only
+  right after picking it, so a chosen file no longer looks like an empty
+  field. Clicking the thumbnail opens the item's details, where its name,
+  alt text, tags, crop and focal point can be edited without leaving the
+  form; fields with several items show file names on their tiles too.
 
 ## 1.10.0 (2026-11-04)
 

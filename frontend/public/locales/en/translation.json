@@ -235,7 +235,8 @@
       "upload_label": "Upload media",
       "replace": "Replace",
       "remove": "Remove",
-      "empty": "No file chosen yet."
+      "empty": "No file chosen yet.",
+      "show_details": "Show the details of {{name}}"
     },
     "cover_image_widget": {
       "empty_title": "Add a cover image",

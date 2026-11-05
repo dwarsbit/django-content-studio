@@ -44,6 +44,9 @@ def represent_related(value, request):
         data["file"] = value.file.url
         data["type"] = value.type
         data["thumbnail"] = admin_site.get_thumbnail(value)
+        # The media widgets show the item's name and size.
+        data["name"] = getattr(value, "name", "") or ""
+        data["size"] = getattr(value, "size", None)
 
     return data
 
