@@ -186,6 +186,7 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
           <MenuItem
             collapsed={collapsed}
             to="/media-library"
+            matchNested
             icon={<PiImageBold />}
             label={t("main_menu.media_library")}
           />
@@ -224,6 +225,8 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
                     key={label}
                     collapsed={collapsed}
                     to={`/content/${model.label}`}
+                    // Stays active on the model's edit and trash pages.
+                    matchNested
                     label={model.verbose_name_plural}
                     icon={model.admin.icon ?? <PiFileTextBold />}
                   />
@@ -439,6 +442,7 @@ function MenuItem({
   collapsed,
   disabled,
   title,
+  matchNested = false,
   onClick,
 }: {
   label: string;
@@ -447,11 +451,16 @@ function MenuItem({
   collapsed: boolean;
   disabled?: boolean;
   title?: string;
+  /** Also active on the pages below `to`, such as a model's edit page. */
+  matchNested?: boolean;
   onClick?(): void;
 }) {
   const external = isExternalUrl(to);
   const Comp = external ? "a" : to ? Link : "button";
-  const match = useMatch(external ? "" : `${to ?? ""}`);
+  const match = useMatch({
+    path: external ? "" : `${to ?? ""}`,
+    end: !matchNested,
+  });
   const active = !R.isNil(to) && !external && !!match;
 
   const item = (

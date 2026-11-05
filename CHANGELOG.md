@@ -13,6 +13,12 @@
   alt text, tags, crop and focal point can be edited without leaving the
   form; fields with several items show file names on their tiles too.
 
+### Fixes
+
+- **Active menu item on the edit page.** A model's main menu item stays
+  highlighted on its edit and trash pages, not only on its list page. The
+  media library item does the same on its folders.
+
 ## 1.10.0 (2026-11-04)
 
 - **`ModelStudio.get_queryset(request)`.** Override it to narrow the objects
