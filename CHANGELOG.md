@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.11.0 (unreleased)
+## 1.11.0 (2026-11-05)
 
 - **Year stepper in the date pickers.** The calendar of the date, date and
   time, and date range pickers has buttons to go a year back or forward
