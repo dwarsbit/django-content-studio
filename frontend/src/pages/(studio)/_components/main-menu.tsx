@@ -186,7 +186,6 @@ export function MainMenu({ onOpenPalette }: { onOpenPalette(): void }) {
           <MenuItem
             collapsed={collapsed}
             to="/media-library"
-            matchNested
             icon={<PiImageBold />}
             label={t("main_menu.media_library")}
           />

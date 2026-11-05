@@ -16,8 +16,7 @@
 ### Fixes
 
 - **Active menu item on the edit page.** A model's main menu item stays
-  highlighted on its edit and trash pages, not only on its list page. The
-  media library item does the same on its folders.
+  highlighted on its edit and trash pages, not only on its list page.
 
 ## 1.10.0 (2026-11-04)
 
