@@ -1,0 +1,57 @@
+# 🤖 AI agents
+
+AI coding agents, such as Claude Code, Codex or Cursor, can set up and
+configure Content Studio for you. Give them the documentation in a form they
+read well: an index and a full text of the docs, and an agent skill with the
+setup, the main APIs and the mistakes to avoid.
+
+## The documentation as text
+
+The docs website publishes the documentation as plain Markdown, generated
+from the same pages you are reading:
+
+- [`/llms.txt`](pathname:///llms.txt): an index of every page with a short
+  summary, in the [llms.txt](https://llmstxt.org) format.
+- [`/llms-full.txt`](pathname:///llms-full.txt): every page in one file.
+- Each page as Markdown: add `.md` to its address, such as
+  `https://djangocontentstudio.org/docs/edit-page.md`.
+
+Point your agent at `https://djangocontentstudio.org/llms.txt`, or paste a
+page's Markdown address into the conversation.
+
+## The agent skill
+
+The agent skill is a short guide for agents: how to install Content Studio,
+register models, lay out the edit page, pick widgets and formats, write
+conditional fields, and set up the dashboard, menus, extensions and
+analytics, with the mistakes the system checks report most. It links to the
+pages above for everything else.
+
+The skill is published at
+[`/skills/django-content-studio/SKILL.md`](pathname:///skills/django-content-studio/SKILL.md).
+For Claude Code, save it in your project, where Claude Code loads it when a
+task involves Content Studio:
+
+```bash
+mkdir -p .claude/skills/django-content-studio
+curl -o .claude/skills/django-content-studio/SKILL.md \
+  https://djangocontentstudio.org/skills/django-content-studio/SKILL.md
+```
+
+Other agents that support skills load it from their own skills folder. For
+an agent without skills, add the file's address to your project's
+`AGENTS.md`.
+
+The skill and the text versions follow the current documentation. Download
+the skill again after you upgrade Content Studio.
+
+## Check the result
+
+Agents make the same mistakes people do: a required field left off the
+edit page, a column that is not a field, two buttons with the same ID. Run
+the [system checks](/docs/deployment#system-checks) after every change, and
+let the agent fix what they report:
+
+```bash
+python manage.py check
+```

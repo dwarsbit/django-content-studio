@@ -21,6 +21,7 @@ from .providers import (
     MetricValue,
     TimeseriesPoint,
 )
+from .umami import UmamiProvider
 from .widgets import AnalyticsStatisticWidget, AnalyticsTopPagesWidget
 
 __all__ = [
@@ -37,5 +38,6 @@ __all__ = [
     "BreakdownRow",
     "MetricValue",
     "TimeseriesPoint",
+    "UmamiProvider",
     "get_analytics",
 ]
