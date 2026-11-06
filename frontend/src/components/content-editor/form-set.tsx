@@ -1,7 +1,15 @@
 import * as R from "ramda";
 
-import type { FormSet, Model } from "@/types";
+import { useConditions } from "@/hooks/use-conditions";
+import type {
+  FormField as IFormField,
+  FormLayout,
+  FormSet,
+  Model,
+} from "@/types";
 
+import { Conditional } from "./conditional";
+import { useResetInvalidInput } from "./conditional-fields";
 import { FormField } from "./form-field";
 
 export function FormSet({
@@ -32,30 +40,69 @@ export function FormSet({
       <div className="p-5 space-y-5">
         {formSet.fields.map((formField, idx) =>
           R.has("fields", formField) ? (
-            <div
+            <LayoutRow
               key={idx}
-              className="grid gap-4"
-              style={{
-                gridTemplateColumns: `repeat(${formField.fields.length}, 1fr)`,
-              }}
-            >
-              {formField.fields
-                .filter((f) => !hiddenFields.includes(f.name))
-                .map((innerFormField, idx) => (
-                  <FormField
-                    key={idx}
-                    formField={innerFormField}
-                    model={model}
-                  />
-                ))}
-            </div>
+              layout={formField}
+              model={model}
+              hiddenFields={hiddenFields}
+            />
           ) : (
             !hiddenFields.includes(formField.name) && (
-              <FormField key={idx} formField={formField} model={model} />
+              <Conditional
+                key={idx}
+                when={formField.when}
+                fields={formField.type === "field" ? [formField.name] : []}
+              >
+                <FormField formField={formField} model={model} />
+              </Conditional>
             )
           ),
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * A FieldLayout row: its fields side by side. A field hidden by its
+ * condition gives its column to the others; a row without shown fields
+ * is left out.
+ */
+function LayoutRow({
+  layout,
+  model,
+  hiddenFields,
+}: {
+  layout: FormLayout;
+  model: Model;
+  hiddenFields: string[];
+}) {
+  const fields = layout.fields.filter((f) => !hiddenFields.includes(f.name));
+  const shown = useConditions(fields.map((f) => f.when));
+  const visible = fields.filter((_, idx) => shown[idx]);
+
+  useResetInvalidInput(
+    fields
+      .filter((f, idx) => !shown[idx] && f.type === "field")
+      .map((f) => f.name),
+  );
+
+  return (
+    visible.length > 0 && (
+      <div
+        className="grid gap-4"
+        style={{
+          gridTemplateColumns: `repeat(${visible.length}, 1fr)`,
+        }}
+      >
+        {visible.map((innerFormField: IFormField) => (
+          <FormField
+            key={innerFormField.name}
+            formField={innerFormField}
+            model={model}
+          />
+        ))}
+      </div>
+    )
   );
 }

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.12.0 (unreleased)
+
+- **Conditional fields.** `when` on a `Field`, a component, a `FormSet` or
+  a `FormSetGroup` shows it only while the form's values meet a condition,
+  written as a Django `Q` object: a discount code once the type is "Sale"
+  (`when=Q(type="sale")`), a callout while the publication date lies ahead
+  (`when=Q(published_at__gt=Now())`). The edit page applies it as the
+  editor types. Conditions combine with `&`, `|` and `~`, compare with
+  other fields (`F()`) and the current time (`Now()`, with an offset), and
+  support the common lookups. A hidden field is not saved and not
+  required: its stored value stays, which the server decides again on
+  save. For rules a `Q` cannot express, subclass `Condition` and decide in
+  Python, such as a house style check on the description; the admin asks
+  the server as the editor types. System check `content_studio.E040`
+  reports conditions on fields the form does not hold, and
+  `content_studio.W024` required fields that only show under a condition.
+
 ## 1.11.0 (2026-11-05)
 
 - **Year stepper in the date pickers.** The calendar of the date, date and

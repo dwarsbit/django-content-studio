@@ -533,7 +533,7 @@ describe("FormSet", () => {
       ],
     };
 
-    render(
+    renderWithQueryClient(
       <FormHarness
         defaultValues={{ title: "Hello", status: "draft", is_published: false }}
       >
@@ -588,7 +588,7 @@ describe("Main", () => {
       ],
     });
 
-    render(
+    renderWithQueryClient(
       <FormHarness
         defaultValues={{ title: "", status: "draft", is_published: false }}
       >

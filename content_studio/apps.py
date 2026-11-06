@@ -15,6 +15,7 @@ from .utils import (
     get_latest_version,
     is_newer_version,
     get_tenant_scoped_queryset,
+    is_jsonable,
     normalize_version,
 )
 
@@ -146,7 +147,9 @@ class DjangoContentStudioConfig(AppConfig):
 
     def _create_view_set(self, model, admin_model, parent=None):
         from .admin import (
+            get_condition_field_names,
             get_form_field_names,
+            get_hidden_field_names,
             get_is_singleton,
             get_readonly_field_names,
             get_table_display_columns,
@@ -319,6 +322,76 @@ class DjangoContentStudioConfig(AppConfig):
                                     field.read_only = True
 
                             return fields
+
+                        def to_internal_value(self, data):
+                            # Fields the edit page hides for these
+                            # values are not written: their stored
+                            # values stay, and a required one is not
+                            # required while hidden.
+                            request = self.context.get("request")
+                            names = get_condition_field_names(admin_model, request)
+
+                            if names and hasattr(data, "get"):
+                                values = self._condition_values(data, names)
+                                for name in get_hidden_field_names(
+                                    admin_model, request, values
+                                ):
+                                    field = self.fields.get(name)
+                                    if field is not None:
+                                        field.read_only = True
+
+                            return super().to_internal_value(data)
+
+                        def _condition_values(self, data, names):
+                            """
+                            The form values conditions read, as the
+                            editor has them: what the request writes,
+                            else the object's own value (or the field's
+                            default on create).
+                            """
+                            from .conditions import normalize
+
+                            obj = self._get_obj()
+                            values = {}
+
+                            for name in names:
+                                field = self.fields.get(name)
+
+                                if field is None:
+                                    values[name] = None
+                                elif not field.read_only and name in data:
+                                    values[name] = normalize(data.get(name))
+                                else:
+                                    values[name] = self._stored_value(field, name, obj)
+
+                            return values
+
+                        def _stored_value(self, field, name, obj):
+                            from .conditions import normalize
+
+                            try:
+                                if obj is not None:
+                                    value = field.get_attribute(obj)
+                                else:
+                                    # The create form starts from the
+                                    # defaults the model payload sends.
+                                    model_field = model._meta.get_field(name)
+                                    value = model_field.default
+                                    if not model_field.has_default() or (
+                                        not is_jsonable(value)
+                                    ):
+                                        return None
+                                    return normalize(value)
+                            except Exception:
+                                return None
+
+                            if value is None:
+                                return None
+
+                            try:
+                                return normalize(field.to_representation(value))
+                            except Exception:
+                                return None
 
                         def get_readonly_field_list(self, obj):
                             return list(

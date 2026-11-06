@@ -529,6 +529,8 @@ export interface Resource {
 export interface FormSetGroup {
   label: string;
   formsets: FormSet[];
+  // When the tab shows; null: always.
+  when?: ConditionTree | null;
 }
 
 export interface FormLayout {
@@ -540,6 +542,30 @@ export interface FormSet {
   title: string;
   description: string;
   fields: (FormField | FormLayout)[];
+  // When the form set shows; null: always.
+  when?: ConditionTree | null;
+}
+
+// A condition of the edit page, evaluated by lib/conditions.ts: a group
+// of conditions, a field lookup, or a server-side Condition.
+export type ConditionTree =
+  ConditionGroup | ConditionLookup | ServerConditionLeaf;
+
+export interface ConditionGroup {
+  connector: "AND" | "OR" | "XOR";
+  negated: boolean;
+  children: ConditionTree[];
+}
+
+export interface ConditionLookup {
+  field: string;
+  lookup: string;
+  value: unknown;
+}
+
+export interface ServerConditionLeaf {
+  condition: string;
+  fields: string[];
 }
 
 export interface FormField {
@@ -551,6 +577,8 @@ export interface FormField {
   // Widget override from the form configuration; falls back to the
   // model field's default widget when null.
   widget: WidgetConfig | null;
+  // When the field or component shows; null: always.
+  when?: ConditionTree | null;
   component_id: string;
   component_type:
     | "Link"

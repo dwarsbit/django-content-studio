@@ -9,6 +9,8 @@ from django.db.models import Model
 from django.utils.translation import gettext_lazy as _
 from rest_framework.response import Response
 
+from . import conditions
+from .conditions import Condition
 from .utils import as_instance, derive_uuid
 
 __all__ = [
@@ -18,6 +20,7 @@ __all__ = [
     "ButtonResult",
     "Callout",
     "Component",
+    "Condition",
     "Field",
     "FieldLayout",
     "FormSet",
@@ -43,6 +46,7 @@ class Field:
         label: str = None,
         readonly: bool = False,
         widget: Union[Type, object] = None,
+        when=None,
     ):
         self.name = name
         self.col_span = col_span
@@ -52,6 +56,10 @@ class Field:
         # instance carrying options. None falls back to the field
         # type's default widget.
         self.widget = widget
+        # When the field shows: a Q object or Condition over the form's
+        # values. A hidden field is not saved: its value stays as it is.
+        conditions.validate(when, f"Field({name!r})")
+        self.when = when
 
     def serialize(self):
         return {
@@ -61,6 +69,7 @@ class Field:
             "label": self.label,
             "readonly": self.readonly,
             "widget": as_instance(self.widget).serialize() if self.widget else None,
+            "when": conditions.serialize(self.when),
         }
 
 
@@ -137,10 +146,14 @@ class FormSet:
         title: str = "",
         description: str = "",
         fields: list[str | Field | FieldLayout] = None,
+        when=None,
     ):
         self.title = title
         self.description = description
         self.fields = [self._normalize_field(f) for f in fields] if fields else []
+        # When the form set shows; its fields are not saved while hidden.
+        conditions.validate(when, f"FormSet({title!r})")
+        self.when = when
 
     def serialize(self):
         return {
@@ -148,6 +161,7 @@ class FormSet:
             "title": self.title,
             "description": self.description,
             "fields": [field.serialize() for field in self.fields],
+            "when": conditions.serialize(self.when),
         }
 
     def get_fields(self) -> list[Field]:
@@ -187,15 +201,19 @@ class FormSetGroup:
     Formset group class for configuring the groups of form sets in content edit views.
     """
 
-    def __init__(self, label: str = "", formsets: list[FormSet] = None):
+    def __init__(self, label: str = "", formsets: list[FormSet] = None, when=None):
         self.label = label
         self.formsets = formsets or []
+        # When the tab shows; its fields are not saved while hidden.
+        conditions.validate(when, f"FormSetGroup({label!r})")
+        self.when = when
 
     def serialize(self):
         return {
             "type": "form-set-group",
             "label": self.label,
             "formsets": [formset.serialize() for formset in self.formsets],
+            "when": conditions.serialize(self.when),
         }
 
     def get_fields(self) -> list[Field]:
@@ -213,13 +231,22 @@ class FormSetGroup:
 class Component:
     component_id: uuid.UUID
     component_type: str
+    # When the component shows: a Q object or Condition over the form's
+    # values; None shows it always. Set it as a class attribute, or pass
+    # when= to the components that take it.
+    when = None
 
-    def __init__(self, component_id=None):
+    def __init__(self, component_id=None, *, when=None):
         """
         The component ID is derived deterministically from the class and
         its ID parts, so all workers agree on it. Pass an explicit UUID
         to disambiguate components that share these.
         """
+        if when is not None:
+            self.when = when
+
+        conditions.validate(self.when, self.__class__.__name__)
+
         if component_id is not None:
             self.component_id = uuid.UUID(str(component_id))
         else:
@@ -247,6 +274,7 @@ class Component:
             "type": "component",
             "component_type": str(self.component_type),
             "component_id": str(self.component_id),
+            "when": conditions.serialize(self.when),
         }
 
 
@@ -385,10 +413,10 @@ class ActivityLog(Component):
 
     component_type = "ActivityLog"
 
-    def __init__(self, title=None, component_id=None):
+    def __init__(self, title=None, component_id=None, *, when=None):
         # Set before super().__init__(): get_id_parts() reads it.
         self.title = title or _("Activity")
-        super().__init__(component_id)
+        super().__init__(component_id, when=when)
 
     def get_id_parts(self):
         return (self.title,)
@@ -413,7 +441,7 @@ class BaseText(Component):
 
     text: Optional[str] = None
 
-    def __init__(self, text=None, *, component_id=None):
+    def __init__(self, text=None, *, component_id=None, when=None):
         # Set before super().__init__(): get_id_parts() reads it.
         if text is not None:
             self.text = text
@@ -424,7 +452,7 @@ class BaseText(Component):
                 "get_text(obj, request) method."
             )
 
-        super().__init__(component_id)
+        super().__init__(component_id, when=when)
 
     @property
     def per_object(self) -> bool:
@@ -493,6 +521,7 @@ class Callout(BaseText):
         variant=None,
         icon=None,
         component_id=None,
+        when=None,
     ):
         # Set before super().__init__(): get_id_parts() reads them.
         if title is not None:
@@ -510,7 +539,7 @@ class Callout(BaseText):
                 f"not {self.variant!r}."
             )
 
-        super().__init__(text, component_id=component_id)
+        super().__init__(text, component_id=component_id, when=when)
 
     def get_id_parts(self):
         return (
@@ -553,6 +582,7 @@ class SEOPreview(Component):
         path_field=None,
         site_name=None,
         component_id=None,
+        when=None,
     ):
         # Set before super().__init__(): get_id_parts() reads them.
         if title_field is not None:
@@ -586,7 +616,7 @@ class SEOPreview(Component):
                 f"SEOPreview base_url must be a string; got {self.base_url!r}."
             )
 
-        super().__init__(component_id)
+        super().__init__(component_id, when=when)
 
     def get_id_parts(self):
         return (

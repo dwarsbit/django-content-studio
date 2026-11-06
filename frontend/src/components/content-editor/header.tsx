@@ -31,6 +31,7 @@ import type {
   Resource,
 } from "@/types";
 
+import { Conditional } from "./conditional";
 import { ComponentRenderer } from "./form-field";
 
 export function Header({
@@ -190,11 +191,12 @@ export function Header({
                   </div>
                 ) : null}
                 {components.map((component) => (
-                  <ComponentRenderer
+                  <Conditional
                     key={component.component_id}
-                    formField={component}
-                    model={model}
-                  />
+                    when={component.when}
+                  >
+                    <ComponentRenderer formField={component} model={model} />
+                  </Conditional>
                 ))}
                 {!isCreate && (showDelete || showDuplicate || canFollow) && (
                   <DropdownMenu>

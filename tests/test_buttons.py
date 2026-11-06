@@ -80,6 +80,7 @@ def test_a_button_serializes_its_options():
         "type": "component",
         "component_type": "Button",
         "component_id": str(button.component_id),
+        "when": None,
         "label": "Publish",
         "icon": "ph-bold ph-paper-plane-tilt",
         "confirm": "Publish this article?",

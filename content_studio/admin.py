@@ -1029,6 +1029,132 @@ def get_form_field_names(
     return names
 
 
+def get_field_placements(studio, request: HttpRequest) -> dict[str, list[list[Any]]]:
+    """
+    Where the edit page places each field, by name: one list per
+    placement of the conditions it shows under (its tab's, its form
+    set's and its own when=). An empty list shows the field always.
+    """
+    serializer = AdminSerializer(studio)
+    # get_fields is called as the edit page's payload calls it.
+    edit_main = list(getattr(studio, "edit_main", None) or []) or list(
+        studio.get_fields(request)
+    )
+    placements: dict[str, list[list[Any]]] = {}
+
+    def place(form_set, group=None):
+        for field in form_set.get_fields():
+            if isinstance(field, Field):
+                placements.setdefault(field.name, []).append(
+                    [
+                        when
+                        for when in (
+                            getattr(group, "when", None),
+                            form_set.when,
+                            field.when,
+                        )
+                        if when is not None
+                    ]
+                )
+
+    for group in serializer.get_edit_main(edit_main):
+        for form_set in group.formsets:
+            place(form_set, group)
+
+    for form_set in serializer.get_edit_sidebar(getattr(studio, "edit_sidebar", None)):
+        place(form_set)
+
+    return placements
+
+
+def iter_conditions(studio):
+    """
+    Yield the server-side Conditions of a studio's edit page: in the
+    when= of its header components, tabs, form sets, fields and
+    components.
+    """
+    from .conditions import iter_conditions as conditions_in
+
+    entries = (
+        _header_entries(studio)
+        + list(getattr(studio, "edit_main", None) or [])
+        + list(getattr(studio, "edit_sidebar", None) or [])
+    )
+
+    def visit(entry):
+        yield from conditions_in(getattr(entry, "when", None))
+
+        for child in getattr(entry, "formsets", None) or []:
+            yield from visit(child)
+
+        for child in getattr(entry, "fields", None) or []:
+            yield from visit(child)
+
+    for entry in entries:
+        yield from visit(entry)
+
+
+def get_hidden_field_names(
+    studio, request: HttpRequest, values: dict[str, Any]
+) -> set[str]:
+    """
+    The fields the edit page hides for these form values: every
+    placement of the field has a condition that does not hold. The API
+    does not write them, so their stored values stay as they are.
+    """
+    from .conditions import evaluate, iter_conditions as conditions_in, serialize
+
+    hidden = set()
+
+    for name, placements in get_field_placements(studio, request).items():
+        if not placements or any(not whens for whens in placements):
+            continue
+
+        def shows(whens) -> bool:
+            for when in whens:
+                by_id = {
+                    str(condition.condition_id): condition
+                    for condition in conditions_in(when)
+                }
+                result = evaluate(
+                    serialize(when),
+                    values,
+                    run_condition=lambda leaf: by_id[leaf["condition"]].run(
+                        values, request
+                    ),
+                )
+
+                if not result:
+                    return False
+
+            return True
+
+        if not any(shows(whens) for whens in placements):
+            hidden.add(name)
+
+    return hidden
+
+
+def get_condition_field_names(studio, request: HttpRequest) -> list[str]:
+    """
+    The form values the conditions of a studio's conditional fields
+    read, so a save can decide which fields are hidden.
+    """
+    from .conditions import referenced_fields
+
+    names = []
+
+    for placements in get_field_placements(studio, request).values():
+        if not placements or any(not whens for whens in placements):
+            continue
+
+        for whens in placements:
+            for when in whens:
+                names.extend(referenced_fields(when))
+
+    return list(dict.fromkeys(names))
+
+
 def get_write_only_field_names(studio, model) -> set[str]:
     """
     The fields edited with a write-only PasswordWidget, whose values are

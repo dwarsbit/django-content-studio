@@ -1,0 +1,1153 @@
+{
+  "time_zone": "Europe/Amsterdam",
+  "cases": [
+    {
+      "name": "select equals",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "type",
+            "lookup": "exact",
+            "value": "sale"
+          }
+        ]
+      },
+      "values": {
+        "type": "sale"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "select differs",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "type",
+            "lookup": "exact",
+            "value": "sale"
+          }
+        ]
+      },
+      "values": {
+        "type": "news"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "in",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "type",
+            "lookup": "in",
+            "value": [
+              "sale",
+              "promo"
+            ]
+          }
+        ]
+      },
+      "values": {
+        "type": "promo"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "not in",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "type",
+            "lookup": "in",
+            "value": [
+              "sale",
+              "promo"
+            ]
+          }
+        ]
+      },
+      "values": {
+        "type": "news"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "foreign key by id",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "author",
+            "lookup": "exact",
+            "value": 3
+          }
+        ]
+      },
+      "values": {
+        "author": {
+          "id": 3,
+          "__str__": "Ann"
+        }
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "foreign key id as text",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "author",
+            "lookup": "exact",
+            "value": "3"
+          }
+        ]
+      },
+      "values": {
+        "author": {
+          "id": 3,
+          "__str__": "Ann"
+        }
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "empty foreign key",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "author",
+            "lookup": "isnull",
+            "value": true
+          }
+        ]
+      },
+      "values": {
+        "author": null
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "many-to-many has",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "tags",
+            "lookup": "exact",
+            "value": 2
+          }
+        ]
+      },
+      "values": {
+        "tags": [
+          {
+            "id": 1
+          },
+          {
+            "id": 2
+          }
+        ]
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "many-to-many lacks",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "tags",
+            "lookup": "exact",
+            "value": 5
+          }
+        ]
+      },
+      "values": {
+        "tags": [
+          {
+            "id": 1
+          },
+          {
+            "id": 2
+          }
+        ]
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "many-to-many empty",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "tags",
+            "lookup": "isnull",
+            "value": true
+          }
+        ]
+      },
+      "values": {
+        "tags": []
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "empty text is not null",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "code",
+            "lookup": "isnull",
+            "value": true
+          }
+        ]
+      },
+      "values": {
+        "code": ""
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "empty text equals ''",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "code",
+            "lookup": "exact",
+            "value": ""
+          }
+        ]
+      },
+      "values": {
+        "code": ""
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "nothing equals ''",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "code",
+            "lookup": "exact",
+            "value": ""
+          }
+        ]
+      },
+      "values": {
+        "code": null
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "text is not ''",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "code",
+            "lookup": "exact",
+            "value": ""
+          }
+        ]
+      },
+      "values": {
+        "code": "a"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "missing field is null",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "code",
+            "lookup": "isnull",
+            "value": true
+          }
+        ]
+      },
+      "values": {},
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "datetime in the future",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_at",
+            "lookup": "gt",
+            "value": {
+              "$now": 0
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_at": "2026-11-07T10:00:00+01:00"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "datetime in the past",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_at",
+            "lookup": "gt",
+            "value": {
+              "$now": 0
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_at": "2026-11-05T10:00:00+01:00"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "empty datetime",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_at",
+            "lookup": "gt",
+            "value": {
+              "$now": 0
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_at": null
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "within a week",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_at",
+            "lookup": "lt",
+            "value": {
+              "$now": 604800
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_at": "2026-11-10T00:00:00Z"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "a week ago",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_at",
+            "lookup": "gt",
+            "value": {
+              "$now": -604800
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_at": "2026-10-30T00:00:00Z"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "date today is not after now",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_date",
+            "lookup": "gt",
+            "value": {
+              "$now": 0
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_date": "2026-11-06"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "date today is now or later",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_date",
+            "lookup": "gte",
+            "value": {
+              "$now": 0
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_date": "2026-11-06"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "date tomorrow",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_date",
+            "lookup": "gt",
+            "value": {
+              "$now": 0
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_date": "2026-11-07"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "date in the server time zone",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_date",
+            "lookup": "exact",
+            "value": {
+              "$now": 0
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_date": "2026-11-07"
+      },
+      "expected": true,
+      "now": "2026-11-06T23:30:00Z"
+    },
+    {
+      "name": "date literal",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_date",
+            "lookup": "gte",
+            "value": {
+              "$date": "2026-01-01"
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_date": "2026-11-06"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "datetime literal",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "publish_at",
+            "lookup": "exact",
+            "value": {
+              "$datetime": "2026-11-06T13:00:00+01:00"
+            }
+          }
+        ]
+      },
+      "values": {
+        "publish_at": "2026-11-06T12:00:00Z"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "time literal",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "starts",
+            "lookup": "lt",
+            "value": {
+              "$time": "12:00:00"
+            }
+          }
+        ]
+      },
+      "values": {
+        "starts": "09:30"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "time after now",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "starts",
+            "lookup": "gt",
+            "value": {
+              "$now": 0
+            }
+          }
+        ]
+      },
+      "values": {
+        "starts": "14:00:00"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "decimal text equals number",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "price",
+            "lookup": "exact",
+            "value": 0
+          }
+        ]
+      },
+      "values": {
+        "price": "0.00"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "decimal text above number",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "price",
+            "lookup": "gt",
+            "value": 10
+          }
+        ]
+      },
+      "values": {
+        "price": "12.50"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "number range",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "rating",
+            "lookup": "range",
+            "value": [
+              1,
+              3
+            ]
+          }
+        ]
+      },
+      "values": {
+        "rating": 3
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "number out of range",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "rating",
+            "lookup": "range",
+            "value": [
+              1,
+              3
+            ]
+          }
+        ]
+      },
+      "values": {
+        "rating": 4
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "texts compare as text",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "code",
+            "lookup": "gt",
+            "value": "9"
+          }
+        ]
+      },
+      "values": {
+        "code": "10"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "icontains",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "title",
+            "lookup": "icontains",
+            "value": "draft"
+          }
+        ]
+      },
+      "values": {
+        "title": "My DRAFT post"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "contains is case-sensitive",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "title",
+            "lookup": "contains",
+            "value": "draft"
+          }
+        ]
+      },
+      "values": {
+        "title": "My DRAFT post"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "startswith",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "slug",
+            "lookup": "startswith",
+            "value": "news-"
+          }
+        ]
+      },
+      "values": {
+        "slug": "news-today"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "iendswith",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "email",
+            "lookup": "iendswith",
+            "value": "@EXAMPLE.com"
+          }
+        ]
+      },
+      "values": {
+        "email": "ann@example.com"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "iexact",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "status",
+            "lookup": "iexact",
+            "value": "Draft"
+          }
+        ]
+      },
+      "values": {
+        "status": "draft"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "boolean",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "featured",
+            "lookup": "exact",
+            "value": true
+          }
+        ]
+      },
+      "values": {
+        "featured": true
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "boolean is not text",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "featured",
+            "lookup": "exact",
+            "value": "true"
+          }
+        ]
+      },
+      "values": {
+        "featured": true
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "boolean is not a number",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "featured",
+            "lookup": "exact",
+            "value": 1
+          }
+        ]
+      },
+      "values": {
+        "featured": true
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "field reference",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "start",
+            "lookup": "lte",
+            "value": {
+              "$field": "end"
+            }
+          }
+        ]
+      },
+      "values": {
+        "start": "2026-11-01",
+        "end": "2026-11-03"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "field reference to a later start",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "start",
+            "lookup": "lte",
+            "value": {
+              "$field": "end"
+            }
+          }
+        ]
+      },
+      "values": {
+        "start": "2026-11-05",
+        "end": "2026-11-03"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "negated",
+      "tree": {
+        "connector": "AND",
+        "negated": true,
+        "children": [
+          {
+            "field": "type",
+            "lookup": "exact",
+            "value": "sale"
+          }
+        ]
+      },
+      "values": {
+        "type": "news"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "or",
+      "tree": {
+        "connector": "OR",
+        "negated": false,
+        "children": [
+          {
+            "field": "type",
+            "lookup": "exact",
+            "value": "sale"
+          },
+          {
+            "field": "price",
+            "lookup": "exact",
+            "value": 0
+          }
+        ]
+      },
+      "values": {
+        "type": "news",
+        "price": 0
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "and",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "type",
+            "lookup": "exact",
+            "value": "sale"
+          },
+          {
+            "field": "price",
+            "lookup": "exact",
+            "value": 0
+          }
+        ]
+      },
+      "values": {
+        "type": "sale",
+        "price": 5
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "xor",
+      "tree": {
+        "connector": "XOR",
+        "negated": false,
+        "children": [
+          {
+            "field": "a",
+            "lookup": "exact",
+            "value": 1
+          },
+          {
+            "field": "b",
+            "lookup": "exact",
+            "value": 1
+          }
+        ]
+      },
+      "values": {
+        "a": 1,
+        "b": 1
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "xor one",
+      "tree": {
+        "connector": "XOR",
+        "negated": false,
+        "children": [
+          {
+            "field": "a",
+            "lookup": "exact",
+            "value": 1
+          },
+          {
+            "field": "b",
+            "lookup": "exact",
+            "value": 1
+          }
+        ]
+      },
+      "values": {
+        "a": 1,
+        "b": 2
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "nested",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "field": "type",
+            "lookup": "exact",
+            "value": "sale"
+          },
+          {
+            "connector": "AND",
+            "negated": true,
+            "children": [
+              {
+                "field": "price",
+                "lookup": "exact",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "values": {
+        "type": "sale",
+        "price": "9.99"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z"
+    },
+    {
+      "name": "server answer",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "condition": "6f1c1b1e-0000-5000-8000-000000000001",
+            "fields": [
+              "description"
+            ]
+          }
+        ]
+      },
+      "values": {
+        "description": "x"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z",
+      "server": {
+        "6f1c1b1e-0000-5000-8000-000000000001": true
+      }
+    },
+    {
+      "name": "negated server answer",
+      "tree": {
+        "connector": "AND",
+        "negated": true,
+        "children": [
+          {
+            "condition": "6f1c1b1e-0000-5000-8000-000000000001",
+            "fields": [
+              "description"
+            ]
+          }
+        ]
+      },
+      "values": {
+        "description": "x"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z",
+      "server": {
+        "6f1c1b1e-0000-5000-8000-000000000001": true
+      }
+    },
+    {
+      "name": "unknown server answer",
+      "tree": {
+        "connector": "AND",
+        "negated": true,
+        "children": [
+          {
+            "condition": "6f1c1b1e-0000-5000-8000-000000000001",
+            "fields": [
+              "description"
+            ]
+          }
+        ]
+      },
+      "values": {
+        "description": "x"
+      },
+      "expected": null,
+      "now": "2026-11-06T12:00:00Z",
+      "server": {}
+    },
+    {
+      "name": "false wins over unknown",
+      "tree": {
+        "connector": "AND",
+        "negated": false,
+        "children": [
+          {
+            "condition": "6f1c1b1e-0000-5000-8000-000000000001",
+            "fields": [
+              "description"
+            ]
+          },
+          {
+            "field": "type",
+            "lookup": "exact",
+            "value": "sale"
+          }
+        ]
+      },
+      "values": {
+        "type": "news"
+      },
+      "expected": false,
+      "now": "2026-11-06T12:00:00Z",
+      "server": {}
+    },
+    {
+      "name": "true wins over unknown",
+      "tree": {
+        "connector": "OR",
+        "negated": false,
+        "children": [
+          {
+            "condition": "6f1c1b1e-0000-5000-8000-000000000001",
+            "fields": [
+              "description"
+            ]
+          },
+          {
+            "field": "type",
+            "lookup": "exact",
+            "value": "sale"
+          }
+        ]
+      },
+      "values": {
+        "type": "sale"
+      },
+      "expected": true,
+      "now": "2026-11-06T12:00:00Z",
+      "server": {}
+    }
+  ]
+}

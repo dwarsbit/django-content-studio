@@ -33,13 +33,16 @@ class ArticleStudio(ModelStudio):
 
 ## Building blocks
 
-- **`Field(name, col_span=1, label=None, readonly=False, widget=None)`**: one
-  model field. A string is short for `Field(name)`.
+- **`Field(name, col_span=1, label=None, readonly=False, widget=None, when=None)`**:
+  one model field. A string is short for `Field(name)`.
 - **`FieldLayout(fields=[...], columns=1)`**: a group of fields shown in
   `columns` columns.
-- **`FormSet(title, description, fields)`**: a titled block of fields, the
-  main way to group the edit page.
-- **`FormSetGroup(label, formsets=[...])`**: a group of form sets.
+- **`FormSet(title, description, fields, when=None)`**: a titled block of
+  fields, the main way to group the edit page.
+- **`FormSetGroup(label, formsets=[...], when=None)`**: a group of form sets.
+
+`when` shows the item only under a condition; see
+[Conditional fields](#conditional-fields).
 
 You do not have to wrap everything: a list of fields becomes a form set,
 and a list of form sets becomes a group.
@@ -132,6 +135,154 @@ class ArticleStudio(ModelStudio):
 Inlines take `readonly_fields` and `get_readonly_fields` too. A required
 field in `readonly_fields` can never be filled in, so creating objects fails;
 system check `content_studio.W002` reports it.
+
+## Conditional fields
+
+`when` shows a field, a component, a form set or a tab only while the
+form's values meet a condition. Write the condition as a Django
+[`Q` object](https://docs.djangoproject.com/en/stable/topics/db/queries/#complex-lookups-with-q-objects)
+over the model's fields. The edit page applies it as the editor types:
+
+```python
+# blog/admin.py
+from django.db.models import Q
+from django.db.models.functions import Now
+
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import Callout, Field, FormSet
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_main = [
+        FormSet(
+            title="Content",
+            fields=["title", "body", "status"],
+        ),
+        FormSet(
+            title="Publishing",
+            fields=[
+                "published_at",
+                Callout(
+                    "Scheduled: the article goes live at its publication date.",
+                    when=Q(published_at__gt=Now()),
+                ),
+            ],
+            when=Q(status=Article.Status.PUBLISHED),
+        ),
+    ]
+    edit_sidebar = [
+        "featured",
+        Field("views", when=Q(featured=True) | Q(views__gt=0)),
+    ]
+```
+
+The Publishing form set shows once the status is Published, and its
+callout while the publication date lies ahead. `when` takes the same
+argument on every component, such as `Text`, `Callout`, `Button` or
+`SEOPreview`, and on the components of `edit_header`. On a component you
+subclass, you can set `when` as a class attribute.
+
+Combine conditions with `&`, `|` and `~`, like `Q` objects in a query.
+They read the values of the model's own fields, with these lookups:
+`exact`, `iexact`, `in`, `isnull`, `gt`, `gte`, `lt`, `lte`, `range`,
+`contains`, `icontains`, `startswith`, `istartswith`, `endswith` and
+`iendswith`. A value is one of:
+
+- **a literal**: text, a number, a boolean, `None`, a date, a date and
+  time, a time, a model instance or a choice such as
+  `Article.Status.PUBLISHED`;
+- **another field**: `F("published_at")`;
+- **the current time**: `Now()`, optionally with an offset, such as
+  `Now() + timedelta(days=7)`. A date field compares with the current
+  date in the site's [`TIME_ZONE`](https://docs.djangoproject.com/en/stable/ref/settings/#std-setting-TIME_ZONE).
+
+A foreign key compares by the related object's primary key:
+`Q(author=3)`. A many-to-many field matches
+when any of its objects does, so `Q(categories=2)` holds for articles in
+category 2, like in a query. An empty text field equals `""`, also in a
+new object's form. Related fields (`author__username`) and transforms
+(`published_at__year`) are not supported: the condition reads the form,
+not the database. System check `content_studio.E040` reports a condition
+on a field the model does not have, or on an excluded or write-only field.
+
+### Saving hidden fields
+
+A hidden field is not saved. Its stored value stays as it is and comes
+back when the field shows again, and a value an editor typed before hiding
+it is dropped. Content Studio decides this again when the object is saved,
+from the values the editor sends, so an editor cannot change a hidden
+field by other means. The same holds for the fields in a hidden form set
+or tab. A field placed twice is saved when one of its places shows.
+
+A hidden field is not required. So a required model field that only shows
+under a condition makes creating an object fail while it is hidden;
+system check `content_studio.W024` reports it. Give the field a default,
+make it nullable or blank, or show it always.
+
+:::note
+Conditions decide what the edit page shows, not who may change what: an
+editor can show a field by changing the value it depends on. Use
+[read-only fields](#read-only-fields) and
+[permissions](/docs/permissions) to restrict editors.
+:::
+
+### Server-side conditions
+
+For a rule a `Q` object cannot express, subclass `Condition` and decide in
+Python. `fields` lists the form values `check` reads:
+
+```python
+# blog/admin.py
+from django.db.models import Q
+
+from content_studio import register
+from content_studio.admin import ModelStudio
+from content_studio.form import Callout, Condition, FormSet
+
+from .models import Article
+
+
+class MeetsHouseStyle(Condition):
+    fields = ["body"]
+
+    def check(self, values, request):
+        body = values["body"] or ""
+        sentences = [s for s in body.split(".") if s.strip()]
+
+        return all(len(sentence.split()) <= 25 for sentence in sentences)
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    edit_main = [
+        FormSet(
+            title="Content",
+            fields=[
+                "title",
+                "body",
+                Callout(
+                    "Keep sentences under 25 words.",
+                    title="House style",
+                    variant="warning",
+                    when=~Q(body="") & ~MeetsHouseStyle(),
+                ),
+            ],
+        ),
+    ]
+```
+
+While the editor types, the admin sends the values of `fields` to the
+server once the form rests, and shows or hides what the condition guards
+when the answer arrives. Until then it stays hidden. `check` receives the
+values as the form holds them: text, numbers and booleans as they are,
+related objects as their primary key (a list for many-to-many fields),
+dates and times as ISO 8601 strings, and `None` for empty fields. It runs
+for every pause in typing, and again on save for conditions that guard
+fields, so keep it fast and without side effects.
 
 ## Prepopulated fields
 

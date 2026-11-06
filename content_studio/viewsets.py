@@ -525,6 +525,58 @@ class BaseModelViewSet(ModelViewSet):
 
         return Response(component.run(obj, request).serialize())
 
+    @action(
+        methods=["post"],
+        detail=False,
+        url_path="conditions/(?P<condition_id>[^/.]+)",
+    )
+    def condition(self, request, condition_id):
+        """
+        The answer of a server-side Condition of the edit page for the
+        form's values, {"values": {...}}: {"result": true}. The values
+        are the editor's unsaved input; nothing is stored. Only the
+        condition's own fields reach its check().
+        """
+        condition = self._find_condition(condition_id)
+
+        if condition is None:
+            raise NotFound()
+
+        values = request.data.get("values") if hasattr(request.data, "get") else None
+
+        if not isinstance(values, dict):
+            raise ValidationError("The form values must be an object.")
+
+        from .conditions import normalize
+
+        return Response(
+            {
+                "result": condition.run(
+                    {name: normalize(values.get(name)) for name in condition.fields},
+                    request,
+                )
+            }
+        )
+
+    def _find_condition(self, condition_id):
+        from .admin import iter_conditions
+
+        studios = [self._admin_model]
+
+        # Inline editors show the inline model's own studio's layout.
+        if getattr(self, "parent_model", None) is not None:
+            model_studio = cs_settings.ADMIN_SITE._registry.get(self._model)
+
+            if model_studio is not None:
+                studios.append(model_studio)
+
+        for studio in studios:
+            for condition in iter_conditions(studio):
+                if str(condition.condition_id) == condition_id:
+                    return condition
+
+        return None
+
     def _find_component(self, component_id):
         try:
             component_uuid = uuid.UUID(component_id)
