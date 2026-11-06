@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.12.0 (unreleased)
+## 1.12.0 (2026-11-06)
 
 - **Conditional fields.** `when` on a `Field`, a component, a `FormSet` or
   a `FormSetGroup` shows it only while the form's values meet a condition,
