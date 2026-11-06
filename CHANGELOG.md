@@ -16,6 +16,21 @@
   the server as the editor types. System check `content_studio.E040`
   reports conditions on fields the form does not hold, and
   `content_studio.W024` required fields that only show under a condition.
+- **Docs for AI agents.** The docs website publishes
+  [`llms.txt`](https://djangocontentstudio.org/llms.txt), an index of the
+  documentation, and `llms-full.txt`, every page in one file, both
+  generated from the docs when the website is built. Each page is also
+  available as Markdown at its address plus `.md`. An agent skill
+  (`SKILL.md`) for AI coding agents such as Claude Code covers the setup,
+  the main APIs and the common mistakes; the new
+  [AI agents](https://djangocontentstudio.org/docs/ai-agents) page says how
+  to install it.
+
+### Fixes
+
+- **`UmamiProvider` import.** `from content_studio.analytics import
+  UmamiProvider`, as the analytics docs show it, now works. The
+  `content_studio.analytics` names are listed in the public API.
 
 ## 1.11.0 (2026-11-05)
 

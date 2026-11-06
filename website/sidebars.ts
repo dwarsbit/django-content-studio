@@ -24,6 +24,7 @@ const sidebars: SidebarsConfig = {
     "deployment",
     "settings",
     "public-api",
+    "ai-agents",
     "comparison",
   ],
 };

@@ -253,6 +253,25 @@ Django, no internal API, no roadmap promises, no version history in prose,
 no django-blueprint; complete, runnable examples in the shared blog example
 project.
 
+### Docs for AI agents
+
+The docs website also serves the documentation to AI agents. Keep both in
+step with every user-facing change:
+
+- `website/plugins/llms-txt.ts` generates `llms.txt`, `llms-full.txt` and
+  a Markdown copy of each page (`/docs/<page>.md`) from `website/docs` at
+  build time, in sidebar order. Nothing to edit by hand; a new docs page
+  only needs its sidebar entry.
+- `website/skills/django-content-studio/SKILL.md` is the agent skill for
+  projects that use Content Studio, served at
+  `/skills/django-content-studio/SKILL.md`. Update it when a feature is
+  added or its API changes, as you update the docs: it is short, so add the
+  essentials and link to the page for the rest.
+- `tests/test_agent_docs.py` checks that every `content_studio` import in
+  the docs, the README and the skill resolves, that the skill only imports
+  public names, that its code parses, and that its page links and check
+  IDs exist.
+
 ---
 
 ## Design System
@@ -370,6 +389,8 @@ urlpatterns = [
 | Vite config | `/frontend/vite.config.ts` |
 | Docs website | `/website` (Docusaurus, `npm run build`; deployed by the Website workflow) |
 | Writing style guide | `/website/STYLE.md` |
+| Agent skill (for projects using Content Studio) | `/website/skills/django-content-studio/SKILL.md` |
+| llms.txt generator | `/website/plugins/llms-txt.ts` |
 | Design system | `/design-system` (tokens, component guidelines and previews; built by `frontend/design-system/build.mjs`) |
 
 ---

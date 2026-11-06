@@ -124,6 +124,7 @@ Good places to start:
 - [Access control](https://djangocontentstudio.org/docs/permissions): model and object permissions
 - [Deployment](https://djangocontentstudio.org/docs/deployment): a deployment checklist and system checks
 - [How it compares](https://djangocontentstudio.org/docs/comparison): Content Studio next to admin themes and content management systems
+- [AI agents](https://djangocontentstudio.org/docs/ai-agents): `llms.txt` and an agent skill for AI coding agents
 
 See also [Django Headless](https://djangoheadless.org), if you need an API
 for your own clients.
