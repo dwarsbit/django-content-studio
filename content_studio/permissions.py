@@ -40,6 +40,13 @@ class ModelStudioPermissions(BasePermission):
         if request.method in SAFE_METHODS:
             return admin_model.has_view_permission(request)
 
+        if getattr(view, "action", None) == "condition":
+            # A server-side condition of the edit page answers for the
+            # create form too, and stores nothing.
+            return admin_model.has_view_permission(
+                request
+            ) or admin_model.has_add_permission(request)
+
         if getattr(view, "action", None) == "run_component":
             # Buttons enforce their own allowed_permissions on the
             # object (see form.Button); seeing it is the only gate here.

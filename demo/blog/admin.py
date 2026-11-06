@@ -5,6 +5,8 @@ configured in CONTENT_STUDIO (demo.blog.studio.admin_site).
 """
 
 from django.contrib.auth import get_user_model
+from django.db.models import Q
+from django.db.models.functions import Now
 
 from content_studio import register, widgets
 from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
@@ -12,6 +14,7 @@ from content_studio.analytics import Analytics
 from content_studio.form import (
     ActivityLog,
     Callout,
+    Condition,
     Field,
     FormSet,
     SEOPreview,
@@ -89,6 +92,22 @@ class ReadingTime(Callout):
         return f"About **{minutes} min** to read."
 
 
+class MeetsHouseStyle(Condition):
+    """The demo's house style for search descriptions: a full sentence,
+    without shouting or "click here"."""
+
+    fields = ["meta_description"]
+
+    def check(self, values, request):
+        text = (values["meta_description"] or "").strip()
+
+        return (
+            text.endswith(".")
+            and not text.isupper()
+            and "click here" not in text.lower()
+        )
+
+
 @register(models.Article)
 class ArticleStudio(ModelStudio):
     icon = "ph-bold ph-article"
@@ -145,6 +164,15 @@ class ArticleStudio(ModelStudio):
                     "meta_description",
                     widget=widgets.InputWidget(recommended_length=160),
                 ),
+                # Shown while the description breaks the house style;
+                # the check runs on the server.
+                Callout(
+                    "Write the description as one full sentence, ending in "
+                    'a period, without capitals throughout or "click here".',
+                    title="House style",
+                    variant="warning",
+                    when=~Q(meta_description="") & ~MeetsHouseStyle(),
+                ),
                 SEOPreview(
                     title_field="title",
                     description_field="meta_description",
@@ -157,7 +185,13 @@ class ArticleStudio(ModelStudio):
     ]
     edit_sidebar = [
         ReadingTime(),
-        "published_at",
+        # The publication date only matters once the article is published.
+        Field("published_at", when=Q(status="published")),
+        Callout(
+            "Scheduled: the article goes live at its publication date.",
+            variant="info",
+            when=Q(status="published", published_at__gt=Now()),
+        ),
         "author",
         "featured",
         "views",

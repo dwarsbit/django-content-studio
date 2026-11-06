@@ -24,6 +24,8 @@ export function useDiscover() {
         model_groups: ModelGroup[];
         models: Model[];
         user_model: string;
+        // The server's time zone, which conditions compare dates in.
+        time_zone?: string;
         // The notifications app; absent from older servers.
         notifications?: {
           enabled: boolean;

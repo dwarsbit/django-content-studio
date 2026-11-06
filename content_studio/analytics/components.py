@@ -49,6 +49,7 @@ class Analytics(Component):
         layout: str = None,
         default_range: str = None,
         component_id=None,
+        when=None,
     ):
         # Set before super().__init__(): get_id_parts() reads them.
         if title is not None:
@@ -70,7 +71,7 @@ class Analytics(Component):
                 f"{', '.join(LAYOUTS)}."
             )
 
-        super().__init__(component_id)
+        super().__init__(component_id, when=when)
 
     def get_id_parts(self):
         return (

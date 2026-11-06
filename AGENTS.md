@@ -36,6 +36,7 @@ content_studio/
 ├── router.py            # Custom DRF router
 ├── paginators.py        # Custom pagination classes
 ├── form.py              # Form and field definitions
+├── conditions.py        # when= conditions: Q/Condition serialization and the evaluator mirrored by frontend/src/lib/conditions.ts (tests/conditions_cases.json keeps them in step)
 ├── fields.py            # Optional content fields (HTMLField, TagField, FlexField, ...)
 ├── blocks.py            # BlockField and Block: an ordered list of content blocks
 ├── managers.py          # Managers for the base models (SingletonManager, SoftDeletableManager)
@@ -45,7 +46,7 @@ content_studio/
 ├── colors.py            # Color parsing and conversion (hex/rgb/hsl) for ColorField; mirrored by frontend/src/lib/colors.ts
 ├── widgets.py           # Widget definitions for field rendering
 ├── formats.py           # Format definitions for field display
-├── checks.py            # System checks (content_studio.E001-E037, W001-W023)
+├── checks.py            # System checks (content_studio.E001-E040, W001-W024)
 ├── utils.py             # Utility functions
 ├── actions.py           # Bulk actions (@bulk_action decorator, resolution)
 ├── reordering.py        # Built-in reordering (reorder_field moves, ManualOrderModel renumbering)

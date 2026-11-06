@@ -61,6 +61,7 @@ def test_static_text_serializes(cls, component_type):
         "type": "component",
         "component_type": component_type,
         "component_id": str(component.component_id),
+        "when": None,
         "text": "Some *text*",
         "per_object": False,
     }
@@ -78,6 +79,7 @@ def test_a_callout_serializes_its_options():
         "type": "component",
         "component_type": "Callout",
         "component_id": str(callout.component_id),
+        "when": None,
         "text": "Changes go live immediately.",
         "per_object": False,
         "title": "Heads up",

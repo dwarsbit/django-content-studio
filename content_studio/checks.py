@@ -25,7 +25,9 @@ from .admin import (
     AdminSerializer,
     ContentStudioSite,
     declares,
+    get_field_placements,
     get_is_singleton,
+    get_write_only_field_names,
     get_table_display_columns,
     is_computed_column,
     iter_components,
@@ -33,7 +35,17 @@ from .admin import (
 )
 from .export import is_exportable
 from .extensions import DashboardPage
-from .form import BaseText, Component, Field, SEOPreview, TableColumn
+from .conditions import referenced_fields
+from .form import (
+    BaseText,
+    Component,
+    Field,
+    FieldLayout,
+    FormSet,
+    FormSetGroup,
+    SEOPreview,
+    TableColumn,
+)
 from .settings import cs_settings
 from .utils import as_instance, flatten, get_tenant_field_name
 
@@ -2619,6 +2631,125 @@ def seo_preview_errors(studio) -> list[tuple[str, str]]:
     return errors
 
 
+def iter_whens(studio):
+    """
+    Yield (description, when) for every when= on a studio's edit page:
+    header components, tabs, form sets, fields and components.
+    """
+
+    def describe(entry) -> str:
+        if isinstance(entry, Field):
+            return f"Field({entry.name!r})"
+        if isinstance(entry, FormSet):
+            return f"FormSet({entry.title!r})"
+        if isinstance(entry, FormSetGroup):
+            return f"FormSetGroup({entry.label!r})"
+        return entry.__class__.__name__
+
+    def visit(entry):
+        when = getattr(entry, "when", None)
+
+        if isinstance(entry, (Field, FormSet, FormSetGroup, Component)) and (
+            when is not None
+        ):
+            yield describe(entry), when
+
+        if isinstance(entry, FormSetGroup):
+            for form_set in entry.formsets:
+                yield from visit(form_set)
+
+        if isinstance(entry, (FormSet, FieldLayout)):
+            for field in entry.fields:
+                yield from visit(field)
+
+    header = getattr(studio, "edit_header", None)
+    entries = (
+        (list(header) if isinstance(header, (list, tuple)) else [])
+        + list(getattr(studio, "edit_main", None) or [])
+        + list(getattr(studio, "edit_sidebar", None) or [])
+    )
+
+    for entry in entries:
+        yield from visit(entry)
+
+
+def condition_errors(studio) -> list[tuple[str, str]]:
+    """
+    Conditions (when=) that read fields the edit page's form does not
+    hold, as (check id, message) pairs: fields the model does not have,
+    and excluded or write-only fields, whose values never reach the
+    admin. Either way the condition reads an empty value.
+    """
+    model = getattr(studio, "model", None)
+
+    if model is None:
+        return []
+
+    errors = []
+    field_names = model_field_names(model)
+    hidden = set(getattr(studio, "exclude", None) or []) | get_write_only_field_names(
+        studio, model
+    )
+
+    for owner, when in iter_whens(studio):
+        for name in referenced_fields(when):
+            if name not in field_names:
+                errors.append(
+                    (
+                        "content_studio.E040",
+                        f"{config_name(studio)}: the condition of {owner} "
+                        f"reads {name!r}, which is not a field of "
+                        f"{model._meta.label_lower}.",
+                    )
+                )
+            elif name in hidden:
+                errors.append(
+                    (
+                        "content_studio.E040",
+                        f"{config_name(studio)}: the condition of {owner} "
+                        f"reads {name!r}, which is excluded or write-only, so "
+                        "its value never reaches the admin.",
+                    )
+                )
+
+    return errors
+
+
+def condition_warnings(studio) -> list[tuple[str, str]]:
+    """
+    Required model fields that only show under a condition, as (check
+    id, message) pairs: a hidden field is not saved, so creating an
+    object while it is hidden fails.
+    """
+    model = getattr(studio, "model", None)
+
+    if model is None:
+        return []
+
+    ignored = ignored_edit_field_names(model)
+    required = {
+        field.name
+        for field in model._meta.get_fields()
+        if is_required_model_field(field) and field.name not in ignored
+    }
+    warnings = []
+
+    for name, placements in get_field_placements(studio, None).items():
+        if name in required and placements and all(placements):
+            warnings.append(
+                (
+                    "content_studio.W024",
+                    f"{config_name(studio)}: the required field {name!r} only "
+                    "shows under a condition, and a hidden field is not "
+                    "saved, so creating an object while it is hidden fails. "
+                    "Give the model field a default, make it nullable or "
+                    "blank, or show it always.",
+                )
+            )
+
+    return warnings
+
+
 @checks.register()
 def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage]:
     site = cs_settings.ADMIN_SITE
@@ -2676,6 +2807,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         for check_id, error in seo_preview_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
+        for check_id, error in condition_errors(studio):
+            messages.append(checks.Error(error, obj=obj, id=check_id))
+
         for check_id, error in duplication_errors(studio):
             messages.append(checks.Error(error, obj=obj, id=check_id))
 
@@ -2710,6 +2844,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
         for check_id, warning in export_warnings(studio):
+            messages.append(checks.Warning(warning, obj=obj, id=check_id))
+
+        for check_id, warning in condition_warnings(studio):
             messages.append(checks.Warning(warning, obj=obj, id=check_id))
 
     for check_id, error in duplicate_id_errors(site):

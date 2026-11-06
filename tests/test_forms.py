@@ -41,6 +41,7 @@ def test_field_serialization():
         "label": "Title",
         "readonly": True,
         "widget": None,
+        "when": None,
     }
 
 
@@ -69,6 +70,7 @@ def test_field_layout_wraps_and_normalizes():
                 "label": None,
                 "readonly": False,
                 "widget": None,
+                "when": None,
             },
             {
                 "type": "field",
@@ -77,6 +79,7 @@ def test_field_layout_wraps_and_normalizes():
                 "label": None,
                 "readonly": False,
                 "widget": None,
+                "when": None,
             },
         ],
         "columns": 2,

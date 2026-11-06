@@ -3,6 +3,7 @@ import uuid
 from django.apps import apps
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import never_cache
@@ -164,6 +165,9 @@ class AdminApiViewSet(ViewSet):
             "model_groups": get_model_groups(),
             "user_model": settings.AUTH_USER_MODEL,
             "extensions": get_extensions(request),
+            # The server's time zone: conditions compare dates in it, so
+            # the browser decides "today" the way a save does.
+            "time_zone": timezone.get_current_timezone_name(),
         }
 
         media_model = cs_settings.MEDIA_LIBRARY_MODEL

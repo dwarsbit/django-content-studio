@@ -2,6 +2,8 @@ import * as R from "ramda";
 
 import type { Model } from "@/types";
 
+import { Conditional } from "./conditional";
+import { fieldNames } from "./conditional-fields";
 import { EditPlacementContext } from "./edit-placement";
 import { FormSet } from "./form-set";
 
@@ -24,16 +26,19 @@ export function Aside({
       <EditPlacementContext.Provider value="sidebar">
         <aside className="space-y-4">
           {sidebar.map((formSet, idx) => (
-            <section
+            <Conditional
               key={idx}
-              className="rounded-lg border bg-card shadow-xs w-full"
+              when={formSet.when}
+              fields={fieldNames(formSet.fields)}
             >
-              <FormSet
-                model={model}
-                formSet={formSet}
-                hiddenFields={hiddenFields}
-              />
-            </section>
+              <section className="rounded-lg border bg-card shadow-xs w-full">
+                <FormSet
+                  model={model}
+                  formSet={formSet}
+                  hiddenFields={hiddenFields}
+                />
+              </section>
+            </Conditional>
           ))}
         </aside>
       </EditPlacementContext.Provider>

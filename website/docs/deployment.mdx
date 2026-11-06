@@ -133,6 +133,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E037` | [Analytics](/docs/analytics) set up wrong: an `AnalyticsPage`, link, `Analytics` component or analytics widget without an `AnalyticsExtension`, more than one extension or page, a provider that reports metrics or breakdowns Content Studio does not know, or an analytics page path that another page uses. |
 | `content_studio.E038` | The same model inlined twice on one studio. An inline is served at one endpoint per parent and model, so the second inline is not served. |
 | `content_studio.E039` | With [`TENANT_MODEL`](/docs/settings#tenant_model) set, a registered or inlined model with more than one foreign key to the tenant model. Tenant scoping needs exactly one. |
+| `content_studio.E040` | A [condition](/docs/edit-page#conditional-fields) (`when`) that reads a field the model does not have, or an excluded or write-only field, whose value never reaches the admin. |
 
 ### Warnings
 
@@ -161,6 +162,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.W021` | A [`NotificationsWidget`](/docs/notifications#a-dashboard-widget) on a site without `content_studio.notifications` in `INSTALLED_APPS`; it is not shown. |
 | `content_studio.W022` | [`IMAGE_SIZES`](/docs/settings#image_sizes) set while no sizes can be made: Pillow is not installed, `IMAGE_SIZE_FOLDER` is not set, or the media model has no metadata field. Every size is then the image's own file. |
 | `content_studio.W023` | An analytics provider missing a setting it needs, such as an [`UmamiProvider`](/docs/analytics#umami) without an `api_key` or `website_id`. Its reports show the statistics as unavailable. |
+| `content_studio.W024` | A required model field that only shows under a [condition](/docs/edit-page#conditional-fields). A hidden field is not saved, so creating an object while it is hidden fails. |
 
 ## Reporting a vulnerability
 

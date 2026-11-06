@@ -89,6 +89,7 @@ def test_seo_preview_serializes_its_fields():
         "type": "component",
         "component_type": "SEOPreview",
         "component_id": str(preview.component_id),
+        "when": None,
         "title_field": "title",
         "description_field": "summary",
         "base_url": "https://example.com/blog/",
