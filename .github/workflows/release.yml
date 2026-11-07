@@ -3,9 +3,10 @@ name: Release
 # Releases the version of the "## X.Y.Z (unreleased)" heading in
 # CHANGELOG.md: sets the version everywhere, builds the
 # package, commits to main and pushes the tag vX.Y.Z, then publishes to
-# PyPI (trusted publishing, environment "pypi") and creates the GitHub
-# Release. Pushes use GITHUB_TOKEN, so they do not trigger other
-# workflows: anything a release needs runs as a job here.
+# PyPI (trusted publishing, environment "pypi"), creates the GitHub
+# Release and redeploys the website, which shows the version. Pushes use
+# GITHUB_TOKEN, so they do not trigger other workflows: anything a release
+# needs runs as a job here.
 
 on:
   workflow_dispatch:
@@ -167,3 +168,16 @@ jobs:
           if [[ "$VERSION" == *-* ]]; then flags+=(--prerelease); fi
           gh release create "v$VERSION" dist/* \
             --title "v$VERSION" --notes-file notes.md "${flags[@]}"
+
+  website:
+    # The website shows the version, and a push by the workflow's token
+    # does not start the website deploy by itself.
+    needs: github-release
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Redeploy the website
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run website.yml --repo "$GITHUB_REPOSITORY" --ref main

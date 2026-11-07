@@ -77,6 +77,10 @@ const features = [
 
 export default function Home(): React.JSX.Element {
   const { siteConfig } = useDocusaurusContext();
+  const { version, releaseUrl } = siteConfig.customFields as {
+    version: string;
+    releaseUrl: string;
+  };
 
   return (
     <Layout
@@ -87,6 +91,9 @@ export default function Home(): React.JSX.Element {
         <section className="hero-dbp">
           <div className="container">
             <div>
+              <Link className="hero-release" href={releaseUrl}>
+                <b>v{version}</b> What’s new →
+              </Link>
               <h1>Django Content Studio</h1>
               <p className="tagline">
                 A modern alternative to the classic Django admin, with batteries

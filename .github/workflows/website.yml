@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "website/**"
+      # The website shows the version.
+      - "pyproject.toml"
       - ".github/workflows/website.yml"
   workflow_dispatch:
 
