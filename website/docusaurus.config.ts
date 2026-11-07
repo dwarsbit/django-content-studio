@@ -1,8 +1,16 @@
+import { readFileSync } from "node:fs";
+
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
 import llmsTxt from "./plugins/llms-txt";
 import sidebars from "./sidebars";
+
+// The released version, which the Release workflow writes to pyproject.toml
+// before it redeploys the website.
+const pyproject = readFileSync(new URL("../pyproject.toml", import.meta.url), "utf8");
+const version = pyproject.match(/^version = "(.+)"$/m)![1];
+const releaseUrl = `https://github.com/dwarsbit/django-content-studio/releases/tag/v${version}`;
 
 const config: Config = {
   title: "Django Content Studio",
@@ -19,6 +27,7 @@ const config: Config = {
     },
   },
   trailingSlash: false,
+  customFields: { version, releaseUrl },
   themes: [],
   plugins: [
     [
@@ -72,6 +81,11 @@ const config: Config = {
         src: "img/logo.svg",
       },
       items: [
+        {
+          type: "html",
+          position: "left",
+          value: `<a class="dcs-version" href="${releaseUrl}" title="Release notes for v${version}">v${version}</a>`,
+        },
         {
           label: "Docs",
           position: "left",

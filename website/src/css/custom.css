@@ -72,6 +72,53 @@ html {
   }
 }
 
+/* The latest version: a badge in the navbar and a pill above the hero title */
+.dcs-version {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--ifm-color-primary) 30%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ifm-color-primary) 12%, transparent);
+  color: var(--ifm-color-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.dcs-version:hover {
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+  background: color-mix(in srgb, var(--ifm-color-primary) 20%, transparent);
+}
+
+.hero-release {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding: 0.25rem 0.8rem 0.25rem 0.3rem;
+  border: 1px solid rgba(208, 214, 216, 0.3);
+  border-radius: 999px;
+  background: rgba(208, 214, 216, 0.06);
+  color: #e3e7e8;
+  font-size: 0.85rem;
+}
+
+.hero-release:hover {
+  color: #ffffff;
+  text-decoration: none;
+  border-color: rgba(208, 214, 216, 0.55);
+}
+
+.hero-release b {
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: #d0d6d8;
+  color: #161b1d;
+  font-size: 0.75rem;
+}
+
 .hero-dbp h1 {
   font-family: var(--ifm-heading-font-family);
   font-size: clamp(2.2rem, 4.5vw, 3.2rem);
