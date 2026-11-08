@@ -86,6 +86,7 @@ class ContentStudioSiteTests(TestCase):
 
         assert self.site.is_registered(get_user_model())
         assert isinstance(self.site._registry[get_user_model()], ModelStudio)
+        assert self.site._registry[get_user_model()].icon == "ph-bold ph-users"
 
     def test_setup_respects_a_custom_user_studio(self):
         user_model = get_user_model()

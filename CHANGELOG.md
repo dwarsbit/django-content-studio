@@ -23,6 +23,8 @@
 
 - **User menu initials.** The user menu shows the initials of the first
   and last name: "Alex Morgan" is AM, not AL.
+- **Users icon.** The user model's default studio showed the generic model
+  icon in the menu; it now shows a users icon.
 
 ## 1.12.0 (2026-11-06)
 
