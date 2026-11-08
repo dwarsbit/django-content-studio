@@ -53,6 +53,7 @@ content_studio/
 ├── throttling.py        # ClientIPMixin: throttles identify clients by REMOTE_ADDR unless NUM_PROXIES is set
 ├── thumbnails.py        # Thumbnails of media images (Pillow, "small"/"large" WebP under THUMBNAIL_FOLDER)
 ├── presence.py          # Presence: who has an object open, kept in Django's cache (PRESENCE, PRESENCE_CACHE)
+├── profile.py           # The profile page of the signed-in user: profile_fields (get_profile_fields), the activity overview and recent content from LogEntry, the password change (api/profile)
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions
 ├── dashboard/

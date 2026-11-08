@@ -16,6 +16,7 @@ const sidebars: SidebarsConfig = {
     "analytics",
     "permissions",
     "authentication",
+    "profile",
     "multi-tenancy",
     "webhooks",
     "notifications",

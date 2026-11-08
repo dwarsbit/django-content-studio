@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.13.0 (unreleased)
+
+- **Profile page.** Every editor has a profile page, opened with Profile at
+  the top of the user menu. The overview shows their card (picture or
+  initials, name, email address, superuser and group badges, member since,
+  last login), how many objects they created, updated and deleted in a
+  period against the period before, with a chart, the content they changed
+  last, and their changes per model. It counts the activity log on the
+  models the editor may view. The Edit profile tab saves the user model
+  fields in the new `ContentStudioSite.profile_fields` (default
+  `first_name`, `last_name` and `email`), without any permission on the
+  user model, and changes the password in a dialog, so password managers
+  leave the page alone. Changing the password logs the editor out on other
+  devices and keeps them logged in where they changed it; attempts share
+  `LOGIN_THROTTLE_RATE`, per user. System check `content_studio.E041`
+  reports `profile_fields` entries that are not user model fields, the
+  password, or fields that decide what a user may do without
+  `readonly=True`.
+
+### Fixes
+
+- **User menu initials.** The user menu shows the initials of the first
+  and last name: "Alex Morgan" is AM, not AL.
+
 ## 1.12.0 (2026-11-06)
 
 - **Conditional fields.** `when` on a `Field`, a component, a `FormSet` or

@@ -134,6 +134,7 @@ probably not as you intended. Neither stops the server from starting, but
 | `content_studio.E038` | The same model inlined twice on one studio. An inline is served at one endpoint per parent and model, so the second inline is not served. |
 | `content_studio.E039` | With [`TENANT_MODEL`](/docs/settings#tenant_model) set, a registered or inlined model with more than one foreign key to the tenant model. Tenant scoping needs exactly one. |
 | `content_studio.E040` | A [condition](/docs/edit-page#conditional-fields) (`when`) that reads a field the model does not have, or an excluded or write-only field, whose value never reaches the admin. |
+| `content_studio.E041` | A [`profile_fields`](/docs/profile#edit-profile) entry that is not a field name or `Field`, names a field the user model does not have, names the password, names the username or a field that decides what a user may do without `readonly=True`, or has `when`. |
 
 ### Warnings
 
