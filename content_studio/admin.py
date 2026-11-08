@@ -741,7 +741,7 @@ class ContentStudioSite:
         user_model = get_user_model()
 
         if not self.is_registered(user_model):
-            self.register(user_model)
+            self.register(user_model, icon="ph-bold ph-users")
 
     def get_thumbnail(self, obj, size: str = "small") -> str:
         """

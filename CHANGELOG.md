@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.12.1 (unreleased)
+
+### Fixes
+
+- Fixed: the user model's default studio showed the generic model icon in
+  the menu; it now shows a users icon.
+
 ## 1.12.0 (2026-11-06)
 
 - **Conditional fields.** `when` on a `Field`, a component, a `FormSet` or
