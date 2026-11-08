@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.13.0 (unreleased)
+## 1.13.0 (2026-11-08)
 
 - **Profile page.** Every editor has a profile page, opened with Profile at
   the top of the user menu. The overview shows their card (picture or
