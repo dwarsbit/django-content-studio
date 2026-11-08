@@ -127,7 +127,9 @@ Good places to start:
 - [AI agents](https://djangocontentstudio.org/docs/ai-agents): `llms.txt` and an agent skill for AI coding agents
 
 See also [Django Headless](https://djangoheadless.org), if you need an API
-for your own clients.
+for your own clients, and [DjangoStack](https://djangostack.org), if you want
+a ready-to-run project with Content Studio, Django Headless and a frontend
+from one command.
 
 ## Contributing and support
 

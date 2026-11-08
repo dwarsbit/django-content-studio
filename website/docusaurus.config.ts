@@ -92,6 +92,16 @@ const config: Config = {
           to: "docs/intro",
         },
         {
+          href: "https://djangoheadless.org",
+          label: "Django Headless",
+          position: "right",
+        },
+        {
+          href: "https://djangostack.org",
+          label: "DjangoStack",
+          position: "right",
+        },
+        {
           href: "https://github.com/dwarsbit/django-content-studio",
           label: "GitHub",
           position: "right",
@@ -144,6 +154,10 @@ const config: Config = {
             {
               label: "Django Headless",
               href: "https://djangoheadless.org",
+            },
+            {
+              label: "DjangoStack",
+              href: "https://djangostack.org",
             },
           ],
         },

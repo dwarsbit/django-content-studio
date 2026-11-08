@@ -170,6 +170,8 @@ admonitions or the README.
   page, factually and without judging them. Nowhere else.
 - **django-headless**: only as a "see also" link, for readers who need an
   API for their own clients.
+- **DjangoStack**: only as a "see also" link, for readers who want a
+  ready-to-run project with Content Studio, Django Headless and a frontend.
 - **Django**: freely. Link to the Django documentation for Django concepts
   rather than explaining them again.
 
