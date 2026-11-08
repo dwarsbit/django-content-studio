@@ -69,7 +69,8 @@
     "theme": "Thema",
     "collapse": "Menu inklappen",
     "expand": "Menu uitklappen",
-    "title": "Hoofdmenu"
+    "title": "Hoofdmenu",
+    "profile": "Profiel"
   },
   "editor": {
     "title_create": "Maak {{modelName}} aan",
@@ -704,6 +705,43 @@
       "organicShopping": "Organisch winkelen",
       "paidShopping": "Betaald winkelen",
       "paidAds": "Betaalde advertenties"
+    }
+  },
+  "profile": {
+    "title": "Profiel",
+    "overview": "Overzicht",
+    "edit": "Profiel bewerken",
+    "superuser": "Superuser",
+    "member_since": "Lid sinds",
+    "last_login": "Laatst ingelogd",
+    "metrics": {
+      "total": "Wijzigingen",
+      "created": "Aangemaakt",
+      "updated": "Bijgewerkt",
+      "deleted": "Verwijderd"
+    },
+    "actions": {
+      "created": "Aangemaakt",
+      "updated": "Bijgewerkt",
+      "deleted": "Verwijderd"
+    },
+    "activity_error": "Je activiteit kon niet worden geladen.",
+    "recent_content": "Recente content",
+    "recent_content_empty": "Content die je aanmaakt of wijzigt verschijnt hier.",
+    "by_model": "Per model",
+    "by_model_empty": "Geen wijzigingen in deze periode.",
+    "details": "Persoonlijke gegevens",
+    "saved": "Profiel opgeslagen",
+    "password": {
+      "title": "Wachtwoord",
+      "description": "Wijzig het wachtwoord waarmee je inlogt. Je blijft hier ingelogd; op andere apparaten word je uitgelogd.",
+      "change": "Wachtwoord wijzigen",
+      "dialog_description": "Vul je huidige wachtwoord in en daarna twee keer het nieuwe.",
+      "current": "Huidig wachtwoord",
+      "new": "Nieuw wachtwoord",
+      "confirm": "Bevestig nieuw wachtwoord",
+      "mismatch": "De nieuwe wachtwoorden komen niet overeen.",
+      "changed": "Wachtwoord gewijzigd"
     }
   }
 }

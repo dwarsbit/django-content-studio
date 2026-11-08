@@ -866,3 +866,11 @@ msgstr "t.o.v. de vorige periode"
 #: analytics/widgets.py
 msgid "Top pages"
 msgstr "Toppagina's"
+
+#: profile.py
+msgid "Your current password is not correct."
+msgstr "Je huidige wachtwoord is niet juist."
+
+#: profile.py
+msgid "Enter a new password."
+msgstr "Vul een nieuw wachtwoord in."

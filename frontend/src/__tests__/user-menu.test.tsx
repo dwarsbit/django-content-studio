@@ -69,9 +69,10 @@ vi.mock("@/hooks/use-discover", () => ({
 vi.mock("@/hooks/use-admin-info", () => ({
   useAdminInfo: () => ({ data: undefined }),
 }));
-vi.mock("@/hooks/use-me", () => ({
-  useMe: () => ({ data: { username: "leon", first_name: "", last_name: "" } }),
-}));
+const meMock = vi.hoisted(() =>
+  vi.fn(() => ({ data: { username: "leon", first_name: "", last_name: "" } })),
+);
+vi.mock("@/hooks/use-me", () => ({ useMe: meMock }));
 vi.mock("@/auth", () => ({ useAuth: () => ({ logout: vi.fn() }) }));
 vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/components/theme-provider", () => ({
@@ -121,6 +122,7 @@ describe("User menu extensions", () => {
       (item) => item.textContent,
     );
     expect(items).toEqual([
+      "main_menu.profile",
       "Task queue",
       "Sign out everywhere",
       "Help",
@@ -164,5 +166,27 @@ describe("User menu extensions", () => {
     await waitFor(() =>
       expect(toastMock.success).toHaveBeenCalledWith("Signed out."),
     );
+  });
+
+  it("opens the profile from the top of the menu", async () => {
+    const user = userEvent.setup();
+    const router = renderMenu();
+
+    await user.click(screen.getByText("leon"));
+    await user.click(
+      await screen.findByRole("menuitem", { name: "main_menu.profile" }),
+    );
+
+    expect(router.state.location.pathname).toBe("/profile");
+  });
+
+  it("shows the initials of the first and last name", () => {
+    meMock.mockReturnValue({
+      data: { username: "alex", first_name: "Alex", last_name: "Morgan" },
+    });
+    renderMenu();
+
+    expect(screen.getAllByText("AM").length).toBeGreaterThan(0);
+    expect(screen.queryByText("AL")).not.toBeInTheDocument();
   });
 });

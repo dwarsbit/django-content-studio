@@ -2410,6 +2410,90 @@ def check_password_reset_deployment(
     return []
 
 
+def profile_field_errors(site) -> list[tuple[str, str]]:
+    """
+    A malformed profile_fields, as (check id, message) pairs: entries are
+    field names or Field objects naming a field of the user model,
+    without when=; the password, the username and the fields deciding
+    what a user may do can only be shown read-only.
+    """
+    from .profile import protected_field_names
+
+    configured = getattr(site, "profile_fields", None)
+
+    if configured is None:
+        return []
+
+    if not isinstance(configured, (list, tuple)):
+        return [
+            (
+                "content_studio.E041",
+                "profile_fields must be a list of field names or Field "
+                f"objects, not {type(configured).__name__}.",
+            )
+        ]
+
+    user_model = get_user_model()
+    protected = protected_field_names(user_model)
+    errors = []
+
+    for entry in configured:
+        if isinstance(entry, str):
+            name, readonly, when = entry, False, None
+        elif isinstance(entry, Field):
+            name, readonly, when = entry.name, entry.readonly, entry.when
+        else:
+            errors.append(
+                (
+                    "content_studio.E041",
+                    f"profile_fields entry {entry!r} is not a field name or a "
+                    "Field.",
+                )
+            )
+            continue
+
+        try:
+            model_field = user_model._meta.get_field(name)
+        except FieldDoesNotExist:
+            errors.append(
+                (
+                    "content_studio.E041",
+                    f"profile_fields names {name!r}, which is not a field of "
+                    f"{user_model._meta.label}.",
+                )
+            )
+            continue
+
+        if name == "password" or getattr(model_field, "attname", "") == "password":
+            errors.append(
+                (
+                    "content_studio.E041",
+                    "profile_fields cannot name 'password': the profile page "
+                    "changes it in its own dialog.",
+                )
+            )
+        elif name in protected and not readonly:
+            errors.append(
+                (
+                    "content_studio.E041",
+                    f"profile_fields names {name!r}, which editors may not "
+                    f"change on their own profile; use Field({name!r}, "
+                    "readonly=True) to show it.",
+                )
+            )
+
+        if when is not None:
+            errors.append(
+                (
+                    "content_studio.E041",
+                    f"profile_fields entry {name!r} has when=, which the "
+                    "profile page does not support.",
+                )
+            )
+
+    return errors
+
+
 def map_setting_errors() -> list[tuple[str, str]]:
     """
     Malformed map and embed settings, as (check id, message) pairs: the
@@ -2868,6 +2952,9 @@ def check_content_studio(app_configs=None, **kwargs) -> list[checks.CheckMessage
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in media_upload_errors():
+        messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
+
+    for check_id, error in profile_field_errors(site):
         messages.append(checks.Error(error, obj=site.__class__.__name__, id=check_id))
 
     for check_id, error in map_setting_errors():

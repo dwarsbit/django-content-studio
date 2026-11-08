@@ -12,6 +12,7 @@ import {
   PiMagnifyingGlassBold,
   PiSidebarSimpleBold,
   PiSignOutBold,
+  PiUserCircleBold,
 } from "react-icons/pi";
 import { TbCommand } from "react-icons/tb";
 import {
@@ -48,7 +49,7 @@ import { useMe } from "@/hooks/use-me";
 import { NARROW_QUERY, useMediaQuery } from "@/hooks/use-media-query";
 import { useRunButton } from "@/hooks/use-run-button";
 import { safeStorage } from "@/lib/safe-storage";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { useTenant } from "@/tenant";
 import {
   type ButtonResult,
@@ -537,12 +538,8 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
   }
 
   const name = `${me.first_name ?? ""} ${me.last_name ?? ""}`.trim();
-  const initials =
-    `${me.first_name ?? ""}${me.last_name ?? ""}${me.username ?? ""}`
-      .trim()
-      .replace(/\s/g, "")
-      .slice(0, 2)
-      .toUpperCase();
+  // "Alex Morgan" is AM: the first letters of the first and last name.
+  const initials = getInitials(name || me.username || "");
 
   return (
     <div className="p-2 border-t border-sidebar-border">
@@ -592,6 +589,13 @@ function UserMenu({ collapsed }: { collapsed: boolean }) {
             )}
           </div>
           <div className="p-1">
+            <DropdownMenuItem asChild>
+              <Link to="/profile">
+                {t("main_menu.profile")}
+                <PiUserCircleBold />
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <div className="flex items-center justify-between gap-2 pl-2 pr-1 py-1 text-sm">
               <span>{t("main_menu.theme")}</span>
               <ToggleGroup

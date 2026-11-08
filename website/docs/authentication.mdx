@@ -24,7 +24,9 @@ immediately. What an editor may see and do is decided by the
   ([`MAX_SESSION_LIFETIME`](/docs/settings#max_session_lifetime)).
 - **Survives a reload.** Reloading the page keeps the editor logged in.
 - **Ends everywhere on a password change.** Changing or resetting a
-  password logs the user out on every device.
+  password logs the user out on every device. Editors change their own
+  password on their [profile page](/docs/profile#password), which keeps
+  them logged in where they changed it.
 - **Logging out** ends the session in that browser. The session cannot be
   continued afterwards, not even with a copy of its cookie.
 - **A copied session ends.** Each renewal replaces the session cookie and

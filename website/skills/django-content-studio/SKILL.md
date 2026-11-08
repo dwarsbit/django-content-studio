@@ -32,7 +32,7 @@ before using an option this skill does not show.
   (`content_studio.models`) are optional. Never import the `blueprint`
   package.
 - **Run `python manage.py check` after every change.** The system checks
-  (`content_studio.E001`–`E040`, `W001`–`W024`) report most configuration
+  (`content_studio.E001`–`E041`, `W001`–`W024`) report most configuration
   mistakes: unknown fields, required fields missing from the form, duplicate
   IDs, wrong widget types. Treat warnings as bugs.
 
@@ -513,6 +513,10 @@ Each is optional and has its own page:
   https://djangocontentstudio.org/docs/multi-tenancy.md
 - Login backends, sessions and password reset:
   https://djangocontentstudio.org/docs/authentication.md
+- The profile page (every editor's own changes, details and password;
+  `ContentStudioSite.profile_fields` picks the user model fields editors
+  may change, default `first_name`, `last_name`, `email`):
+  https://djangocontentstudio.org/docs/profile.md
 - Presence, the command palette, deployment and every system check:
   https://djangocontentstudio.org/docs/presence.md,
   https://djangocontentstudio.org/docs/command-palette.md,

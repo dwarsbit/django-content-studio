@@ -69,7 +69,8 @@
     "theme": "Theme",
     "collapse": "Collapse menu",
     "expand": "Expand menu",
-    "title": "Main menu"
+    "title": "Main menu",
+    "profile": "Profile"
   },
   "editor": {
     "title_create": "Create {{modelName}}",
@@ -704,6 +705,43 @@
       "organicShopping": "Organic shopping",
       "paidShopping": "Paid shopping",
       "paidAds": "Paid ads"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "overview": "Overview",
+    "edit": "Edit profile",
+    "superuser": "Superuser",
+    "member_since": "Member since",
+    "last_login": "Last login",
+    "metrics": {
+      "total": "Changes",
+      "created": "Created",
+      "updated": "Updated",
+      "deleted": "Deleted"
+    },
+    "actions": {
+      "created": "Created",
+      "updated": "Updated",
+      "deleted": "Deleted"
+    },
+    "activity_error": "Your activity could not be loaded.",
+    "recent_content": "Recent content",
+    "recent_content_empty": "Content you create or change shows up here.",
+    "by_model": "By model",
+    "by_model_empty": "No changes in this period.",
+    "details": "Personal details",
+    "saved": "Profile saved",
+    "password": {
+      "title": "Password",
+      "description": "Change the password you log in with. You stay logged in here; other devices are logged out.",
+      "change": "Change password",
+      "dialog_description": "Enter your current password, then the new one twice.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "mismatch": "The new passwords do not match.",
+      "changed": "Password changed"
     }
   }
 }

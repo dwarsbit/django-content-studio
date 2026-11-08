@@ -21,6 +21,7 @@ import { StudioLayout } from "@/pages/(studio)/layout";
 import { MediaLibraryPage } from "@/pages/(studio)/media-library/[model]/page";
 import { NotificationsPage } from "@/pages/(studio)/notifications/page";
 import { NotificationSettingsPage } from "@/pages/(studio)/notifications/settings/page";
+import { ProfilePage } from "@/pages/(studio)/profile/page";
 import { UIPage } from "@/pages/(studio)/ui/page";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,14 @@ const router = createBrowserRouter(
                 {
                   path: "notifications/settings",
                   element: <NotificationSettingsPage />,
+                },
+                {
+                  path: "profile",
+                  element: <ProfilePage tab="overview" />,
+                },
+                {
+                  path: "profile/edit",
+                  element: <ProfilePage tab="edit" />,
                 },
                 ...(uiShowcaseEnabled
                   ? [{ path: "ui", element: <UIPage /> }]

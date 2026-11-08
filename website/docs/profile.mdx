@@ -1,0 +1,94 @@
+# 🪪 Profile page
+
+Every editor has a profile page, opened with **Profile** at the top of the
+user menu. It shows what the editor changed in the admin and lets them keep
+their own name, email address and password up to date, without needing any
+permission on the user model.
+
+## Overview
+
+The overview tab starts with the editor's card: their picture or initials,
+name, username and email address, a badge for superusers and one for each
+group, when they joined and when they last logged in. Under it:
+
+- **Changes**: how many objects the editor created, updated and deleted in
+  the period picked in the header (7, 30 or 90 days, 12 months or a custom
+  range), each against the period before, with a chart of the one you pick.
+- **Recent content**: the objects the editor changed last, one row per
+  object with its latest change. Rows link to the object's edit page; a
+  deleted object is listed without a link.
+- **By model**: the period's changes per model.
+
+The numbers come from the activity log, the same entries the
+[dashboard's activity log widget](/docs/dashboard) shows. Like that widget,
+the overview only counts and lists the models the editor may view, and with
+[multi-tenancy](/docs/multi-tenancy) the recent content of tenant-scoped
+models only shows objects in the current tenant.
+
+The picture and initials come from the user model's relation display, as on
+[presence](/docs/presence) avatars: override `get_relation_display` on the
+user model's studio to set them.
+
+## Edit profile
+
+The edit tab has the editor's personal details and a password section.
+Editors save their details with **Save** in the header. The change is
+recorded in the activity log, like a change made on the user's edit page.
+
+By default the details are the user model's `first_name`, `last_name` and
+`email` fields, the ones it has. Set `profile_fields` on the site to choose
+other fields, such as a `bio` field on a custom user model. List field
+names, or `Field` objects for a label, a widget, a column span or a
+read-only field. This example assumes a custom user model with a `bio`
+text field:
+
+```python
+# mysite/studio.py
+from content_studio.admin import ContentStudioSite
+from content_studio.form import Field
+from content_studio.widgets import TextAreaWidget
+
+
+class BlogStudioSite(ContentStudioSite):
+    profile_fields = [
+        "first_name",
+        "last_name",
+        Field("email", col_span=2),
+        Field("bio", col_span=2, widget=TextAreaWidget),
+        Field("username", readonly=True),
+    ]
+
+
+admin_site = BlogStudioSite()
+```
+
+The fields use the same widgets as on the edit page. Set `profile_fields`
+to an empty list to leave only the password section.
+
+Editors can never change who they are or what they may do on their own
+profile: the username, `is_active`, `is_staff`, `is_superuser`, the groups
+and the permissions are only shown read-only, and the password is never a
+profile field. System check `content_studio.E041` reports a
+`profile_fields` entry that is not a field of the user model, names one of
+these fields without `readonly=True`, names the password, or has `when`.
+
+## Password
+
+**Change password** opens a dialog that asks for the current password and
+the new one twice, so password managers do not fill in the page's fields.
+The new password must pass your
+[`AUTH_PASSWORD_VALIDATORS`](https://docs.djangoproject.com/en/stable/topics/auth/passwords/#enabling-password-validation).
+
+Changing the password logs the editor out on every other device; the
+browser they changed it in stays logged in. Attempts are limited per user,
+at the rate of [`LOGIN_THROTTLE_RATE`](/docs/settings#login_throttle_rate),
+because a wrong current password is a guess like a failed login.
+
+Users without a usable password, such as users created with
+`set_unusable_password()`, have no password section.
+
+## Related pages
+
+- [Authentication](/docs/authentication)
+- [Dashboard](/docs/dashboard)
+- [System checks](/docs/deployment#system-checks)

@@ -527,6 +527,11 @@ class ContentStudioSite:
 
     extensions: Optional[list[Any]] = None
 
+    # The user model fields editors change on their profile page: field
+    # names or Field objects. None: first_name, last_name and email, those
+    # the user model has; an empty list leaves only the password.
+    profile_fields: Optional[list[Union[str, Field]]] = None
+
     default_widget_mapping: dict[
         Union[Type[models.Field], str], Type[widgets.BaseWidget]
     ] = {
@@ -718,6 +723,11 @@ class ContentStudioSite:
             from .analytics.views import set_up_router as set_up_analytics_router
 
             set_up_analytics_router()
+
+        # The profile page of the signed-in user.
+        from .profile import set_up_router as set_up_profile_router
+
+        set_up_profile_router()
 
         # Global search for the command palette.
         from .router import content_studio_router
