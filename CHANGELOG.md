@@ -4,6 +4,11 @@
 
 ### Fixes
 
+- **Rich text in dark mode.** The rich text editor's text was a fixed
+  dark gray, so in dark mode it was barely readable against the editor's
+  background. It now follows the theme's text color, and quotes use the
+  theme's muted text and border colors.
+
 - **Long media names.** A media item whose name is long and has no
   spaces widened its form field past the edit page, pushing the Replace
   button out of sight. The name is cut off with an ellipsis, in fields
