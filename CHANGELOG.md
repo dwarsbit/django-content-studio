@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.13.2 (unreleased)
+## 1.13.2 (2026-11-09)
 
 ### Fixes
 
