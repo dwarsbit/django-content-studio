@@ -256,11 +256,13 @@ export function NotificationList({
   };
 
   const footer = (
-    <div className="px-4 py-2.5 border-t bg-muted flex items-center justify-between gap-3 text-xs text-muted-foreground">
-      <span>
-        {retention ? t("notifications.retention", { count: retention }) : ""}
-      </span>
-      <span className="flex gap-3 shrink-0">
+    // The note on a line of its own, the links below it: side by side,
+    // a long translation of either squeezed the note into three lines.
+    <div className="px-4 py-2.5 border-t bg-muted flex flex-col gap-1.5 text-xs text-muted-foreground">
+      {retention ? (
+        <span>{t("notifications.retention", { count: retention })}</span>
+      ) : null}
+      <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         {variant === "popover" && (
           <Link
             to="/notifications"

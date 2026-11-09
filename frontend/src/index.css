@@ -259,3 +259,46 @@
   filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9)
     saturate(0.7);
 }
+
+/* Toasts (sonner). Its stylesheet is injected unlayered, hence the
+   attribute selectors. The text keeps a readable width: buttons that
+   don't fit beside it move below it, to the end. Colors follow the
+   theme instead of sonner's own. */
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
+  flex-wrap: wrap;
+  row-gap: 0.75rem;
+  column-gap: 0.5rem;
+  font-family: inherit;
+  border-radius: var(--radius);
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-content] {
+  min-width: 12rem;
+}
+[data-sonner-toaster]
+  [data-sonner-toast][data-styled="true"]
+  [data-description] {
+  color: var(--muted-foreground);
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-button] {
+  height: 1.75rem;
+  padding-inline: 0.625rem;
+  border-radius: calc(var(--radius) - 4px);
+  margin: 0;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+[data-sonner-toaster]
+  [data-sonner-toast][data-styled="true"]
+  [data-content]
+  + [data-button] {
+  margin-inline-start: auto;
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-cancel] {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+[data-sonner-toaster]
+  [data-sonner-toast][data-styled="true"]
+  [data-button]:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
