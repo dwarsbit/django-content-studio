@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.13.2 (unreleased)
+
+### Fixes
+
+- **Toasts.** Toasts followed the operating system's theme instead of the
+  admin's, so with a dark OS and a light admin their description was
+  near-white on white. They now follow the admin's theme and use its
+  colors. The text keeps a readable width: buttons that don't fit beside
+  it move below it, to the right.
+
+- **Notifications footer.** The note on how long read notifications are
+  kept has a line of its own, above the links, instead of being squeezed
+  into three lines beside them.
+
 ## 1.13.1 (2026-11-09)
 
 ### Fixes
