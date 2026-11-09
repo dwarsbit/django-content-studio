@@ -1,7 +1,7 @@
 @reference "@/index.css";
 
 .rich-text-field {
-  @apply focus:outline-none p-4 min-h-[400px] font-normal text-gray-800;
+  @apply focus:outline-none p-4 min-h-[400px] font-normal text-foreground;
 
   & h1 {
     @apply mt-8 mb-6 text-4xl font-bold;
@@ -32,7 +32,7 @@
   }
 
   & blockquote {
-    @apply border-l-2 border-gray-200 border-solid border-0 mx-0 px-4 text-gray-500;
+    @apply border-l-2 border-border border-solid border-0 mx-0 px-4 text-muted-foreground;
   }
 
   & a {
