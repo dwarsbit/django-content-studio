@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.13.1 (unreleased)
+
+### Fixes
+
+- **Long media names.** A media item whose name is long and has no
+  spaces widened its form field past the edit page, pushing the Replace
+  button out of sight. The name is cut off with an ellipsis, in fields
+  side by side too, and in the media library's table view.
+
 ## 1.13.0 (2026-11-08)
 
 - **Profile page.** Every editor has a profile page, opened with Profile at

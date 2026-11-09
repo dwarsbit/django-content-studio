@@ -199,7 +199,7 @@ describe("conditional fields", () => {
     const row = container.querySelector(
       "[style*='grid-template-columns']",
     ) as HTMLElement;
-    expect(row.style.gridTemplateColumns).toBe("repeat(1, 1fr)");
+    expect(row.style.gridTemplateColumns).toBe("repeat(1, minmax(0, 1fr))");
     expect(screen.getByText("price")).toBeInTheDocument();
     expect(screen.queryByText("discount")).not.toBeInTheDocument();
   });

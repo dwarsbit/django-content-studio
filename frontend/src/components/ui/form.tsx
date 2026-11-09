@@ -79,7 +79,9 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
     <FormItemContext.Provider value={{ id }}>
       <div
         data-slot="form-item"
-        className={cn("grid gap-2", className)}
+        // minmax(0, 1fr): a widget with unbreakable content, such as a
+        // long file name, truncates instead of widening the form.
+        className={cn("grid grid-cols-[minmax(0,1fr)] gap-2", className)}
         {...props}
       />
     </FormItemContext.Provider>

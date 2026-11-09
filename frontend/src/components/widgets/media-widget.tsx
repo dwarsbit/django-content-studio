@@ -139,7 +139,7 @@ function SingleMedia({
         <div className="text-sm font-medium truncate" title={name}>
           {name}
         </div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-muted-foreground truncate">
           {t(`media_library.file_types.${item.type}`)}
           {size ? ` · ${size}` : ""}
         </div>

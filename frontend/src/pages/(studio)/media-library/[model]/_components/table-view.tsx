@@ -63,7 +63,12 @@ export function TableView({
       render: (item) => (
         <span className="flex items-center gap-2.5 min-w-0">
           <Thumb item={item} className="size-7" />
-          <span className="font-medium line-clamp-1 break-all">
+          {/* Cells don't wrap; this one may, so a long name without
+              spaces is clamped to a line instead of widening the table. */}
+          <span
+            className="font-medium line-clamp-1 break-all whitespace-normal"
+            title={item.name}
+          >
             {item.name}
           </span>
         </span>

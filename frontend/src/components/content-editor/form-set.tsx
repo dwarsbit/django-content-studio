@@ -92,7 +92,9 @@ function LayoutRow({
       <div
         className="grid gap-4"
         style={{
-          gridTemplateColumns: `repeat(${visible.length}, 1fr)`,
+          // minmax(0, 1fr) keeps the columns equal when a field holds
+          // unbreakable content, such as a long file name.
+          gridTemplateColumns: `repeat(${visible.length}, minmax(0, 1fr))`,
         }}
       >
         {visible.map((innerFormField: IFormField) => (
