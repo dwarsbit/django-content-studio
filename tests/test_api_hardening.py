@@ -300,6 +300,30 @@ def test_bulk_action_with_malformed_ids_is_a_client_error():
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("body", ["[]", "[1, 2]", '"text"', "5", "null"])
+@pytest.mark.parametrize(
+    "method, url",
+    [
+        ("post", "/api/content/testapp.article/bulk"),
+        ("post", "/api/content/testapp.article/relations/author"),
+        ("post", "/api/content/testapp.track/{track}/move"),
+        ("patch", "/api/profile"),
+        ("post", "/api/profile/password"),
+        ("post", "/api/notifications/follow"),
+    ],
+)
+def test_a_body_that_is_not_a_json_object_is_a_client_error(method, url, body):
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+    track = Track.objects.create(title="t")
+
+    response = getattr(client, method)(
+        url.format(track=track.pk), data=body, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
 def test_related_item_with_malformed_id_is_a_client_error():
     client = client_for(staff_with("view_article", "change_article"))
     article = Article.objects.create(title="a")

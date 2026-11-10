@@ -1,8 +1,8 @@
 from rest_framework.exceptions import NotFound
-from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.viewsets import ViewSet
 
+from ..parsers import ObjectJSONParser
 from ..permissions import IsActiveStaff
 from ..settings import cs_settings
 from .extensions import get_analytics
@@ -14,7 +14,7 @@ class AnalyticsViewSet(ViewSet):
 
     # Explicit, so the project's DEFAULT_PERMISSION_CLASSES never decide.
     permission_classes = [IsActiveStaff]
-    parser_classes = [JSONParser]
+    parser_classes = [ObjectJSONParser]
     renderer_classes = [JSONRenderer]
 
     def __init__(self, *args, **kwargs):

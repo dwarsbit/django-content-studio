@@ -12,11 +12,11 @@ from functools import reduce
 
 from django.db.models import Q
 
-from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
+from .parsers import ObjectJSONParser
 from .permissions import IsActiveStaff
 from .settings import cs_settings
 from .utils import get_tenant_scoped_queryset
@@ -31,7 +31,7 @@ PER_MODEL_LIMIT = 5
 
 class SearchViewSet(ViewSet):
     permission_classes = [IsActiveStaff]
-    parser_classes = [JSONParser]
+    parser_classes = [ObjectJSONParser]
     renderer_classes = [JSONRenderer]
 
     def __init__(self, *args, **kwargs):

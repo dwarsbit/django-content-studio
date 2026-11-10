@@ -6,13 +6,14 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS, DjangoModelPermissions
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from content_studio.paginators import ContentPagination
+from content_studio.parsers import ObjectJSONParser
 from content_studio.exceptions import NotConfigured
 from content_studio.settings import cs_settings
 from content_studio.thumbnails import delete_thumbnails
@@ -101,7 +102,7 @@ class MediaLibraryPermissions(DjangoModelPermissions):
 class MediaLibraryViewSet(ModelViewSet):
     _media_model = None
     lookup_field = "id"
-    parser_classes = [JSONParser, MultiPartParser]
+    parser_classes = [ObjectJSONParser, MultiPartParser]
     renderer_classes = [JSONRenderer]
     permission_classes = [MediaLibraryPermissions]
     filter_backends = [SearchFilter, OrderingFilter]
@@ -452,7 +453,7 @@ class MediaFolderPermissions(DjangoModelPermissions):
 class MediaFolderViewSet(ModelViewSet):
     _folder_model = None
     lookup_field = "id"
-    parser_classes = [JSONParser]
+    parser_classes = [ObjectJSONParser]
     renderer_classes = [JSONRenderer]
     permission_classes = [MediaFolderPermissions]
     filter_backends = [SearchFilter, OrderingFilter]

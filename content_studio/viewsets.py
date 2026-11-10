@@ -15,11 +15,12 @@ from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from .parsers import ObjectJSONParser
 from .actions import EXPORT_ACTION_ID, check_object_permissions, get_bulk_actions
 from .admin import get_relation_display_for, is_duplicable
 from .dashboard.activity_log import LogEntrySerializer
@@ -63,7 +64,7 @@ class BaseModelViewSet(ModelViewSet):
     lookup_field = "pk"
     lookup_url_kwarg = "id"
     is_singleton = False
-    parser_classes = [JSONParser]
+    parser_classes = [ObjectJSONParser]
     renderer_classes = [JSONRenderer]
     permission_classes = [ModelStudioPermissions]
     filter_backends = [SearchFilter, OrderingFilter, LookupFilter]

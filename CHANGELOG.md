@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.13.3 (unreleased)
+
+### Fixes
+
+- **Request bodies that are not a JSON object.** A JSON body that was a
+  list, a string, a number or null, such as `[]`, made many endpoints
+  answer 500 (bulk actions, relation pickers, moves, the profile,
+  notifications). Every endpoint now answers 400: the body must be an
+  object.
+
 ## 1.13.2 (2026-11-09)
 
 ### Fixes
