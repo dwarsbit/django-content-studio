@@ -7,6 +7,7 @@ from .models import (
     Attachment,
     Article,
     Category,
+    Coupon,
     Edition,
     Event,
     Label,
@@ -189,3 +190,9 @@ class EventAdmin(ModelStudio):
 class ShelfAdmin(ModelStudio):
     table_display = ["title"]
     search_fields = ["title"]
+
+
+@register(Coupon)
+class CouponAdmin(ModelStudio):
+    table_display = ["code"]
+    soft_delete = "removed_at"

@@ -15,6 +15,12 @@
   stopped the project from starting. Content Studio now uses the model's
   default manager, whatever its name.
 
+- **Restoring from the trash.** A model whose unique constraint holds
+  among live objects only (a `UniqueConstraint` with a condition on the
+  soft delete field) answered 500 when a trashed object was restored
+  while a live object had taken its value. The restore now answers 400
+  with the conflict, and the object stays in the trash.
+
 ## 1.13.2 (2026-11-09)
 
 ### Fixes

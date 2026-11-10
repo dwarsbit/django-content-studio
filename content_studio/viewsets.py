@@ -345,7 +345,18 @@ class BaseModelViewSet(ModelViewSet):
 
         instance = self.get_object()
         setattr(instance, soft_delete_field, None)
-        instance.save(update_fields=[soft_delete_field])
+
+        # A unique constraint that only holds among live objects (a
+        # condition on the soft delete field) refuses the restore when a
+        # live object took the value meanwhile: a conflict, not a crash.
+        try:
+            with transaction.atomic(using=router.db_for_write(instance.__class__)):
+                instance.save(update_fields=[soft_delete_field])
+        except IntegrityError as error:
+            raise ValidationError(
+                "The object could not be restored: it conflicts with an "
+                f"existing object ({error})."
+            )
 
         record_change(self.request, instance, RESTORED, "Restored from trash.")
 
