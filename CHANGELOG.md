@@ -27,6 +27,11 @@
   example). The media library now answers 409 and names what refers to
   the item, like the content lists do.
 
+- **List filters on numeric choices.** A list filter on an integer field
+  with choices never showed a picked choice as checked, so picking it
+  again added it twice ("Paid, Paid") instead of removing it. Picked
+  choices are checked now, and picking one again removes it.
+
 ## 1.13.2 (2026-11-09)
 
 ### Fixes

@@ -32,26 +32,32 @@ export function MultiSelectFilter({
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        {field.choices?.map(([key, label]) => (
-          <DropdownMenuCheckboxItem
-            key={key}
-            checked={valueArray.includes(key)}
-            onSelect={(e) => {
-              e.preventDefault();
-              onChange({
-                "":
-                  (valueArray.includes(key)
-                    ? valueArray.filter((i) => i !== key)
-                    : [...valueArray, key]
-                  )
-                    .filter(Boolean)
-                    .join(",") || null,
-              });
-            }}
-          >
-            {label}
-          </DropdownMenuCheckboxItem>
-        ))}
+        {field.choices?.map(([choice, label]) => {
+          // The query string holds text; choices of an integer field
+          // are numbers.
+          const key = String(choice);
+
+          return (
+            <DropdownMenuCheckboxItem
+              key={key}
+              checked={valueArray.includes(key)}
+              onSelect={(e) => {
+                e.preventDefault();
+                onChange({
+                  "":
+                    (valueArray.includes(key)
+                      ? valueArray.filter((i) => i !== key)
+                      : [...valueArray, key]
+                    )
+                      .filter(Boolean)
+                      .join(",") || null,
+                });
+              }}
+            >
+              {label}
+            </DropdownMenuCheckboxItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
