@@ -10,6 +10,11 @@
   notifications). Every endpoint now answers 400: the body must be an
   object.
 
+- **Models whose manager is not called objects.** A registered model
+  whose only manager has another name (`items = models.Manager()`)
+  stopped the project from starting. Content Studio now uses the model's
+  default manager, whatever its name.
+
 ## 1.13.2 (2026-11-09)
 
 ### Fixes

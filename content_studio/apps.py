@@ -198,7 +198,7 @@ class DjangoContentStudioConfig(AppConfig):
             _admin_model = admin_model
             is_singleton = get_is_singleton(admin_model)
             pagination_class = Pagination
-            queryset = _model.objects.none()
+            queryset = _model._default_manager.none()
             search_fields = list(admin_model.search_fields)
             ordering_fields = allowed_ordering
             # Inline viewsets: the FK to the parent model.

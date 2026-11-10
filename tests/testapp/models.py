@@ -300,3 +300,14 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Shelf(models.Model):
+    """A model whose only manager is not called objects; see
+    test_api_hardening."""
+
+    title = models.CharField(max_length=100)
+    items = models.Manager()
+
+    def __str__(self):
+        return self.title

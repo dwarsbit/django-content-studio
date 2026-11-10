@@ -18,6 +18,7 @@ from .models import (
     ProductComment,
     ProductSupplier,
     Review,
+    Shelf,
     SiteSettings,
     Step,
     Track,
@@ -182,3 +183,9 @@ class EventAdmin(ModelStudio):
 
     def get_summary(self, obj, request):
         return f"{obj.title} ({obj.attendees})"
+
+
+@register(Shelf)
+class ShelfAdmin(ModelStudio):
+    table_display = ["title"]
+    search_fields = ["title"]

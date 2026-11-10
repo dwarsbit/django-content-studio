@@ -1029,7 +1029,7 @@ class BaseModelViewSet(ModelViewSet):
         search_fields = related_admin.search_fields if related_admin else None
 
         if not search_fields:
-            return related_model.objects.none()
+            return related_model._default_manager.none()
 
         queries = [Q(**{f"{field}__icontains": search}) for field in search_fields]
         combined_query = reduce(operator.or_, queries)
