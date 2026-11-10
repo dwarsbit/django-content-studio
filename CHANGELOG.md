@@ -32,6 +32,14 @@
   again added it twice ("Paid, Paid") instead of removing it. Picked
   choices are checked now, and picking one again removes it.
 
+- **Date and time fields in another time zone.** The date and time
+  picker showed the time in the browser's time zone but sent it without
+  one, so the server read it in its own time zone. In a browser whose
+  time zone differs from the server's, opening and closing the picker
+  moved the stored time by the difference. The picker now sends the time
+  with its offset, leaves the value alone when nothing changed, and
+  stays empty after Clear.
+
 ## 1.13.2 (2026-11-09)
 
 ### Fixes
