@@ -21,6 +21,12 @@
   while a live object had taken its value. The restore now answers 400
   with the conflict, and the object stays in the trash.
 
+- **Deleting media that is in use.** Deleting a media item, a selection
+  of media items or a folder answered 500 when content refers to an item
+  with `on_delete=PROTECT` or `RESTRICT` (on a `MediaField`, for
+  example). The media library now answers 409 and names what refers to
+  the item, like the content lists do.
+
 ## 1.13.2 (2026-11-09)
 
 ### Fixes
