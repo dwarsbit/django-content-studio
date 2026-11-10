@@ -20,13 +20,13 @@ import { Inline } from "@/components/content-editor/inline";
 import { Main } from "@/components/content-editor/main";
 import { Form } from "@/components/ui/form";
 import { ValueDialogProvider } from "@/components/value-dialog-provider";
+import { InvalidInput } from "@/lib/invalid-input";
 import type {
   FormField as IFormField,
   FormSet as IFormSet,
   Model,
   ModelField,
 } from "@/types";
-import { InvalidInput } from "@/lib/invalid-input";
 import { FieldType, FieldWidget } from "@/types";
 
 const httpMock = vi.hoisted(() => ({
