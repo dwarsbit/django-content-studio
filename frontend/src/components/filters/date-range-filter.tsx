@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { dateRangeBound } from "@/lib/date-range";
 import { FieldType } from "@/types";
 
 import { FilterTrigger } from "./filter-trigger";
@@ -32,9 +33,7 @@ export function DateRangeFilter({
   const to = values["lte"] ? dayjs(values["lte"]) : null;
 
   const bound = (date: Date, lookup: "gte" | "lte") =>
-    isDateTime
-      ? `${dayjs(date).format("YYYY-MM-DD")}T${lookup === "gte" ? "00:00" : "23:59"}`
-      : dayjs(date).format("YYYY-MM-DD");
+    dateRangeBound(date, lookup, isDateTime);
 
   const range = [from?.format("ll"), to?.format("ll")]
     .filter(Boolean)

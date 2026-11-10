@@ -46,6 +46,12 @@
   edits were lost. The dialog now stays open and shows the field's
   message.
 
+- **Date range filters on date and time fields.** The range ended at
+  23:59 on its last day, so objects from the last minute of that day
+  were left out, and the days were the server's while the list shows
+  times in the browser's time zone. The range now covers the picked days
+  entirely, in the browser's time zone.
+
 ## 1.13.2 (2026-11-09)
 
 ### Fixes
