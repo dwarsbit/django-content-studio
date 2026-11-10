@@ -40,6 +40,12 @@
   with its offset, leaves the value alone when nothing changed, and
   stays empty after Clear.
 
+- **Saving an inline row with an invalid value.** In the dialog of an
+  inline row, Save with a value that cannot be saved (JSON that does not
+  parse, a key used twice) closed the dialog without saving, and the
+  edits were lost. The dialog now stays open and shows the field's
+  message.
+
 ## 1.13.2 (2026-11-09)
 
 ### Fixes

@@ -26,6 +26,7 @@ import type {
   Model,
   ModelField,
 } from "@/types";
+import { InvalidInput } from "@/lib/invalid-input";
 import { FieldType, FieldWidget } from "@/types";
 
 const httpMock = vi.hoisted(() => ({
@@ -739,6 +740,29 @@ describe("Editor", () => {
     expect(httpMock.put).not.toHaveBeenCalled();
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("does not report a save when a value is invalid", async () => {
+    const onSave = vi.fn();
+
+    // An invalid value, such as JSON that does not parse: Save shows
+    // its message and must not close an inline dialog through onSave.
+    renderEditorPage(
+      <Editor
+        modelLabel="testapp.article"
+        initialValues={{ status: new InvalidInput("{", "Invalid JSON.") }}
+        onSave={onSave}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const user = userEvent.setup();
+    await user.type(screen.getByRole("textbox"), "Hello World");
+    await user.click(screen.getByRole("button", { name: "common.create" }));
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(httpMock.post).not.toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
   });
 
   it("loads an existing resource via GET and saves it via PUT", async () => {
