@@ -224,15 +224,14 @@ class LookupFilter(BaseFilterBackend):
 
         lowered = value.strip().lower()
 
-        if isinstance(field, models.BooleanField) or isinstance(
-            field, models.NullBooleanField
-        ):
+        if isinstance(field, models.BooleanField):
             if lowered in ["1", "true", "on"]:
                 return True
             if lowered in ["0", "false", "off"]:
                 return False
-        if isinstance(field, models.NullBooleanField):
-            if lowered in ["null", "none", "empty"]:
+            # Django removed NullBooleanField: a nullable boolean is now a
+            # BooleanField(null=True).
+            if field.null and lowered in ["null", "none", "empty"]:
                 return None
 
         if isinstance(field, models.IntegerField):
