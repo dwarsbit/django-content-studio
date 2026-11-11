@@ -84,10 +84,19 @@ def test_nulls_match_case_insensitively():
     from django.db import models
 
     lf = LookupFilter()
-    field = models.NullBooleanField()
+    field = models.BooleanField(null=True)
 
     for raw in ("null", "NULL", "none", "empty"):
         assert lf.cast_field_value(raw, field) is None
+
+
+def test_null_is_not_a_value_of_a_required_boolean():
+    from django.db import models
+
+    lf = LookupFilter()
+    field = models.BooleanField()
+
+    assert lf.cast_field_value("null", field) == "null"
 
 
 def test_integers_are_cast():

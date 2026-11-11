@@ -4,6 +4,11 @@
 
 ### Fixes
 
+- **Filtering a nullable boolean for null.** `?field=null` (or `none`,
+  `empty`) only matched the removed `NullBooleanField`, so on a
+  `BooleanField(null=True)` it was compared as text. It now matches
+  empty values.
+
 - **Request bodies that are not a JSON object.** A JSON body that was a
   list, a string, a number or null, such as `[]`, made many endpoints
   answer 500 (bulk actions, relation pickers, moves, the profile,
