@@ -989,3 +989,79 @@ def test_items_filter_by_folder(media_settings):
     )
 
     assert [item["name"] for item in response.json()["results"]] == ["in"]
+
+
+class ItemUse(models.Model):
+    """Content that keeps its media item from being deleted."""
+
+    item = models.ForeignKey(ItemModel, on_delete=models.PROTECT)
+
+    class Meta:
+        app_label = "content_studio"
+
+
+@pytest.mark.django_db
+def test_deleting_an_item_in_use_is_a_conflict(media_settings):
+    user = make_superuser()
+    item = ItemModel.objects.create(name="used", type="file")
+    ItemUse.objects.create(item=item)
+
+    response = media_client(user).delete(f"/api/media-library/items/{item.pk}")
+
+    assert response.status_code == 409
+    assert ItemModel.objects.filter(pk=item.pk).exists()
+    assert not LogEntry.objects.exists()
+
+
+@pytest.mark.django_db
+def test_bulk_deleting_items_in_use_is_a_conflict(media_settings):
+    user = make_superuser()
+    used = ItemModel.objects.create(name="used", type="file")
+    free = ItemModel.objects.create(name="free", type="file")
+    ItemUse.objects.create(item=used)
+
+    response = media_client(user).post(
+        "/api/media-library/items/bulk",
+        {"action": "delete", "ids": [used.pk, free.pk]},
+        format="json",
+    )
+
+    assert response.status_code == 409
+    assert ItemModel.objects.count() == 2
+    assert not LogEntry.objects.exists()
+
+
+class MediaUse(models.Model):
+    """Content that keeps a built-in media item from being deleted."""
+
+    media = models.ForeignKey(
+        "content_studio_media_library.Media", on_delete=models.PROTECT
+    )
+
+    class Meta:
+        app_label = "content_studio"
+
+
+@pytest.mark.django_db
+def test_deleting_a_folder_with_media_in_use_is_a_conflict(media_root):
+    from content_studio.media_library.models import Folder, Media
+
+    folder = Folder.objects.create(name="photos")
+    media = Media.objects.create(
+        name="used", folder=folder, file=ContentFile(b"x", name="used.png")
+    )
+    MediaUse.objects.create(media=media)
+
+    with override_settings(
+        CONTENT_STUDIO={
+            "MEDIA_LIBRARY_MODEL": "content_studio.media_library.models.Media",
+            "MEDIA_LIBRARY_FOLDER_MODEL": "content_studio.media_library.models.Folder",
+        }
+    ):
+        response = media_client(make_superuser()).delete(
+            f"/api/media-library/folders/{folder.pk}"
+        )
+
+    assert response.status_code == 409
+    assert Folder.objects.filter(pk=folder.pk).exists()
+    assert not LogEntry.objects.exists()

@@ -35,19 +35,48 @@ export function DateTimeWidget({
   const { t } = useTranslation();
   const limits = getDateLimits(options);
   const [open, setOpen] = React.useState(false);
-  const date$ = React.useMemo(
-    () => (value ? dayjs(value, "YYYY-MM-DD HH:mm") : null),
-    [value],
-  );
+  // The value is an instant (ISO 8601 with its offset); the picker
+  // shows and edits it in the browser's time zone.
+  const date$ = React.useMemo(() => (value ? dayjs(value) : null), [value]);
   const [time, setTime] = useState(date$?.format("HH:mm") ?? "00:00");
   const [date, setDate] = useState(date$?.toDate() ?? undefined);
+  const [shown, setShown] = useState(value);
+
+  // Follow the value when it changes from outside the picker: a clear,
+  // a reset or a reload.
+  if (value !== shown) {
+    setShown(value);
+    setTime(date$?.format("HH:mm") ?? "00:00");
+    setDate(date$?.toDate() ?? undefined);
+  }
+
+  function commit() {
+    if (!date || !time) {
+      return;
+    }
+
+    const text = `${dayjs(date).format("YYYY-MM-DD")}T${time}`;
+    const next = dayjs(text);
+
+    // Opening and closing the picker changes nothing (the seconds
+    // stay too).
+    if (next.isValid() && date$?.isSame(next, "minute")) {
+      return;
+    }
+
+    // With the offset, so the server stores the instant the editor
+    // picked, whatever its own time zone. A malformed time goes as
+    // typed, for the server to report.
+    onChange?.(next.isValid() ? next.format() : text);
+  }
+
   return (
     <Popover
       open={open}
       onOpenChange={(isOpen) => {
         setOpen(isOpen);
-        if (!isOpen && date && time) {
-          onChange?.(`${dayjs(date).format("YYYY-MM-DD")}T${time ?? "00:00"}`);
+        if (!isOpen) {
+          commit();
         }
       }}
     >

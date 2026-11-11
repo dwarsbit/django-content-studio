@@ -1,4 +1,4 @@
-from django.db import router, transaction
+from django.db import models, router, transaction
 from django.db.models import Q
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models.deletion import Collector
@@ -6,14 +6,15 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS, DjangoModelPermissions
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from content_studio.paginators import ContentPagination
-from content_studio.exceptions import NotConfigured
+from content_studio.parsers import ObjectJSONParser
+from content_studio.exceptions import DeleteConflict, NotConfigured
 from content_studio.settings import cs_settings
 from content_studio.thumbnails import delete_thumbnails
 from content_studio.signals import (
@@ -101,7 +102,7 @@ class MediaLibraryPermissions(DjangoModelPermissions):
 class MediaLibraryViewSet(ModelViewSet):
     _media_model = None
     lookup_field = "id"
-    parser_classes = [JSONParser, MultiPartParser]
+    parser_classes = [ObjectJSONParser, MultiPartParser]
     renderer_classes = [JSONRenderer]
     permission_classes = [MediaLibraryPermissions]
     filter_backends = [SearchFilter, OrderingFilter]
@@ -220,10 +221,15 @@ class MediaLibraryViewSet(ModelViewSet):
     def perform_destroy(self, instance):
         using = router.db_for_write(type(instance))
 
-        # Logged first, as deleting clears the pk.
-        with transaction.atomic(using=using):
-            record_change(self.request, instance, DELETED)
-            instance.delete()
+        # Logged first, as deleting clears the pk. Content that refers to
+        # the item with on_delete=PROTECT or RESTRICT blocks the delete:
+        # 409, and the transaction drops the recorded change.
+        try:
+            with transaction.atomic(using=using):
+                record_change(self.request, instance, DELETED)
+                instance.delete()
+        except (models.ProtectedError, models.RestrictedError) as error:
+            raise DeleteConflict.from_error(error)
 
     def get_list_param(self, name):
         """A comma-separated query parameter as a list of values."""
@@ -399,13 +405,16 @@ class MediaLibraryViewSet(ModelViewSet):
         # objects' pks.
         using = router.db_for_write(model)
 
-        with transaction.atomic(using=using):
-            for obj in objects:
-                record_change(request, obj, DELETED)
+        try:
+            with transaction.atomic(using=using):
+                for obj in objects:
+                    record_change(request, obj, DELETED)
 
-            collector = Collector(using=using)
-            collector.collect(objects)
-            collector.delete()
+                collector = Collector(using=using)
+                collector.collect(objects)
+                collector.delete()
+        except (models.ProtectedError, models.RestrictedError) as error:
+            raise DeleteConflict.from_error(error)
 
         return Response({"count": len(objects)})
 
@@ -452,7 +461,7 @@ class MediaFolderPermissions(DjangoModelPermissions):
 class MediaFolderViewSet(ModelViewSet):
     _folder_model = None
     lookup_field = "id"
-    parser_classes = [JSONParser]
+    parser_classes = [ObjectJSONParser]
     renderer_classes = [JSONRenderer]
     permission_classes = [MediaFolderPermissions]
     filter_backends = [SearchFilter, OrderingFilter]
@@ -489,19 +498,23 @@ class MediaFolderViewSet(ModelViewSet):
         using = router.db_for_write(type(instance))
         recorded = {type(instance), cs_settings.MEDIA_LIBRARY_MODEL}
 
-        with transaction.atomic(using=using):
-            collector = Collector(using=using)
-            collector.collect([instance])
+        try:
+            with transaction.atomic(using=using):
+                collector = Collector(using=using)
+                collector.collect([instance])
 
-            record_change(self.request, instance, DELETED)
+                record_change(self.request, instance, DELETED)
 
-            for obj in _collected(collector, recorded):
-                if obj != instance:
-                    record_change(
-                        self.request, obj, DELETED, "Deleted with its folder."
-                    )
+                for obj in _collected(collector, recorded):
+                    if obj != instance:
+                        record_change(
+                            self.request, obj, DELETED, "Deleted with its folder."
+                        )
 
-            collector.delete()
+                collector.delete()
+        except (models.ProtectedError, models.RestrictedError) as error:
+            # A media item in the folder is still in use.
+            raise DeleteConflict.from_error(error)
 
     def get_queryset(self):
         if not self._folder_model:

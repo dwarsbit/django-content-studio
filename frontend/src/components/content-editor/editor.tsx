@@ -388,8 +388,19 @@ function EditorForm({
                   : undefined
               }
               onSave={async () => {
-                await form.handleSubmit(onSubmit)();
-                onSave?.();
+                // handleSubmit resolves without saving when a value is
+                // invalid: only a save that happened is reported, so an
+                // inline dialog stays open on the field's message.
+                let saved = false;
+
+                await form.handleSubmit(async (values) => {
+                  await onSubmit(values);
+                  saved = true;
+                })();
+
+                if (saved) {
+                  onSave?.();
+                }
               }}
               onDelete={() => {
                 // The changes died with the object; leaving must not

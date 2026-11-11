@@ -189,7 +189,7 @@ def get_tenant_scoped_queryset(request, model, queryset=None):
     """
     tenant_model = cs_settings.TENANT_MODEL
     field_name = get_tenant_field_name(model)
-    qs = queryset if queryset is not None else model.objects.all()
+    qs = queryset if queryset is not None else model._default_manager.all()
 
     if not tenant_model or not field_name:
         return qs

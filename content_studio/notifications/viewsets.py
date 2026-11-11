@@ -23,11 +23,11 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
+from ..parsers import ObjectJSONParser
 from ..permissions import IsActiveStaff
 from ..presence import describe_user
 from ..settings import cs_settings
@@ -225,7 +225,7 @@ def serialize_notifications(request, notifications) -> list[dict]:
 
 class NotificationViewSet(ViewSet):
     permission_classes = [IsActiveStaff]
-    parser_classes = [JSONParser]
+    parser_classes = [ObjectJSONParser]
     renderer_classes = [JSONRenderer]
 
     def __init__(self, *args, **kwargs):

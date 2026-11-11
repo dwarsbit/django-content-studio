@@ -21,12 +21,12 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.viewsets import ViewSet
 
+from .parsers import ObjectJSONParser
 from .analytics.ranges import InvalidRange, get_query
 from .form import Field
 from .permissions import IsActiveStaff
@@ -196,7 +196,7 @@ class ProfileViewSet(ViewSet):
     # One profile per user: the router maps PATCH on the list route to
     # partial_update, like a singleton's.
     is_singleton = True
-    parser_classes = [JSONParser]
+    parser_classes = [ObjectJSONParser]
     renderer_classes = [JSONRenderer]
 
     def __init__(self, *args, **kwargs):

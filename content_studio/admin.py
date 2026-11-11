@@ -460,7 +460,7 @@ class ModelStudio(BaseStudio[T]):
 
     def has_add_permission(self, request: HttpRequest, obj: Optional[T] = None) -> bool:
         # Don't allow adding more than one singleton object.
-        if get_is_singleton(self) and self.model.objects.exists():
+        if get_is_singleton(self) and self.model._default_manager.exists():
             return False
 
         return super().has_add_permission(request, obj)
@@ -826,7 +826,7 @@ class ContentStudioSite:
         """
         Method for getting the list of available tenants.
         """
-        return tenant_model.objects.all()
+        return tenant_model._default_manager.all()
 
     def get_default_subscriptions(self, user) -> dict:
         """

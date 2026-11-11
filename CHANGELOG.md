@@ -1,5 +1,57 @@
 # Changelog
 
+## 1.13.3 (unreleased)
+
+### Fixes
+
+- **Request bodies that are not a JSON object.** A JSON body that was a
+  list, a string, a number or null, such as `[]`, made many endpoints
+  answer 500 (bulk actions, relation pickers, moves, the profile,
+  notifications). Every endpoint now answers 400: the body must be an
+  object.
+
+- **Models whose manager is not called objects.** A registered model
+  whose only manager has another name (`items = models.Manager()`)
+  stopped the project from starting. Content Studio now uses the model's
+  default manager, whatever its name.
+
+- **Restoring from the trash.** A model whose unique constraint holds
+  among live objects only (a `UniqueConstraint` with a condition on the
+  soft delete field) answered 500 when a trashed object was restored
+  while a live object had taken its value. The restore now answers 400
+  with the conflict, and the object stays in the trash.
+
+- **Deleting media that is in use.** Deleting a media item, a selection
+  of media items or a folder answered 500 when content refers to an item
+  with `on_delete=PROTECT` or `RESTRICT` (on a `MediaField`, for
+  example). The media library now answers 409 and names what refers to
+  the item, like the content lists do.
+
+- **List filters on numeric choices.** A list filter on an integer field
+  with choices never showed a picked choice as checked, so picking it
+  again added it twice ("Paid, Paid") instead of removing it. Picked
+  choices are checked now, and picking one again removes it.
+
+- **Date and time fields in another time zone.** The date and time
+  picker showed the time in the browser's time zone but sent it without
+  one, so the server read it in its own time zone. In a browser whose
+  time zone differs from the server's, opening and closing the picker
+  moved the stored time by the difference. The picker now sends the time
+  with its offset, leaves the value alone when nothing changed, and
+  stays empty after Clear.
+
+- **Saving an inline row with an invalid value.** In the dialog of an
+  inline row, Save with a value that cannot be saved (JSON that does not
+  parse, a key used twice) closed the dialog without saving, and the
+  edits were lost. The dialog now stays open and shows the field's
+  message.
+
+- **Date range filters on date and time fields.** The range ended at
+  23:59 on its last day, so objects from the last minute of that day
+  were left out, and the days were the server's while the list shows
+  times in the browser's time zone. The range now covers the picked days
+  entirely, in the browser's time zone.
+
 ## 1.13.2 (2026-11-09)
 
 ### Fixes

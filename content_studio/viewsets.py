@@ -15,11 +15,12 @@ from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from .parsers import ObjectJSONParser
 from .actions import EXPORT_ACTION_ID, check_object_permissions, get_bulk_actions
 from .admin import get_relation_display_for, is_duplicable
 from .dashboard.activity_log import LogEntrySerializer
@@ -63,7 +64,7 @@ class BaseModelViewSet(ModelViewSet):
     lookup_field = "pk"
     lookup_url_kwarg = "id"
     is_singleton = False
-    parser_classes = [JSONParser]
+    parser_classes = [ObjectJSONParser]
     renderer_classes = [JSONRenderer]
     permission_classes = [ModelStudioPermissions]
     filter_backends = [SearchFilter, OrderingFilter, LookupFilter]
@@ -344,7 +345,18 @@ class BaseModelViewSet(ModelViewSet):
 
         instance = self.get_object()
         setattr(instance, soft_delete_field, None)
-        instance.save(update_fields=[soft_delete_field])
+
+        # A unique constraint that only holds among live objects (a
+        # condition on the soft delete field) refuses the restore when a
+        # live object took the value meanwhile: a conflict, not a crash.
+        try:
+            with transaction.atomic(using=router.db_for_write(instance.__class__)):
+                instance.save(update_fields=[soft_delete_field])
+        except IntegrityError as error:
+            raise ValidationError(
+                "The object could not be restored: it conflicts with an "
+                f"existing object ({error})."
+            )
 
         record_change(self.request, instance, RESTORED, "Restored from trash.")
 
@@ -1028,7 +1040,7 @@ class BaseModelViewSet(ModelViewSet):
         search_fields = related_admin.search_fields if related_admin else None
 
         if not search_fields:
-            return related_model.objects.none()
+            return related_model._default_manager.none()
 
         queries = [Q(**{f"{field}__icontains": search}) for field in search_fields]
         combined_query = reduce(operator.or_, queries)

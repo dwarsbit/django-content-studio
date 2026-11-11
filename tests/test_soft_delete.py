@@ -17,7 +17,7 @@ from rest_framework.test import APIClient
 from content_studio.admin import ModelStudio, admin_site
 from content_studio.checks import check_content_studio
 from content_studio.token_backends.jwt import create_access_token
-from tests.testapp.models import Article, Note
+from tests.testapp.models import Article, Coupon, Note
 
 
 class AuthenticatedTestCase(TestCase):
@@ -82,6 +82,26 @@ class SoftDeleteTests(AuthenticatedTestCase):
         rows = response.json()["results"]
         self.assertEqual([row["__str__"] for row in rows], ["second", "first"])
         self.assertTrue(all(row["removed_at"] for row in rows))
+
+    def test_restore_blocked_by_a_live_only_unique_constraint_is_a_client_error(self):
+        # The code is unique among live coupons only: a new coupon may
+        # take the code of a trashed one, which then cannot come back.
+        trashed = Coupon.objects.create(code="spring")
+        self.client.delete(f"/api/content/testapp.coupon/{trashed.pk}")
+        Coupon.objects.create(code="spring")
+
+        response = self.client.post(f"/api/content/testapp.coupon/{trashed.pk}/restore")
+
+        self.assertEqual(response.status_code, 400)
+        trashed.refresh_from_db()
+        self.assertIsNotNone(trashed.removed_at)
+        self.assertFalse(
+            LogEntry.objects.filter(
+                content_type=ContentType.objects.get_for_model(Coupon),
+                object_id=trashed.pk,
+                action_flag=CHANGE,
+            ).exists()
+        )
 
     def test_restore_returns_the_object_to_the_lists(self):
         note = Note.objects.create(title="one")

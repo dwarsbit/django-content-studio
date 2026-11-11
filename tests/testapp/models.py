@@ -300,3 +300,34 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Shelf(models.Model):
+    """A model whose only manager is not called objects; see
+    test_api_hardening."""
+
+    title = models.CharField(max_length=100)
+    items = models.Manager()
+
+    def __str__(self):
+        return self.title
+
+
+class Coupon(models.Model):
+    """Soft delete with a code that is unique among live coupons only;
+    see test_soft_delete."""
+
+    code = models.SlugField()
+    removed_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["code"],
+                condition=models.Q(removed_at__isnull=True),
+                name="testapp_coupon_live_code",
+            )
+        ]
+
+    def __str__(self):
+        return self.code

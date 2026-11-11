@@ -20,7 +20,7 @@ from content_studio.serializers import ContentRelatedField
 from content_studio.token_backends.jwt import create_access_token
 from content_studio.viewsets import BaseModelViewSet
 from tests.testapp.admin import ArticleAdmin
-from tests.testapp.models import Article, Category, Label, Page, Track
+from tests.testapp.models import Article, Category, Label, Page, Shelf, Track
 
 TENANT_SETTINGS = {
     "ADMIN_SITE": "content_studio.admin.admin_site",
@@ -297,6 +297,45 @@ def test_bulk_action_with_malformed_ids_is_a_client_error():
     )
 
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("body", ["[]", "[1, 2]", '"text"', "5", "null"])
+@pytest.mark.parametrize(
+    "method, url",
+    [
+        ("post", "/api/content/testapp.article/bulk"),
+        ("post", "/api/content/testapp.article/relations/author"),
+        ("post", "/api/content/testapp.track/{track}/move"),
+        ("patch", "/api/profile"),
+        ("post", "/api/profile/password"),
+        ("post", "/api/notifications/follow"),
+    ],
+)
+def test_a_body_that_is_not_a_json_object_is_a_client_error(method, url, body):
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+    track = Track.objects.create(title="t")
+
+    response = getattr(client, method)(
+        url.format(track=track.pk), data=body, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_models_whose_manager_is_not_called_objects():
+    client = client_for(User.objects.create_superuser(username="admin", password="x"))
+    shelf = Shelf.items.create(title="top")
+
+    assert client.get("/api/content/testapp.shelf").json()["results"][0]["id"] == (
+        shelf.pk
+    )
+    assert client.get(f"/api/content/testapp.shelf/{shelf.pk}").status_code == 200
+    response = client.post(
+        "/api/content/testapp.shelf", {"title": "bottom"}, format="json"
+    )
+    assert response.status_code == 201
 
 
 @pytest.mark.django_db

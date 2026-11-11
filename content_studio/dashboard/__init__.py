@@ -3,11 +3,11 @@ import uuid
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
-from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
+from content_studio.parsers import ObjectJSONParser
 from content_studio.permissions import IsActiveStaff
 from content_studio.settings import cs_settings
 from content_studio.utils import derive_uuid
@@ -52,7 +52,7 @@ class DashboardViewSet(ViewSet):
     # Explicit, so the project's DEFAULT_PERMISSION_CLASSES (AllowAny
     # unless configured) never decides who sees the dashboard data.
     permission_classes = [IsActiveStaff]
-    parser_classes = [JSONParser]
+    parser_classes = [ObjectJSONParser]
     renderer_classes = [JSONRenderer]
 
     def __init__(self, *args, **kwargs):
