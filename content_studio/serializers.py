@@ -8,6 +8,8 @@ from django.db import models
 from rest_framework import serializers
 from rest_framework.fields import SkipField
 from rest_framework.relations import RelatedField
+from rest_framework.serializers import raise_errors_on_nested_writes
+from rest_framework.utils import model_meta
 
 from content_studio.settings import cs_settings
 from content_studio.uniqueness import get_unique_sets
@@ -324,12 +326,73 @@ class ContentSerializer(serializers.ModelSerializer):
     def save(self, **kwargs):
         from .uploads import TemporaryUpload, discard_upload
 
+        # What the server sets itself (the tenant, the creator) is
+        # validated with the fields the serializer writes.
+        self._server_set_fields = frozenset(kwargs)
         instance = super().save(**kwargs)
 
         # Attached uploads were copied to the field's own storage.
         for value in (self.validated_data or {}).values():
             if isinstance(value, TemporaryUpload):
                 discard_upload(value)
+
+        return instance
+
+    def create(self, validated_data):
+        """
+        Like ModelSerializer.create, but the instance is validated with
+        full_clean() before it is inserted, as the classic admin does.
+        """
+        from .validation import full_clean, uses_plain_create
+
+        raise_errors_on_nested_writes("create", self, validated_data)
+        model = self.Meta.model
+        info = model_meta.get_field_info(model)
+        many_to_many = {
+            name: validated_data.pop(name)
+            for name, relation in info.relations.items()
+            if relation.to_many and name in validated_data
+        }
+
+        instance = model(**validated_data)
+        full_clean(self, instance, getattr(self, "_server_set_fields", ()))
+
+        if uses_plain_create(model):
+            instance.save(force_insert=True)
+        else:
+            # The manager's own create() (a singleton updates the existing
+            # object), with the values as clean() left them.
+            instance = model._default_manager.create(
+                **{name: getattr(instance, name) for name in validated_data}
+            )
+
+        for name, value in many_to_many.items():
+            getattr(instance, name).set(value)
+
+        return instance
+
+    def update(self, instance, validated_data):
+        """
+        Like ModelSerializer.update, but the instance is validated with
+        full_clean() before it is saved, as the classic admin does.
+        """
+        from .validation import full_clean
+
+        raise_errors_on_nested_writes("update", self, validated_data)
+        info = model_meta.get_field_info(instance)
+        many_to_many = []
+
+        for name, value in validated_data.items():
+            if name in info.relations and info.relations[name].to_many:
+                many_to_many.append((name, value))
+            else:
+                setattr(instance, name, value)
+
+        full_clean(self, instance, getattr(self, "_server_set_fields", ()))
+        instance.save()
+
+        for name, value in many_to_many:
+            getattr(instance, name).set(value)
 
         return instance
 

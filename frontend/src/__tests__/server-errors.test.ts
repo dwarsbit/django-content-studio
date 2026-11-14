@@ -1,7 +1,11 @@
 import { AxiosError, AxiosHeaders } from "axios";
 import { describe, expect, it, vi } from "vitest";
 
-import { applyFieldErrors, getFieldErrors } from "@/lib/server-errors";
+import {
+  applyFieldErrors,
+  getFieldErrors,
+  getNonFieldErrors,
+} from "@/lib/server-errors";
 import { getErrorMessage } from "@/lib/utils";
 
 function responseError(status: number, data: unknown) {
@@ -58,5 +62,31 @@ describe("applyFieldErrors", () => {
     expect(getFieldErrors(responseError(400, ["Not allowed."]))).toBeNull();
     expect(getFieldErrors(responseError(400, "Bad request"))).toBeNull();
     expect(getFieldErrors(new Error("Network"))).toBeNull();
+  });
+});
+
+describe("getNonFieldErrors", () => {
+  it("returns the non-field errors and leaves them off the fields", () => {
+    const setError = vi.fn();
+    const error = responseError(400, {
+      non_field_errors: ["Dates overlap.", "Not now."],
+      title: ["Required."],
+    });
+
+    expect(applyFieldErrors(error, setError)).toBe(true);
+    expect(setError).toHaveBeenCalledTimes(1);
+    expect(setError).toHaveBeenCalledWith("title", {
+      type: "custom",
+      message: "Required.",
+    });
+    expect(getNonFieldErrors(error)).toEqual(["Dates overlap.", "Not now."]);
+  });
+
+  it("is empty without them", () => {
+    expect(getNonFieldErrors(responseError(400, { title: ["x"] }))).toEqual([]);
+    expect(getNonFieldErrors(responseError(403, { detail: "No." }))).toEqual(
+      [],
+    );
+    expect(getNonFieldErrors(new Error("Network"))).toEqual([]);
   });
 });

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.14.0 (unreleased)
+
+### Features
+
+- **Model validation on save.** Saving an object now runs the model's
+  `clean()`, its unique checks and its `Meta.constraints`, as the classic
+  Django admin does. Until now these rules were skipped, so an object that
+  broke them was saved anyway, or a constraint the serializer could not
+  check answered with a generic database error. An error for a field on
+  the form shows under the field; an error for no field, or for a field the
+  editor cannot change, shows above the form. Changes that `clean()` makes
+  to the object are saved with it. Fields that are not on the form, are
+  read-only or are hidden by their condition are left out of the checks.
+
 ## 1.13.3 (2026-11-11)
 
 ### Fixes

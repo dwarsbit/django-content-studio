@@ -332,6 +332,55 @@ A field that the model fills in itself when it is saved, and that is not
 editable (`editable=False`), needs no `prepopulated_fields`: the edit page
 shows its value read-only.
 
+## Model validation
+
+Saving runs the model's own validation, as the classic Django admin does:
+`Model.clean()`, the unique checks (`unique`, `unique_together`) and the
+model's `constraints`, including check constraints and functional unique
+constraints. An object that fails is not saved, and the edit page shows
+why.
+
+```python
+# events/models.py
+from django.core.exceptions import ValidationError
+from django.db import models
+
+
+class Event(models.Model):
+    title = models.CharField(max_length=100)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+
+    def clean(self):
+        if self.ends_at <= self.starts_at:
+            raise ValidationError({"ends_at": "An event ends after it starts."})
+```
+
+Where an error shows depends on what it is about:
+
+- **An error for a field on the form**, such as `{"ends_at": ...}` above,
+  shows under that field.
+- **An error for no field**, such as `ValidationError("...")` or a
+  `unique_together` conflict, shows above the form.
+- **An error for a field that is not on the form**, or is read-only or
+  hidden by its `when=` condition, also shows above the form, led by the
+  field's name: the editor cannot change that field, but should know why
+  the save failed.
+
+A field that is not on the form, is read-only or is hidden is left out of
+the unique checks and the constraints, as the classic admin leaves out the
+fields that are not on its form. Fields Content Studio sets itself, such as
+the tenant and the creator, are checked.
+
+Changes that `clean()` makes to the object, such as normalizing a value or
+filling in a field, are saved with it. Each field's own validation (its
+validators, `max_length`, choices) runs before `clean()`, and only when it
+passes.
+
+Validation runs when the edit page saves an object. Bulk actions, moving
+objects to reorder them and restoring from the trash write to the
+database directly and do not run it, like the classic admin's actions.
+
 ## Unique fields
 
 For every editable field with `unique=True`, such as the slug above, the
