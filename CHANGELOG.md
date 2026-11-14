@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.14.0 (unreleased)
+## 1.14.0 (2026-11-14)
 
 ### Features
 
