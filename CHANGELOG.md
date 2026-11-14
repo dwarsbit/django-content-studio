@@ -21,6 +21,16 @@
   `content_studio_prune_history` command removes the versions of deleted
   objects. Add the app to `INSTALLED_APPS` and run `migrate`.
 
+- **Invite users.** Adding a user in the admin emails them an invite with
+  a link to set their password, which logs them in. The add page asks for
+  an email address and starts with Staff status checked; the new user has
+  no password until they set one. Existing users get **Send password
+  link** in the more actions menu, or **Resend invite** when they never
+  logged in. Links are signed by Django's password reset token generator:
+  no table or extra app, they work once and expire after
+  `PASSWORD_RESET_TIMEOUT`. The emails are sent as Django tasks; links use
+  `ADMIN_URL` when set, else the request's address.
+
 - **Set a user's password.** Admins set another user's password from the
   user's edit page, with **Set password** in the more actions menu: typed
   twice, or generated to copy and pass on. The password must pass

@@ -1,0 +1,8 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate %}Hi {{ name }},
+
+{{ sender }} invited you to {{ site_title }}. Set your password to log in:{% endblocktranslate %}
+
+{{ link }}
+
+{% blocktranslate %}Your username is {{ username }}. The link works once and expires in {{ expires }}. If it has expired, ask {{ sender }} for a new one.{% endblocktranslate %}
+{% endautoescape %}

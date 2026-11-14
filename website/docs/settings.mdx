@@ -315,7 +315,9 @@ links in the emails. Default: `False`. See
 ### ADMIN_URL {#admin_url}
 
 The admin's absolute URL, like `"https://example.com/admin/"`, for links in
-emails, which are sent outside a request. Default: `None`.
+emails, which are sent outside a request. Default: `None`. Invites and
+password links fall back to the address of the request that sends them;
+set `ADMIN_URL` when a proxy in front of Django changes it.
 
 ## History
 
@@ -337,4 +339,5 @@ How long a password reset code stays valid, in minutes. Default: `10`.
 The maximum number of password reset requests per IP address, as a
 [Django REST Framework rate string](https://www.django-rest-framework.org/api-guide/throttling/#setting-the-throttling-policy).
 Default: `"10/hour"`. `None` removes the limit. Like the login limit, it is
-counted in the cache.
+counted in the cache. The same limit applies to the page that sets a
+password with an [invite or password link](/docs/users#invites-and-password-links).

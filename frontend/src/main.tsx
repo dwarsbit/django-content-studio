@@ -11,6 +11,7 @@ import { ForgotPasswordPage } from "@/pages/(auth)/forgot-password/page";
 import { AuthLayout } from "@/pages/(auth)/layout";
 import { LoginPage } from "@/pages/(auth)/login/page";
 import { ResetPasswordPage } from "@/pages/(auth)/reset-password/page";
+import { SetPasswordPage } from "@/pages/(auth)/set-password/page";
 import { DashboardPage } from "@/pages/(studio)/(dashboard)/page";
 import { CatchAllPage } from "@/pages/(studio)/[...slug]/page";
 import { ContentEditorPage } from "@/pages/(studio)/content/[model]/[id]/page";
@@ -114,6 +115,10 @@ const router = createBrowserRouter(
             {
               path: "reset-password",
               element: <ResetPasswordPage />,
+            },
+            {
+              path: "set-password",
+              element: <SetPasswordPage />,
             },
           ],
         },

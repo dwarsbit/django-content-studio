@@ -216,7 +216,7 @@ class UserInfoTests(UserManagementTestCase):
         return response.json()["__user__"]
 
     def test_offers_setting_the_password(self):
-        self.assertEqual(self.info(self.admin, self.target), {"can_set_password": True})
+        self.assertTrue(self.info(self.admin, self.target)["can_set_password"])
         self.assertTrue(self.info(self.editor, self.target)["can_set_password"])
 
     def test_not_for_the_own_account(self):
@@ -279,7 +279,12 @@ class SuperuserGuardTests(UserManagementTestCase):
     def test_staff_cannot_create_a_superuser(self):
         response = client_for(self.editor).post(
             "/api/content/auth.user",
-            {"username": "new", "is_superuser": True, "is_staff": True},
+            {
+                "username": "new",
+                "email": "new@example.com",
+                "is_superuser": True,
+                "is_staff": True,
+            },
             format="json",
         )
 
@@ -388,7 +393,7 @@ class UserEditPageTests(UserManagementTestCase):
     def test_a_user_is_created_without_a_password(self):
         response = client_for(self.admin).post(
             "/api/content/auth.user",
-            {"username": "new", "is_staff": True},
+            {"username": "new", "email": "new@example.com", "is_staff": True},
             format="json",
         )
 

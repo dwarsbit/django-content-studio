@@ -590,6 +590,12 @@ class ModelSerializer:
         if is_jsonable(field.default):
             data["default"] = field.default
 
+        # The user model's create form defaults (a new user is staff).
+        from .users import CREATE_DEFAULTS, is_user_model
+
+        if is_user_model(self.model) and field.name in CREATE_DEFAULTS:
+            data["default"] = CREATE_DEFAULTS[field.name]
+
         if not field.editable:
             data["readonly"] = True
 

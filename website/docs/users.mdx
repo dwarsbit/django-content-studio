@@ -2,12 +2,58 @@
 
 Users are managed on the user model's edit page, like any other model:
 Content Studio registers the user model when your project does not. On top
-of the fields, admins can set another user's password, and Content Studio
-keeps staff who are not superusers from taking over a superuser account.
+of the fields, admins invite new users by email, send a link to set a new
+password or set one themselves, and Content Studio keeps staff who are not
+superusers from taking over a superuser account.
+
+## Invites and password links
+
+Adding a user sends them an invite: an email with a link to set their
+password. The new user has no password until they do, so they cannot log
+in before. Setting it logs them in. The add page asks for an email
+address, which the invite is sent to, and starts with **Staff status**
+checked, since only active staff users can log in. Uncheck it and no
+invite is sent.
+
+On an existing user's page, the more actions menu has **Send password
+link**: an email with a link to set a new password. Their current password
+keeps working until they use it. For a user who never logged in, the same
+item is **Resend invite**. It is offered under the same conditions as
+[setting a password](#setting-a-password), and when the user has an email
+address and may log in.
+
+A link works once: it stops working when the password is set, when the
+user logs in, when their email address changes and after Django's
+[`PASSWORD_RESET_TIMEOUT`](https://docs.djangoproject.com/en/stable/ref/settings/#password-reset-timeout)
+(three days by default; raise it for invites that may wait longer). The
+links are signed with your `SECRET_KEY` by Django's own password reset
+token generator, so they need no table and no extra app. The page that
+sets the password is limited by
+[`PASSWORD_RESET_THROTTLE_RATE`](/docs/settings#password_reset_throttle_rate).
+
+Invites and password links need:
+
+- Django's `EMAIL_*` settings, so the emails can be sent.
+- A user model with an email field. Without one, users are added without
+  an invite and you set their password yourself.
+- [`ADMIN_URL`](/docs/settings#admin_url) when a proxy in front of Django
+  changes the address the admin is served at; otherwise the links use the
+  address of the request that sends them.
+
+Like the password reset emails, the emails are sent as a
+[Django task](https://docs.djangoproject.com/en/stable/topics/tasks/), so
+your `TASKS` setting decides whether a worker sends them. Without a task
+backend they are sent during the request. A failure to send is logged to
+the `content_studio.users` logger.
+
+The [password reset](/docs/authentication#password-reset) app is
+separate: it lets editors who forgot their password request a code
+themselves, and works with or without invites.
 
 ## Setting a password
 
-Open a user and choose **Set password** in the header's more actions menu.
+To set a password yourself, open a user and choose **Set password** in the
+header's more actions menu.
 Type the new password twice, or choose **Generate password** for a random
 one that you can copy and pass on. The password must pass your project's
 [`AUTH_PASSWORD_VALIDATORS`](https://docs.djangoproject.com/en/stable/topics/auth/passwords/#module-django.contrib.auth.password_validation).
@@ -38,7 +84,8 @@ Content Studio closes both. For editors who are not superusers:
 
 - `is_superuser` is read-only, on the create page and on every user.
 - A superuser's email address is read-only.
-- A superuser's password cannot be set.
+- A superuser's password cannot be set, and no password link can be sent
+  to them.
 
 Superusers can change everything. The fields show read-only on the edit
 page and the server does not save them either, whichever studio you

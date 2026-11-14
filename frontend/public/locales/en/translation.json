@@ -777,6 +777,29 @@
       "mismatch": "The passwords do not match.",
       "submit": "Set password",
       "done": "Password set for {{name}}"
+    },
+    "send_link": {
+      "menu": "Send password link",
+      "invite_menu": "Resend invite",
+      "title": "Send a password link?",
+      "invite_title": "Resend the invite?",
+      "description": "{{name}} gets an email with a link to set a new password. Their current password keeps working until they do.",
+      "invite_description": "{{name}} gets a new invite email with a link to set their password.",
+      "send": "Send",
+      "sent": "Password link sent to {{email}}",
+      "invite_sent": "Invite sent to {{email}}"
     }
+  },
+  "set_password": {
+    "title": "Set a new password",
+    "welcome": "Welcome, {{name}}",
+    "subtitle": "Choose a password to log in as {{username}}.",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "mismatch": "The passwords do not match.",
+    "submit": "Set password and log in",
+    "done": "Password set. Welcome!",
+    "invalid": "This link is no longer valid. It works once and expires after a few days. Ask an administrator for a new one.",
+    "to_login": "Go to the login page"
   }
 }

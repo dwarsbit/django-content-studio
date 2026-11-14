@@ -535,6 +535,10 @@ export interface Resource {
 export interface UserInfo {
   // Whether the editor may set this user's password.
   can_set_password: boolean;
+  // Whether the editor may email this user a link to set it.
+  can_send_password_link?: boolean;
+  // Whether the user never logged in: the link is then an invite.
+  invited?: boolean;
 }
 
 export interface ObjectPermissions {

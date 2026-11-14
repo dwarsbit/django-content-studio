@@ -183,7 +183,10 @@ function renderEditor(path: string) {
   return router;
 }
 
-function mockApi(canSetPassword?: boolean) {
+function mockApi(
+  canSetPassword?: boolean,
+  link?: { can_send_password_link: boolean; invited: boolean },
+) {
   httpMock.get.mockImplementation((url: string) => {
     if (url === "/content/auth.user/7") {
       return Promise.resolve({
@@ -194,7 +197,9 @@ function mockApi(canSetPassword?: boolean) {
           __str__: "maya",
           ...(canSetPassword === undefined
             ? {}
-            : { __user__: { can_set_password: canSetPassword } }),
+            : {
+                __user__: { can_set_password: canSetPassword, ...link },
+              }),
         },
       });
     }
@@ -347,5 +352,85 @@ describe("Set password", () => {
     expect(
       screen.getByRole("button", { name: "users.set_password.copy" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("Send password link", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    useDiscoverMock.mockReturnValue({ data: makeDiscover(makeModel()) });
+  });
+
+  async function openMenu() {
+    const user = userEvent.setup();
+    renderEditor("/content/auth.user/7");
+    await screen.findByDisplayValue("maya-lindqvist");
+    await user.click(
+      screen.getByRole("button", { name: "editor.more_actions" }),
+    );
+    return user;
+  }
+
+  it("sends a password link after confirming", async () => {
+    mockApi(true, { can_send_password_link: true, invited: false });
+    httpMock.post.mockResolvedValue({
+      data: { kind: "reset", email: "maya@example.com" },
+    });
+    const user = await openMenu();
+
+    await user.click(
+      await screen.findByRole("menuitem", { name: "users.send_link.menu" }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "users.send_link.send" }),
+    );
+
+    await waitFor(() =>
+      expect(httpMock.post).toHaveBeenCalledWith(
+        "/content/auth.user/7/password-link",
+      ),
+    );
+    expect(toastMock.success).toHaveBeenCalledWith("users.send_link.sent");
+  });
+
+  it("resends the invite to who never logged in", async () => {
+    mockApi(true, { can_send_password_link: true, invited: true });
+    const user = await openMenu();
+
+    expect(
+      await screen.findByRole("menuitem", {
+        name: "users.send_link.invite_menu",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "users.send_link.menu" }),
+    ).toBeNull();
+    await user.keyboard("{Escape}");
+  });
+
+  it("sends nothing when cancelled", async () => {
+    mockApi(true, { can_send_password_link: true, invited: false });
+    const user = await openMenu();
+
+    await user.click(
+      await screen.findByRole("menuitem", { name: "users.send_link.menu" }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "common.cancel" }),
+    );
+
+    expect(httpMock.post).not.toHaveBeenCalled();
+  });
+
+  it("is not offered otherwise", async () => {
+    mockApi(true, { can_send_password_link: false, invited: false });
+    await openMenu();
+
+    expect(
+      await screen.findByRole("menuitem", { name: "users.set_password.menu" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "users.send_link.menu" }),
+    ).toBeNull();
   });
 });

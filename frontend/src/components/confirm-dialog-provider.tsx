@@ -35,6 +35,8 @@ export function ConfirmDialogProvider({ children }: Props) {
         <ConfirmDialog
           title={dialog?.title ?? ""}
           description={dialog?.description ?? ""}
+          okText={dialog?.okText}
+          cancelText={dialog?.cancelText}
           onOk={() => {
             setDialog(null);
             dialog?.onOk?.();
