@@ -32,6 +32,7 @@ import { MarkdownWidget } from "./markdown-widget";
 import { MediaWidget } from "./media-widget";
 import { MultiSelectWidget } from "./multi-select-widget";
 import { PasswordWidget } from "./password-widget";
+import { PermissionMatrixWidget } from "./permission-matrix-widget";
 import { RadioButtonWidget } from "./radio-button-widget";
 import { RatingWidget } from "./rating-widget";
 import { RichTextWidget } from "./rich-text-widget";
@@ -92,6 +93,7 @@ const WIDGETS = {
   [FieldWidget.MediaWidget]: MediaWidget,
   [FieldWidget.MultiSelectWidget]: MultiSelectWidget,
   [FieldWidget.PasswordWidget]: PasswordWidget,
+  [FieldWidget.PermissionMatrixWidget]: PermissionMatrixWidget,
   [FieldWidget.PhoneWidget]: PhoneWidget,
   [FieldWidget.RadioButtonWidget]: RadioButtonWidget,
   [FieldWidget.RatingWidget]: RatingWidget,

@@ -118,3 +118,6 @@ own permissions.
 The user model is the exception: staff who are not superusers cannot change
 `is_superuser`, nor a superuser's email address or password. See
 [User management](/docs/users#what-staff-who-are-not-superusers-can-change).
+Nor can they grant permissions they do not have themselves, directly or
+through a group; see
+[Permissions and groups](/docs/users#permissions-and-groups).

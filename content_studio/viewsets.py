@@ -471,6 +471,27 @@ class BaseModelViewSet(ModelViewSet):
 
         return Response({"kind": kind, "email": get_email(instance)})
 
+    @action(methods=["get"], detail=False, url_path="permissions/(?P<field_name>[^/]+)")
+    def permission_options(self, request, field_name):
+        """
+        The options of a many-to-many field to auth.Permission, grouped
+        by app and model for the permission matrix; each says whether
+        the editor may grant it (only what they have themselves, unless
+        they are a superuser). Seeing the model is enough: the list
+        only names the permissions.
+        """
+        from .permission_matrix import get_permission_options, is_permission_field
+
+        try:
+            field = self._model._meta.get_field(field_name)
+        except FieldDoesNotExist:
+            raise NotFound()
+
+        if not is_permission_field(field):
+            raise NotFound()
+
+        return Response(get_permission_options(request.user))
+
     @action(methods=["delete"], detail=True, url_path="destroy")
     def destroy_permanently(self, request, id):
         """
@@ -1155,7 +1176,6 @@ class BaseModelViewSet(ModelViewSet):
         # tenant only, like any list.
         if isinstance(qs, models.QuerySet):
             qs = get_tenant_scoped_queryset(request, related_model, qs)
-
         items = []
         for obj in qs[:20]:
             display = get_relation_display_for(related_model, obj, request)

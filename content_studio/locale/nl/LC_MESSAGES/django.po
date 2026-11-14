@@ -955,3 +955,33 @@ msgid "%(count)d hour"
 msgid_plural "%(count)d hours"
 msgstr[0] "%(count)d uur"
 msgstr[1] "%(count)d uur"
+
+#: user_studios.py
+msgid "Account"
+msgstr "Account"
+
+#: user_studios.py
+msgid "Personal info"
+msgstr "Persoonlijke gegevens"
+
+#: user_studios.py
+msgid "Access"
+msgstr "Toegang"
+
+#: user_studios.py
+msgid "Permissions"
+msgstr "Rechten"
+
+#: user_studios.py
+msgid "Important dates"
+msgstr "Belangrijke datums"
+
+#: permission_matrix.py
+#, python-format
+msgid "You can only grant or revoke permissions you have yourself. Not allowed: %(permissions)s."
+msgstr "Je kunt alleen rechten geven of afnemen die je zelf hebt. Niet toegestaan: %(permissions)s."
+
+#: permission_matrix.py
+#, python-format
+msgid "You can only add or remove groups whose permissions you all have yourself. Not allowed: %(groups)s."
+msgstr "Je kunt alleen groepen toevoegen of verwijderen waarvan je zelf alle rechten hebt. Niet toegestaan: %(groups)s."

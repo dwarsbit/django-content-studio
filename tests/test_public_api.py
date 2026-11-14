@@ -16,6 +16,7 @@ DOCS_PAGE = Path(__file__).parent.parent / "website" / "docs" / "public-api.mdx"
 PUBLIC_MODULES = [
     "content_studio",
     "content_studio.admin",
+    "content_studio.user_studios",
     "content_studio.form",
     "content_studio.actions",
     "content_studio.dashboard",

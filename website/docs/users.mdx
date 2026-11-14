@@ -1,10 +1,11 @@
 # 👥 User management
 
 Users are managed on the user model's edit page, like any other model:
-Content Studio registers the user model when your project does not. On top
-of the fields, admins invite new users by email, send a link to set a new
-password or set one themselves, and Content Studio keeps staff who are not
-superusers from taking over a superuser account.
+Content Studio registers the user model and Django's groups when your
+project does not. On top of the fields, admins invite new users by email,
+send a link to set a new password or set one themselves, pick permissions
+in a matrix, and Content Studio keeps staff who are not superusers from
+taking over a superuser account or granting more than they have.
 
 ## Invites and password links
 
@@ -91,6 +92,65 @@ Superusers can change everything. The fields show read-only on the edit
 page and the server does not save them either, whichever studio you
 register for the user model. Your studio's own `get_readonly_fields` still
 applies on top.
+
+## Permissions and groups
+
+A user's permissions and a group's permissions are picked in a matrix: a
+row per model, grouped by app, with **Add**, **Change**, **View** and
+**Delete** columns. Permissions of your own (`Meta.permissions`) follow in
+the **Other** column. The checkboxes at the head of a row, a column or an
+app toggle all of its permissions, the search box filters by app, model or
+permission, and **Selected only** shows the rows that have any.
+
+Editors who are not superusers can only grant what they have themselves:
+
+- A permission they do not have is shown dimmed and cannot be checked or
+  unchecked, so they can neither grant it nor take it away.
+- They can only add a user to a group, or remove them from one, when they
+  have every permission of the group.
+
+The server refuses anything else when the user or group is saved, with an
+error on the field, whatever the form sent. Superusers grant everything.
+
+The matrix is the `PermissionMatrixWidget`, the default for every
+many-to-many field to `django.contrib.auth.models.Permission`, also on
+models of your own. Its options come from
+`api/content/<model>/permissions/<field>`, which needs view permission on
+the model.
+
+## The default user and group studios
+
+When your project registers no studio for them, Content Studio registers
+these, from `content_studio.user_studios`:
+
+- **`UserStudio`**, for the user model: an **Account** tab with the
+  username, name and email address, a **Permissions** tab with active,
+  staff and superuser status, groups and permissions, and the last login
+  and date joined in the sidebar, read-only. The list shows the username,
+  email address, name and staff status, searches the username, name and
+  email address, and filters by status and group. Fields a custom user
+  model does not have are left out, and fields the layout does not know
+  are added to the Account tab.
+- **`GroupStudio`**, for Django's groups: the name and the permission
+  matrix.
+
+Subclass them to start from their layout. What you set yourself is kept:
+
+```python
+from django.contrib.auth import get_user_model
+
+from content_studio import register
+from content_studio.user_studios import UserStudio
+
+
+@register(get_user_model())
+class MyUserStudio(UserStudio):
+    list_filter = ["is_staff", "groups"]
+```
+
+To leave groups out of the menu, give the studio no view permission, or
+register a `ModelStudio` of your own for `Group` that returns `False` from
+`has_view_permission`.
 
 ## Related pages
 

@@ -9,6 +9,10 @@ from rest_framework import serializers
 from rest_framework.fields import SkipField
 from rest_framework.relations import RelatedField
 
+from content_studio.permission_matrix import (
+    check_permission_changes,
+    is_permission_field,
+)
 from content_studio.settings import cs_settings
 from content_studio.uniqueness import get_unique_sets
 from content_studio.validators import ColorValidator
@@ -321,6 +325,16 @@ class ContentSerializer(serializers.ModelSerializer):
 
         return fields
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        # Staff who are not superusers grant only what they have.
+        instance = self.instance if isinstance(self.instance, models.Model) else None
+        check_permission_changes(
+            self.Meta.model, instance, attrs, self.context.get("request")
+        )
+
+        return attrs
+
     def save(self, **kwargs):
         from .uploads import TemporaryUpload, discard_upload
 
@@ -580,6 +594,9 @@ class ModelSerializer:
 
         if hasattr(field, "widget_class"):
             data["widget_class"] = field.widget_class.__name__
+        elif is_permission_field(field):
+            # Permissions are picked in a matrix of models and actions.
+            data["widget_class"] = "PermissionMatrixWidget"
 
         if hasattr(field, "format_class"):
             data["format_class"] = field.format_class.__name__

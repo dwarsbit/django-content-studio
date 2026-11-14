@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.db.models.functions import Now
 
-from content_studio import register, widgets
+from content_studio import register, user_studios, widgets
 from content_studio.admin import ModelStudio, RelationDisplay, InlineModelStudio
 from content_studio.analytics import Analytics
 from content_studio.form import (
@@ -33,8 +33,9 @@ class ReviewInline(InlineModelStudio):
 
 
 @register(get_user_model())
-class UserStudio(ModelStudio):
-    icon = "ph-bold ph-users"
+class UserStudio(user_studios.UserStudio):
+    # The built-in user studio's layout: account details, then access,
+    # groups and the permission matrix on a tab of their own.
     table_display = ["username", "first_name", "last_name", "email", "is_superuser"]
     search_fields = ["username", "first_name", "last_name", "email"]
 

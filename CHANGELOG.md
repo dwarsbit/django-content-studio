@@ -40,6 +40,21 @@
   never for their own account (that stays on the profile page) and only by
   a superuser for a superuser.
 
+- **Permission matrix and groups.** Permissions (a user's
+  `user_permissions`, a group's `permissions`) are now picked in a matrix:
+  a row per model, grouped by app, with add, change, view and delete
+  columns, the model's own permissions after them, a search box, and
+  toggles per row, column and app. Django's groups are registered out of
+  the box (`GroupStudio`), and the default user studio (`UserStudio`) has
+  an Account tab, a Permissions tab with access, groups and permissions,
+  the login dates read-only in the sidebar, and list columns, search and
+  filters. Both are in `content_studio.user_studios` to subclass; your own
+  studios still take precedence. Editors who are not superusers can only
+  grant or revoke permissions they have themselves, and only add users to
+  or remove them from groups whose permissions they all have; the server
+  refuses anything else. The new `PermissionMatrixWidget` is the default
+  for many-to-many fields to `Permission`.
+
 ### Fixes
 
 - **Staff can no longer make themselves superuser.** Editors who are not

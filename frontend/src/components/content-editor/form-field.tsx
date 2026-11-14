@@ -20,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { PermissionMatrixWidget } from "@/components/widgets/permission-matrix-widget";
 import { WidgetRenderer } from "@/components/widgets/renderer";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import { cn } from "@/lib/utils";
@@ -111,23 +112,36 @@ export function FormField({
                 {label}
               </span>
             );
-            const control = isReadonly ? (
-              <div className="min-h-9 flex items-center px-3 rounded-md border border-dashed bg-muted/40 text-muted-foreground cursor-default">
-                <FormatRenderer
-                  value={field.value}
-                  field={modelField}
-                  display="field"
-                />
-              </div>
-            ) : (
-              <FormControl>
-                <WidgetRenderer
+            const control =
+              isReadonly &&
+              modelField &&
+              widgetClass === FieldWidget.PermissionMatrixWidget ? (
+                // Read-only permissions stay a matrix, which reads better
+                // than a list of every permission's name.
+                <PermissionMatrixWidget
+                  readOnly
                   model={model}
-                  {...field}
-                  widget={formField.widget}
+                  name={formField.name}
+                  value={field.value}
+                  onChange={field.onChange}
                 />
-              </FormControl>
-            );
+              ) : isReadonly ? (
+                <div className="min-h-9 flex items-center px-3 rounded-md border border-dashed bg-muted/40 text-muted-foreground cursor-default">
+                  <FormatRenderer
+                    value={field.value}
+                    field={modelField}
+                    display="field"
+                  />
+                </div>
+              ) : (
+                <FormControl>
+                  <WidgetRenderer
+                    model={model}
+                    {...field}
+                    widget={formField.widget}
+                  />
+                </FormControl>
+              );
 
             return (
               <FormItem className={isCheckbox ? "gap-1" : undefined}>

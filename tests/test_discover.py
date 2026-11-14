@@ -127,9 +127,9 @@ class DiscoverEndpointTests(TestCase):
         self.assertEqual(media_library["properties"], "properties")
 
     def test_discover_lists_registered_models(self):
-        """Discover includes the registered studios. Only the user model
-        is there out of the box; Group no longer rides in through the
-        Django admin's global registry."""
+        """Discover includes the registered studios. Out of the box that
+        is the user model and Django's groups (Content Studio's own
+        default studios, not the Django admin's global registry)."""
         response = self.client.get("/api/discover")
 
         self.assertEqual(response.status_code, 200)
@@ -137,7 +137,8 @@ class DiscoverEndpointTests(TestCase):
         models = {model["label"] for model in response.json()["models"]}
         self.assertIn("auth.user", models)
         self.assertIn("testapp.article", models)
-        self.assertNotIn("auth.group", models)
+        self.assertIn("auth.group", models)
+        self.assertNotIn("auth.permission", models)
 
     def test_discover_marks_inline_only_models(self):
         """A model that is only inlined has no list page: the frontend

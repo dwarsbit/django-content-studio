@@ -744,8 +744,8 @@ class ContentStudioSite:
         return model in self._registry
 
     def setup(self):
-        # The user model is manageable out of the box; projects that
-        # register their own user studio take precedence.
+        # The user model and Django's groups are manageable out of the
+        # box; projects that register their own studios take precedence.
         self._register_default_user_studio()
 
         # Add token backend's view set to the
@@ -794,10 +794,19 @@ class ContentStudioSite:
             )
 
     def _register_default_user_studio(self):
+        from .user_studios import GroupStudio, UserStudio
+
         user_model = get_user_model()
 
         if not self.is_registered(user_model):
-            self.register(user_model, icon="ph-bold ph-users")
+            self.register(user_model, UserStudio)
+
+        # Django's groups, to manage permissions per role.
+        if apps.is_installed("django.contrib.auth"):
+            from django.contrib.auth.models import Group
+
+            if not self.is_registered(Group):
+                self.register(Group, GroupStudio)
 
     def get_thumbnail(self, obj, size: str = "small") -> str:
         """

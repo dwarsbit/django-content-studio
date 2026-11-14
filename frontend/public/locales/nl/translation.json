@@ -290,6 +290,26 @@
       "no_results": "Geen resultaten gevonden",
       "remove": "Verwijder {{item}}"
     },
+    "permission_matrix": {
+      "search": "Rechten zoeken",
+      "selected_only": "Alleen geselecteerd",
+      "count": "{{count}} van {{total}} geselecteerd",
+      "no_results": "Geen rechten gevonden",
+      "model": "Model",
+      "other": "Overig",
+      "actions": {
+        "add": "Toevoegen",
+        "change": "Wijzigen",
+        "view": "Bekijken",
+        "delete": "Verwijderen"
+      },
+      "toggle": "{{action}} {{model}}",
+      "toggle_column": "Alle: {{action}}",
+      "toggle_model": "Alles van {{model}}",
+      "toggle_app": "Alles van {{app}}",
+      "not_grantable": "Je kunt alleen rechten geven die je zelf hebt",
+      "locked_hint": "Gedimde rechten heb je zelf niet, dus die kun je niet geven of afnemen."
+    },
     "date_picker": {
       "placeholder": "Selecteer een datum"
     },

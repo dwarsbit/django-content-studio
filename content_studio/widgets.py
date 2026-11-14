@@ -25,6 +25,7 @@ __all__ = [
     "MediaWidget",
     "MultiSelectWidget",
     "PasswordWidget",
+    "PermissionMatrixWidget",
     "PhoneWidget",
     "RadioButtonWidget",
     "RatingWidget",
@@ -682,6 +683,14 @@ class ForeignKeyWidget(BaseWidget):
 
 class ManyToManyWidget(BaseWidget):
     pass
+
+
+class PermissionMatrixWidget(BaseWidget):
+    """
+    A matrix of models and actions (add, change, view, delete, then the
+    model's own permissions) for a many-to-many field to
+    auth.Permission. The default for those fields.
+    """
 
 
 class JSONSchemaWidget(BaseWidget):

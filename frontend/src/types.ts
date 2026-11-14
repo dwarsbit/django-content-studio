@@ -725,6 +725,7 @@ export enum FieldWidget {
   ManyMediaWidget = "ManyMediaWidget",
   MultiSelectWidget = "MultiSelectWidget",
   PasswordWidget = "PasswordWidget",
+  PermissionMatrixWidget = "PermissionMatrixWidget",
   PhoneWidget = "PhoneWidget",
   RadioButtonWidget = "RadioButtonWidget",
   RatingWidget = "RatingWidget",

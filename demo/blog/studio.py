@@ -7,6 +7,7 @@ would be circular.
 """
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 
 from content_studio.admin import ContentStudioSite, ModelGroup
 from content_studio.analytics import (
@@ -49,7 +50,7 @@ class DemoStudioSite(ContentStudioSite):
         ModelGroup(
             "settings",
             icon="ph-bold ph-gear",
-            models=[models.SiteSettings, get_user_model()],
+            models=[models.SiteSettings, get_user_model(), Group],
         ),
     ]
     dashboard = Dashboard(

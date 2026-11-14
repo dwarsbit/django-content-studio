@@ -122,8 +122,9 @@ def test_search_uses_the_related_studios_search_fields():
 @pytest.mark.django_db
 def test_search_does_not_fall_back_to_other_fields():
     """
-    Without search_fields (like the default user studio), a search term
-    matches nothing: the user model's password hash is not searchable.
+    Only the related studio's search_fields are searched (the default
+    user studio's are the username, names and email): the user model's
+    password hash is not searchable.
     """
     from tests.testapp.models import Article
 
@@ -131,12 +132,17 @@ def test_search_does_not_fall_back_to_other_fields():
         username="admin", email="a@example.com", password="x"
     )
 
-    for search in [user.password[:20], "pbkdf2", "admin"]:
+    for search in [user.password[:20], "pbkdf2"]:
         viewset, request = make_viewset(user, Article, search=search)
 
         response = viewset.get_related_objects(request, "author")
 
         assert response.data == [], search
+
+    viewset, request = make_viewset(user, Article, search="admin")
+    response = viewset.get_related_objects(request, "author")
+
+    assert [item["__str__"] for item in response.data] == ["admin"]
 
     viewset, request = make_viewset(user, Article)
 
