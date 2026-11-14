@@ -529,6 +529,9 @@ Each is optional and has its own page:
   `ContentStudioSite.profile_fields` picks the user model fields editors
   may change, default `first_name`, `last_name`, `email`):
   https://djangocontentstudio.org/docs/profile.md
+- User management (admins set another user's password; staff who are not
+  superusers cannot change `is_superuser`, nor a superuser's email or
+  password): https://djangocontentstudio.org/docs/users.md
 - Presence, the command palette, deployment and every system check:
   https://djangocontentstudio.org/docs/presence.md,
   https://djangocontentstudio.org/docs/command-palette.md,

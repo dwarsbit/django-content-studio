@@ -120,14 +120,9 @@ def can_change_password(user, site=None) -> bool:
     Whether the profile offers a password change: the user has a usable
     password and the site signs in with a username and password.
     """
-    from .login_backends.username_password import UsernamePasswordBackend
+    from .users import uses_password_login
 
-    site = site or cs_settings.ADMIN_SITE
-
-    return user.has_usable_password() and any(
-        isinstance(backend, type) and issubclass(backend, UsernamePasswordBackend)
-        for backend in site.login_backend.active_backends
-    )
+    return user.has_usable_password() and uses_password_login(site)
 
 
 def get_profile_serializer(fields: list[Field]):

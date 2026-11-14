@@ -526,7 +526,15 @@ export interface Resource {
   // What this user may do with this object (has_change_permission and
   // has_delete_permission with the object), on detail responses.
   __permissions__?: ObjectPermissions;
+  // What the edit page of a user offers besides the fields, on detail
+  // responses of the user model.
+  __user__?: UserInfo;
   [key: string]: unknown;
+}
+
+export interface UserInfo {
+  // Whether the editor may set this user's password.
+  can_set_password: boolean;
 }
 
 export interface ObjectPermissions {

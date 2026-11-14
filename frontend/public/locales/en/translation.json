@@ -745,5 +745,21 @@
       "mismatch": "The new passwords do not match.",
       "changed": "Password changed"
     }
+  },
+  "users": {
+    "set_password": {
+      "menu": "Set password",
+      "title": "Set password",
+      "description": "Set a new password for {{name}}. They are logged out on every device and log in with the new password from now on.",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "generate": "Generate password",
+      "copy": "Copy password",
+      "copied": "Password copied",
+      "copy_failed": "The password could not be copied.",
+      "mismatch": "The passwords do not match.",
+      "submit": "Set password",
+      "done": "Password set for {{name}}"
+    }
   }
 }

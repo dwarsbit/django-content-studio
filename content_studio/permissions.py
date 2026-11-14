@@ -79,9 +79,10 @@ class ModelStudioPermissions(BasePermission):
                 request
             ) or admin_model.has_change_permission(request)
 
-        if getattr(view, "action", None) in ("restore", "move"):
-            # Restoring a trashed object and moving one to another
-            # position are changes, whatever the HTTP method.
+        if getattr(view, "action", None) in ("restore", "move", "password"):
+            # Restoring a trashed object, moving one to another position
+            # and setting a user's password are changes, whatever the
+            # HTTP method.
             return admin_model.has_change_permission(request)
 
         if request.method == "POST":
@@ -106,7 +107,7 @@ class ModelStudioPermissions(BasePermission):
 
         if getattr(request, "method", None) == "POST" and getattr(
             view, "action", None
-        ) in ("restore", "move"):
+        ) in ("restore", "move", "password"):
             return admin_model.has_change_permission(request, obj)
 
         if getattr(view, "action", None) in ("run_component", "presence"):

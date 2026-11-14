@@ -1,0 +1,54 @@
+# 👥 User management
+
+Users are managed on the user model's edit page, like any other model:
+Content Studio registers the user model when your project does not. On top
+of the fields, admins can set another user's password, and Content Studio
+keeps staff who are not superusers from taking over a superuser account.
+
+## Setting a password
+
+Open a user and choose **Set password** in the header's more actions menu.
+Type the new password twice, or choose **Generate password** for a random
+one that you can copy and pass on. The password must pass your project's
+[`AUTH_PASSWORD_VALIDATORS`](https://docs.djangoproject.com/en/stable/topics/auth/passwords/#module-django.contrib.auth.password_validation).
+
+Setting a password logs the user out on every device: they log in with the
+new password from then on. The change is recorded in the activity log as
+"Set password.", without the password itself.
+
+**Set password** is offered when:
+
+- the site logs in with a username and password (the default
+  [login backend](/docs/authentication)),
+- the editor may change the user: the user model studio's
+  `has_change_permission(request, obj)`, by default Django's `change_user`
+  permission,
+- the user is not a superuser, or the editor is one too,
+- the user is not the editor. Editors change their own password on their
+  [profile page](/docs/profile#password), which asks for the current one.
+
+## What staff who are not superusers can change
+
+Django's classic admin lets anyone with the `change_user` permission change
+every field of every user, including `is_superuser`. A staff member could
+make themselves a superuser, or change a superuser's email address and then
+[reset the password](/docs/authentication#password-reset) sent to it.
+
+Content Studio closes both. For editors who are not superusers:
+
+- `is_superuser` is read-only, on the create page and on every user.
+- A superuser's email address is read-only.
+- A superuser's password cannot be set.
+
+Superusers can change everything. The fields show read-only on the edit
+page and the server does not save them either, whichever studio you
+register for the user model. Your studio's own `get_readonly_fields` still
+applies on top.
+
+## Related pages
+
+- [Access control](/docs/permissions): the permission hooks the user
+  model's studio uses.
+- [Authentication](/docs/authentication): logging in, sessions and password
+  reset.
+- [Profile page](/docs/profile): every editor's own details and password.

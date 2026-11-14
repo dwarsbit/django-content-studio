@@ -745,5 +745,21 @@
       "mismatch": "De nieuwe wachtwoorden komen niet overeen.",
       "changed": "Wachtwoord gewijzigd"
     }
+  },
+  "users": {
+    "set_password": {
+      "menu": "Wachtwoord instellen",
+      "title": "Wachtwoord instellen",
+      "description": "Stel een nieuw wachtwoord in voor {{name}}. Diegene wordt op elk apparaat uitgelogd en logt voortaan in met het nieuwe wachtwoord.",
+      "new": "Nieuw wachtwoord",
+      "confirm": "Bevestig nieuw wachtwoord",
+      "generate": "Wachtwoord genereren",
+      "copy": "Wachtwoord kopiëren",
+      "copied": "Wachtwoord gekopieerd",
+      "copy_failed": "Het wachtwoord kon niet worden gekopieerd.",
+      "mismatch": "De wachtwoorden komen niet overeen.",
+      "submit": "Wachtwoord instellen",
+      "done": "Wachtwoord ingesteld voor {{name}}"
+    }
   }
 }

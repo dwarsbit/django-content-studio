@@ -233,9 +233,14 @@ class BaseStudio(Generic[T]):
         """
         The fields of the default edit form: every editable field
         (including many-to-many), minus `exclude`. The additive way to
-        pick fields is edit_main.
+        pick fields is edit_main. The user model's password is never a
+        form field: its hash is not sent to the admin, and admins set
+        it with Set password.
         """
         exclude = set(self.exclude or [])
+
+        if self.model is get_user_model():
+            exclude.add("password")
 
         return [
             field.name
@@ -1027,6 +1032,22 @@ def is_computed_column(admin_class, column: TableColumn) -> bool:
     return callable(getattr(admin_class, column.field, None))
 
 
+def get_studio_readonly_fields(
+    studio, request: HttpRequest, obj: Optional[models.Model] = None
+) -> list[str]:
+    """
+    The studio's get_readonly_fields plus, on the user model, the fields
+    the request may not change (see users.guarded_field_names): the
+    read-only fields the edit page shows.
+    """
+    from .users import guarded_field_names
+
+    names = list(studio.get_readonly_fields(request, obj))
+    guarded = guarded_field_names(getattr(studio, "model", None), request, obj)
+
+    return names + sorted(guarded - set(names))
+
+
 def get_readonly_field_names(
     studio, request: HttpRequest, obj: Optional[models.Model] = None
 ) -> set[str]:
@@ -1035,7 +1056,7 @@ def get_readonly_field_names(
     get_readonly_fields plus the edit page's Field(readonly=True)
     entries, so neither is enforced by the interface alone.
     """
-    names = set(studio.get_readonly_fields(request, obj))
+    names = set(get_studio_readonly_fields(studio, request, obj))
 
     all_fields = list(getattr(studio, "edit_main", None) or []) + list(
         getattr(studio, "edit_sidebar", None) or []
@@ -1356,7 +1377,7 @@ class AdminSerializer:
                 "sidebar": self.serialize_edit_sidebar(request),
                 # The create form's read-only fields; saved objects
                 # carry their own.
-                "readonly_fields": list(admin_class.get_readonly_fields(request)),
+                "readonly_fields": get_studio_readonly_fields(admin_class, request),
                 "prepopulated_fields": serialize_prepopulated_fields(
                     admin_class, request
                 ),
