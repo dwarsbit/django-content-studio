@@ -874,3 +874,84 @@ msgstr "Je huidige wachtwoord is niet juist."
 #: profile.py
 msgid "Enter a new password."
 msgstr "Vul een nieuw wachtwoord in."
+
+#: users.py
+msgid "Enter a password."
+msgstr "Vul een wachtwoord in."
+
+#: users.py
+msgid "This password is too long."
+msgstr "Dit wachtwoord is te lang."
+
+#: users.py
+msgid "Enter an email address: the invite is sent to it."
+msgstr "Vul een e-mailadres in: de uitnodiging wordt daarheen gestuurd."
+
+#: users.py
+msgid "No invite was sent: only active staff users can log in. Send one from the user's page once they can."
+msgstr "Er is geen uitnodiging gestuurd: alleen actieve stafgebruikers kunnen inloggen. Stuur er een vanaf de pagina van de gebruiker zodra dat kan."
+
+#: users.py
+#, python-format
+msgid "Invite sent to %(email)s."
+msgstr "Uitnodiging gestuurd naar %(email)s."
+
+#: password_links.py
+#, python-format
+msgid "You are invited to %(site)s"
+msgstr "Je bent uitgenodigd voor %(site)s"
+
+#: password_links.py
+#, python-format
+msgid "Set a new password for %(site)s"
+msgstr "Stel een nieuw wachtwoord in voor %(site)s"
+
+#: password_links.py
+msgid "This link is no longer valid."
+msgstr "Deze link is niet meer geldig."
+
+#: templates/content_studio/users/invite.txt
+#, python-format
+msgid ""
+"Hi %(name)s,\n"
+"\n"
+"%(sender)s invited you to %(site_title)s. Set your password to log in:"
+msgstr ""
+"Hoi %(name)s,\n"
+"\n"
+"%(sender)s heeft je uitgenodigd voor %(site_title)s. Stel je wachtwoord in om in te loggen:"
+
+#: templates/content_studio/users/invite.txt
+#, python-format
+msgid "Your username is %(username)s. The link works once and expires in %(expires)s. If it has expired, ask %(sender)s for a new one."
+msgstr "Je gebruikersnaam is %(username)s. De link werkt één keer en verloopt over %(expires)s. Is hij verlopen, vraag %(sender)s dan om een nieuwe."
+
+#: templates/content_studio/users/password_link.txt
+#, python-format
+msgid ""
+"Hi %(name)s,\n"
+"\n"
+"%(sender)s sent you a link to set a new password for %(site_title)s:"
+msgstr ""
+"Hoi %(name)s,\n"
+"\n"
+"%(sender)s heeft je een link gestuurd om een nieuw wachtwoord in te stellen voor %(site_title)s:"
+
+#: templates/content_studio/users/password_link.txt
+#, python-format
+msgid "Your username is %(username)s. The link works once and expires in %(expires)s. If you did not expect this email, contact your administrator."
+msgstr "Je gebruikersnaam is %(username)s. De link werkt één keer en verloopt over %(expires)s. Verwachtte je deze e-mail niet, neem dan contact op met je beheerder."
+
+#: password_links.py
+#, python-format
+msgid "%(count)d day"
+msgid_plural "%(count)d days"
+msgstr[0] "%(count)d dag"
+msgstr[1] "%(count)d dagen"
+
+#: password_links.py
+#, python-format
+msgid "%(count)d hour"
+msgid_plural "%(count)d hours"
+msgstr[0] "%(count)d uur"
+msgstr[1] "%(count)d uur"

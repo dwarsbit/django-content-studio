@@ -777,6 +777,29 @@
       "mismatch": "De wachtwoorden komen niet overeen.",
       "submit": "Wachtwoord instellen",
       "done": "Wachtwoord ingesteld voor {{name}}"
+    },
+    "send_link": {
+      "menu": "Wachtwoordlink sturen",
+      "invite_menu": "Uitnodiging opnieuw sturen",
+      "title": "Wachtwoordlink sturen?",
+      "invite_title": "Uitnodiging opnieuw sturen?",
+      "description": "{{name}} krijgt een e-mail met een link om een nieuw wachtwoord in te stellen. Het huidige wachtwoord blijft werken tot dan.",
+      "invite_description": "{{name}} krijgt een nieuwe uitnodiging met een link om een wachtwoord in te stellen.",
+      "send": "Sturen",
+      "sent": "Wachtwoordlink gestuurd naar {{email}}",
+      "invite_sent": "Uitnodiging gestuurd naar {{email}}"
     }
+  },
+  "set_password": {
+    "title": "Nieuw wachtwoord instellen",
+    "welcome": "Welkom, {{name}}",
+    "subtitle": "Kies een wachtwoord om in te loggen als {{username}}.",
+    "new": "Nieuw wachtwoord",
+    "confirm": "Bevestig nieuw wachtwoord",
+    "mismatch": "De wachtwoorden komen niet overeen.",
+    "submit": "Wachtwoord instellen en inloggen",
+    "done": "Wachtwoord ingesteld. Welkom!",
+    "invalid": "Deze link is niet meer geldig. Hij werkt één keer en verloopt na een paar dagen. Vraag een beheerder om een nieuwe.",
+    "to_login": "Naar de inlogpagina"
   }
 }

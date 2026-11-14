@@ -55,6 +55,7 @@ content_studio/
 ├── presence.py          # Presence: who has an object open, kept in Django's cache (PRESENCE, PRESENCE_CACHE)
 ├── profile.py           # The profile page of the signed-in user: profile_fields (get_profile_fields), the activity overview and recent content from LogEntry, the password change (api/profile)
 ├── users.py             # Managing other users: Set password (api/content/<user model>/<id>/password) and the guard on is_superuser and superusers' email for staff who are not superusers
+├── password_links.py    # Invite and password links: Django's default_token_generator, the emails (a Django task, templates in templates/content_studio/users) and the public set-password endpoints (api/set-password)
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions
 ├── dashboard/

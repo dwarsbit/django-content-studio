@@ -46,6 +46,7 @@ from .serializers import RelatedItemSerializer
 from .snapshots import get_tracked_field_names, take_snapshot
 from .settings import cs_settings
 from .uniqueness import find_duplicate, get_unique_sets
+from .users import check_invite_email, invite_new_user, is_user_model
 from .signals import (
     CREATED,
     DELETED,
@@ -120,6 +121,10 @@ class BaseModelViewSet(ModelViewSet):
         if hasattr(model, cs_settings.CREATED_BY_ATTR):
             attrs[cs_settings.CREATED_BY_ATTR] = self.request.user
 
+        # A new user is invited to set their password: the invite needs
+        # an email address.
+        check_invite_email(model, serializer.validated_data)
+
         instance = self._save(serializer, **attrs)
         source = getattr(self, "_duplicate_source", None)
         # The history app keeps the created object's values as its first
@@ -142,8 +147,12 @@ class BaseModelViewSet(ModelViewSet):
             )
             self._copy_inline_rows(source, instance)
 
-        self._created_result = self._admin_model.get_created_result(
-            self.request, instance
+        invited = (
+            invite_new_user(instance, self.request) if is_user_model(model) else None
+        )
+
+        self._created_result = (
+            self._admin_model.get_created_result(self.request, instance) or invited
         )
 
     def create(self, request, *args, **kwargs):
@@ -415,7 +424,7 @@ class BaseModelViewSet(ModelViewSet):
         set by a superuser, and the own password is changed on the
         profile page. Setting it signs the user out everywhere.
         """
-        from .users import can_set_password, is_user_model, set_password
+        from .users import can_set_password, set_password
 
         if not is_user_model(self._model):
             raise NotFound()
@@ -434,6 +443,33 @@ class BaseModelViewSet(ModelViewSet):
         record_change(request, instance, UPDATED, "Set password.")
 
         return Response(status=204)
+
+    @action(methods=["post"], detail=True, url_path="password-link")
+    def password_link(self, request, id):
+        """
+        Email a user a link to set their password: an invite when they
+        never logged in, else a reset. Gated like setting the password.
+        """
+        from .password_links import INVITE, get_email, send_link
+        from .users import can_send_password_link
+
+        if not is_user_model(self._model):
+            raise NotFound()
+
+        instance = self.get_object()
+
+        if not can_send_password_link(self._admin_model, request, instance):
+            raise PermissionDenied()
+
+        kind = send_link(instance, request)
+        record_change(
+            request,
+            instance,
+            UPDATED,
+            "Sent an invite." if kind == INVITE else "Sent a password link.",
+        )
+
+        return Response({"kind": kind, "email": get_email(instance)})
 
     @action(methods=["delete"], detail=True, url_path="destroy")
     def destroy_permanently(self, request, id):

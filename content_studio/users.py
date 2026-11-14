@@ -103,9 +103,88 @@ def can_set_password(studio, request: HttpRequest, obj) -> bool:
     return bool(studio.has_change_permission(request, obj))
 
 
+def can_send_password_link(studio, request: HttpRequest, obj) -> bool:
+    """
+    Whether the request may email obj a link to set their password: as
+    for setting it, and obj has an email address and may log in (an
+    active staff user), so the link works.
+    """
+    from .password_links import can_log_in, get_email
+
+    return (
+        can_set_password(studio, request, obj)
+        and bool(get_email(obj))
+        and can_log_in(obj)
+    )
+
+
 def user_info(studio, request: HttpRequest, obj) -> dict:
     """What the edit page of a user offers besides the fields."""
-    return {"can_set_password": can_set_password(studio, request, obj)}
+    from .password_links import is_invite
+
+    return {
+        "can_set_password": can_set_password(studio, request, obj),
+        "can_send_password_link": can_send_password_link(studio, request, obj),
+        # Whether the user never logged in: the link is then an invite.
+        "invited": is_invite(obj),
+    }
+
+
+def sends_invites(model=None) -> bool:
+    """
+    Whether creating a user sends an invite: the site logs in with
+    passwords and the user model has an email field.
+    """
+    model = model or get_user_model()
+
+    return uses_password_login() and _has_field(model, model.get_email_field_name())
+
+
+# The create form's defaults on the user model: only staff users log in,
+# so a new user is staff unless unchecked.
+CREATE_DEFAULTS = {"is_staff": True}
+
+
+def check_invite_email(model, validated_data: dict) -> None:
+    """
+    A new user needs an email address when invites are sent: the invite
+    goes to it. Raises the serializer's ValidationError otherwise.
+    """
+    from rest_framework.exceptions import ValidationError
+
+    if not is_user_model(model) or not sends_invites(model):
+        return
+
+    email_field = model.get_email_field_name()
+
+    if not validated_data.get(email_field):
+        raise ValidationError(
+            {email_field: [_("Enter an email address: the invite is sent to it.")]}
+        )
+
+
+def invite_new_user(obj, request: HttpRequest) -> Optional[str]:
+    """
+    Prepare a user just created in the admin: no password until they set
+    one, and an invite to set it. Returns the message the editor sees.
+    """
+    from .password_links import can_log_in, get_email, send_link, INVITE
+
+    obj.set_unusable_password()
+    obj.save(update_fields=["password"])
+
+    if not sends_invites(type(obj)) or not get_email(obj):
+        return None
+
+    if not can_log_in(obj):
+        return _(
+            "No invite was sent: only active staff users can log in. "
+            "Send one from the user's page once they can."
+        )
+
+    send_link(obj, request, INVITE)
+
+    return _("Invite sent to %(email)s.") % {"email": get_email(obj)}
 
 
 def set_password(obj, password: str) -> list[str]:

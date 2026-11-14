@@ -1880,6 +1880,7 @@ RESERVED_PAGE_PATHS = {
     "login",
     "forgot-password",
     "reset-password",
+    "set-password",
 }
 
 

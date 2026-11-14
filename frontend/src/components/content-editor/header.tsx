@@ -91,6 +91,20 @@ export function Header({
   const showSetPassword =
     !dialog && !isCreate && !!resource?.__user__?.can_set_password;
   const [setPasswordOpen, setSetPasswordOpen] = useState(false);
+  // Users: an admin emails a link to set the password (an invite when
+  // the user never logged in).
+  const showSendLink =
+    !dialog && !isCreate && !!resource?.__user__?.can_send_password_link;
+  const invited = !!resource?.__user__?.invited;
+  const { mutateAsync: sendLink } = useMutation({
+    async mutationFn(id: string) {
+      const { data } = await http.post<{ email: string }>(
+        `${resourcePath}/${id}/password-link`,
+      );
+      return data;
+    },
+  });
+  const showUserActions = showSetPassword || showSendLink;
   const { isDirty } = form.formState;
   const editedAt =
     resource && info
@@ -208,7 +222,7 @@ export function Header({
                 {!isCreate &&
                   (showDelete ||
                     showDuplicate ||
-                    showSetPassword ||
+                    showUserActions ||
                     canFollow) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -248,7 +262,53 @@ export function Header({
                             {t("users.set_password.menu")}
                           </DropdownMenuItem>
                         )}
-                        {(showDuplicate || showSetPassword) && showDelete && (
+                        {showSendLink && (
+                          <DropdownMenuItem
+                            onSelect={async () => {
+                              const confirmed = await confirm({
+                                title: t(
+                                  invited
+                                    ? "users.send_link.invite_title"
+                                    : "users.send_link.title",
+                                ),
+                                description: t(
+                                  invited
+                                    ? "users.send_link.invite_description"
+                                    : "users.send_link.description",
+                                  { name: resource.__str__ },
+                                ),
+                                okText: t("users.send_link.send"),
+                              });
+
+                              if (!confirmed) {
+                                return;
+                              }
+
+                              try {
+                                const { email } = await sendLink(
+                                  String(resource.id),
+                                );
+                                toast.success(
+                                  t(
+                                    invited
+                                      ? "users.send_link.invite_sent"
+                                      : "users.send_link.sent",
+                                    { email },
+                                  ),
+                                );
+                              } catch (e: unknown) {
+                                toast.error(getErrorMessage(e));
+                              }
+                            }}
+                          >
+                            {t(
+                              invited
+                                ? "users.send_link.invite_menu"
+                                : "users.send_link.menu",
+                            )}
+                          </DropdownMenuItem>
+                        )}
+                        {(showDuplicate || showUserActions) && showDelete && (
                           <DropdownMenuSeparator />
                         )}
                         {showDelete && (
