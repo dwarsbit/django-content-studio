@@ -64,6 +64,8 @@ content_studio/
 │   ├── scheduled_tasks.py
 │   └── tasks.py         # Task dashboard: TaskAdapter, its widgets and the TaskDashboard page
 ├── analytics/           # Analytics: AnalyticsProvider interface (providers.py), UmamiProvider, AnalyticsExtension/AnalyticsPage/links, the Analytics component, dashboard widgets, report building and the api/analytics endpoint
+├── snapshots.py         # Snapshots of an object's values around an admin save: the changed fields in the activity log (LogEntry change_message) and the history app's versions
+├── history/             # Optional history app: Version (an object's values after a change, kept with its LogEntry), save_version/trim_versions (HISTORY_MAX_VERSIONS), the prune command; the activity/<entry_id> endpoint and the frontend's VersionDialog show and restore versions
 ├── notifications/       # Optional notifications app: models, the content_changed fan-out, register_event/notify, read filter, prune command, the admin endpoints (viewsets.py, with the page's filters and search), site defaults (defaults.py), the dashboard widget, the email digest (digest.py, templates in templates/content_studio/notifications)
 ├── media_library/       # Optional built-in media library app (models, migrations)
 │   ├── sizes.py         # Image sizes (IMAGE_SIZES): made by tasks.py, recorded in metadata["sizes"], get_image_sizes

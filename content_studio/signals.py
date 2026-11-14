@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional
 
+from django.apps import apps
 from django.contrib.admin.models import ADDITION, CHANGE, DELETION, LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, router, transaction
@@ -90,7 +91,15 @@ def _send(changes: list[Change], user):
             )
 
 
-def record_change(request, instance, action: str, message: str = "") -> LogEntry:
+def record_change(
+    request,
+    instance,
+    action: str,
+    message: str = "",
+    *,
+    before: Optional[dict] = None,
+    after: Optional[dict] = None,
+) -> LogEntry:
     """
     Record a change made in the admin: log it in the activity log and
     add it to the request's batch once its transaction commits. Outside
@@ -98,6 +107,11 @@ def record_change(request, instance, action: str, message: str = "") -> LogEntry
     for each object they change; action is one of "created",
     "updated", "deleted", "restored" or "reordered", and a deleted
     object is recorded before it is deleted (deleting clears its pk).
+
+    before and after are snapshots of the object's values around the
+    change (see snapshots.py): an update without a message is logged
+    with the fields it changed, and the history app keeps the
+    snapshots as a version of the object.
     """
     if action not in ACTION_FLAGS:
         raise ValueError(
@@ -105,6 +119,16 @@ def record_change(request, instance, action: str, message: str = "") -> LogEntry
         )
 
     model = type(instance)
+    changed_fields = []
+
+    if action == UPDATED and before is not None and after is not None:
+        from .snapshots import get_change_message, get_changed_fields
+
+        changed_fields = get_changed_fields(before, after)
+
+        if not message:
+            message = get_change_message(model, changed_fields)
+
     entry = LogEntry.objects.create(
         user=request.user,
         action_flag=ACTION_FLAGS[action],
@@ -113,6 +137,11 @@ def record_change(request, instance, action: str, message: str = "") -> LogEntry
         object_repr=str(instance)[:200],
         change_message=message,
     )
+
+    if after is not None and apps.is_installed("content_studio.history"):
+        from .history.recording import save_version
+
+        save_version(entry, instance, changed_fields, before, after)
 
     tenant_field_name = get_tenant_field_name(model)
     change = Change(

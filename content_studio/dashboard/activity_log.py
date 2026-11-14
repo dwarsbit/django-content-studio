@@ -15,6 +15,9 @@ __all__ = [
 
 class LogEntrySerializer(ContentSerializer):
     object_model = serializers.SerializerMethodField()
+    # The change in words, such as "Changed Title and Body.", in the
+    # request's language; empty when nothing was recorded.
+    message = serializers.SerializerMethodField()
 
     class Meta:
         model = LogEntry
@@ -26,10 +29,19 @@ class LogEntrySerializer(ContentSerializer):
             "object_id",
             "object_repr",
             "object_model",
+            "message",
         ]
 
     def get_object_model(self, obj):
         return f"{obj.content_type.app_label}.{obj.content_type.model}"
+
+    def get_message(self, obj):
+        # An empty list of changes reads "No fields changed." in Django;
+        # it says nothing an entry does not already say.
+        if obj.change_message.strip() in ("", "[]"):
+            return ""
+
+        return obj.get_change_message()
 
 
 class ActivityLogWidget(DashboardWidget):

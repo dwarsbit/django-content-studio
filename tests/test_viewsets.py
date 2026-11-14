@@ -32,6 +32,13 @@ class StubSerializer:
             setattr(self.instance, name, value)
         return self.instance
 
+    def to_representation(self, instance):
+        return {"name": getattr(instance, "name", None)}
+
+    @property
+    def data(self):
+        return self.to_representation(self.instance)
+
 
 def make_viewset():
     class ViewSet(BaseModelViewSet):
