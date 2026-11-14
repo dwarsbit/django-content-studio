@@ -162,3 +162,24 @@ def test_a_singleton_is_validated_before_its_manager_creates_it(client, monkeypa
 
     assert response.status_code == 201, response.content
     assert SiteSettings.objects.get().tagline == "A tagline"
+
+
+def test_save_model_is_not_called_when_validation_fails(client, monkeypatch):
+    calls = []
+
+    def save_model(self, request, obj, data, change):
+        calls.append(obj.title)
+        obj.save()
+
+    monkeypatch.setattr(ArticleAdmin, "save_model", save_model)
+    rule(monkeypatch, Article, no_published_without_date)
+
+    response = client.post(URL, {"title": "A", "status": "published"}, format="json")
+
+    assert response.status_code == 400
+    assert calls == []
+
+    response = client.post(URL, {"title": "B"}, format="json")
+
+    assert response.status_code == 201, response.content
+    assert calls == ["B"]

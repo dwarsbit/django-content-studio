@@ -4,6 +4,17 @@
 
 ### Features
 
+- **Save hooks.** Studios and inline studios have `save_model(request,
+  obj, data, change)`, `save_related(request, obj, data, change)`,
+  `delete_model(request, obj)` and `delete_queryset(request, queryset)`,
+  like the classic Django admin's. The admin saves and deletes through
+  them: the edit page, inline objects, the objects a duplicate copies, the
+  Delete bulk action and permanent deletes from the trash. `data` holds the
+  written values by field name, in place of the classic admin's form.
+  Raising Django's `ValidationError` in one of them refuses the save or
+  delete and shows the message to the editor, on the field when it is
+  keyed by field.
+
 - **Model validation on save.** Saving an object now runs the model's
   `clean()`, its unique checks and its `Meta.constraints`, as the classic
   Django admin does. Until now these rules were skipped, so an object that
@@ -13,6 +24,12 @@
   editor cannot change, shows above the form. Changes that `clean()` makes
   to the object are saved with it. Fields that are not on the form, are
   read-only or are hidden by their condition are left out of the checks.
+
+### Fixes
+
+- **Refused deletes on the edit page.** When a delete was refused, such
+  as by objects that refer to the object with `on_delete=PROTECT`,
+  Delete on the edit page did nothing. It now shows why.
 
 ## 1.13.3 (2026-11-11)
 

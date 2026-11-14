@@ -4,7 +4,7 @@ from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
-from django.db.models import Model
+from django.db.models import Model, QuerySet
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 from rest_framework.request import HttpRequest
@@ -176,6 +176,47 @@ class BaseStudio(Generic[T]):
         in a dialog with a copy button, such as a generated secret.
         """
         return None
+
+    def save_model(
+        self, request: HttpRequest, obj: T, data: dict[str, Any], change: bool
+    ) -> None:
+        """
+        Save obj, created (change is False) or changed in the admin,
+        like the classic admin's save_model. obj carries the edited
+        values; data maps the fields that were written to their values,
+        many-to-many fields included, which save_related sets once obj
+        is saved. Raise ValidationError to refuse the save: nothing is
+        stored and the editor sees the message.
+        """
+        obj.save()
+
+    def save_related(
+        self, request: HttpRequest, obj: T, data: dict[str, Any], change: bool
+    ) -> None:
+        """
+        Set the many-to-many fields of obj from data, after save_model
+        saved obj. Override to act once the relations are in place.
+        """
+        for field in obj._meta.many_to_many:
+            if field.name in data:
+                getattr(obj, field.name).set(data[field.name])
+
+    def delete_model(self, request: HttpRequest, obj: T) -> None:
+        """
+        Delete obj, like the classic admin's delete_model. Called for
+        the delete on the edit page and for permanent deletes from the
+        trash; the bulk delete calls delete_queryset. Raise
+        ValidationError to refuse the delete.
+        """
+        obj.delete()
+
+    def delete_queryset(self, request: HttpRequest, queryset: QuerySet) -> None:
+        """
+        Delete the objects of the built-in bulk delete, like the classic
+        admin's delete_queryset. Raise ValidationError to refuse the
+        delete.
+        """
+        queryset.delete()
 
     def get_component(self, component_id) -> Optional[Component]:
         """

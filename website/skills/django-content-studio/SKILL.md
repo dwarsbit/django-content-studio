@@ -121,6 +121,15 @@ Hooks, as in the classic Django admin: `has_view_permission`,
 (returns a `RelationDisplay`), `get_duplicate_initial(request, obj)` and
 `get_created_result(request, obj)`.
 
+Save hooks, as in the classic Django admin (also on inline studios):
+`save_model(request, obj, data, change)` (default `obj.save()`),
+`save_related(request, obj, data, change)` (sets the many-to-many fields),
+`delete_model(request, obj)` and `delete_queryset(request, queryset)` (the
+Delete bulk action). `data` maps the written fields to their values; there is
+no form. Call `super()` to keep the default. Raise Django's `ValidationError`
+to refuse: nothing is stored and the editor sees the message. Moving to the
+trash and restoring do not call them.
+
 Icons are Phosphor bold icons everywhere: `"ph-bold ph-<name>"`.
 
 Docs: https://djangocontentstudio.org/docs/registering-models.md and

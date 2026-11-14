@@ -222,11 +222,13 @@ def copy_inline_rows(request, studio, source, target) -> list[models.Model]:
             if hasattr(model, cs_settings.CREATED_BY_ATTR):
                 values[cs_settings.CREATED_BY_ATTR] = request.user
 
-            new = model(**values, **{fk_name: target})
-            new.save()
-
-            for name, value in many.items():
-                getattr(new, name).set(value)
+            # Saved through the inline studio's hooks, like a row
+            # added on the edit page.
+            values[fk_name] = target
+            data = {**values, **many}
+            new = model(**values)
+            inline.save_model(request, new, data, False)
+            inline.save_related(request, new, data, False)
 
             copies.append(new)
 
