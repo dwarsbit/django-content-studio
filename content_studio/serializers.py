@@ -333,6 +333,51 @@ class ContentSerializer(serializers.ModelSerializer):
 
         return instance
 
+    def create(self, validated_data):
+        if self.context.get("studio") is None:
+            return super().create(validated_data)
+
+        serializers.raise_errors_on_nested_writes("create", self, validated_data)
+
+        return self._save_with_studio(None, validated_data)
+
+    def update(self, instance, validated_data):
+        if self.context.get("studio") is None:
+            return super().update(instance, validated_data)
+
+        serializers.raise_errors_on_nested_writes("update", self, validated_data)
+
+        return self._save_with_studio(instance, validated_data)
+
+    def _save_with_studio(self, instance, validated_data):
+        """
+        Save through the studio's hooks, like the classic admin's form
+        save: the values are set on the object, the studio's save_model
+        saves it and save_related sets its many-to-many fields.
+        """
+        studio = self.context["studio"]
+        request = self.context.get("request")
+        model = self.Meta.model
+        many_to_many = {field.name for field in model._meta.many_to_many}
+        values = {
+            name: value
+            for name, value in validated_data.items()
+            if name not in many_to_many
+        }
+        change = instance is not None
+
+        if instance is None:
+            instance = model(**values)
+        else:
+            for name, value in values.items():
+                setattr(instance, name, value)
+
+        data = dict(validated_data)
+        studio.save_model(request, instance, data, change)
+        studio.save_related(request, instance, data, change)
+
+        return instance
+
     def get_field_names(self, declared_fields, info):
         fields = list(super().get_field_names(declared_fields, info))
 

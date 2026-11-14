@@ -261,6 +261,73 @@ class ArticleStudio(ModelStudio):
 System check `content_studio.E021` reports `duplicate_inlines` entries that
 are not in `inlines`, and `content_studio.W014` options that have no effect.
 
+## Saving and deleting
+
+The admin saves and deletes objects through four methods of the studio,
+like the classic Django admin. Override them to run code when an editor
+saves or deletes, such as setting a field the form does not show or
+clearing a cache:
+
+| Method | Called when | Default |
+|--------|-------------|---------|
+| `save_model(request, obj, data, change)` | An editor creates or saves an object | `obj.save()` |
+| `save_related(request, obj, data, change)` | After `save_model`, to set the many-to-many fields | Sets each many-to-many field in `data` |
+| `delete_model(request, obj)` | An editor deletes an object on its edit page | `obj.delete()` |
+| `delete_queryset(request, queryset)` | An editor deletes a selection with the Delete bulk action | `queryset.delete()` |
+
+`obj` carries the values from the form; on a new object, `obj.pk` is not
+set until it is saved. `data` holds the values that were written, by field
+name, including many-to-many fields as lists of objects. `change` is `False`
+for a new object and `True` for an existing one.
+
+```python
+# blog/admin.py
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+from content_studio import register
+from content_studio.admin import ModelStudio
+
+from .models import Article
+
+
+@register(Article)
+class ArticleStudio(ModelStudio):
+    def save_model(self, request, obj, data, change):
+        if not change:
+            obj.author = request.user
+
+        if obj.status == Article.Status.PUBLISHED and obj.published_at is None:
+            obj.published_at = timezone.now()
+
+        super().save_model(request, obj, data, change)
+
+    def delete_model(self, request, obj):
+        if obj.status == Article.Status.PUBLISHED:
+            raise ValidationError("Unpublish the article before deleting it.")
+
+        super().delete_model(request, obj)
+```
+
+To refuse a save or a delete, raise Django's `ValidationError`. Nothing is
+stored and the editor sees the message. A `ValidationError` with a
+dictionary, such as `ValidationError({"title": "This title is reserved."})`,
+shows each message on its field. The save or delete runs in a transaction,
+so changes made by the method before it raises are rolled back too.
+
+An inline studio has the same methods: the objects of an inline are saved
+and deleted one at a time through them. The objects of `duplicate_inlines`
+that a [duplicate](#duplicating-objects) copies are saved through
+`save_model` and `save_related` as well.
+
+With [soft delete](/docs/list-page#soft-delete-and-the-trash), moving
+objects to the trash and restoring them does not call these methods.
+Deleting an object from the trash for good calls `delete_model`. Custom
+[bulk actions](/docs/list-page#bulk-actions) do not call them either.
+
+To react to changes after they are saved, without overriding the save,
+connect to the [`content_changed` signal](/docs/webhooks#react-in-python).
+
 ## Use your own site
 
 The default site, `content_studio.admin.admin_site`, is enough for many

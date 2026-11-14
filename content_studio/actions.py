@@ -14,7 +14,6 @@ from typing import Callable, Optional
 
 from django.core.exceptions import PermissionDenied
 from django.db import router, transaction
-from django.db.models.deletion import Collector
 from django.utils import timezone
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
@@ -128,26 +127,29 @@ class BulkAction:
         return data
 
 
-def delete_action(request, queryset):
+def _delete_action(studio):
     """
-    The built-in delete: it collects related rows and fires deletion
-    signals like the classic admin, and records one change per object.
+    The built-in delete: it records one change per object and deletes
+    the selection through the studio's delete_queryset, which collects
+    related rows and fires deletion signals like the classic admin.
     Returns the number of deleted objects.
     """
-    objects = list(queryset)
-    using = router.db_for_write(queryset.model)
 
-    # Logged before deleting, which clears the objects' pks; the
-    # transaction keeps the log and the deletion together.
-    with transaction.atomic(using=using):
-        for obj in objects:
-            record_change(request, obj, DELETED)
+    def handler(request, queryset):
+        objects = list(queryset)
+        using = router.db_for_write(queryset.model)
 
-        collector = Collector(using=using)
-        collector.collect(objects)
-        collector.delete()
+        # Logged before deleting, which clears the objects' pks; the
+        # transaction keeps the log and the deletion together.
+        with transaction.atomic(using=using):
+            for obj in objects:
+                record_change(request, obj, DELETED)
 
-    return len(objects)
+            studio.delete_queryset(request, queryset)
+
+        return len(objects)
+
+    return handler
 
 
 _DELETE_META = BulkActionMeta(
@@ -282,7 +284,9 @@ def get_bulk_actions(studio, request=None) -> list[BulkAction]:
                     meta=_SOFT_DELETE_META,
                 )
             else:
-                action = BulkAction(id=name, handler=delete_action, meta=_DELETE_META)
+                action = BulkAction(
+                    id=name, handler=_delete_action(studio), meta=_DELETE_META
+                )
         else:
             handler = declared.get(name)
 

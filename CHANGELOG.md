@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.14.0 (unreleased)
+
+- **Save hooks.** Studios and inline studios have `save_model(request,
+  obj, data, change)`, `save_related(request, obj, data, change)`,
+  `delete_model(request, obj)` and `delete_queryset(request, queryset)`,
+  like the classic Django admin's. The admin saves and deletes through
+  them: the edit page, inline objects, the objects a duplicate copies, the
+  Delete bulk action and permanent deletes from the trash. `data` holds the
+  written values by field name, in place of the classic admin's form.
+  Raising Django's `ValidationError` in one of them refuses the save or
+  delete and shows the message to the editor, on the field when it is
+  keyed by field.
+
+### Fixes
+
+- **Refused deletes on the edit page.** When a delete was refused, such
+  as by objects that refer to the object with `on_delete=PROTECT`,
+  Delete on the edit page did nothing. It now shows why.
+
 ## 1.13.3 (2026-11-11)
 
 ### Fixes
