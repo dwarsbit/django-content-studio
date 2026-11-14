@@ -192,6 +192,13 @@ function EditorForm({
     },
   });
 
+  // The object's own permissions: a studio may refuse changing or
+  // deleting this object while allowing the model. The editor then only
+  // shows it, and offers no Delete.
+  const isReadOnly = readOnly || resource?.__permissions__?.change === false;
+  const mayDelete =
+    (canDelete ?? true) && resource?.__permissions__?.delete !== false;
+
   // A duplicate starts as a create form with the copied values; they
   // count as changes, so leaving without saving asks first.
   // eslint-disable-next-line @tanstack/query/exhaustive-deps -- as above, `initialized` only guards the one-time fill
@@ -288,7 +295,7 @@ function EditorForm({
   const presence = usePresence({
     model,
     id: resource?.id,
-    editing: isDirty && !readOnly,
+    editing: isDirty && !isReadOnly,
     enabled: !dialog && !inlineOf,
   });
 
@@ -383,7 +390,7 @@ function EditorForm({
   return model && initialized ? (
     <Form {...form}>
       <ResourcePathContext value={resourcePath}>
-        <EditorReadOnlyContext value={readOnly}>
+        <EditorReadOnlyContext value={isReadOnly}>
           {/* A duplicate's slugs are copied with a free suffix, not
               made from the copied sources again. */}
           <Prepopulate
@@ -405,8 +412,8 @@ function EditorForm({
               isSaving={isPending}
               dialog={dialog}
               components={headerComponents}
-              readOnly={readOnly}
-              canDelete={canDelete}
+              readOnly={isReadOnly}
+              canDelete={mayDelete}
               presence={presence}
               onDuplicate={
                 canDuplicate && resource?.id != null

@@ -523,7 +523,15 @@ export interface Resource {
   // The fields read-only for this object (get_readonly_fields), on
   // detail responses.
   __readonly_fields__?: string[];
+  // What this user may do with this object (has_change_permission and
+  // has_delete_permission with the object), on detail responses.
+  __permissions__?: ObjectPermissions;
   [key: string]: unknown;
+}
+
+export interface ObjectPermissions {
+  change: boolean;
+  delete: boolean;
 }
 
 export interface FormSetGroup {

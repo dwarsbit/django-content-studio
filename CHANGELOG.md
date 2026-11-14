@@ -31,6 +31,14 @@
   as by objects that refer to the object with `on_delete=PROTECT`,
   Delete on the edit page did nothing. It now shows why.
 
+- **Per-object permissions on the edit page.** The edit page only knew
+  the model's permissions, so an object the studio refuses to change
+  (`has_change_permission(request, obj)`) still opened with Save, and
+  saving failed. The edit page now asks the studio about the object
+  itself: an object the editor may not change opens read-only, without
+  Save, and Delete is only offered when `has_delete_permission(request,
+  obj)` allows it. Inline rows follow the inline's methods the same way.
+
 ## 1.13.3 (2026-11-11)
 
 ### Fixes
