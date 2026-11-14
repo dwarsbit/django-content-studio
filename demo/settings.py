@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "content_studio",
     "content_studio.contrib.password_reset",
     "content_studio.notifications",
+    "content_studio.history",
     "demo.blog",
 ]
 

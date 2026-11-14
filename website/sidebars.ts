@@ -20,6 +20,7 @@ const sidebars: SidebarsConfig = {
     "multi-tenancy",
     "webhooks",
     "notifications",
+    "history",
     "presence",
     "command-palette",
     "deployment",

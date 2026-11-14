@@ -1,0 +1,90 @@
+# 🕓 History and restore
+
+History shows editors what each change to an object did, field by field, and
+lets them restore an earlier version. It builds on the activity log every
+admin already keeps, so it works with any registered model; nothing is added
+to your models.
+
+<Screenshot name="history" alt="A version of an article: the changed title and body as a word diff, with Restore this version" />
+
+## Changed fields
+
+Every save in the admin logs which fields it changed, like the classic Django
+admin does. The [`ActivityLog`](edit-page.mdx#object-history) component shows
+them under each entry, such as "Changed Title and Body.", and so does the
+classic admin's own history page. This needs no setup.
+
+## Set up versions
+
+Versions are an optional app. With it, every create and save in the admin
+keeps the object's values, so an editor can see exactly what a change did and
+bring an earlier version back.
+
+1. Add the history app to your project:
+
+   ```python
+   # mysite/settings.py
+   INSTALLED_APPS = [
+       # ...
+       "content_studio",
+       "content_studio.history",
+   ]
+   ```
+
+2. Run `manage.py migrate` to create its table.
+3. Put an `ActivityLog` on the edit page of the models whose history editors
+   should see; see [Object history](edit-page.mdx#object-history).
+
+## What editors see
+
+- **The Activity card** names the fields each change touched. An entry with a
+  version opens it.
+- **A version** shows each field the change touched: text, rich text and
+  other text fields as a word diff, other fields as their value before and
+  after. The version of a new object shows the values it was created with.
+  Only the fields the editor can see on the object are shown.
+- **Restore this version** puts the version's values in the form as unsaved
+  changes. The editor reviews them, changes more if they like, and saves.
+  Saving restores them like any other edit: the model's validation, your
+  studio's save hooks and its permissions apply, and the save is logged as a
+  change of its own. Restore is not offered when the editor may not change
+  the object.
+
+## What a version holds
+
+A version holds the fields the edit page has: the model's editable fields and
+many-to-many fields, as the admin sent them to the editor. It leaves out the
+primary key, fields the model sets itself (`auto_now`, `editable=False`), the
+editor and creator stamps, the tenant and the soft delete field, and the
+fields a studio excludes.
+
+Some values are shown but not restored:
+
+- **Read-only fields**, from `readonly_fields` or `get_readonly_fields`.
+- **Files and images**: the admin never takes a file path from the editor, so
+  an old file cannot come back this way. Upload it again instead.
+- **Secrets** (fields with a `PasswordWidget`): a version only records whether
+  one was set, never its value.
+
+A related object or media item that was deleted since cannot be restored
+either: saving then reports the field, as it would for any other edit.
+
+Each object keeps its own versions. Inline rows are saved on their own, so
+they get versions of their own; restoring an object leaves its inline rows as
+they are. Bulk actions, reordering, moving to the trash and restoring from
+the trash are logged without a version.
+
+## How many versions are kept
+
+Each object keeps its latest 50 versions; older ones are removed when the
+object is saved. Set [`HISTORY_MAX_VERSIONS`](settings.mdx#history_max_versions)
+to keep more or fewer, or `None` to keep every version. The activity log
+itself keeps every entry; only the versions are removed.
+
+The prune command removes the versions of objects that no longer exist, and
+applies `HISTORY_MAX_VERSIONS` to every object, which helps after you lower
+it. Run it from cron, for example once a night:
+
+```text
+0 3 * * * /srv/mysite/venv/bin/python /srv/mysite/manage.py content_studio_prune_history
+```

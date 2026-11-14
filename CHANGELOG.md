@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.15.0 (unreleased)
+
+### Features
+
+- **Changed fields in the activity log.** Every save in the admin now logs
+  which fields it changed, like the classic Django admin. The `ActivityLog`
+  component shows them under each entry ("Changed Title and Body."), and
+  so does the classic admin's history page.
+
+- **History with restore.** The new optional app `content_studio.history`
+  keeps a version of an object on every create and save in the admin. An
+  entry on the Activity card opens its version: each field the change
+  touched, text as a word diff and other values before and after. **Restore
+  this version** puts the version's values in the form as unsaved changes,
+  so the editor reviews them and saves, with validation, save hooks and
+  permissions applying as usual. Files, read-only fields and secrets are
+  not restored. Each object keeps its latest `HISTORY_MAX_VERSIONS`
+  versions (default 50, `None` keeps all), and the
+  `content_studio_prune_history` command removes the versions of deleted
+  objects. Add the app to `INSTALLED_APPS` and run `migrate`.
+
 ## 1.14.0 (2026-11-14)
 
 ### Features

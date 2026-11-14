@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "content_studio.media_library",
     "content_studio.webhooks",
     "content_studio.notifications",
+    "content_studio.history",
     "tests.testapp",
 ]
 

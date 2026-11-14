@@ -317,6 +317,15 @@ links in the emails. Default: `False`. See
 The admin's absolute URL, like `"https://example.com/admin/"`, for links in
 emails, which are sent outside a request. Default: `None`.
 
+## History
+
+### HISTORY_MAX_VERSIONS {#history_max_versions}
+
+How many versions the history app (`content_studio.history`) keeps per
+object. Saving an object removes its older versions, and
+`content_studio_prune_history` applies the limit to every object. Default:
+`50`. `None` keeps every version. See [History and restore](history.mdx).
+
 ## Password reset
 
 ### PASSWORD_RESET_EXPIRATION_TIME {#password_reset_expiration_time}
