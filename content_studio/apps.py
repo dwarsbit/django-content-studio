@@ -152,6 +152,7 @@ class DjangoContentStudioConfig(AppConfig):
             get_hidden_field_names,
             get_is_singleton,
             get_readonly_field_names,
+            get_studio_readonly_fields,
             get_table_display_columns,
             get_write_only_field_names,
             is_computed_column,
@@ -401,10 +402,8 @@ class DjangoContentStudioConfig(AppConfig):
                                 return None
 
                         def get_readonly_field_list(self, obj):
-                            return list(
-                                admin_model.get_readonly_fields(
-                                    self.context.get("request"), obj
-                                )
+                            return get_studio_readonly_fields(
+                                admin_model, self.context.get("request"), obj
                             )
 
                         def get_object_permissions(self, obj):
@@ -418,6 +417,22 @@ class DjangoContentStudioConfig(AppConfig):
                                     admin_model.has_delete_permission(request, obj)
                                 ),
                             }
+
+                    # Users carry what their edit page offers besides
+                    # the fields (setting the password).
+                    if model is user_model:
+
+                        class DetailSerializer(DetailSerializer):
+                            __user__ = serializers.SerializerMethodField(
+                                method_name="get_user_info"
+                            )
+
+                            def get_user_info(self, obj):
+                                from .users import user_info
+
+                                return user_info(
+                                    admin_model, self.context.get("request"), obj
+                                )
 
                     return DetailSerializer
 

@@ -407,6 +407,34 @@ class BaseModelViewSet(ModelViewSet):
 
         return Response({"id": instance.pk, "__str__": str(instance)})
 
+    @action(methods=["post"], detail=True, url_path="password")
+    def password(self, request, id):
+        """
+        Set a user's password, on the user model's studio only. Gated by
+        change permission on the user; a superuser's password is only
+        set by a superuser, and the own password is changed on the
+        profile page. Setting it signs the user out everywhere.
+        """
+        from .users import can_set_password, is_user_model, set_password
+
+        if not is_user_model(self._model):
+            raise NotFound()
+
+        instance = self.get_object()
+
+        if not can_set_password(self._admin_model, request, instance):
+            raise PermissionDenied()
+
+        password = request.data.get("password")
+        errors = set_password(instance, password if isinstance(password, str) else "")
+
+        if errors:
+            raise ValidationError({"password": errors})
+
+        record_change(request, instance, UPDATED, "Set password.")
+
+        return Response(status=204)
+
     @action(methods=["delete"], detail=True, url_path="destroy")
     def destroy_permanently(self, request, id):
         """

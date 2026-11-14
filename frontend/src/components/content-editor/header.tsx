@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { PiArrowLeftBold, PiDotsThreeBold } from "react-icons/pi";
@@ -34,6 +35,7 @@ import type {
 
 import { Conditional } from "./conditional";
 import { ComponentRenderer } from "./form-field";
+import { SetPasswordDialog } from "./set-password-dialog";
 
 export function Header({
   model,
@@ -85,6 +87,10 @@ export function Header({
     !!model?.admin.notifications && !dialog && !isCreate && !!resource;
   const showDuplicate = !isSingleton && !!onDuplicate;
   const showDelete = !isSingleton && canDelete;
+  // Users: an admin sets another user's password.
+  const showSetPassword =
+    !dialog && !isCreate && !!resource?.__user__?.can_set_password;
+  const [setPasswordOpen, setSetPasswordOpen] = useState(false);
   const { isDirty } = form.formState;
   const editedAt =
     resource && info
@@ -199,75 +205,91 @@ export function Header({
                     <ComponentRenderer formField={component} model={model} />
                   </Conditional>
                 ))}
-                {!isCreate && (showDelete || showDuplicate || canFollow) && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={t("editor.more_actions")}
-                        // Only Follow inside: the header shows it wide.
-                        className={cn(
-                          !showDelete && !showDuplicate && "lg:hidden",
-                        )}
-                      >
-                        <PiDotsThreeBold />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {canFollow && (
-                        <FollowMenuItem
-                          model={model}
-                          id={resource.id}
-                          name={resource.__str__}
-                          className="lg:hidden"
-                        />
-                      )}
-                      {showDuplicate && (
-                        <DropdownMenuItem onSelect={onDuplicate!}>
-                          {t("editor.duplicate")}
-                        </DropdownMenuItem>
-                      )}
-                      {showDuplicate && showDelete && <DropdownMenuSeparator />}
-                      {showDelete && (
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onSelect={async () => {
-                            const confirmed = await confirm({
-                              title: t("common.delete_confirm_title"),
-                              // With soft delete the object lands in the
-                              // trash and can be restored, which the
-                              // regular message denies.
-                              description: t(
-                                model.admin.list.trash
-                                  ? "common.delete_to_trash_confirm_description"
-                                  : "common.delete_confirm_description",
-                              ),
-                            });
-
-                            if (!confirmed) {
-                              return;
-                            }
-
-                            // A refused delete (objects that refer to it,
-                            // or the studio's delete_model) keeps the page
-                            // open and says why.
-                            try {
-                              await mutateAsync(resource!.id);
-                            } catch (e: unknown) {
-                              toast.error(getErrorMessage(e));
-                              return;
-                            }
-
-                            onDelete?.();
-                          }}
+                {!isCreate &&
+                  (showDelete ||
+                    showDuplicate ||
+                    showSetPassword ||
+                    canFollow) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={t("editor.more_actions")}
+                          // Only Follow inside: the header shows it wide.
+                          className={cn(
+                            !showDelete &&
+                              !showDuplicate &&
+                              !showSetPassword &&
+                              "lg:hidden",
+                          )}
                         >
-                          {t("common.delete")}
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                          <PiDotsThreeBold />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {canFollow && (
+                          <FollowMenuItem
+                            model={model}
+                            id={resource.id}
+                            name={resource.__str__}
+                            className="lg:hidden"
+                          />
+                        )}
+                        {showDuplicate && (
+                          <DropdownMenuItem onSelect={onDuplicate!}>
+                            {t("editor.duplicate")}
+                          </DropdownMenuItem>
+                        )}
+                        {showSetPassword && (
+                          <DropdownMenuItem
+                            onSelect={() => setSetPasswordOpen(true)}
+                          >
+                            {t("users.set_password.menu")}
+                          </DropdownMenuItem>
+                        )}
+                        {(showDuplicate || showSetPassword) && showDelete && (
+                          <DropdownMenuSeparator />
+                        )}
+                        {showDelete && (
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onSelect={async () => {
+                              const confirmed = await confirm({
+                                title: t("common.delete_confirm_title"),
+                                // With soft delete the object lands in the
+                                // trash and can be restored, which the
+                                // regular message denies.
+                                description: t(
+                                  model.admin.list.trash
+                                    ? "common.delete_to_trash_confirm_description"
+                                    : "common.delete_confirm_description",
+                                ),
+                              });
+
+                              if (!confirmed) {
+                                return;
+                              }
+
+                              // A refused delete (objects that refer to it,
+                              // or the studio's delete_model) keeps the page
+                              // open and says why.
+                              try {
+                                await mutateAsync(resource!.id);
+                              } catch (e: unknown) {
+                                toast.error(getErrorMessage(e));
+                                return;
+                              }
+
+                              onDelete?.();
+                            }}
+                          >
+                            {t("common.delete")}
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 {!readOnly && (
                   <Button
                     className="min-w-20"
@@ -291,6 +313,15 @@ export function Header({
             }
           />
         </DialogHeader>
+        {showSetPassword && (
+          <SetPasswordDialog
+            open={setPasswordOpen}
+            onOpenChange={setSetPasswordOpen}
+            resourcePath={resourcePath}
+            id={String(resource.id)}
+            name={resource.__str__}
+          />
+        )}
       </>
     )
   );

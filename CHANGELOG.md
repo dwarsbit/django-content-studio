@@ -21,6 +21,29 @@
   `content_studio_prune_history` command removes the versions of deleted
   objects. Add the app to `INSTALLED_APPS` and run `migrate`.
 
+- **Set a user's password.** Admins set another user's password from the
+  user's edit page, with **Set password** in the more actions menu: typed
+  twice, or generated to copy and pass on. The password must pass
+  `AUTH_PASSWORD_VALIDATORS`, setting it logs the user out on every device,
+  and it is recorded in the activity log. Until now the password was left
+  out of the admin entirely. Offered to editors who may change the user,
+  never for their own account (that stays on the profile page) and only by
+  a superuser for a superuser.
+
+### Fixes
+
+- **Staff can no longer make themselves superuser.** Editors who are not
+  superusers but may change users could set `is_superuser`, on themselves
+  too, or change a superuser's email address and reset its password. For
+  them `is_superuser` is now read-only, and so is a superuser's email
+  address; superusers still change everything. This holds for any studio
+  registered for the user model.
+
+- **No empty Password field on users.** The default user edit page showed
+  a required Password field that was never saved, so a user could only be
+  created after typing a password that was then thrown away. The field is
+  gone; admins set passwords with **Set password**.
+
 ## 1.14.0 (2026-11-14)
 
 ### Features
