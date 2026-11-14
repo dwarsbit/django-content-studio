@@ -78,6 +78,8 @@
     "last_edited": "Last edited",
     "field_validation_error_title": "Some fields are invalid",
     "field_validation_error_description": "Please check the fields and try again.",
+    "non_field_validation_error_title": "The changes could not be saved",
+    "non_field_validation_error_description": "Please check the messages above the form and try again.",
     "unsaved_alert": "There are unsaved changes. Are you sure you want to leave?",
     "empty_state": "No items yet",
     "back_to_list": "Back to the list",

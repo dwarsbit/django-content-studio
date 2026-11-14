@@ -38,8 +38,20 @@ export function getFieldErrors(
   return data as Record<string, ServerErrors>;
 }
 
-// Sets a save's field errors on the form. Returns false when the error
-// is not a field-error map and should be reported as a message instead.
+// The key of the errors that belong to no field, such as those of the
+// model's clean() or of a unique set: DRF's non_field_errors.
+export const NON_FIELD_ERRORS = "non_field_errors";
+
+// A save's non-field errors, for the editor to show above the form.
+export function getNonFieldErrors(error: unknown): string[] {
+  const errors = getFieldErrors(error)?.[NON_FIELD_ERRORS];
+
+  return Array.isArray(errors) ? errors.map(String) : [];
+}
+
+// Sets a save's field errors on the form; non-field errors are left to
+// getNonFieldErrors. Returns false when the error is not a field-error
+// map and should be reported as a message instead.
 export function applyFieldErrors(
   error: unknown,
   setError: (name: string, error: { type: string; message: string }) => void,
@@ -49,7 +61,9 @@ export function applyFieldErrors(
     return false;
   }
   for (const [key, nested] of Object.entries(errors)) {
-    setServerErrors(setError, key, nested);
+    if (key !== NON_FIELD_ERRORS) {
+      setServerErrors(setError, key, nested);
+    }
   }
   return true;
 }

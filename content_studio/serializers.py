@@ -324,12 +324,76 @@ class ContentSerializer(serializers.ModelSerializer):
     def save(self, **kwargs):
         from .uploads import TemporaryUpload, discard_upload
 
+        # What the server sets itself (the tenant, the creator) is
+        # validated with the fields the serializer writes.
+        self._server_set_fields = frozenset(kwargs)
         instance = super().save(**kwargs)
 
         # Attached uploads were copied to the field's own storage.
         for value in (self.validated_data or {}).values():
             if isinstance(value, TemporaryUpload):
                 discard_upload(value)
+
+        return instance
+
+    def create(self, validated_data):
+        serializers.raise_errors_on_nested_writes("create", self, validated_data)
+
+        return self._validate_and_save(None, validated_data)
+
+    def update(self, instance, validated_data):
+        serializers.raise_errors_on_nested_writes("update", self, validated_data)
+
+        return self._validate_and_save(instance, validated_data)
+
+    def _validate_and_save(self, instance, validated_data):
+        """
+        Like the classic admin's form save: the values are set on the
+        object, the model's validation runs (clean(), the unique checks
+        and the constraints), then the studio's save_model saves it and
+        save_related sets its many-to-many fields. Without a studio, the
+        object is saved as ModelSerializer would.
+        """
+        from .validation import full_clean, uses_plain_create
+
+        studio = self.context.get("studio")
+        model = self.Meta.model
+        many_to_many = {field.name for field in model._meta.many_to_many}
+        values = {
+            name: value
+            for name, value in validated_data.items()
+            if name not in many_to_many
+        }
+        change = instance is not None
+
+        if instance is None:
+            instance = model(**values)
+        else:
+            for name, value in values.items():
+                setattr(instance, name, value)
+
+        full_clean(self, instance, getattr(self, "_server_set_fields", ()))
+
+        if studio is not None:
+            request = self.context.get("request")
+            data = dict(validated_data)
+            studio.save_model(request, instance, data, change)
+            studio.save_related(request, instance, data, change)
+
+            return instance
+
+        if change or uses_plain_create(model):
+            instance.save(force_insert=not change)
+        else:
+            # The manager's own create() (a singleton updates the existing
+            # object), with the values as clean() left them.
+            instance = model._default_manager.create(
+                **{name: getattr(instance, name) for name in values}
+            )
+
+        for name, value in validated_data.items():
+            if name in many_to_many:
+                getattr(instance, name).set(value)
 
         return instance
 

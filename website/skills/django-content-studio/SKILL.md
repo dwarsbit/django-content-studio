@@ -121,6 +121,15 @@ Hooks, as in the classic Django admin: `has_view_permission`,
 (returns a `RelationDisplay`), `get_duplicate_initial(request, obj)` and
 `get_created_result(request, obj)`.
 
+Save hooks, as in the classic Django admin (also on inline studios):
+`save_model(request, obj, data, change)` (default `obj.save()`),
+`save_related(request, obj, data, change)` (sets the many-to-many fields),
+`delete_model(request, obj)` and `delete_queryset(request, queryset)` (the
+Delete bulk action). `data` maps the written fields to their values; there is
+no form. Call `super()` to keep the default. Raise Django's `ValidationError`
+to refuse: nothing is stored and the editor sees the message. Moving to the
+trash and restoring do not call them.
+
 Icons are Phosphor bold icons everywhere: `"ph-bold ph-<name>"`.
 
 Docs: https://djangocontentstudio.org/docs/registering-models.md and
@@ -243,7 +252,10 @@ class ArticleStudio(ModelStudio):
 ```
 
 Every required model field must be on the form (`edit_main` or
-`edit_sidebar`): the edit page only saves what it shows. Subclass a text
+`edit_sidebar`): the edit page only saves what it shows. Saving runs
+`Model.clean()`, the unique checks and `Meta.constraints`, like the classic
+admin: an error keyed by a field on the form shows under it, any other
+error above the form. Subclass a text
 component and override `get_text(obj, request)` for text that depends on the
 object; subclass `Link`/`ButtonLink` and override `get_url(obj, request)`.
 Two components of the same class and settings on one studio need an
