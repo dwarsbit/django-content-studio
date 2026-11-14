@@ -845,6 +845,21 @@ export interface ActivityLogEntry {
     id: string;
     __str__: string;
   };
+  // The change in words, such as "Changed Title and Body."; empty when
+  // nothing was recorded.
+  message?: string;
+  // The object's activity only: whether the history app kept a
+  // version with the entry, which then opens it.
+  has_version?: boolean;
+}
+
+// A version the history app kept with an activity log entry: the
+// object's values after the change (data), the fields it changed and
+// their values before it (previous). A created object changed none.
+export interface ActivityVersion extends ActivityLogEntry {
+  fields: string[];
+  previous: Record<string, unknown>;
+  data: Record<string, unknown>;
 }
 
 /** One model's results from the global search endpoint. */

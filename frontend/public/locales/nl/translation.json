@@ -746,6 +746,23 @@
       "changed": "Wachtwoord gewijzigd"
     }
   },
+  "history": {
+    "open": "Bekijk wat er is gewijzigd",
+    "loading": "Versie",
+    "title": "Versie van {{date}}",
+    "created": "Aangemaakt",
+    "no_changes": "Geen wijzigingen in de velden die je kunt zien.",
+    "before": "Voor",
+    "after": "Na",
+    "empty": "Leeg",
+    "secret_set": "Ingesteld",
+    "secret_not_set": "Niet ingesteld",
+    "close": "Sluiten",
+    "restore": "Deze versie herstellen",
+    "restored_one": "{{count}} veld hersteld. Sla op om het te bewaren.",
+    "restored_other": "{{count}} velden hersteld. Sla op om ze te bewaren.",
+    "nothing_to_restore": "Het formulier heeft de waarden van deze versie al."
+  },
   "users": {
     "set_password": {
       "menu": "Wachtwoord instellen",

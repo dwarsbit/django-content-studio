@@ -317,6 +317,10 @@ function EditorForm({
       await queryClient.invalidateQueries({
         queryKey: ["resources", modelLabel],
       });
+      // The Activity card shows the save.
+      await queryClient.invalidateQueries({
+        queryKey: ["activity", modelLabel],
+      });
     },
   });
 

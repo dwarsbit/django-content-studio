@@ -4,6 +4,7 @@ import uuid
 from contextlib import nullcontext
 from functools import reduce
 
+from django.apps import apps
 from django.contrib.admin.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
@@ -42,6 +43,7 @@ from .presence import (
 )
 from .reordering import get_reorder_scope
 from .serializers import RelatedItemSerializer
+from .snapshots import get_tracked_field_names, take_snapshot
 from .settings import cs_settings
 from .uniqueness import find_duplicate, get_unique_sets
 from .signals import (
@@ -120,11 +122,24 @@ class BaseModelViewSet(ModelViewSet):
 
         instance = self._save(serializer, **attrs)
         source = getattr(self, "_duplicate_source", None)
+        # The history app keeps the created object's values as its first
+        # version.
+        after = (
+            self._snapshot(serializer.data)
+            if apps.is_installed("content_studio.history")
+            else None
+        )
 
         if source is None:
-            record_change(self.request, instance, CREATED)
+            record_change(self.request, instance, CREATED, after=after)
         else:
-            record_change(self.request, instance, CREATED, f"Duplicated from {source}.")
+            record_change(
+                self.request,
+                instance,
+                CREATED,
+                f"Duplicated from {source}.",
+                after=after,
+            )
             self._copy_inline_rows(source, instance)
 
         self._created_result = self._admin_model.get_created_result(
@@ -253,7 +268,16 @@ class BaseModelViewSet(ModelViewSet):
         except DjangoValidationError as error:
             raise ValidationError(get_error_detail(error))
 
+    def _snapshot(self, data):
+        """The tracked fields of a representation (see snapshots.py)."""
+        model = self.get_queryset().model
+        return take_snapshot(data, model, getattr(self, "_admin_model", None))
+
     def perform_update(self, serializer):
+        # The object's values before and after the save: the activity
+        # log names the fields the save changed, and the history app
+        # keeps them as a version.
+        before = self._snapshot(serializer.to_representation(serializer.instance))
         instance = self._save(serializer)
 
         # Stamp the editor with a targeted update: a full instance save
@@ -271,7 +295,13 @@ class BaseModelViewSet(ModelViewSet):
         if stamp_fields:
             instance.save(update_fields=stamp_fields)
 
-        record_change(self.request, instance, UPDATED)
+        # Prefetched relations are stale after the save (DRF clears them
+        # only after perform_update); the response reuses this data.
+        if getattr(instance, "_prefetched_objects_cache", None):
+            instance._prefetched_objects_cache = {}
+
+        after = self._snapshot(serializer.data)
+        record_change(self.request, instance, UPDATED, before=before, after=after)
 
     def perform_destroy(self, instance):
         # With soft_delete configured, deleting moves the object to the
@@ -670,8 +700,78 @@ class BaseModelViewSet(ModelViewSet):
             .select_related("user", "content_type")
             .order_by("-action_time")
         )
+        data = LogEntrySerializer(entries, many=True).data
 
-        return Response(LogEntrySerializer(entries, many=True).data)
+        # With the history app, entries that kept a version open it.
+        versioned = set()
+
+        if apps.is_installed("content_studio.history"):
+            from .history.models import Version
+
+            versioned = set(
+                Version.objects.filter(
+                    log_entry__in=[entry["id"] for entry in data]
+                ).values_list("log_entry_id", flat=True)
+            )
+
+        return Response(
+            [{**entry, "has_version": entry["id"] in versioned} for entry in data]
+        )
+
+    @action(
+        methods=["get"],
+        detail=True,
+        url_path=r"activity/(?P<entry_id>[0-9]+)",
+    )
+    def activity_version(self, request, id, entry_id):
+        """
+        The version kept with one of the object's activity log entries
+        (the history app): the object's values after the change, the
+        fields it changed and their values before it. Only the fields
+        the editor sees on the object now are answered.
+        """
+        obj = self.get_object()
+
+        if not apps.is_installed("content_studio.history"):
+            raise NotFound()
+
+        from .history.models import Version
+
+        version = (
+            Version.objects.filter(
+                log_entry_id=entry_id,
+                content_type=ContentType.objects.get_for_model(obj),
+                object_id=str(obj.pk),
+            )
+            .select_related("log_entry__user", "log_entry__content_type")
+            .first()
+        )
+
+        if version is None:
+            raise NotFound()
+
+        visible = {
+            name
+            for name, field in self.get_serializer(obj).fields.items()
+            if not field.write_only
+        } & get_tracked_field_names(self._model, self._admin_model)
+
+        return Response(
+            {
+                **LogEntrySerializer(version.log_entry).data,
+                "fields": [name for name in version.fields if name in visible],
+                "previous": {
+                    name: value
+                    for name, value in version.previous.items()
+                    if name in visible
+                },
+                "data": {
+                    name: value
+                    for name, value in version.data.items()
+                    if name in visible
+                },
+            }
+        )
 
     @action(methods=["get"], detail=False, url_path="presence")
     def presence_list(self, request):

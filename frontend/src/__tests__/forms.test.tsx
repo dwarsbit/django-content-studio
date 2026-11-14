@@ -52,7 +52,7 @@ vi.mock("@/hooks/use-discover", () => ({
 }));
 
 vi.mock("sonner", () => ({
-  toast: { error: toastErrorMock, success: vi.fn() },
+  toast: { error: toastErrorMock, success: vi.fn(), info: vi.fn() },
 }));
 
 vi.mock("react-i18next", () => ({
@@ -1044,6 +1044,187 @@ describe("Editor", () => {
     ]);
     expect(screen.getAllByText("admin")).toHaveLength(2);
     expect(screen.getAllByText(/ago$/)).toHaveLength(2);
+  });
+
+  it("opens a version from the activity with a word diff", async () => {
+    const activityField = {
+      type: "component" as const,
+      component_type: "ActivityLog" as const,
+      component_id: "activity-1",
+      name: "",
+      label: null,
+      readonly: false,
+      col_span: 1,
+      widget: null,
+      copy: false,
+      icon: "",
+      title: "Activity",
+    };
+    const entries = [
+      {
+        id: 7,
+        action_flag: 2 as const,
+        action_time: new Date(Date.now() - 60_000).toISOString(),
+        object_repr: "Existing title",
+        object_id: "abc-123",
+        object_model: "testapp.article",
+        user: { id: "1", __str__: "admin" },
+        message: "Changed Title.",
+        has_version: true,
+      },
+    ];
+    const version = {
+      ...entries[0],
+      fields: ["title"],
+      previous: { title: "Old title" },
+      data: { title: "Existing title", status: "draft", is_published: false },
+    };
+    httpMock.get.mockImplementation((url: string) =>
+      url.endsWith("/activity")
+        ? Promise.resolve({ data: entries })
+        : url.endsWith("/activity/7")
+          ? Promise.resolve({ data: version })
+          : Promise.resolve({
+              data: {
+                id: "abc-123",
+                title: "Existing title",
+                status: "draft",
+                is_published: false,
+                __str__: "Existing title",
+              },
+            }),
+    );
+    httpMock.put.mockResolvedValue({ data: {} });
+
+    useDiscoverMock.mockReturnValue({
+      data: makeDiscover([
+        makeModel({
+          sidebar: [{ title: "", description: "", fields: [activityField] }],
+        }),
+      ]),
+    });
+
+    renderEditorPage(
+      <Editor
+        modelLabel="testapp.article"
+        id="abc-123"
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await screen.findByDisplayValue("Existing title");
+    const user = userEvent.setup();
+
+    // The entry names the changed fields and opens its version: the
+    // title's words, removed and added.
+    await user.click(await screen.findByText("Changed Title."));
+    const diff = await screen.findByTestId("word-diff");
+    expect(diff.querySelector("del")?.textContent).toBe("Old");
+    expect(diff.querySelector("ins")?.textContent).toBe("Existing");
+    expect(httpMock.get).toHaveBeenCalledWith(
+      "/content/testapp.article/abc-123/activity/7",
+    );
+    await user.click(screen.getByRole("button", { name: "history.close" }));
+    await waitFor(() =>
+      expect(screen.queryByTestId("word-diff")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("restores a version's values as unsaved changes", async () => {
+    const activityField = {
+      type: "component" as const,
+      component_type: "ActivityLog" as const,
+      component_id: "activity-1",
+      name: "",
+      label: null,
+      readonly: false,
+      col_span: 1,
+      widget: null,
+      copy: false,
+      icon: "",
+      title: "Activity",
+    };
+    const entries = [
+      {
+        id: 6,
+        action_flag: 1 as const,
+        action_time: new Date(Date.now() - 60_000).toISOString(),
+        object_repr: "Old title",
+        object_id: "abc-123",
+        object_model: "testapp.article",
+        user: { id: "1", __str__: "admin" },
+        message: "",
+        has_version: true,
+      },
+    ];
+    httpMock.get.mockImplementation((url: string) =>
+      url.endsWith("/activity")
+        ? Promise.resolve({ data: entries })
+        : url.endsWith("/activity/6")
+          ? Promise.resolve({
+              data: {
+                ...entries[0],
+                fields: [],
+                previous: {},
+                data: {
+                  title: "Old title",
+                  status: "draft",
+                  is_published: true,
+                },
+              },
+            })
+          : Promise.resolve({
+              data: {
+                id: "abc-123",
+                title: "Existing title",
+                status: "draft",
+                is_published: false,
+                __str__: "Existing title",
+              },
+            }),
+    );
+    httpMock.put.mockResolvedValue({ data: {} });
+
+    useDiscoverMock.mockReturnValue({
+      data: makeDiscover([
+        makeModel({
+          sidebar: [{ title: "", description: "", fields: [activityField] }],
+        }),
+      ]),
+    });
+
+    renderEditorPage(
+      <Editor
+        modelLabel="testapp.article"
+        id="abc-123"
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    await screen.findByDisplayValue("Existing title");
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByText("dashboard.widgets.activity_log.action_flags.1"),
+    );
+    // A created object's version lists the values it was created with.
+    const fields = await screen.findByTestId("version-fields");
+    expect(fields).toHaveTextContent("Old title");
+
+    await user.click(screen.getByRole("button", { name: "history.restore" }));
+
+    expect(await screen.findByDisplayValue("Old title")).toBeInTheDocument();
+    expect(httpMock.put).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "common.save" }));
+    await waitFor(() =>
+      expect(httpMock.put).toHaveBeenCalledWith(
+        "/content/testapp.article/abc-123",
+        expect.objectContaining({ title: "Old title", is_published: true }),
+      ),
+    );
   });
 
   it("renders no activity and fetches nothing without the component", async () => {

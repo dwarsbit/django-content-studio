@@ -482,8 +482,9 @@ class ArticleStudio(ModelStudio):
 - **`ButtonLink`**: the same as a button, with an optional `icon`. Set
   `copy = True` to add a button that copies the URL.
 - **`Button`**: a button that runs your code on the object; see below.
-- **`ActivityLog`**: the changes made to the object, newest first, under the
-  title "Activity" or the `title` you pass.
+- **`ActivityLog`**: the changes made to the object, newest first, with the
+  fields each change touched, under the title "Activity" or the `title` you
+  pass.
 - **`Title`**, **`Subtitle`**, **`Text`** and **`Callout`**: text for the
   editor to read, such as headings and instructions; see below.
 - **`SEOPreview`**: how the object would show in a search result, as the
@@ -754,8 +755,10 @@ duplicates.
 ### Object history
 
 The `ActivityLog` component shows an object's history on its edit page: every
-addition, change and deletion, newest first. Add it to the sidebar or to any
-form set:
+addition, change and deletion, newest first, with the fields each change
+touched. With the history app, an entry opens the version it kept: what the
+change did, field by field, and **Restore this version**; see
+[History and restore](history.mdx). Add it to the sidebar or to any form set:
 
 ```python
 # blog/admin.py

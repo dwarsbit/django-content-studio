@@ -138,6 +138,9 @@ DEFAULTS = {
     # Whether content_studio_send_notification_digest emails editors their
     # unread notifications; it needs ADMIN_URL for the links.
     "NOTIFICATION_EMAIL_DIGEST": False,
+    # Versions the history app (content_studio.history) keeps per
+    # object; older ones are removed on save. None keeps them all.
+    "HISTORY_MAX_VERSIONS": 50,
     # The admin's absolute URL, like "https://example.com/admin/", for
     # links in emails.
     "ADMIN_URL": None,

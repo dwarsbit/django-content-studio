@@ -746,6 +746,23 @@
       "changed": "Password changed"
     }
   },
+  "history": {
+    "open": "Show what changed",
+    "loading": "Version",
+    "title": "Version of {{date}}",
+    "created": "Created",
+    "no_changes": "No changes in the fields you can see.",
+    "before": "Before",
+    "after": "After",
+    "empty": "Empty",
+    "secret_set": "Set",
+    "secret_not_set": "Not set",
+    "close": "Close",
+    "restore": "Restore this version",
+    "restored_one": "Restored {{count}} field. Save to keep it.",
+    "restored_other": "Restored {{count}} fields. Save to keep them.",
+    "nothing_to_restore": "The form already has this version's values."
+  },
   "users": {
     "set_password": {
       "menu": "Set password",
