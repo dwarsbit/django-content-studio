@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { PiArrowLeftBold, PiDotsThreeBold } from "react-icons/pi";
+import { toast } from "sonner";
 
 import {
   FollowButton,
@@ -22,7 +23,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useAdminInfo } from "@/hooks/use-admin-info";
 import useConfirmDialog from "@/hooks/use-confirm-dialog";
 import { useHttp } from "@/hooks/use-http";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import type {
   DateTimeString,
   FormField,
@@ -244,10 +245,21 @@ export function Header({
                               ),
                             });
 
-                            if (confirmed) {
-                              await mutateAsync(resource!.id);
-                              onDelete?.();
+                            if (!confirmed) {
+                              return;
                             }
+
+                            // A refused delete (objects that refer to it,
+                            // or the studio's delete_model) keeps the page
+                            // open and says why.
+                            try {
+                              await mutateAsync(resource!.id);
+                            } catch (e: unknown) {
+                              toast.error(getErrorMessage(e));
+                              return;
+                            }
+
+                            onDelete?.();
                           }}
                         >
                           {t("common.delete")}

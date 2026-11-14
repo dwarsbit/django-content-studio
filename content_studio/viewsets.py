@@ -14,6 +14,7 @@ from django.http import HttpResponseBase
 from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.fields import get_error_detail
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import MultiPartParser
 from rest_framework.renderers import JSONRenderer
@@ -83,6 +84,10 @@ class BaseModelViewSet(ModelViewSet):
         # The request's changes are sent as one content_changed signal.
         with collect_changes(request):
             return super().dispatch(request, *args, **kwargs)
+
+    def get_serializer_context(self):
+        # Saves go through the studio's save_model and save_related.
+        return {**super().get_serializer_context(), "studio": self._admin_model}
 
     def list(self, request, *args, **kwargs):
         """
@@ -192,6 +197,9 @@ class BaseModelViewSet(ModelViewSet):
                 "The inline rows could not be copied: a unique value is "
                 "already taken."
             )
+        except DjangoValidationError as error:
+            # Refused by the inline studio's save_model.
+            raise ValidationError(get_error_detail(error))
 
         for row in copies:
             record_change(self.request, row, CREATED, f"Duplicated with {instance}.")
@@ -229,7 +237,8 @@ class BaseModelViewSet(ModelViewSet):
         Save the serializer; a database integrity error (a unique
         constraint the serializer could not check, such as a
         conditional one or one that includes the tenant field) is a
-        validation error, not a crash.
+        validation error, not a crash, and so is a Django
+        ValidationError raised by the studio's save hooks.
         """
         try:
             with transaction.atomic(
@@ -241,6 +250,8 @@ class BaseModelViewSet(ModelViewSet):
                 "The object could not be saved: it conflicts with an existing "
                 f"object ({error})."
             )
+        except DjangoValidationError as error:
+            raise ValidationError(get_error_detail(error))
 
     def perform_update(self, serializer):
         instance = self._save(serializer)
@@ -276,16 +287,20 @@ class BaseModelViewSet(ModelViewSet):
 
     def _delete(self, instance):
         """
-        Delete an object and record the change. Objects that refer to it
-        with on_delete=PROTECT or RESTRICT block the delete: 409, and
-        the transaction drops the recorded change.
+        Delete an object through the studio's delete_model and record
+        the change. Objects that refer to it with on_delete=PROTECT or
+        RESTRICT block the delete: 409, and the transaction drops the
+        recorded change, as it does when delete_model refuses with a
+        ValidationError (400).
         """
         try:
             with transaction.atomic(using=router.db_for_write(instance.__class__)):
                 record_change(self.request, instance, DELETED)
-                instance.delete()
+                self._admin_model.delete_model(self.request, instance)
         except (models.ProtectedError, models.RestrictedError) as error:
             raise DeleteConflict.from_error(error)
+        except DjangoValidationError as error:
+            raise ValidationError(get_error_detail(error))
 
     @action(methods=["get"], detail=False, url_path="trash")
     def trash(self, request):
@@ -752,6 +767,9 @@ class BaseModelViewSet(ModelViewSet):
             result = action.handler(request, queryset)
         except (models.ProtectedError, models.RestrictedError) as error:
             raise DeleteConflict.from_error(error)
+        except DjangoValidationError as error:
+            # A refusal, such as from the studio's delete_queryset.
+            raise ValidationError(get_error_detail(error))
 
         # A response, such as the export's download, is returned as is.
         if isinstance(result, HttpResponseBase):
