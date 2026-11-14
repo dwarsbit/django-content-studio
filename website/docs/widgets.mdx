@@ -15,6 +15,7 @@ the widget from the field's type, so most models need no configuration.
 | `BooleanField`                            | `CheckboxWidget`                             |
 | `ForeignKey`, `OneToOneField`             | `ForeignKeyWidget`                           |
 | `ManyToManyField`                         | `ManyToManyWidget`                           |
+| `ManyToManyField` to `Permission`         | `PermissionMatrixWidget`                     |
 | `DateField`, `DateTimeField`, `TimeField` | `DateWidget`, `DateTimeWidget`, `TimeWidget` |
 | `DurationField`                           | `DurationWidget`                             |
 | `FileField`, `ImageField`                 | `FileWidget`                                 |
@@ -30,6 +31,8 @@ the widget from the field's type, so most models need no configuration.
 | `AutoSlugField` (django-extensions)       | `SlugWidget`                                 |
 
 Fields with choices get a select. Fields of other types get a plain input.
+The permission matrix is described under
+[User management](/docs/users#permissions-and-groups).
 
 These widgets are not used by default but are there to choose:
 

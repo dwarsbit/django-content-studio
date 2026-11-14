@@ -56,6 +56,8 @@ content_studio/
 ├── profile.py           # The profile page of the signed-in user: profile_fields (get_profile_fields), the activity overview and recent content from LogEntry, the password change (api/profile)
 ├── users.py             # Managing other users: Set password (api/content/<user model>/<id>/password) and the guard on is_superuser and superusers' email for staff who are not superusers
 ├── password_links.py    # Invite and password links: Django's default_token_generator, the emails (a Django task, templates in templates/content_studio/users) and the public set-password endpoints (api/set-password)
+├── permission_matrix.py # The permission matrix's options (api/content/<model>/permissions/<field>) and the guard: staff who are not superusers only grant permissions (and groups) they have
+├── user_studios.py      # The default UserStudio and GroupStudio, registered when a project registers none
 ├── extensions.py        # Extension base classes
 ├── filters.py           # Filter definitions
 ├── dashboard/

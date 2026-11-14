@@ -290,6 +290,26 @@
       "no_results": "No results found",
       "remove": "Remove {{item}}"
     },
+    "permission_matrix": {
+      "search": "Search permissions",
+      "selected_only": "Selected only",
+      "count": "{{count}} of {{total}} selected",
+      "no_results": "No permissions found",
+      "model": "Model",
+      "other": "Other",
+      "actions": {
+        "add": "Add",
+        "change": "Change",
+        "view": "View",
+        "delete": "Delete"
+      },
+      "toggle": "{{action}} {{model}}",
+      "toggle_column": "All {{action}}",
+      "toggle_model": "All of {{model}}",
+      "toggle_app": "All of {{app}}",
+      "not_grantable": "You can only grant permissions you have yourself",
+      "locked_hint": "Dimmed permissions are ones you don't have yourself, so you can't grant or revoke them."
+    },
     "date_picker": {
       "placeholder": "Select a date"
     },

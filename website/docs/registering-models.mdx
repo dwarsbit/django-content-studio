@@ -23,9 +23,11 @@ class ArticleStudio(ModelStudio):
 Registrations go to the site set in the
 [`ADMIN_SITE`](/docs/settings#admin_site) setting. Content Studio keeps its
 own registry: models registered only with the classic Django admin do not
-appear in the admin. The user model is the exception. It is registered with
-a default studio with a users icon, so editors can manage users from the
-start; register your own studio for it to change how it looks.
+appear in the admin. The user model and Django's groups are the exception.
+They are registered with default studios, so editors can manage users and
+their permissions from the start; register your own studio for them to
+change how they look, or subclass the defaults (see
+[User management](/docs/users#the-default-user-and-group-studios)).
 
 ## Studio options
 

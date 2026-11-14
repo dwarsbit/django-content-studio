@@ -339,7 +339,11 @@ class SuperuserGuardTests(UserManagementTestCase):
         other.refresh_from_db()
         self.assertTrue(self.target.is_superuser)
         self.assertEqual(other.email, "root@example.org")
-        self.assertEqual(self.detail(self.admin, other)["__readonly_fields__"], [])
+        # Only the login dates, read-only for everyone.
+        self.assertEqual(
+            self.detail(self.admin, other)["__readonly_fields__"],
+            ["last_login", "date_joined"],
+        )
 
     def test_create_form_shows_is_superuser_read_only_to_staff(self):
         request = RequestFactory().get("/")

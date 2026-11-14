@@ -61,7 +61,10 @@ export function FilterRenderer({
     if (widgetClass === FieldWidget.ForeignKeyWidget) {
       return ForeignKeyFilter;
     }
-    if (widgetClass === FieldWidget.ManyToManyWidget) {
+    if (
+      widgetClass === FieldWidget.ManyToManyWidget ||
+      widgetClass === FieldWidget.PermissionMatrixWidget
+    ) {
       return ManyToManyFilter;
     }
     return null;

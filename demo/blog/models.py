@@ -144,6 +144,11 @@ class Article(models.Model):
         verbose_name = "article"
         verbose_name_plural = "articles"
         ordering = ["-pk"]
+        # Shown after the default actions in the permission matrix.
+        permissions = [
+            ("publish_article", "Can publish article"),
+            ("feature_article", "Can feature article"),
+        ]
 
     def __str__(self):
         return self.title

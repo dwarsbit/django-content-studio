@@ -535,7 +535,10 @@ Each is optional and has its own page:
 - User management (adding a user emails an invite to set their password,
   admins send password links or set a password; staff who are not
   superusers cannot change `is_superuser`, nor a superuser's email or
-  password): https://djangocontentstudio.org/docs/users.md
+  password; permissions are picked in a matrix and staff only grant what
+  they have; default `UserStudio` and `GroupStudio` in
+  `content_studio.user_studios` to subclass):
+  https://djangocontentstudio.org/docs/users.md
 - Presence, the command palette, deployment and every system check:
   https://djangocontentstudio.org/docs/presence.md,
   https://djangocontentstudio.org/docs/command-palette.md,

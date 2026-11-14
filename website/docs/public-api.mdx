@@ -63,6 +63,14 @@ Studios, the site and their configuration objects. `admin_site` is the default s
 - `admin_site`
 - `register`
 
+## `content_studio.user_studios`
+
+The studios registered for the user model and Django's groups when a
+project registers none, to subclass. See [User management](/docs/users).
+
+- `GroupStudio`
+- `UserStudio`
+
 ## `content_studio.form`
 
 Edit page layouts, components and table columns. `Component` is the base type of the built-in components; custom component types are not supported, but `Link`, `ButtonLink`, `Button`, the text components (`Title`, `Subtitle`, `Text`, `Callout`) and `SEOPreview` are meant to be subclassed. `Condition` is the base of [server-side conditions](/docs/edit-page#server-side-conditions).
@@ -190,6 +198,7 @@ The built-in editing widgets, to use in `Field(widget=...)` and `default_widget_
 - `MediaWidget`
 - `MultiSelectWidget`
 - `PasswordWidget`
+- `PermissionMatrixWidget`
 - `PhoneWidget`
 - `RadioButtonWidget`
 - `RatingWidget`
