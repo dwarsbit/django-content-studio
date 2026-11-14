@@ -1,5 +1,5 @@
 __title__ = "Django Content Studio"
-__version__ = "1.13.3"
+__version__ = "1.14.0"
 __author__ = "Leon van der Grient"
 __license__ = "MIT"
 
