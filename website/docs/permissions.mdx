@@ -27,6 +27,10 @@ The methods also receive the object, so a studio can decide per object. The
 answer guards every endpoint that works on one object: opening, saving,
 deleting, restoring and moving it, and running its buttons.
 
+The edit page follows the same answer: an object the editor may not change
+opens read-only, without Save, and Delete is only offered when the editor
+may delete the object. Inline rows follow the inline's methods.
+
 ```python
 # blog/admin.py
 from content_studio import register

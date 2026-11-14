@@ -277,6 +277,13 @@ class DjangoContentStudioConfig(AppConfig):
                         __readonly_fields__ = serializers.SerializerMethodField(
                             method_name="get_readonly_field_list"
                         )
+                        # The object's own permissions: a studio may
+                        # refuse changing or deleting one object while
+                        # allowing the model, so the edit page opens
+                        # read-only and hides Delete for it.
+                        __permissions__ = serializers.SerializerMethodField(
+                            method_name="get_object_permissions"
+                        )
 
                         def _get_obj(self):
                             return (
@@ -399,6 +406,18 @@ class DjangoContentStudioConfig(AppConfig):
                                     self.context.get("request"), obj
                                 )
                             )
+
+                        def get_object_permissions(self, obj):
+                            request = self.context.get("request")
+
+                            return {
+                                "change": bool(
+                                    admin_model.has_change_permission(request, obj)
+                                ),
+                                "delete": bool(
+                                    admin_model.has_delete_permission(request, obj)
+                                ),
+                            }
 
                     return DetailSerializer
 
