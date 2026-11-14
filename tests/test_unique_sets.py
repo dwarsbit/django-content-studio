@@ -229,7 +229,8 @@ class UniqueSetCheckTenantTests(TestCase):
     def test_a_conflict_the_serializer_cannot_check_is_a_validation_error(self):
         """The title-per-category constraint includes the tenant field,
         which is read-only, so the serializer has no validator for it:
-        the database refuses the row, and that is a 400, not a 500."""
+        the model's unique check on save catches it, and that is a 400,
+        not a 500."""
         data = {"title": "Spring", "slug": "spring-2", "language": "en"}
 
         response = self.client.post(
@@ -240,7 +241,10 @@ class UniqueSetCheckTenantTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("conflicts with an existing object", str(response.json()))
+        self.assertIn(
+            "Edition with this Title and Category already exists.",
+            response.json()["non_field_errors"],
+        )
         self.assertFalse(Edition.objects.filter(slug="spring-2").exists())
 
         other = Edition.objects.create(

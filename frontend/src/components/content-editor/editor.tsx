@@ -18,7 +18,7 @@ import { useHttp } from "@/hooks/use-http";
 import { usePresence } from "@/hooks/use-presence";
 import { useShowResult } from "@/hooks/use-show-result";
 import { contentFormSchema } from "@/lib/invalid-input";
-import { applyFieldErrors } from "@/lib/server-errors";
+import { applyFieldErrors, getNonFieldErrors } from "@/lib/server-errors";
 import { cn, getErrorMessage } from "@/lib/utils";
 import type {
   ButtonResult,
@@ -313,7 +313,20 @@ function EditorForm({
     },
   });
 
+  // The save's errors that belong to no field (the model's clean(), a
+  // unique set), shown above the form until the next save.
+  const [nonFieldErrors, setNonFieldErrors] = useState<string[]>([]);
+  const nonFieldErrorsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (nonFieldErrors.length) {
+      nonFieldErrorsRef.current?.scrollIntoView?.({ block: "nearest" });
+    }
+  }, [nonFieldErrors]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setNonFieldErrors([]);
+
     try {
       const { __result__: result, ...saved } = (await save(
         values,
@@ -339,11 +352,24 @@ function EditorForm({
       }
     } catch (e: unknown) {
       if (applyFieldErrors(e, form.setError as never)) {
+        const messages = getNonFieldErrors(e);
+
+        setNonFieldErrors(messages);
         toast.error(
           <div>
-            <div>{t("editor.field_validation_error_title")}</div>
+            <div>
+              {t(
+                messages.length
+                  ? "editor.non_field_validation_error_title"
+                  : "editor.field_validation_error_title",
+              )}
+            </div>
             <div className="font-normal text-muted-foreground">
-              {t("editor.field_validation_error_description")}
+              {t(
+                messages.length
+                  ? "editor.non_field_validation_error_description"
+                  : "editor.field_validation_error_description",
+              )}
             </div>
           </div>,
         );
@@ -419,6 +445,26 @@ function EditorForm({
                     getMainColumnWidth(width ?? model.admin.edit.width),
                   )}
                 >
+                  {nonFieldErrors.length > 0 && (
+                    <Alert
+                      ref={nonFieldErrorsRef}
+                      variant="destructive"
+                      className="mb-6 scroll-mt-6"
+                      data-testid="non-field-errors"
+                    >
+                      <AlertDescription>
+                        {nonFieldErrors.length === 1 ? (
+                          nonFieldErrors[0]
+                        ) : (
+                          <ul className="list-disc pl-4 space-y-1">
+                            {nonFieldErrors.map((message, index) => (
+                              <li key={index}>{message}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   {isDuplicate && duplicate && !form.getValues("id") && (
                     <Alert className="mb-6">
                       <AlertDescription>

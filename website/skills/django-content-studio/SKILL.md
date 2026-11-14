@@ -252,7 +252,10 @@ class ArticleStudio(ModelStudio):
 ```
 
 Every required model field must be on the form (`edit_main` or
-`edit_sidebar`): the edit page only saves what it shows. Subclass a text
+`edit_sidebar`): the edit page only saves what it shows. Saving runs
+`Model.clean()`, the unique checks and `Meta.constraints`, like the classic
+admin: an error keyed by a field on the form shows under it, any other
+error above the form. Subclass a text
 component and override `get_text(obj, request)` for text that depends on the
 object; subclass `Link`/`ButtonLink` and override `get_url(obj, request)`.
 Two components of the same class and settings on one studio need an

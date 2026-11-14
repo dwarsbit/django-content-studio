@@ -278,7 +278,10 @@ clearing a cache:
 `obj` carries the values from the form; on a new object, `obj.pk` is not
 set until it is saved. `data` holds the values that were written, by field
 name, including many-to-many fields as lists of objects. `change` is `False`
-for a new object and `True` for an existing one.
+for a new object and `True` for an existing one. `save_model` is called
+after the [model's validation](/docs/edit-page#model-validation) has passed,
+as in the classic admin, so `obj` already satisfies `clean()` and the
+model's constraints.
 
 ```python
 # blog/admin.py
